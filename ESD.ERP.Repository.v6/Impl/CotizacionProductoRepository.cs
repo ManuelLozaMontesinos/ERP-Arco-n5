@@ -296,7 +296,8 @@ namespace ESD.ERP.Repository.Impl
                 parameters.AddParameter("pesoNeto", entity.PesoNeto);
                 parameters.AddParameter("tipoAfectacionIgvId", entity.TipoAfectacionIgvId);
                 parameters.AddParameter("tipoIscId", entity.TipoIscId);
-                parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+                int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : entity.UsuarioCreacionId;
+                parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
                 DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, StoredProcActionConstant.UPDATE), parameters);
 
@@ -315,7 +316,8 @@ namespace ESD.ERP.Repository.Impl
             try
             {
                 parameters.AddParameter("cotizacionProductoId", entity.CotizacionProductoId);
-                parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+                int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : entity.UsuarioCreacionId;
+                parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
                 DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, StoredProcActionConstant.DELETE), parameters);
 
@@ -333,7 +335,8 @@ namespace ESD.ERP.Repository.Impl
             try
             {
                 parameters.AddParameter("cotizacionId", entity.CotizacionId);
-                parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+                int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : entity.UsuarioCreacionId;
+                parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
                 DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, "_eliminarPorCotizacionId"), parameters);
 
@@ -353,7 +356,8 @@ namespace ESD.ERP.Repository.Impl
                 parameters.AddParameter("cotizacionProductoId", entity.CotizacionProductoId);
                 parameters.AddParameter("cantidadBloqueada", entity.CantidadBloqueada);
                 parameters.AddParameter("solicitaAutorizacionDescuento", entity.SolicitaAutorizacionDescuento);
-                parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+                int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : entity.UsuarioCreacionId;
+                parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
                 DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, "_actualizarSolicitaAutorizacionDescuento"), parameters);
 
@@ -373,7 +377,8 @@ namespace ESD.ERP.Repository.Impl
                 parameters.AddParameter("cotizacionProductoId", entity.CotizacionProductoId);
                 parameters.AddParameter("solicitaAutorizacionDescuento", entity.SolicitaAutorizacionDescuento);
                 parameters.AddParameter("precioAutorizado", entity.PrecioAutorizado);
-                parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+                int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : entity.UsuarioCreacionId;
+                parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
                 DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, "_actualizarPrecioAutorizado"), parameters);
 
@@ -413,7 +418,7 @@ namespace ESD.ERP.Repository.Impl
                                                       MontoIsc = s.MontoIsc,
                                                       MontoTotal = s.MontoTotal,
                                                       Estado = s.Estado,
-                                                      UsuarioCreacionId = s.UsuarioCreacionId,
+                                                      UsuarioCreacionId = (s.UsuarioModificacionId.HasValue && s.UsuarioModificacionId.Value > 0) ? s.UsuarioModificacionId.Value : s.UsuarioCreacionId,
                                                   }).ToList();
                 }
 
@@ -453,7 +458,8 @@ namespace ESD.ERP.Repository.Impl
             {
                 parameters.AddParameter("cotizacionProductoId", entity.CotizacionProductoId);
                 parameters.AddParameter("sinSaldo", entity.SinSaldo);
-                parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+                int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : entity.UsuarioCreacionId;
+                parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
                 DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, "_actualizarSinSaldo"), parameters);
 

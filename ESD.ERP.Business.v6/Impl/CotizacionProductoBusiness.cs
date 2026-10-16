@@ -108,7 +108,13 @@ namespace ESD.ERP.Business.Impl
 		{
 			try
 			{
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: dto.UsuarioCreacionId;
+
 				CotizacionProducto cotizacionProducto = Mapper.Map<CotizacionProducto>(dto);
+				cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+				cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
 
 				validarMontoMinimoAnticipo(cotizacionProducto,true);
 
@@ -120,7 +126,8 @@ namespace ESD.ERP.Business.Impl
 
 					cotizacionRepository.ActualizarMonto(new Cotizacion() { 
 						CotizacionId = dto.CotizacionId,
-						UsuarioCreacionId = dto.UsuarioCreacionId
+						UsuarioCreacionId = usuarioAccionId,
+						UsuarioModificacionId = usuarioAccionId
 					});
 
                if (cotizacionProducto.Producto.FamiliaProducto.ClaseProducto.GrupoProducto
@@ -144,7 +151,13 @@ namespace ESD.ERP.Business.Impl
 		{
 			try
 			{
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: dto.UsuarioCreacionId;
+
 				CotizacionProducto cotizacionProducto = Mapper.Map<CotizacionProducto>(dto);
+				cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+				cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
 
 				validarMontoMinimoAnticipo(cotizacionProducto, false);
 
@@ -163,7 +176,8 @@ namespace ESD.ERP.Business.Impl
 					cotizacionRepository.ActualizarMonto(new Cotizacion()
 					{
 						CotizacionId = dto.CotizacionId,
-						UsuarioCreacionId = dto.UsuarioCreacionId
+						UsuarioCreacionId = usuarioAccionId,
+						UsuarioModificacionId = usuarioAccionId
 					});
 					tx.Complete();
 				}
@@ -179,7 +193,13 @@ namespace ESD.ERP.Business.Impl
 		{
 			try
 			{
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: dto.UsuarioCreacionId;
+
 				CotizacionProducto cotizacionProducto = Mapper.Map<CotizacionProducto>(dto);
+				cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+				cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
 
 				using (TransactionScope tx = new())
 				{
@@ -188,7 +208,8 @@ namespace ESD.ERP.Business.Impl
 					cotizacionRepository.ActualizarMonto(new Cotizacion()
 					{
 						CotizacionId = dto.CotizacionId,
-						UsuarioCreacionId = dto.UsuarioCreacionId
+						UsuarioCreacionId = usuarioAccionId,
+						UsuarioModificacionId = usuarioAccionId
 					});
 
 					if (cotizacionProducto.Producto.FamiliaProducto.ClaseProducto.GrupoProducto
@@ -372,6 +393,7 @@ namespace ESD.ERP.Business.Impl
 					cotizacionProductoTemp.MontoIgv = calculadorVentaItemDTO.MontoImpuesto;
 					cotizacionProductoTemp.MontoTotal = calculadorVentaItemDTO.MontoTotal;
 					cotizacionProductoTemp.UsuarioCreacionId = cotizacionProducto.UsuarioCreacionId;
+					cotizacionProductoTemp.UsuarioModificacionId = cotizacionProducto.UsuarioModificacionId ?? cotizacionProducto.UsuarioCreacionId;
 
 					if (cotizacion.EsPedido == SiNoConstante.S)
 						actualizarReservaInterna(cotizacionProductoTemp, esNuevo);
@@ -423,6 +445,8 @@ namespace ESD.ERP.Business.Impl
 				if(cotizacionProducto.Cotizacion.EsPedido == SiNoConstante.S)
 					eliminarReserva(comprobanteProductoTemp);
 
+				comprobanteProductoTemp.UsuarioCreacionId = cotizacionProducto.UsuarioCreacionId;
+				comprobanteProductoTemp.UsuarioModificacionId = cotizacionProducto.UsuarioModificacionId ?? cotizacionProducto.UsuarioCreacionId;
 				cotizacionProductoRepository.Delete(comprobanteProductoTemp);
 			}
 		}
@@ -493,7 +517,13 @@ namespace ESD.ERP.Business.Impl
 		{
 			try
 			{
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: dto.UsuarioCreacionId;
+
 				CotizacionProducto cotizacionProducto = Mapper.Map<CotizacionProducto>(dto);
+				cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+				cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
 
 				using (TransactionScope tx = new())
 				{

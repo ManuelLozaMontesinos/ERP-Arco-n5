@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Cryptography;
 using ESD.Core.Service.DTO;
 using ESD.ERP.Common;
@@ -203,6 +203,8 @@ namespace ESD.ERP.Web.Infrastructure
          int usuarioId = ObtenerUsuarioId();
 
          changeAuditProperty("UsuarioCreacionId", dto, usuarioId);
+         changeAuditProperty("UsuarioModificacionId", dto, usuarioId);
+         changeAuditProperty("FechaModificacion", dto, DateTime.Now);
       }
       private void changeAuditProperty(string propertyName, object dto, object newValue)
       {

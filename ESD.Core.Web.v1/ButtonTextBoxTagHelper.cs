@@ -56,7 +56,7 @@ namespace ESD.Core.Web
          Id = ResolveId(Id);
 
          TagBuilder tagDiv = new TagBuilder(HtmlTagNameConstant.DIV);
-         tagDiv.AddCssClass("input-group");
+         tagDiv.AddCssClass("input-group input-group-sm");
 
          TagBuilder tagText = new TagBuilder(HtmlTagNameConstant.INPUT);
          tagText.GenerateId(Id,string.Empty);
@@ -93,9 +93,8 @@ namespace ESD.Core.Web
          tagButton.Attributes.Add("class", "input-group-append");
          tagButton.InnerHtml.AppendHtml(createButtonItem());
 
-         tagText.InnerHtml.AppendHtml(tagButton);
-
          tagDiv.InnerHtml.AppendHtml(tagText);
+         tagDiv.InnerHtml.AppendHtml(tagButton);
 
          output.TagName = HtmlTagNameConstant.DIV;
 

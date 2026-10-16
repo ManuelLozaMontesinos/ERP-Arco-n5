@@ -152,7 +152,8 @@ namespace ESD.Core.Web
          output.TagName = HtmlTagNameConstant.NAV;
          output.Attributes.Add("id", Id);
          output.Attributes.Add("name", Id);
-         output.Attributes.Add("class","navbar navbar-light bg-light");
+         string menuSizeClass = MenuSize == MenuSize.Small ? "esd-menubar-sm" : "esd-menubar-default";
+         output.Attributes.Add("class", $"navbar navbar-light bg-light esd-menubar {menuSizeClass}");
 
          TagBuilder containerTag = new(HtmlTagNameConstant.DIV);
          containerTag.AddCssClass("form-inline");

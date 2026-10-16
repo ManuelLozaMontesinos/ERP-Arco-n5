@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service.DTO;
 using ESD.Core.Web;
@@ -772,10 +772,9 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          try
          {
-            model.NotaCreditoProductoDTO.DTOState = DTOState.Modified;
-            AuditDTO(model.NotaCreditoProductoDTO);
-
             NotaCreditoProductoDTO notaCreditoProductoDTO = notaCreditoProductoProxy.GetById(model.NotaCreditoProductoDTO);
+            notaCreditoProductoDTO.DTOState = DTOState.Modified;
+            AuditDTO(notaCreditoProductoDTO);
 
             notaCreditoProductoProxy.Delete(notaCreditoProductoDTO);
 

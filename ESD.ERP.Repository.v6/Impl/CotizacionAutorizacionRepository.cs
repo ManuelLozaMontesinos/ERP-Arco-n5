@@ -144,7 +144,8 @@ namespace ESD.ERP.Repository.Impl
 				parameters.AddParameter("tipoAutorizacionId", entity.TipoAutorizacionId);
 				parameters.AddParameter("cotizacionId", entity.CotizacionId);
 				parameters.AddParameter("estadoAprobacionId", entity.EstadoAprobacionId);
-				parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+				int usuarioAccionId = entity.UsuarioCreacionId > 0 ? entity.UsuarioCreacionId : (entity.UsuarioModificacionId ?? (entity.UsuarioId ?? 0));
+				parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 				parameters.AddNewIdParameter();
 
 				int id = DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, StoredProcActionConstant.INSERT), parameters);
@@ -168,7 +169,8 @@ namespace ESD.ERP.Repository.Impl
 				parameters.AddParameter("fechaAutorizacion", entity.FechaAutorizacion);
 				parameters.AddParameter("estadoAprobacionId", entity.EstadoAprobacionId);
 				parameters.AddParameter("estado", entity.Estado);
-				parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+				int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : (entity.UsuarioCreacionId > 0 ? entity.UsuarioCreacionId : (entity.UsuarioId ?? 0));
+				parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
 				DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, StoredProcActionConstant.UPDATE), parameters);
 
@@ -187,7 +189,8 @@ namespace ESD.ERP.Repository.Impl
 			try
 			{
 				parameters.AddParameter("CotizacionAutorizacionId", entity.CotizacionAutorizacionId);
-				parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
+				int usuarioAccionId = (entity.UsuarioModificacionId.HasValue && entity.UsuarioModificacionId.Value > 0) ? entity.UsuarioModificacionId.Value : (entity.UsuarioCreacionId > 0 ? entity.UsuarioCreacionId : (entity.UsuarioId ?? 0));
+				parameters.AddParameter("usuarioAccionId", usuarioAccionId);
 
 				DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, StoredProcActionConstant.DELETE), parameters);
 

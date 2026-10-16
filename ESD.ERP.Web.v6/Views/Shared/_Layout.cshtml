@@ -18,12 +18,35 @@
    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
    <!-- App -->
    <link rel="stylesheet" href="~/lib/jqgrid/css/ui.jqgrid-bootstrap4.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/plugins/sweetalert2/sweetalert2.min.css" asp-append-version="true">
    <link rel="stylesheet" href="~/css/alertifyjs/alertify.min.css" asp-append-version="true">
    <link rel="stylesheet" href="~/css/alertifyjs/themes/bootstrap.min.css" asp-append-version="true">
    @*<link rel="stylesheet" href="~/css/bootstrap-datetimepicker.css" asp-append-version="true">*@
    <link rel="stylesheet" href="~/css/app.main.css" asp-append-version="true">
+      <script type="text/javascript">
+      (function () {
+         try {
+            if (localStorage.getItem('adminlte_dark_mode') === 'true') {
+               document.documentElement.classList.add('dark-mode');
+            }
+         } catch (e) { }
+      })();
+   </script>
+   <!-- Core libraries in head for synchronous view rendering -->
+   <script src="~/plugins/jquery/jquery.min.js" asp-append-version="true"></script>
+   <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+   <script src="~/plugins/chart.js/chart.min.js" asp-append-version="true"></script>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
+   <script type="text/javascript">
+      (function () {
+         try {
+            if (localStorage.getItem('adminlte_dark_mode') === 'true') {
+               document.body.classList.add('dark-mode');
+            }
+         } catch (e) { }
+      })();
+   </script>
    <div class="wrapper">
       <!-- Navbar -->
       <nav class="main-header navbar navbar-expand navbar-white navbar-light">
@@ -33,29 +56,29 @@
                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
             </li>
          </ul>
-         <ul class="navbar-nav ml-auto">
-            <li class="nav-item">
-               <span class="navbar-text">Año : </span>
+         <ul class="navbar-nav ml-auto align-items-center">
+            <li class="nav-item session-chip mr-2" title="Periodo">
+               <span class="chip-label">A&Ntilde;O</span>
+               <span class="chip-val">@ViewBag.Periodo</span>
             </li>
-            <li class="nav-item">
-               <a class="nav-link active" href="#">@ViewBag.Periodo</a>
+            <li class="nav-item session-chip mr-2" title="Empresa">
+               <span class="chip-label">EMPRESA</span>
+               <span class="chip-val">@ViewBag.Empresa</span>
             </li>
-            <li class="nav-item">
-               <span class="navbar-text">Empresa : </span>
-            </li>
-            <li class="nav-item">
-               <a class="nav-link active" href="#">@ViewBag.Empresa</a>
-            </li>
-            <li class="nav-item">
-               <span class="navbar-text">Sede : </span>
-            </li>
-            <li class="nav-item">
-               <a class="nav-link active" href="#">@ViewBag.Sede</a>
+            <li class="nav-item session-chip mr-2" title="Sede">
+               <span class="chip-label">SEDE</span>
+               <span class="chip-val">@ViewBag.Sede</span>
             </li>
          </ul>
          <!-- SEARCH FORM -->
          <!-- Right navbar links -->
-         <ul class="navbar-nav ml-auto">
+         <ul class="navbar-nav ml-auto align-items-center">
+            <!-- AdminLTE 3 Dark Mode Toggle -->
+            <li class="nav-item mr-1">
+               <a class="nav-link btn-theme-toggle" id="app-dark-mode-toggle" href="javascript:void(0);" role="button" title="Modo Oscuro / Claro" style="cursor: pointer;">
+                  <i id="app-dark-mode-icon" class="far fa-moon"></i>
+               </a>
+            </li>
             <!-- Messages Dropdown Menu -->
             <li class="nav-item dropdown">
                <a class="nav-link" data-toggle="dropdown" href="#">
@@ -94,17 +117,22 @@
       <!-- /.navbar -->
       <!-- Main Sidebar Container -->
       <aside class="main-sidebar sidebar-dark-primary elevation-4">
-         <!-- Brand Logo -->
-         <a href="index3.html" class="brand-link">
-            <img src="~/dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
-                 style="opacity: .8">
-            <span class="brand-text font-weight-light">AdminLTE 3</span>
+         <!-- Brand Logo: ARCO - Hazlo Realidad (29+ AÃ±os) -->
+         <a href="@Url.Action("Index", "Home", new { cid = ViewBag.cid })" onclick="window.location.href = '@Url.Action("Index", "Home")?cid=' + encodeURIComponent($('#__cid').val() || '@ViewBag.cid'); return false;" class="brand-link brand-link-arco" style="cursor: pointer;" title="ARCO - Hazlo Realidad | Ir al Dashboard (29+ A&ntilde;os)">
+            <!-- Collapsed Mini Sidebar Icon -->
+            <img src="~/img/logo-arco-circle.png" alt="ARCO" class="brand-logo-collapsed img-circle elevation-2">
+            
+            <!-- Expanded Full Brand Header -->
+            <div class="brand-logo-expanded">
+               <img src="~/img/logo-arco-full.png" alt="ARCO - Hazlo Realidad" style="height: 42px; width: auto; max-width: 145px; object-fit: contain;">
+               <span class="badge ml-2" style="background: #EAFF00; color: #111; font-size: 0.6rem; padding: 3px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); white-space: nowrap;">29+ A&Ntilde;OS</span>
+            </div>
          </a>
 
          <!-- Sidebar -->
          <div class="sidebar">
             <!-- Sidebar user panel (optional) -->
-            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="user-panel mt-4 pb-3 mb-3 d-flex">
                <div class="image">
                   <img src="img/user.jpg" class="img-circle elevation-2" alt="Usuario">
                </div>
@@ -146,14 +174,18 @@
    <!-- ./wrapper -->
    <!-- REQUIRED SCRIPTS -->
    <!-- plugins -->
-   <script src="~/plugins/jquery/jquery.min.js" asp-append-version="true"></script>
-   <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
    <script src="~/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js" asp-append-version="true"></script>
    <script src="~/plugins/inputmask/jquery.inputmask.min.js" asp-append-version="true"></script>
    <!-- moment.js es requerido por tempusdominus -->
    <script src="~/lib/moment.js/moment.min.js" asp-append-version="true"></script>
+   <script src="~/lib/moment.js/locale/es.js" asp-append-version="true"></script>
+   <script type="text/javascript">
+      if (window.moment) {
+         moment.locale('es');
+      }
+   </script>
    <script src="~/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js" asp-append-version="true"></script>
-   <script src="~/dist/js/adminlte.js" asp-append-version="true"></script>
+      <script src="~/dist/js/adminlte.js" asp-append-version="true"></script>
    <!-- App -->
    <script src="~/lib/jqgrid/js/i18n/grid.locale-es.js" asp-append-version="true"></script>
    <script src="~/lib/jqgrid/js/jquery.jqGrid.min.js" asp-append-version="true"></script>
@@ -165,6 +197,7 @@
    <script src="~/lib/plupload/plupload.full.min.js" asp-append-version="true"></script>
    <script src="~/lib/jquery.fileDownload/jquery.fileDownload.js" asp-append-version="true"></script>
    <script src="~/lib/numeral.js/numeral.min.js" asp-append-version="true"></script>
+   <script src="~/plugins/sweetalert2/sweetalert2.all.min.js" asp-append-version="true"></script>
    <script src="~/js/app.main.js" asp-append-version="true"></script>
    <script src="~/lib/signalr/dist/browser/signalr.min.js" asp-append-version="true"></script>
    <script src="~/js/app.signalr.js" asp-append-version="true"></script>
@@ -218,7 +251,56 @@
             }
          });
       };
+            function initThemeMode() {
+         var isDark = localStorage.getItem('adminlte_dark_mode') === 'true';
+         applyThemeMode(isDark, false);
+
+         $('#app-dark-mode-toggle').off('click').on('click', function (e) {
+            e.preventDefault();
+            var isCurrentDark = $('body').hasClass('dark-mode');
+            applyThemeMode(!isCurrentDark, true);
+         });
+      }
+
+      function applyThemeMode(dark, animate) {
+         var $body = $('body');
+         var $html = $('html');
+         var $nav = $('.main-header.navbar');
+         var $icon = $('#app-dark-mode-icon');
+         var $btn = $('#app-dark-mode-toggle');
+
+         // Eliminar cualquier preload style remanente
+         var preload = document.getElementById('theme-preload-style');
+         if (preload) { preload.remove(); }
+
+         if (dark) {
+            $body.addClass('dark-mode');
+            $html.addClass('dark-mode');
+            $nav.removeClass('navbar-white navbar-light').addClass('navbar-dark');
+            $icon.removeClass('far fa-moon').addClass('fas fa-sun text-warning');
+            $btn.attr('title', 'Cambiar a Modo Claro');
+            try { localStorage.setItem('adminlte_dark_mode', 'true'); } catch (e) { }
+         } else {
+            $body.removeClass('dark-mode');
+            $html.removeClass('dark-mode');
+            $nav.removeClass('navbar-dark').addClass('navbar-white navbar-light');
+            $icon.removeClass('fas fa-sun text-warning').addClass('far fa-moon');
+            $btn.attr('title', 'Cambiar a Modo Oscuro');
+            try { localStorage.setItem('adminlte_dark_mode', 'false'); } catch (e) { }
+         }
+
+         if (animate && $icon.length) {
+            $icon.css({ transform: 'rotate(360deg) scale(1.25)', transition: 'transform 0.3s ease' });
+            setTimeout(function () {
+               $icon.css({ transform: 'none', transition: 'none' });
+            }, 300);
+         }
+         $(document).trigger('themeChanged', [dark]);
+      }
+
       jQuery(document).ready(function ($) {
+
+         initThemeMode();
 
          $('#workspace').removeAttr('style');
 
@@ -282,3 +364,7 @@
    </script>
 </body>
 </html>
+
+
+
+

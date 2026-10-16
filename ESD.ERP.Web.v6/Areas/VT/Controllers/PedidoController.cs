@@ -1119,10 +1119,9 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          try
          {
-            model.CotizacionProductoDTO.DTOState = DTOState.Modified;
-            AuditDTO(model.CotizacionProductoDTO);
-
             CotizacionProductoDTO cotizacionProductoDTO = cotizacionProductoProxy.GetById(model.CotizacionProductoDTO);
+            cotizacionProductoDTO.DTOState = DTOState.Modified;
+            AuditDTO(cotizacionProductoDTO);
 
             cotizacionProductoProxy.Delete(cotizacionProductoDTO);
 
@@ -1465,22 +1464,34 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          try
          {
+            int usuarioId = ObtenerUsuarioId();
             foreach(CotizacionAutorizacionDTO cotizacionAutorizacionDTO in model.CotizacionAutorizacionDTOList)
             {
                cotizacionAutorizacionDTO.Estado = EstadoConstante.ACTIVO;
+               cotizacionAutorizacionDTO.UsuarioId = usuarioId;
+               cotizacionAutorizacionDTO.UsuarioCreacionId = usuarioId;
+               cotizacionAutorizacionDTO.UsuarioModificacionId = usuarioId;
                AuditDTO(cotizacionAutorizacionDTO);
             }
 
             if(model.CotizacionProductoDTOList != null)
                foreach (CotizacionProductoDTO cotizacionProductoDTO in model.CotizacionProductoDTOList)
                {
+                  cotizacionProductoDTO.UsuarioCreacionId = usuarioId;
+                  cotizacionProductoDTO.UsuarioModificacionId = usuarioId;
                   AuditDTO(cotizacionProductoDTO);
                }
 
-            cotizacionAutorizacionProxy.Solicitar(new CotizacionAutorizacionDTO() { 
+            CotizacionAutorizacionDTO cotizacionAutorizacionDTORequest = new CotizacionAutorizacionDTO() { 
                CotizacionAutorizacionDTOList = model.CotizacionAutorizacionDTOList,
-               CotizacionProductoDTOList = model.CotizacionProductoDTOList
-            });
+               CotizacionProductoDTOList = model.CotizacionProductoDTOList,
+               UsuarioId = usuarioId,
+               UsuarioCreacionId = usuarioId,
+               UsuarioModificacionId = usuarioId
+            };
+            AuditDTO(cotizacionAutorizacionDTORequest);
+
+            cotizacionAutorizacionProxy.Solicitar(cotizacionAutorizacionDTORequest);
 
             resultResponse.Message = SR.GetString("VT_cotizacion_autorizacion_solicitada");
          }
@@ -1509,17 +1520,26 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          try
          {
+            int usuarioId = ObtenerUsuarioId();
             foreach (CotizacionAutorizacionDTO cotizacionAutorizacionDTO in model.CotizacionAutorizacionDTOList)
             {
-               cotizacionAutorizacionDTO.UsuarioId = ObtenerUsuarioId();
+               cotizacionAutorizacionDTO.UsuarioId = usuarioId;
+               cotizacionAutorizacionDTO.UsuarioCreacionId = usuarioId;
+               cotizacionAutorizacionDTO.UsuarioModificacionId = usuarioId;
                cotizacionAutorizacionDTO.Estado = EstadoConstante.INACTIVO;
                AuditDTO(cotizacionAutorizacionDTO);
             }
 
-            cotizacionAutorizacionProxy.Cancelar(new CotizacionAutorizacionDTO()
+            CotizacionAutorizacionDTO cotizacionAutorizacionDTORequest = new CotizacionAutorizacionDTO()
             {
-               CotizacionAutorizacionDTOList = model.CotizacionAutorizacionDTOList
-            });
+               CotizacionAutorizacionDTOList = model.CotizacionAutorizacionDTOList,
+               UsuarioId = usuarioId,
+               UsuarioCreacionId = usuarioId,
+               UsuarioModificacionId = usuarioId
+            };
+            AuditDTO(cotizacionAutorizacionDTORequest);
+
+            cotizacionAutorizacionProxy.Cancelar(cotizacionAutorizacionDTORequest);
 
             resultResponse.Message = SR.GetString("VT_cotizacion_autorizacion_cancelada");
          }

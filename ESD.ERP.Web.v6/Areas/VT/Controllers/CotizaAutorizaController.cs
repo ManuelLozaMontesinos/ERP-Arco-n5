@@ -81,6 +81,7 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          model.CotizacionAutorizacionDTO.PageSize = ObtenerMaximoRegistrosBusqueda();
          model.CotizacionAutorizacionDTO.OrderBy = "c.fecha desc,c.cotiza desc";
+         model.CotizacionAutorizacionDTO.Estado = EstadoConstante.ACTIVO;
 
          model.CotizacionAutorizacionDTO.CotizacionDTO.PeriodoEmpresaSedeDTO = new PeriodoEmpresaSedeDTO()
          {
@@ -235,12 +236,19 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          try
          {
-
+            int usuarioId = ObtenerUsuarioId();
+            model.CotizacionAutorizacionDTO.UsuarioId = usuarioId;
+            model.CotizacionAutorizacionDTO.UsuarioCreacionId = usuarioId;
+            model.CotizacionAutorizacionDTO.UsuarioModificacionId = usuarioId;
             AuditDTO(model.CotizacionAutorizacionDTO);
             if(model.CotizacionProductoDTOList != null)
             {
                foreach(CotizacionProductoDTO cotizacionProductoDTO in model.CotizacionProductoDTOList)
+               {
+                  cotizacionProductoDTO.UsuarioCreacionId = usuarioId;
+                  cotizacionProductoDTO.UsuarioModificacionId = usuarioId;
                   AuditDTO(cotizacionProductoDTO);
+               }
 
                model.CotizacionAutorizacionDTO.CotizacionProductoDTOList = model.CotizacionProductoDTOList;
             }
@@ -292,7 +300,10 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          try
          {
-
+            int usuarioId = ObtenerUsuarioId();
+            model.CotizacionAutorizacionDTO.UsuarioId = usuarioId;
+            model.CotizacionAutorizacionDTO.UsuarioCreacionId = usuarioId;
+            model.CotizacionAutorizacionDTO.UsuarioModificacionId = usuarioId;
             AuditDTO(model.CotizacionAutorizacionDTO);
 
             cotizacionAutorizacionProxy.Desaprobar(model.CotizacionAutorizacionDTO);

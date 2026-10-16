@@ -284,10 +284,22 @@ function padLeadingZeros(num, size) {
                      message = xhr.responseJSON.Message;
                   }
 
-                  var dialog = bootbox.dialog({
-                     message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
-                     closeButton: false
-                  });
+                  if (typeof Swal !== 'undefined') {
+                     Swal.fire({
+                        title: 'Aviso del Sistema',
+                        html: message,
+                        icon: 'warning',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                     });
+                  } else if (typeof bootbox !== 'undefined') {
+                     bootbox.dialog({
+                        message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
+                        closeButton: false
+                     });
+                  }
 
                   setTimeout(function () {
                      window.location.href = url;
@@ -558,10 +570,22 @@ function createSelectedItemList(selModel) {
                      message = xhr.responseJSON.Message;
                   }
 
-                  var dialog = bootbox.dialog({
-                     message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
-                     closeButton: false
-                  });
+                  if (typeof Swal !== 'undefined') {
+                     Swal.fire({
+                        title: 'Aviso del Sistema',
+                        html: message,
+                        icon: 'warning',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                     });
+                  } else if (typeof bootbox !== 'undefined') {
+                     bootbox.dialog({
+                        message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
+                        closeButton: false
+                     });
+                  }
 
                   setTimeout(function () {
                      window.location.href = url;
@@ -663,10 +687,22 @@ function createSelectedItemList(selModel) {
                      message = xhr.responseJSON.Message;
                   }
 
-                  var dialog = bootbox.dialog({
-                     message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
-                     closeButton: false
-                  });
+                  if (typeof Swal !== 'undefined') {
+                     Swal.fire({
+                        title: 'Aviso del Sistema',
+                        html: message,
+                        icon: 'warning',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                     });
+                  } else if (typeof bootbox !== 'undefined') {
+                     bootbox.dialog({
+                        message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
+                        closeButton: false
+                     });
+                  }
 
                   setTimeout(function () {
                      window.location.href = url;
@@ -828,10 +864,22 @@ function createSelectedItemList(selModel) {
                      message = xhr.responseJSON.Message;
                   }
 
-                  var dialog = bootbox.dialog({
-                     message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
-                     closeButton: false
-                  });
+                  if (typeof Swal !== 'undefined') {
+                     Swal.fire({
+                        title: 'Aviso del Sistema',
+                        html: message,
+                        icon: 'warning',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
+                     });
+                  } else if (typeof bootbox !== 'undefined') {
+                     bootbox.dialog({
+                        message: '<p class="text-center" style="color: #cc3f44;font-size: 13px;font-weight: bold;padding: 8px 0px 0px 0px;">' + message + '</p>',
+                        closeButton: false
+                     });
+                  }
 
                   setTimeout(function () {
                      window.location.href = url;
@@ -860,9 +908,11 @@ function createSelectedItemList(selModel) {
 (function ($) {
    $.fn.showLoadingOverlay = function () {
       var container = $(this);
+      var isDark = $('body').hasClass('dark-mode');
       this.each(function () {
          container.LoadingOverlay('show', {
-            background: "rgba(255, 255, 255, 0.8)",
+            background: isDark ? "rgba(33, 37, 41, 0.85)" : "rgba(255, 255, 255, 0.8)",
+            imageColor: isDark ? "#38bdf8" : undefined,
             imageResizeFactor: 0.5
          });
       });
@@ -878,7 +928,7 @@ function createSelectedItemList(selModel) {
 })(jQuery);
 /*
  * --------------------------------------------
- * msgAlert.js
+ * msgAlert.js (SweetAlert2 Modern Toast System)
  * --------------------------------------------
 */
 class msgAlertTypeConstant {
@@ -886,24 +936,79 @@ class msgAlertTypeConstant {
    static get INFORMATION() { return 2; }
    static get ERROR() { return 3; }
 };
-function msgAlert(type, message) {
 
-   alertify.set('notifier', 'delay', 4);
-   alertify.set('notifier', 'position', 'top-right');
-   switch (type) {
+var SwalToast = null;
 
-      case 1:
-         alertify.success(message);
-         break;
-
-      case 2:
-         alertify.warning(message);
-         break;
-
-      case 3:
-         alertify.error(message);
-         break;
+function getSwalToast() {
+   if (!SwalToast && typeof Swal !== 'undefined') {
+      SwalToast = Swal.mixin({
+         toast: true,
+         position: 'top-end',
+         showConfirmButton: false,
+         showCloseButton: true,
+         timer: 4000,
+         timerProgressBar: true,
+         didOpen: function (toast) {
+            toast.style.cursor = 'pointer';
+            toast.title = 'Click para cerrar';
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+            toast.addEventListener('click', function () {
+               Swal.close();
+            });
+         }
+      });
    }
+   return SwalToast;
+}
+
+function msgAlert(type, message) {
+   if (typeof Swal !== 'undefined') {
+      var toastInstance = getSwalToast();
+      var icon = 'info';
+      switch (type) {
+         case 1:
+            icon = 'success';
+            break;
+         case 2:
+            icon = 'warning';
+            break;
+         case 3:
+            icon = 'error';
+            break;
+      }
+      toastInstance.fire({
+         icon: icon,
+         title: message
+      });
+      return;
+   }
+
+   if (typeof alertify !== 'undefined') {
+      alertify.set('notifier', 'delay', 4);
+      alertify.set('notifier', 'position', 'top-right');
+      switch (type) {
+         case 1:
+            alertify.success(message);
+            break;
+         case 2:
+            alertify.warning(message);
+            break;
+         case 3:
+            alertify.error(message);
+            break;
+      }
+   }
+}
+
+if (typeof window !== 'undefined') {
+   window.alertify = {
+      set: function () { },
+      success: function (msg) { msgAlert(1, msg); },
+      warning: function (msg) { msgAlert(2, msg); },
+      error: function (msg) { msgAlert(3, msg); },
+      message: function (msg) { msgAlert(2, msg); }
+   };
 }
 /*
  * --------------------------------------------
@@ -1254,43 +1359,73 @@ function isEmptyRecord(rowId) {
 })(jQuery);
 /*
  * --------------------------------------------
- * confirm.js
+ * confirm.js (SweetAlert2 Modern Confirm System)
  * --------------------------------------------
 */
 (function ($) {
    $.fn.confirm = function (options) {
       var defaults = {
-         title: '',
+         title: 'Â¿EstÃ¡ seguro?',
          message: '',
          onConfirm: null,
          onCancel: null
       };
       var settings = $.extend(defaults, options);
-      this.each(function () {
 
-         bootbox.confirm({
-            title: settings.title,
-            message: settings.message,
-            buttons: {
-               confirm: {
-                  label: 'Aceptar',
-                  className: 'btn-primary btn-sm'
-               },
-               cancel: {
-                  label: 'Cancelar',
-                  className: 'btn-secondary btn-sm'
-               }
+      if (typeof Swal !== 'undefined') {
+         Swal.fire({
+            title: settings.title || 'Â¿EstÃ¡ seguro?',
+            html: settings.message,
+            icon: 'question',
+            showCancelButton: true,
+            reverseButtons: true,
+            confirmButtonText: '<i class=\"fas fa-check mr-1\"></i> Aceptar',
+            cancelButtonText: '<i class=\"fas fa-times mr-1\"></i> Cancelar',
+            focusCancel: false,
+            customClass: {
+               popup: 'swal2-modern-modal',
+               confirmButton: 'btn btn-primary px-3 py-2 mr-2',
+               cancelButton: 'btn btn-secondary px-3 py-2'
             },
-            callback: function (result) {
-               if (result === true) {
-                  if (typeof settings.onConfirm === 'function')
-                     settings.onConfirm();
-               } else {
-                  if (typeof settings.onCancel === 'function')
-                     settings.onCancel();
-               }
+            buttonsStyling: false
+         }).then(function (result) {
+            if (result.isConfirmed) {
+               if (typeof settings.onConfirm === 'function')
+                  settings.onConfirm();
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+               if (typeof settings.onCancel === 'function')
+                  settings.onCancel();
             }
          });
+         return;
+      }
+
+      this.each(function () {
+         if (typeof bootbox !== 'undefined') {
+            bootbox.confirm({
+               title: settings.title,
+               message: settings.message,
+               buttons: {
+                  confirm: {
+                     label: 'Aceptar',
+                     className: 'btn-primary btn-sm'
+                  },
+                  cancel: {
+                     label: 'Cancelar',
+                     className: 'btn-secondary btn-sm'
+                  }
+               },
+               callback: function (result) {
+                  if (result === true) {
+                     if (typeof settings.onConfirm === 'function')
+                        settings.onConfirm();
+                  } else {
+                     if (typeof settings.onCancel === 'function')
+                        settings.onCancel();
+                  }
+               }
+            });
+         }
       });
    };
 })(jQuery);

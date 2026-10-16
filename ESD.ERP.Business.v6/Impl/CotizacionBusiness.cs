@@ -208,7 +208,13 @@ namespace ESD.ERP.Business.Impl
 		{
 			try
 			{
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: dto.UsuarioCreacionId;
+
 				Cotizacion cotizacion = Mapper.Map<Cotizacion>(dto);
+				cotizacion.UsuarioCreacionId = usuarioAccionId;
+				cotizacion.UsuarioModificacionId = usuarioAccionId;
 
 				int id = 0;
 				using (TransactionScope tx = new())
@@ -248,9 +254,15 @@ namespace ESD.ERP.Business.Impl
 					throw new Exception(message);
 				}
 
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: dto.UsuarioCreacionId;
+
 				EstadoCotizacion estadoCotizacion = estadoCotizacionRepository.ObtenerPorCodigo(EstadoCotizacionConstante.ANULADO);
 				cotizacion.EstadoCotizacionId = estadoCotizacion.EntityId;
 				cotizacion.Estado = EstadoConstante.INACTIVO;
+				cotizacion.UsuarioCreacionId = usuarioAccionId;
+				cotizacion.UsuarioModificacionId = usuarioAccionId;
 
 				using (TransactionScope tx = new TransactionScope())
 				{
@@ -269,7 +281,11 @@ namespace ESD.ERP.Business.Impl
 
 					cotizacionRepository.Delete(cotizacion);
 
-					cotizacionProductoRepository.EliminarPorComprobanteId(new CotizacionProducto() { CotizacionId = dto.CotizacionId });
+					cotizacionProductoRepository.EliminarPorComprobanteId(new CotizacionProducto() { 
+						CotizacionId = dto.CotizacionId,
+						UsuarioCreacionId = usuarioAccionId,
+						UsuarioModificacionId = usuarioAccionId
+					});
 
 					tx.Complete();
 				}
@@ -345,15 +361,26 @@ namespace ESD.ERP.Business.Impl
 				using (TransactionScope tx = new TransactionScope())
 				{
 
+					int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+						? dto.UsuarioModificacionId.Value
+						: dto.UsuarioCreacionId;
+
 					dto.EsPedido = SiNoConstante.S;
 					dto.AlmacenId = dto.AlmacenComprobanteId.Value;
 					dto.MesContableId = dto.MesContableId.Value;
-					cotizacionRepository.Update(Mapper.Map<Cotizacion>(dto));
+					dto.UsuarioCreacionId = usuarioAccionId;
+					dto.UsuarioModificacionId = usuarioAccionId;
+
+					Cotizacion cotizacionUpdate = Mapper.Map<Cotizacion>(dto);
+					cotizacionUpdate.UsuarioCreacionId = usuarioAccionId;
+					cotizacionUpdate.UsuarioModificacionId = usuarioAccionId;
+					cotizacionRepository.Update(cotizacionUpdate);
 
 					cotizacionRepository.ActualizarEstado(new Cotizacion() { 
 						CotizacionId = dto.CotizacionId,
 						EstadoCotizacionId = estadoCotizacion.EntityId,
-						UsuarioCreacionId = dto.UsuarioCreacionId
+						UsuarioCreacionId = usuarioAccionId,
+						UsuarioModificacionId = usuarioAccionId
 					});
 
 					Cotizacion cotizacion = cotizacionRepository.GetById(dto.CotizacionId);
@@ -576,14 +603,25 @@ namespace ESD.ERP.Business.Impl
 			{
 				using (TransactionScope tx = new TransactionScope())
 				{
+					int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+						? dto.UsuarioModificacionId.Value
+						: dto.UsuarioCreacionId;
+
 					dto.EsPedido = SiNoConstante.S;
-					cotizacionRepository.Update(Mapper.Map<Cotizacion>(dto));
+					dto.UsuarioCreacionId = usuarioAccionId;
+					dto.UsuarioModificacionId = usuarioAccionId;
+
+					Cotizacion cotizacionUpdate = Mapper.Map<Cotizacion>(dto);
+					cotizacionUpdate.UsuarioCreacionId = usuarioAccionId;
+					cotizacionUpdate.UsuarioModificacionId = usuarioAccionId;
+					cotizacionRepository.Update(cotizacionUpdate);
 
 					cotizacionRepository.ActualizarEstado(new Cotizacion()
 					{
 						CotizacionId = dto.CotizacionId,
 						EstadoCotizacionId = estadoCotizacion.EntityId,
-						UsuarioCreacionId = dto.UsuarioCreacionId
+						UsuarioCreacionId = usuarioAccionId,
+						UsuarioModificacionId = usuarioAccionId
 					});
 
 					cotizacion = cotizacionRepository.GetById(dto.CotizacionId);
@@ -752,13 +790,21 @@ namespace ESD.ERP.Business.Impl
 
 					string estadoCotizacionAnterior = cotizacion.EstadoCotizacion.Codigo;
 
+					int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+						? dto.UsuarioModificacionId.Value
+						: dto.UsuarioCreacionId;
+
 					if (estadoCotizacion.Codigo == EstadoCotizacionConstante.COTIZACION)
 					{
 						cotizacion.EsPedido = SiNoConstante.N;
+						cotizacion.UsuarioCreacionId = usuarioAccionId;
+						cotizacion.UsuarioModificacionId = usuarioAccionId;
 						cotizacionRepository.Update(cotizacion);
 					}
 
 					cotizacion.EstadoCotizacionId = estadoCotizacion.EntityId;
+					cotizacion.UsuarioCreacionId = usuarioAccionId;
+					cotizacion.UsuarioModificacionId = usuarioAccionId;
 					cotizacionRepository.ActualizarEstado(cotizacion);
 
 					MovimientoAlmacenCierre movimientoAlmacenCierre = movimientoAlmacenCierreRepository.SingleSearch(new MovimientoAlmacenCierre() {
@@ -1023,11 +1069,16 @@ namespace ESD.ERP.Business.Impl
                         };
                         ordenProduccionProductoBusiness.GenerarSubProcesos(ordenProduccionProductoDTO3);
 
+                        int usuarioAccionIdEnv = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+                            ? dto.UsuarioModificacionId.Value
+                            : dto.UsuarioCreacionId;
+
                         cotizacionRepository.ActualizarEnviadoProduccion(new Cotizacion()
                         {
                             CotizacionId = cotizacion.EntityId,
                             EnviadoProduccion = SiNoConstante.S,
-                            UsuarioCreacionId = dto.UsuarioCreacionId
+                            UsuarioCreacionId = usuarioAccionIdEnv,
+                            UsuarioModificacionId = usuarioAccionIdEnv
                         });
 
                     tx.Complete();
@@ -1463,11 +1514,16 @@ namespace ESD.ERP.Business.Impl
                     };
                     ordenProduccionProductoBusiness.GenerarSubProcesos(ordenProduccionProductoDTO3);
 
+                    int usuarioAccionIdEnv = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+                        ? dto.UsuarioModificacionId.Value
+                        : dto.UsuarioCreacionId;
+
                     cotizacionRepository.ActualizarEnviadoProduccion(new Cotizacion()
                     {
 						CotizacionId = cotizacion.EntityId,
                         EnviadoProduccion = "P",
-                        UsuarioCreacionId = dto.UsuarioCreacionId
+                        UsuarioCreacionId = usuarioAccionIdEnv,
+                        UsuarioModificacionId = usuarioAccionIdEnv
                     });
 
 					tx.Complete();

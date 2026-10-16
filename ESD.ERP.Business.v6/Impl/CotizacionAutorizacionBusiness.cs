@@ -178,15 +178,21 @@ namespace ESD.ERP.Business.Impl
 			{
 				List<CotizacionAutorizacion> cotizacionAutorizacionList = Mapper.Map<List<CotizacionAutorizacion>>(dto.CotizacionAutorizacionDTOList);
 
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: (dto.UsuarioCreacionId > 0 ? dto.UsuarioCreacionId : (dto.CotizacionAutorizacionDTOList?.FirstOrDefault()?.UsuarioModificacionId ?? dto.CotizacionAutorizacionDTOList?.FirstOrDefault()?.UsuarioCreacionId ?? (dto.UsuarioId ?? 0)));
+
 				using (TransactionScope tx = new TransactionScope())
 				{
 
 					EstadoAprobacion estadoAprobacion = estadoAprobacionRepository.ObtenerPorCodigo(EstadoAprobacionConstante.PENDIENTE_APROBACION);
 
 					foreach (CotizacionAutorizacion cotizacionAutorizacion in cotizacionAutorizacionList)
-               {
+					{
 						if(cotizacionAutorizacion.CotizacionAutorizacionId != 0)
-                  {
+						{
+							cotizacionAutorizacion.UsuarioModificacionId = usuarioAccionId;
+							cotizacionAutorizacion.UsuarioCreacionId = usuarioAccionId;
 							cotizacionAutorizacionRepository.Delete(cotizacionAutorizacion);
 
 							cotizacionAutorizacion.UsuarioId = null;
@@ -195,15 +201,19 @@ namespace ESD.ERP.Business.Impl
 						}
 
 						cotizacionAutorizacion.EstadoAprobacionId = estadoAprobacion.EntityId;
+						cotizacionAutorizacion.UsuarioCreacionId = usuarioAccionId;
+						cotizacionAutorizacion.UsuarioModificacionId = usuarioAccionId;
 						cotizacionAutorizacionRepository.Insert(cotizacionAutorizacion);
 					}
 
 					if(dto.CotizacionProductoDTOList != null)
-               {
+					{
 						foreach(CotizacionProductoDTO cotizacionProductoDTO in dto.CotizacionProductoDTOList)
-                  {
+						{
 							CotizacionProducto cotizacionProducto = cotizacionProductoRepository.GetById(cotizacionProductoDTO.Id);
 							cotizacionProducto.SolicitaAutorizacionDescuento = cotizacionProductoDTO.SolicitaAutorizacionDescuento;
+							cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+							cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
 							cotizacionProductoRepository.ActualizarSolicitaAutorizacionDescuento(cotizacionProducto);
 						}
 					}
@@ -223,10 +233,14 @@ namespace ESD.ERP.Business.Impl
 				CotizacionAutorizacion cotizacionAutorizacion = cotizacionAutorizacionRepository.GetById(dto.CotizacionAutorizacionId);
 				EstadoAprobacion estadoAprobacion = estadoAprobacionRepository.ObtenerPorCodigo(EstadoAprobacionConstante.APROBADO);
 
-				cotizacionAutorizacion.UsuarioId = dto.UsuarioCreacionId;
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: (dto.UsuarioCreacionId > 0 ? dto.UsuarioCreacionId : (dto.UsuarioId ?? 0));
+
+				cotizacionAutorizacion.UsuarioId = usuarioAccionId;
 				cotizacionAutorizacion.FechaAutorizacion = DateTime.Now;
 				cotizacionAutorizacion.EstadoAprobacionId = estadoAprobacion.EntityId;
-				cotizacionAutorizacion.UsuarioCreacionId = dto.UsuarioCreacionId;
+				cotizacionAutorizacion.UsuarioModificacionId = usuarioAccionId;
 
 				List<CotizacionProducto> cotizacionProductoList = null;
 				if (cotizacionAutorizacion.TipoAutorizacion.Codigo == TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO)
@@ -238,47 +252,61 @@ namespace ESD.ERP.Business.Impl
 						Estado = EstadoConstante.ACTIVO
 					});
 
-					foreach(CotizacionProductoDTO cotizacionProductoDTO in dto.CotizacionProductoDTOList)
-               {
-						CotizacionProducto cotizacionProducto = cotizacionProductoList.Where(x => x.CotizacionProductoId == cotizacionProductoDTO.Id)
-							.FirstOrDefault();
-						if (cotizacionProducto == null)
-							continue;
+					if (dto.CotizacionProductoDTOList != null)
+					{
+						foreach(CotizacionProductoDTO cotizacionProductoDTO in dto.CotizacionProductoDTOList)
+						{
+							CotizacionProducto cotizacionProducto = cotizacionProductoList.Where(x => x.CotizacionProductoId == cotizacionProductoDTO.Id)
+								.FirstOrDefault();
+							if (cotizacionProducto == null)
+								continue;
 
-						CalculadorVentaItemDTO calculadorVentaItemDTO = CalculadorVenta.CalcularMontos(new CalculadorVentaItemDTO() { 
-							PrecioUnitario = cotizacionProductoDTO.PrecioAutorizado,
-							Cantidad = cotizacionProducto.Cantidad,
-							TipoIGV = cotizacionProducto.TipoAfectacionIgv.TipoIgv.Codigo,
-							ImpuestoTasa = cotizacionProducto.Cotizacion.ImpuestoTasa.Tasa
-						});
+							CalculadorVentaItemDTO calculadorVentaItemDTO = CalculadorVenta.CalcularMontos(new CalculadorVentaItemDTO() { 
+								PrecioUnitario = cotizacionProductoDTO.PrecioAutorizado,
+								Cantidad = cotizacionProducto.Cantidad,
+								TipoIGV = cotizacionProducto.TipoAfectacionIgv.TipoIgv.Codigo,
+								ImpuestoTasa = cotizacionProducto.Cotizacion.ImpuestoTasa.Tasa
+							});
 
-						cotizacionProducto.CantidadBloqueada = SiNoConstante.S;
-						cotizacionProducto.SolicitaAutorizacionDescuento = SiNoConstante.N;
-						cotizacionProducto.PrecioUnitario = calculadorVentaItemDTO.PrecioUnitario;
-						cotizacionProducto.ValorUnitario = calculadorVentaItemDTO.ValorUnitario;
-						cotizacionProducto.MontoBruto = calculadorVentaItemDTO.MontoBruto;
-						cotizacionProducto.MontoNeto = calculadorVentaItemDTO.MontoNeto;
-						cotizacionProducto.MontoIgv = calculadorVentaItemDTO.MontoImpuesto;
-						cotizacionProducto.MontoTotal = calculadorVentaItemDTO.MontoTotal;
+							cotizacionProducto.CantidadBloqueada = SiNoConstante.S;
+							cotizacionProducto.SolicitaAutorizacionDescuento = SiNoConstante.N;
+							cotizacionProducto.PrecioUnitario = calculadorVentaItemDTO.PrecioUnitario;
+							cotizacionProducto.ValorUnitario = calculadorVentaItemDTO.ValorUnitario;
+							cotizacionProducto.MontoBruto = calculadorVentaItemDTO.MontoBruto;
+							cotizacionProducto.MontoNeto = calculadorVentaItemDTO.MontoNeto;
+							cotizacionProducto.MontoIgv = calculadorVentaItemDTO.MontoImpuesto;
+							cotizacionProducto.MontoTotal = calculadorVentaItemDTO.MontoTotal;
+							cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+							cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
+						}
 					}
-
 				}
 
-            using (TransactionScope tx = new TransactionScope())
-            {
-
+				using (TransactionScope tx = new TransactionScope())
+				{
 					cotizacionAutorizacionRepository.Update(cotizacionAutorizacion);
 
 					if (cotizacionProductoList != null)
-               {
-						cotizacionProductoRepository.ActualizarPrecioMontoLote(cotizacionProductoList);
+					{
+						foreach (var cp in cotizacionProductoList)
+						{
+							cp.UsuarioCreacionId = usuarioAccionId;
+							cp.UsuarioModificacionId = usuarioAccionId;
+						}
 
-						cotizacionRepository.ActualizarMonto(new Cotizacion() { CotizacionId = cotizacionAutorizacion.CotizacionId });
+						cotizacionProductoRepository.ActualizarPrecioMontoLote(cotizacionProductoList);
 					}
 
-               tx.Complete();
-            }
-         }
+					cotizacionRepository.ActualizarMonto(new Cotizacion() 
+					{ 
+						CotizacionId = cotizacionAutorizacion.CotizacionId, 
+						UsuarioCreacionId = usuarioAccionId, 
+						UsuarioModificacionId = usuarioAccionId 
+					});
+
+					tx.Complete();
+				}
+			}
 			catch (Exception)
 			{
 				throw;
@@ -291,14 +319,17 @@ namespace ESD.ERP.Business.Impl
 				CotizacionAutorizacion cotizacionAutorizacion = cotizacionAutorizacionRepository.GetById(dto.CotizacionAutorizacionId);
 				EstadoAprobacion estadoAprobacion = estadoAprobacionRepository.ObtenerPorCodigo(EstadoAprobacionConstante.DESAPROBADO);
 
-				cotizacionAutorizacion.UsuarioId = dto.UsuarioCreacionId;
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: (dto.UsuarioCreacionId > 0 ? dto.UsuarioCreacionId : (dto.UsuarioId ?? 0));
+
+				cotizacionAutorizacion.UsuarioId = usuarioAccionId;
 				cotizacionAutorizacion.FechaAutorizacion = DateTime.Now;
 				cotizacionAutorizacion.EstadoAprobacionId = estadoAprobacion.EntityId;
-				cotizacionAutorizacion.UsuarioCreacionId = dto.UsuarioCreacionId;
+				cotizacionAutorizacion.UsuarioModificacionId = usuarioAccionId;
 
 				using (TransactionScope tx = new TransactionScope())
 				{
-
 					cotizacionAutorizacionRepository.Update(cotizacionAutorizacion);
 
 					if (cotizacionAutorizacion.TipoAutorizacion.Codigo == TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO)
@@ -313,10 +344,19 @@ namespace ESD.ERP.Business.Impl
 						foreach (CotizacionProducto cotizacionProducto in cotizacionProductoList)
 						{
 							cotizacionProducto.SolicitaAutorizacionDescuento = SiNoConstante.N;
+							cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+							cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
 
 							cotizacionProductoRepository.ActualizarSolicitaAutorizacionDescuento(cotizacionProducto);
 						}
 					}
+
+					cotizacionRepository.ActualizarMonto(new Cotizacion() 
+					{ 
+						CotizacionId = cotizacionAutorizacion.CotizacionId, 
+						UsuarioCreacionId = usuarioAccionId, 
+						UsuarioModificacionId = usuarioAccionId 
+					});
 
 					tx.Complete();
 				}
@@ -332,21 +372,25 @@ namespace ESD.ERP.Business.Impl
 			{
 				List<CotizacionAutorizacion> cotizacionAutorizacionList = Mapper.Map<List<CotizacionAutorizacion>>(dto.CotizacionAutorizacionDTOList);
 
+				int usuarioAccionId = (dto.UsuarioModificacionId.HasValue && dto.UsuarioModificacionId.Value > 0)
+					? dto.UsuarioModificacionId.Value
+					: (dto.UsuarioCreacionId > 0 ? dto.UsuarioCreacionId : (dto.CotizacionAutorizacionDTOList?.FirstOrDefault()?.UsuarioModificacionId ?? dto.CotizacionAutorizacionDTOList?.FirstOrDefault()?.UsuarioId ?? 0));
+
 				using (TransactionScope tx = new TransactionScope())
 				{
-
 					EstadoAprobacion estadoAprobacion = estadoAprobacionRepository.ObtenerPorCodigo(EstadoAprobacionConstante.CANCELADO);
 
 					foreach (CotizacionAutorizacion cotizacionAutorizacion in cotizacionAutorizacionList)
 					{
-
 						cotizacionAutorizacion.FechaAutorizacion = DateTime.Now;
 						cotizacionAutorizacion.EstadoAprobacionId = estadoAprobacion.EntityId;
 						cotizacionAutorizacion.Estado = EstadoConstante.INACTIVO;
+						cotizacionAutorizacion.UsuarioId = usuarioAccionId;
+						cotizacionAutorizacion.UsuarioModificacionId = usuarioAccionId;
 						cotizacionAutorizacionRepository.Update(cotizacionAutorizacion);
 
-						if(cotizacionAutorizacion.TipoAutorizacion.Codigo == TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO)
-                  {
+						if(cotizacionAutorizacion.TipoAutorizacion?.Codigo == TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO)
+						{
 							List<CotizacionProducto> cotizacionProductoList = cotizacionProductoRepository.Search(new CotizacionProducto()
 							{
 								CotizacionId = cotizacionAutorizacion.CotizacionId,
@@ -357,10 +401,19 @@ namespace ESD.ERP.Business.Impl
 							foreach (CotizacionProducto cotizacionProducto in cotizacionProductoList)
 							{
 								cotizacionProducto.SolicitaAutorizacionDescuento = SiNoConstante.N;
+								cotizacionProducto.UsuarioCreacionId = usuarioAccionId;
+								cotizacionProducto.UsuarioModificacionId = usuarioAccionId;
 
 								cotizacionProductoRepository.ActualizarSolicitaAutorizacionDescuento(cotizacionProducto);
 							}
 						}
+
+						cotizacionRepository.ActualizarMonto(new Cotizacion() 
+						{ 
+							CotizacionId = cotizacionAutorizacion.CotizacionId, 
+							UsuarioCreacionId = usuarioAccionId, 
+							UsuarioModificacionId = usuarioAccionId 
+						});
 					}
 
 					tx.Complete();

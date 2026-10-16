@@ -43,7 +43,7 @@ namespace ESD.Core.Web
          tagDateDiv.Attributes.Add("id", dateDivId);
          tagDateDiv.Attributes.Add("name", dateDivId);
          tagDateDiv.Attributes.Add("data-target-input", "nearest");
-         tagDateDiv.AddCssClass("input-group date");
+         tagDateDiv.AddCssClass("input-group input-group-sm date");
 
          TagBuilder tagText = new TagBuilder(HtmlTagNameConstant.INPUT);
          tagText.GenerateId(Id,string.Empty);
@@ -88,11 +88,10 @@ namespace ESD.Core.Web
          tagButton.Attributes.Add("class", "input-group-append");
          tagButton.Attributes.Add("data-target", string.Concat("#", dateDivId));
          tagButton.Attributes.Add("data-toggle", "datetimepicker");
-         tagButton.InnerHtml.AppendHtml("<button class=\"btn btn-outline-secondary far fa-calendar-alt input-group-addon app-input-group-button\" type=\"button\"></button>");
-
-         tagText.InnerHtml.AppendHtml(tagButton);
+         tagButton.InnerHtml.AppendHtml("<div class=\"input-group-text\"><i class=\"far fa-calendar-alt\"></i></div>");
 
          tagDateDiv.InnerHtml.AppendHtml(tagText);
+         tagDateDiv.InnerHtml.AppendHtml(tagButton);
 
          output.TagName = HtmlTagNameConstant.DIV;
 
@@ -119,7 +118,7 @@ namespace ESD.Core.Web
             sb.Append("startDate : new Date(" + MaxDate.Value.Year.ToString() + ", " + MaxDate.Value.Month.ToString() + ", " +
                MaxDate.Value.Day.ToString() + ", " + MaxDate.Value.Hour.ToString() + ", " + MaxDate.Value.Minute.ToString() + ") ,");
 
-         sb.Append(" format : '" + Format + "'");
+         sb.Append(" locale : 'es', format : '" + Format + "'");
          sb.Append("});");
 
          if (!Enable)
