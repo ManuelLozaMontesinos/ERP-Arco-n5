@@ -1,4 +1,4 @@
-﻿@using ESD.ERP.Web.Infrastructure;
+@using ESD.ERP.Web.Infrastructure;
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -73,6 +73,17 @@
          <!-- SEARCH FORM -->
          <!-- Right navbar links -->
          <ul class="navbar-nav ml-auto align-items-center">
+            <!-- Navbar Dynamic Breadcrumb: Inicio / Modulo / Proceso / Pantalla -->
+            <li class="nav-item d-none d-sm-inline-flex align-items-center mr-3" id="app-navbar-breadcrumb">
+               <ol class="breadcrumb m-0 bg-transparent p-0 align-items-center" id="app-breadcrumb-list" style="font-size: 0.85rem;">
+                  <li class="breadcrumb-item">
+                     <a href="@Url.Action("Index", "Home", new { cid = ViewBag.cid })" onclick="if (window.resetNavbarBreadcrumb) { window.resetNavbarBreadcrumb(); } window.location.href = '@Url.Action("Index", "Home")?cid=' + encodeURIComponent($('#__cid').val() || '@ViewBag.cid'); return false;" style="cursor: pointer; text-decoration: none;">
+                        <i class="fas fa-home mr-1"></i>Inicio
+                     </a>
+                  </li>
+                  <li class="breadcrumb-item active" id="app-breadcrumb-active">Dashboard</li>
+               </ol>
+            </li>
             <!-- AdminLTE 3 Dark Mode Toggle -->
             <li class="nav-item mr-1">
                <a class="nav-link btn-theme-toggle" id="app-dark-mode-toggle" href="javascript:void(0);" role="button" title="Modo Oscuro / Claro" style="cursor: pointer;">
@@ -118,7 +129,7 @@
       <!-- Main Sidebar Container -->
       <aside class="main-sidebar sidebar-dark-primary elevation-4">
          <!-- Brand Logo: ARCO - Hazlo Realidad (29+ AÃ±os) -->
-         <a href="@Url.Action("Index", "Home", new { cid = ViewBag.cid })" onclick="window.location.href = '@Url.Action("Index", "Home")?cid=' + encodeURIComponent($('#__cid').val() || '@ViewBag.cid'); return false;" class="brand-link brand-link-arco" style="cursor: pointer;" title="ARCO - Hazlo Realidad | Ir al Dashboard (29+ A&ntilde;os)">
+         <a href="@Url.Action("Index", "Home", new { cid = ViewBag.cid })" onclick="if (window.resetNavbarBreadcrumb) { window.resetNavbarBreadcrumb(); } window.location.href = '@Url.Action("Index", "Home")?cid=' + encodeURIComponent($('#__cid').val() || '@ViewBag.cid'); return false;" class="brand-link brand-link-arco" style="cursor: pointer;" title="ARCO - Hazlo Realidad | Ir al Dashboard (29+ A&ntilde;os)">
             <!-- Collapsed Mini Sidebar Icon -->
             <img src="~/img/logo-arco-circle.png" alt="ARCO" class="brand-logo-collapsed img-circle elevation-2">
             
@@ -158,6 +169,7 @@
          <!-- /.content -->
       </div>
       <input id="__cid" type="hidden" value="@ViewBag.cid" />
+        <input id="__esSoloLectura" type="hidden" value="@(ViewBag.EsSoloLectura == true ? "true" : "false")" />
       <aside class="control-sidebar control-sidebar-dark">
          <!-- Control sidebar content goes here -->
       </aside>
@@ -205,7 +217,85 @@
       <div id="passwordEditPopupContent"></div>
    </esd-dialog>
    <script type="text/javascript">
-      function buildMenu(parent, items) {
+      window.menuUrlMap = {};
+
+      window.updateNavbarBreadcrumb = function(pathArray) {
+         if (!pathArray || !pathArray.length) {
+            pathArray = ['Dashboard'];
+         }
+         try {
+            sessionStorage.setItem('app_current_breadcrumb', JSON.stringify(pathArray));
+         } catch(e) {}
+
+         var $ol = $('#app-breadcrumb-list');
+         if (!$ol.length) return;
+
+         $ol.empty();
+
+         var homeUrl = '@Url.Action("Index", "Home")?cid=' + encodeURIComponent($('#__cid').val() || '@ViewBag.cid');
+         var $homeLi = $('<li class="breadcrumb-item"></li>');
+         var $homeLink = $('<a href="' + homeUrl + '" style="cursor: pointer; text-decoration: none;"><i class="fas fa-home mr-1"></i>Inicio</a>');
+         $homeLink.on('click', function(e) {
+            e.preventDefault();
+            window.resetNavbarBreadcrumb();
+            window.location.href = homeUrl;
+         });
+         $homeLi.append($homeLink);
+         $ol.append($homeLi);
+
+         if (pathArray.length === 1 && pathArray[0] === 'Dashboard') {
+            $ol.append('<li class="breadcrumb-item active" id="app-breadcrumb-active">Dashboard</li>');
+            return;
+         }
+
+         for (var idx = 0; idx < pathArray.length; idx++) {
+            var isLast = (idx === pathArray.length - 1);
+            var text = pathArray[idx];
+            var safeText = $('<div>').text(text).html();
+            if (isLast) {
+               $ol.append('<li class="breadcrumb-item active" id="app-breadcrumb-active">' + safeText + '</li>');
+            } else {
+               $ol.append('<li class="breadcrumb-item text-secondary">' + safeText + '</li>');
+            }
+         }
+      };
+
+      window.resetNavbarBreadcrumb = function() {
+         try { sessionStorage.removeItem('app_current_breadcrumb'); } catch(e) {}
+         window.updateNavbarBreadcrumb(['Dashboard']);
+      };
+
+      window.appendNavbarBreadcrumb = function(subAction) {
+         var cur = null;
+         try {
+            var raw = sessionStorage.getItem('app_current_breadcrumb');
+            if (raw) cur = JSON.parse(raw);
+         } catch(e) {}
+         if (cur && cur.length && cur[cur.length - 1] !== subAction) {
+            var next = cur.concat([subAction]);
+            window.updateNavbarBreadcrumb(next);
+         }
+      };
+
+      window.removeBreadcrumbSubAction = function() {
+         var cur = null;
+         try {
+            var raw = sessionStorage.getItem('app_current_breadcrumb');
+            if (raw) cur = JSON.parse(raw);
+         } catch(e) {}
+         if (cur && cur.length > 1) {
+            var last = cur[cur.length - 1];
+            if (last === 'Consultar' || last === 'Editar' || last === 'Nuevo') {
+               window.updateNavbarBreadcrumb(cur.slice(0, cur.length - 1));
+            }
+         }
+      };
+
+      function buildMenu(parent, items, pathArray) {
+         pathArray = pathArray || [];
+         if (!window.menuUrlMap) {
+            window.menuUrlMap = {};
+         }
          $.each(items, function () {
 
             var hasNodes = false;
@@ -213,6 +303,8 @@
                if (this.nodes.length > 0)
                   hasNodes = true;
             }
+
+            var currentPath = pathArray.concat([this.text]);
 
             var li = $("<li></li>");
             li.addClass("nav-item");
@@ -225,7 +317,21 @@
             a.attr('href', "javascript:void(0);");
             a.addClass("nav-link");
             if (!$.isNullOrEmpty(this.url)) {
-               a.attr('onclick', "$(this).getView({urlAction: '" + this.url+"'});");
+               var cleanUrl = this.url.trim().toLowerCase().split('?')[0];
+               var noSlash = cleanUrl.replace(/^\/+/, '');
+               window.menuUrlMap[cleanUrl] = currentPath;
+               window.menuUrlMap[noSlash] = currentPath;
+               window.menuUrlMap['/' + noSlash] = currentPath;
+
+               a.on('click', (function(p, url) {
+                  return function(e) {
+                     e.preventDefault();
+                     if (window.updateNavbarBreadcrumb) {
+                        window.updateNavbarBreadcrumb(p);
+                     }
+                     $(this).getView({ urlAction: url });
+                  };
+               })(currentPath, this.url));
             }
 
             var i = $("<i></i>");
@@ -247,7 +353,7 @@
                var ul = $("<ul></ul>");
                ul.addClass("nav nav-treeview");
                ul.appendTo(li);
-               buildMenu(ul, this.nodes);
+               buildMenu(ul, this.nodes, currentPath);
             }
          });
       };

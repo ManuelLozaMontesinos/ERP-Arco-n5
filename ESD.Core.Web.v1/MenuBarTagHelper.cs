@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using System;
 using System.Collections.Generic;
@@ -141,6 +142,10 @@ namespace ESD.Core.Web
 
       [HtmlAttributeName("onclick")]
       public string OnClick { get; set; }
+
+      [ViewContext]
+      [HtmlAttributeNotBound]
+      public ViewContext ViewContext { get; set; }
       private Dictionary<string, MenuItem> DefaultItemsList { get; set; }
 
       public override void Process(TagHelperContext context, TagHelperOutput output)
@@ -282,12 +287,12 @@ namespace ESD.Core.Web
                   if (menuItem.MenuItemType != MenuItemType.Custom)
                   {
                      MenuItem menuItemTmp = getDefaultItem(menuItem.MenuItemType.ToString());
-                     menuItem.Key = menuItemTmp.Key;
-                     menuItem.FontImage = menuItemTmp.FontImage;
-                     menuItem.Content = menuItemTmp.Content;
-                     menuItem.Disabled = menuItemTmp.Disabled;
-                     menuItem.Hidden = menuItemTmp.Hidden;
-                     menuItem.ButtonStyle = menuItemTmp.ButtonStyle;
+                     if (string.IsNullOrEmpty(menuItem.Key)) menuItem.Key = menuItemTmp.Key;
+                     if (string.IsNullOrEmpty(menuItem.FontImage)) menuItem.FontImage = menuItemTmp.FontImage;
+                     if (string.IsNullOrEmpty(menuItem.Content)) menuItem.Content = menuItemTmp.Content;
+                     if (!menuItem.Disabled) menuItem.Disabled = menuItemTmp.Disabled;
+                     if (!menuItem.Hidden) menuItem.Hidden = menuItemTmp.Hidden;
+                     if (string.IsNullOrEmpty(menuItem.ButtonStyle)) menuItem.ButtonStyle = menuItemTmp.ButtonStyle;
                   }
                }
                break;
@@ -301,12 +306,12 @@ namespace ESD.Core.Web
                if (menuItem.MenuItemType != MenuItemType.Custom)
                {
                   MenuItem menuItemTmp = getDefaultItem(menuItem.MenuItemType.ToString());
-                  menuItem.Key = menuItemTmp.Key;
-                  menuItem.FontImage = menuItemTmp.FontImage;
-                  menuItem.Content = menuItemTmp.Content;
-                  menuItem.Disabled = menuItemTmp.Disabled;
-                  menuItem.Hidden = menuItemTmp.Hidden;
-                  menuItem.ButtonStyle = menuItemTmp.ButtonStyle;
+                  if (string.IsNullOrEmpty(menuItem.Key)) menuItem.Key = menuItemTmp.Key;
+                  if (string.IsNullOrEmpty(menuItem.FontImage)) menuItem.FontImage = menuItemTmp.FontImage;
+                  if (string.IsNullOrEmpty(menuItem.Content)) menuItem.Content = menuItemTmp.Content;
+                  if (!menuItem.Disabled) menuItem.Disabled = menuItemTmp.Disabled;
+                  if (!menuItem.Hidden) menuItem.Hidden = menuItemTmp.Hidden;
+                  if (string.IsNullOrEmpty(menuItem.ButtonStyle)) menuItem.ButtonStyle = menuItemTmp.ButtonStyle;
                }
 
                if (menuItem.Position == -1)
@@ -315,6 +320,56 @@ namespace ESD.Core.Web
                {
                   MenuItemList.Insert(menuItem.Position, menuItem);
                   menuItem.Position = -1;
+               }
+            }
+         }
+
+         bool esSoloLectura = false;
+         if (ViewContext != null)
+         {
+            if (ViewContext.ViewData.ContainsKey("EsSoloLectura") && ViewContext.ViewData["EsSoloLectura"] as bool? == true)
+               esSoloLectura = true;
+            else if (ViewContext.ViewBag != null && ViewContext.ViewBag.EsSoloLectura == true)
+               esSoloLectura = true;
+         }
+
+         if (esSoloLectura)
+         {
+            MenuItemList.RemoveAll(item =>
+               item.MenuItemType == MenuItemType.New ||
+               item.MenuItemType == MenuItemType.Delete ||
+               item.MenuItemType == MenuItemType.Save ||
+               item.MenuItemType == MenuItemType.Cancel ||
+               item.MenuItemType == MenuItemType.ImportXLS ||
+               item.Key == MenuItemKey.NEW ||
+               item.Key == MenuItemKey.DELETE ||
+               item.Key == MenuItemKey.SAVE ||
+               item.Key == MenuItemKey.CANCEL ||
+               item.Key == MenuItemKey.IMPORT_XLS ||
+               item.Key == "new" ||
+               item.Key == "delete" ||
+               item.Key == "save" ||
+               item.Key == "cancel" ||
+               item.Key == "aprobar" ||
+               item.Key == "desaprobar" ||
+               item.Key == "soli_auto" ||
+               item.Key == "gen_pedido" ||
+               item.Key == "gen_compro" ||
+               item.Key == "cambiar_cotizacion" ||
+               item.Key == "cambiar_estado" ||
+               item.Key == "enviar_prod" ||
+               item.Key == "cerrar" ||
+               item.Key == "extornar"
+            );
+
+            foreach (var item in MenuItemList)
+            {
+               if (item.MenuItemType == MenuItemType.Edit || item.Key == MenuItemKey.EDIT || item.Key == "edit")
+               {
+                  item.MenuItemType = MenuItemType.Custom;
+                  item.Key = MenuItemKey.EDIT;
+                  item.Content = "Consultar";
+                  item.FontImage = "fas fa-search";
                }
             }
          }
@@ -343,6 +398,30 @@ namespace ESD.Core.Web
       }
       private string createMenuItem(string menuId, MenuItem menuExItem)
       {
+         bool esSoloLectura = false;
+         if (ViewContext != null)
+         {
+            if (ViewContext.ViewData != null && ViewContext.ViewData.ContainsKey("EsSoloLectura") && ViewContext.ViewData["EsSoloLectura"] as bool? == true)
+               esSoloLectura = true;
+            else if (ViewContext.ViewBag != null && ViewContext.ViewBag.EsSoloLectura == true)
+               esSoloLectura = true;
+            else if (ViewContext.HttpContext != null && ViewContext.HttpContext.Items.ContainsKey("EsSoloLectura") && ViewContext.HttpContext.Items["EsSoloLectura"] as bool? == true)
+               esSoloLectura = true;
+         }
+
+         if (esSoloLectura)
+         {
+            if (menuExItem.MenuItemType == MenuItemType.Edit || 
+                menuExItem.Key == MenuItemKey.EDIT || 
+                menuExItem.Key == "edit" || 
+                (!string.IsNullOrEmpty(menuExItem.Content) && menuExItem.Content.Trim().Equals("Editar", StringComparison.OrdinalIgnoreCase)))
+            {
+               menuExItem.MenuItemType = MenuItemType.Custom;
+               menuExItem.Key = MenuItemKey.EDIT;
+               menuExItem.Content = "Consultar";
+               menuExItem.FontImage = "fas fa-search";
+            }
+         }
 
          string optionInternalId = string.Concat(menuId, "_opt_", menuExItem.Key);
          string buttonSizeClass = string.Empty;
@@ -661,3 +740,7 @@ namespace ESD.Core.Web
 
    }
 }
+
+
+
+

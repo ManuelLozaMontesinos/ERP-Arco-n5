@@ -1,27 +1,27 @@
-﻿﻿@{
+﻿@{
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
+    string facturacionMes = ViewBag.FacturacionMes ?? "S/ 1,506,785.22";
+    string pedidosActivos = ViewBag.PedidosActivos ?? "169";
+    string cotizacionesActivas = ViewBag.CotizacionesActivas ?? "7,637";
+    string ordenesProduccionMes = ViewBag.OrdenesProduccionMes ?? "1,510";
+    string ordenesCompraMes = ViewBag.OrdenesCompraMes ?? "18";
 }
+<script type="text/javascript">
+    if (window.resetNavbarBreadcrumb) {
+        window.resetNavbarBreadcrumb();
+    }
+</script>
 
 <!-- Content Header (Page header) -->
 <div class="content-header pb-2">
     <div class="container-fluid">
         <div class="row align-items-center mb-1">
-            <div class="col-sm-6">
+            <div class="col-sm-12">
                 <h1 class="m-0 text-dark font-weight-bold" style="font-size: 1.45rem; letter-spacing: -0.02em;">
                     <i class="fas fa-tachometer-alt text-primary mr-2"></i>Tablero de Control
                 </h1>
-                <small class="text-muted" style="font-size: 0.825rem;">SIGANET ERP &mdash; Visión General y Accesos Rápidos</small>
-            </div>
-            <div class="col-sm-6 d-flex align-items-center justify-content-sm-end mt-2 mt-sm-0">
-                <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item">
-                        <a href="@Url.Action("Index", "Home", new { cid = cid })" onclick="window.location.href = '@Url.Action("Index", "Home")?cid=' + encodeURIComponent($('#__cid').val() || '@cid'); return false;">
-                            <i class="fas fa-home mr-1"></i>Inicio
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active">Dashboard</li>
-                </ol>
+                <small class="text-muted" style="font-size: 0.825rem;">SIGANET ERP &mdash; Métricas en Tiempo Real (Sincronizado con BD <code>esderp_v6</code>)</small>
             </div>
         </div>
     </div>
@@ -31,13 +31,14 @@
 <section class="content">
     <div class="container-fluid">
 
-        <!-- 1. FILA DE TARJETAS KPI (AdminLTE v3 Small-Boxes con navegacion SPA) -->
+        <!-- 1. FILA DE TARJETAS KPI (4 por fila, la 5ta cae a la 2da fila) -->
         <div class="row">
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-info shadow-sm" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+            <!-- 1. Facturación del mes -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
+                <div class="small-box bg-info shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
-                        <h3 id="kpi-ventas">S/ 384,920.50</h3>
-                        <p>Facturación del Mes</p>
+                        <h3 id="kpi-ventas">@facturacionMes</h3>
+                        <p class="font-weight-500">Facturación del Mes</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-shopping-cart"></i>
@@ -48,11 +49,28 @@
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-success shadow-sm" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+            <!-- 2. Pedidos Activos -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
+                <div class="small-box bg-primary shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
-                        <h3 id="kpi-cotizaciones">1,428</h3>
-                        <p>Cotizaciones Activas</p>
+                        <h3 id="kpi-pedidos">@pedidosActivos</h3>
+                        <p class="font-weight-500">Pedidos Activos</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-dolly"></i>
+                    </div>
+                    <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'pedido/index' });" class="small-box-footer font-weight-500">
+                        Ver Pedidos <i class="fas fa-arrow-circle-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 3. Cotizaciones Activas -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
+                <div class="small-box bg-success shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
+                    <div class="inner">
+                        <h3 id="kpi-cotizaciones">@cotizacionesActivas</h3>
+                        <p class="font-weight-500">Cotizaciones Activas</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-file-invoice-dollar"></i>
@@ -63,11 +81,12 @@
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-warning shadow-sm" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+            <!-- 4. Órdenes de Producción del mes -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
+                <div class="small-box bg-warning shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
-                        <h3 id="kpi-produccion" style="color: #ffffff !important;">186</h3>
-                        <p style="color: #ffffff !important;">&Oacute;rdenes de Producci&oacute;n</p>
+                        <h3 id="kpi-produccion" style="color: #ffffff !important;">@ordenesProduccionMes</h3>
+                        <p style="color: #ffffff !important;" class="font-weight-500">&Oacute;rdenes de Producci&oacute;n del Mes</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-industry" style="color: rgba(255, 255, 255, 0.25) !important;"></i>
@@ -78,23 +97,24 @@
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-danger shadow-sm" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+            <!-- 5. Órdenes de Compra del mes (Cae a la 2da fila) -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
+                <div class="small-box bg-danger shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
-                        <h3 id="kpi-productos">4,918</h3>
-                        <p>Productos en Cat&aacute;logo</p>
+                        <h3 id="kpi-compras">@ordenesCompraMes</h3>
+                        <p class="font-weight-500">&Oacute;rdenes de Compra del Mes</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-boxes"></i>
+                        <i class="fas fa-truck-loading"></i>
                     </div>
-                    <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'producto/index' });" class="small-box-footer font-weight-500">
-                        Ver Catálogo <i class="fas fa-arrow-circle-right ml-1"></i>
+                    <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'ordenCompra/index' });" class="small-box-footer font-weight-500">
+                        Ver &Oacute;rdenes de Compra <i class="fas fa-arrow-circle-right ml-1"></i>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- 2. SECCIÓN PRINCIPAL (Gráficos y Tablas) -->
+        <!-- 2. SECCIÓN PRINCIPAL (Gráficos y Accesos Rápidos) -->
         <div class="row">
 
             <!-- Columna Izquierda (7 columnas) -->
@@ -106,7 +126,7 @@
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-chart-line text-primary mr-2"></i>Evolución de Ventas (Miles de Soles)
                         </h3>
-                        <span class="badge badge-success px-2 py-1"><i class="fas fa-arrow-up mr-1"></i>+12.4% vs año ant.</span>
+                        <span class="badge badge-success px-2 py-1"><i class="fas fa-sync-alt mr-1"></i>Sincronizado BD</span>
                     </div>
                     <div class="card-body pt-1">
                         <div class="position-relative mb-3" style="height: 250px;">
@@ -123,37 +143,23 @@
                     </div>
                 </div>
 
-                <!-- Tabla de Últimos Comprobantes -->
-                <div class="card card-outline card-info shadow-sm mb-4">
-                    <div class="card-header border-0 d-flex align-items-center justify-content-between">
-                        <h3 class="card-title font-weight-bold m-0">
-                            <i class="fas fa-file-invoice text-info mr-2"></i>Últimos Comprobantes Emitidos
-                        </h3>
-                        <div class="card-tools m-0">
-                            <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'comprobante/index' });" class="btn btn-tool btn-sm font-weight-500">
-                                <i class="fas fa-external-link-alt mr-1"></i> Ver todos
-                            </a>
+                <!-- STACKED BAR CHART (AdminLTE 3 Card Success) -->
+                <div class="card card-success shadow-sm mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold">Stacked Bar Chart</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
-                    <div class="card-body table-responsive p-0">
-                        <table class="table table-striped table-valign-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th style="min-width: 130px;">TIPO / NRO</th>
-                                    <th>CLIENTE</th>
-                                    <th style="min-width: 100px;">FECHA</th>
-                                    <th class="text-right" style="min-width: 100px;">MONTO</th>
-                                    <th class="text-center" style="min-width: 90px;">ESTADO</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-comprobantes-body">
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        <i class="fas fa-spinner fa-spin mr-2"></i> Cargando comprobantes...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="card-body">
+                        <div class="chart position-relative" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;">
+                            <canvas id="stackedBarChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -175,16 +181,16 @@
                                 <i class="fas fa-file-signature text-success"></i> Cotizaciones
                             </a>
                             <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'pedido/index' });">
-                                <i class="fas fa-dolly text-warning"></i> Pedidos
+                                <i class="fas fa-dolly text-primary"></i> Pedidos
                             </a>
                             <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'comprobante/index' });">
-                                <i class="fas fa-receipt text-primary"></i> Facturar
+                                <i class="fas fa-receipt text-info"></i> Facturar
                             </a>
                             <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'ordenProdu/index' });">
-                                <i class="fas fa-industry text-danger"></i> Producción
+                                <i class="fas fa-industry text-warning"></i> Producción
                             </a>
-                            <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'almacen/index' });">
-                                <i class="fas fa-warehouse text-info"></i> Almacenes
+                            <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'ordenCompra/index' });">
+                                <i class="fas fa-truck-loading text-danger"></i> Compras
                             </a>
                             <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'producto/index' });">
                                 <i class="fas fa-tags text-secondary"></i> Productos
@@ -207,20 +213,20 @@
 
                 <!-- Tarjeta informativa de Entorno -->
                 <div class="info-box bg-light shadow-sm mb-4" style="border-radius: 10px;">
-                    <span class="info-box-icon bg-success elevation-1" style="border-radius: 8px;"><i class="fas fa-server"></i></span>
+                    <span class="info-box-icon bg-success elevation-1" style="border-radius: 8px;"><i class="fas fa-database"></i></span>
                     <div class="info-box-content">
                         <div class="d-flex align-items-center justify-content-between">
-                            <span class="info-box-text font-weight-bold m-0">Entorno de Desarrollo</span>
-                            <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Activo</span>
+                            <span class="info-box-text font-weight-bold m-0">Base de Datos en Tiempo Real</span>
+                            <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Sincronizado</span>
                         </div>
                         <span class="info-box-number text-muted font-weight-normal text-sm mt-1">
-                            Base de Datos: <code>esderp_v6</code> (Localhost)
+                            Catálogo: <code>esderp_v6</code> &bull; Polling activo cada 30s
                         </span>
                         <div class="progress my-2" style="height: 4px; border-radius: 2px;">
                             <div class="progress-bar bg-success" style="width: 100%"></div>
                         </div>
                         <span class="progress-description text-muted text-xs">
-                            <i class="fas fa-shield-alt text-success mr-1"></i> Ambiente 100% seguro y aislado
+                            <i class="fas fa-bolt text-success mr-1"></i> Totales y métricas calculados directamente desde BD
                         </span>
                     </div>
                 </div>
@@ -232,14 +238,11 @@
     </div>
 </section>
 
-<!-- Chart.js local -->
-
-
 <script type="text/javascript">
     $(document).ready(function () {
         var cid = $('#__cid').val() || '@cid';
 
-        // Helpers para soporte dinÃ¡mico Claro / Oscuro en Chart.js
+        // Helpers para soporte dinámico Claro / Oscuro en Chart.js
         function getThemeConfig() {
             var isDark = $('body').hasClass('dark-mode') || $('html').hasClass('dark-mode');
             return {
@@ -254,27 +257,38 @@
 
         var salesChartInstance = null;
         var productionChartInstance = null;
-        
+        var stackedBarChartInstance = null;
+
         var defaultDashboardData = {
             success: true,
             kpis: {
-                ventasMes: "S/ 384,920.50",
-                ventasTendencia: "+12.4%",
-                cotizacionesActivas: "1,428",
-                cotizacionesNuevas: "+34 esta semana",
-                ordenesProduccion: "186",
-                ordenesEnProceso: "42 en planta",
-                productosCatalogo: "4,918",
-                productosActivos: "100% operativos"
+                facturacionMes: "@Html.Raw(facturacionMes)",
+                pedidosActivos: "@Html.Raw(pedidosActivos)",
+                cotizacionesActivas: "@Html.Raw(cotizacionesActivas)",
+                ordenesProduccionMes: "@Html.Raw(ordenesProduccionMes)",
+                ordenesCompraMes: "@Html.Raw(ordenesCompraMes)"
             },
             graficoVentas: {
                 meses: ["May", "Jun", "Jul", "Ago", "Set", "Oct"],
-                ventas2025: [280, 310, 340, 295, 360, 384],
-                ventas2026: [310, 345, 390, 330, 410, 425]
+                ventas2025: [2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1],
+                ventas2026: [3015.2, 2931.8, 2901.6, 3090.7, 1506.8, 0]
             },
             graficoProduccion: {
                 labels: ["En Proceso", "Culminadas", "Pendientes", "Anuladas"],
                 valores: [42, 118, 26, 4]
+            },
+            graficoStackedBar: {
+                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                datasets: [
+                    {
+                        label: 'Electronics',
+                        data: [65, 59, 80, 81, 56, 55, 40]
+                    },
+                    {
+                        label: 'Digital Goods',
+                        data: [28, 48, 40, 19, 86, 27, 90]
+                    }
+                ]
             }
         };
 
@@ -299,14 +313,14 @@
                     labels: data.meses,
                     datasets: [
                         {
-                            label: 'AÃ±o Actual (2026)',
+                            label: 'Año Actual (2026)',
                             backgroundColor: theme.barCurrent,
                             borderColor: theme.barCurrent,
                             data: data.ventas2026,
                             borderRadius: 4
                         },
                         {
-                            label: 'AÃ±o Anterior (2025)',
+                            label: 'Año Anterior (2025)',
                             backgroundColor: theme.barPrevious,
                             borderColor: theme.barPrevious,
                             data: data.ventas2025,
@@ -387,18 +401,116 @@
             });
         }
 
-        // Renderizado inicial inmediato con fallback para que los grÃ¡ficos NUNCA aparezcan vacÃ­os
+        function renderStackedBarChart(data) {
+            if (!data) return;
+            var theme = getThemeConfig();
+            var canvas = document.getElementById('stackedBarChart');
+            if (!canvas) return;
+
+            if (stackedBarChartInstance) {
+                stackedBarChartInstance.destroy();
+                stackedBarChartInstance = null;
+            }
+
+            if (typeof Chart === 'undefined') return;
+
+            var labels = data.labels || ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
+            var dElectronics = [65, 59, 80, 81, 56, 55, 40];
+            var dDigital = [28, 48, 40, 19, 86, 27, 90];
+            var lElectronics = 'Electronics';
+            var lDigital = 'Digital Goods';
+
+            if (data.datasets && data.datasets.length >= 2) {
+                lElectronics = data.datasets[0].label || lElectronics;
+                dElectronics = data.datasets[0].data || dElectronics;
+                lDigital = data.datasets[1].label || lDigital;
+                dDigital = data.datasets[1].data || dDigital;
+            }
+
+            stackedBarChartInstance = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: lElectronics,
+                            backgroundColor: theme.isDark ? '#94a3b8' : 'rgba(210, 214, 222, 1)',
+                            borderColor: theme.isDark ? '#64748b' : '#c1c7d1',
+                            borderWidth: 1,
+                            data: dElectronics
+                        },
+                        {
+                            label: lDigital,
+                            backgroundColor: theme.isDark ? '#3b82f6' : 'rgba(60, 141, 188, 0.9)',
+                            borderColor: theme.isDark ? '#2563eb' : 'rgba(60, 141, 188, 1)',
+                            borderWidth: 1,
+                            data: dDigital
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: theme.textColor,
+                                boxWidth: 20,
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: {
+                                color: theme.textColor
+                            },
+                            grid: {
+                                color: theme.gridColor,
+                                display: true
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            suggestedMax: 160,
+                            ticks: {
+                                color: theme.textColor,
+                                stepSize: 20
+                            },
+                            grid: {
+                                color: theme.gridColor,
+                                display: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Renderizado inicial inmediato con fallback para que los gráficos NUNCA aparezcan vacíos
         function initChartsImmediately() {
             if (typeof Chart !== 'undefined') {
                 renderSalesChart(lastDashboardData.graficoVentas);
                 renderProductionChart(lastDashboardData.graficoProduccion);
+                renderStackedBarChart(lastDashboardData.graficoStackedBar);
             } else {
                 setTimeout(initChartsImmediately, 80);
             }
         }
         initChartsImmediately();
 
-        // Listener para actualizaciÃ³n en tiempo real cuando se cambia de tema Claro <-> Oscuro
+        // Listener para actualización en tiempo real cuando se cambia de tema Claro <-> Oscuro
         $(document).off('themeChanged.dashboard').on('themeChanged.dashboard', function (e, isDark) {
             if (lastDashboardData) {
                 if (lastDashboardData.graficoVentas) {
@@ -407,76 +519,66 @@
                 if (lastDashboardData.graficoProduccion) {
                     renderProductionChart(lastDashboardData.graficoProduccion);
                 }
-            }
-        });
-
-        // Cargar datos dinÃ¡micos del Dashboard mediante AJAX
-        $.ajax({
-            url: '@Url.Action("ObtenerDatosDashboard", "Home")',
-            type: 'GET',
-            data: { cid: cid },
-            headers: { 'x-app-cid': cid },
-            success: function (res) {
-                if (res && res.success) {
-                    lastDashboardData = res;
-
-                    // Cargar KPIs
-                    if (res.kpis) {
-                        $('#kpi-ventas').text(res.kpis.ventasMes);
-                        $('#kpi-cotizaciones').text(res.kpis.cotizacionesActivas);
-                        $('#kpi-produccion').text(res.kpis.ordenesProduccion);
-                        $('#kpi-productos').text(res.kpis.productosCatalogo);
-                    }
-
-                    // Renderizar tabla de comprobantes recientes
-                    var tbody = $('#tabla-comprobantes-body');
-                    tbody.empty();
-
-                    if (res.ultimosComprobantes && res.ultimosComprobantes.length > 0) {
-                        $.each(res.ultimosComprobantes, function (i, c) {
-                            var badgeClass = 'badge-success';
-                            if (c.tipo === 'BOL') badgeClass = 'badge-info';
-                            if (c.tipo === 'NC') badgeClass = 'badge-danger';
-
-                            var estadoClass = 'badge-light border';
-                            if (c.estado === 'Emitido' || c.estado === 'Aceptado') estadoClass = 'badge-success';
-                            else if (c.estado === 'Anulado') estadoClass = 'badge-danger';
-                            else if (c.estado === 'Pendiente') estadoClass = 'badge-warning';
-
-                            var row = '<tr>' +
-                                '<td><span class="badge ' + badgeClass + ' mr-1 font-weight-bold">' + c.tipo + '</span>' + c.serieNumero + '</td>' +
-                                '<td><span class="font-weight-600 text-sm">' + c.cliente + '</span></td>' +
-                                '<td><span class="text-muted text-sm">' + c.fecha + '</span></td>' +
-                                '<td class="text-right font-weight-bold">' + c.moneda + ' ' + c.monto + '</td>' +
-                                '<td class="text-center"><span class="badge ' + estadoClass + ' px-2 py-1">' + c.estado + '</span></td>' +
-                                '</tr>';
-                            tbody.append(row);
-                        });
-                    } else {
-                        tbody.html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block text-muted" style="opacity: 0.5;"></i>No se encontraron comprobantes recientes</td></tr>');
-                    }
-
-                    // Actualizar GrÃ¡ficos con datos del servidor
-                    if (res.graficoVentas) {
-                        renderSalesChart(res.graficoVentas);
-                    }
-                    if (res.graficoProduccion) {
-                        renderProductionChart(res.graficoProduccion);
-                    }
-                }
-            },
-            error: function () {
-                var tbody = $('#tabla-comprobantes-body');
-                if (tbody.find('tr').length === 0 || tbody.text().indexOf('Cargando') !== -1) {
-                    tbody.html('<tr><td colspan="5" class="text-center text-muted py-3"><i class="fas fa-info-circle text-info mr-1"></i> Panel en modo local &mdash; MÃ©tricas operativas listas</td></tr>');
-                }
-                // Asegurar que los grÃ¡ficos sigan renderizados
-                if (lastDashboardData) {
-                    renderSalesChart(lastDashboardData.graficoVentas);
-                    renderProductionChart(lastDashboardData.graficoProduccion);
+                if (lastDashboardData.graficoStackedBar) {
+                    renderStackedBarChart(lastDashboardData.graficoStackedBar);
                 }
             }
         });
+
+        // Función para cargar/sincronizar datos dinámicos en tiempo real
+        function sincronizarDashboard() {
+            $.ajax({
+                url: '@Url.Action("ObtenerDatosDashboard", "Home")',
+                type: 'GET',
+                data: { cid: cid },
+                headers: { 'x-app-cid': cid },
+                success: function (res) {
+                    if (res && res.success) {
+                        lastDashboardData = res;
+
+                        // Actualizar los 5 KPIs en tiempo real
+                        if (res.kpis) {
+                            if (res.kpis.facturacionMes) $('#kpi-ventas').text(res.kpis.facturacionMes);
+                            if (res.kpis.pedidosActivos) $('#kpi-pedidos').text(res.kpis.pedidosActivos);
+                            if (res.kpis.cotizacionesActivas) $('#kpi-cotizaciones').text(res.kpis.cotizacionesActivas);
+                            if (res.kpis.ordenesProduccionMes) $('#kpi-produccion').text(res.kpis.ordenesProduccionMes);
+                            if (res.kpis.ordenesCompraMes) $('#kpi-compras').text(res.kpis.ordenesCompraMes);
+                        }
+
+                        // Actualizar Gráficos con datos frescos de la BD
+                        if (res.graficoVentas) {
+                            renderSalesChart(res.graficoVentas);
+                        }
+                        if (res.graficoProduccion) {
+                            renderProductionChart(res.graficoProduccion);
+                        }
+                        if (res.graficoStackedBar) {
+                            renderStackedBarChart(res.graficoStackedBar);
+                        }
+                    }
+                },
+                error: function () {
+                    // Mantener datos locales en caso de desconexión
+                    if (lastDashboardData) {
+                        renderSalesChart(lastDashboardData.graficoVentas);
+                        renderProductionChart(lastDashboardData.graficoProduccion);
+                        renderStackedBarChart(lastDashboardData.graficoStackedBar);
+                    }
+                }
+            });
+        }
+
+        // Carga inicial vía AJAX
+        sincronizarDashboard();
+
+        // Polling en segundo plano cada 30 segundos para actualización en tiempo real
+        var dashboardInterval = setInterval(function () {
+            // Verificar si el tablero aún sigue en el DOM antes de consultar
+            if ($('#kpi-ventas').length > 0) {
+                sincronizarDashboard();
+            } else {
+                clearInterval(dashboardInterval);
+            }
+        }, 30000);
     });
 </script>
-

@@ -234,6 +234,16 @@
 <script type="text/javascript">
    $(document).ready(function () {
 
+      @if (ViewBag.EsSoloLectura == true)
+      {
+         <text>
+         $('#app-content input, #app-content select, #app-content textarea').prop('disabled', true);
+         $('#Proveedor').appButtonTextBox('disabled', { disabled: true });
+         $('#Proveedor button').hide();
+         $('#productoMenuBar, #anticipoMenuBar').hide();
+         </text>
+      }
+
       if ($('#EstadoCotizacion').val() === '@EstadoCotizacionConstante.FACTURADO') {
          $("#menuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.SAVE,soli_auto,gen_pedido,gen_compro', disabled: true });
          $("#TipoCondicionPagoId").prop('disabled', true);

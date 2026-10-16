@@ -63,6 +63,7 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          {
             new MenuItem() { MenuItemType = MenuItemType.Edit }
          };
+         AplicarPermisosMenu(cotizaAutorizaViewModel.MenuItemList);
 
          EstadoAprobacionDTO estadoAprobacionDTO = estadoAprobacionProxy.ObtenerPorCodigo(
             new EstadoAprobacionDTO() { Codigo = EstadoAprobacionConstante.PENDIENTE_APROBACION });
@@ -180,12 +181,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          WebHelper.SelectedListItemSetValue(model.ListaPrecioList, cotizacionDTO.ListaPrecioId);
          WebHelper.SelectedListItemSetValue(model.TipoCondicionPagoList, cotizacionDTO.TipoCondicionPagoId);
 
-         model.MenuItemList = new List<MenuItem>
+         model.MenuItemList = new List<MenuItem>();
+         if (TienePermisoEscritura())
          {
-            new MenuItem() { Key="aprobar", Content="Aprobar" },
-            new MenuItem() { Key="desaprobar", Content="Desaprobar" },
-            new MenuItem() {  MenuItemType = MenuItemType.Exit}
-         };
+            model.MenuItemList.Add(new MenuItem() { Key="aprobar", Content="Aprobar" });
+            model.MenuItemList.Add(new MenuItem() { Key="desaprobar", Content="Desaprobar" });
+         }
+         model.MenuItemList.Add(new MenuItem() {  MenuItemType = MenuItemType.Exit });
       }
       private void cargarListaEstadoAprobacion(CotizaAutorizaViewModel model)
       {
@@ -233,6 +235,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          Logger.InfoStart();
 
          ResultResponse resultResponse = new();
+
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para autorizar cotizaciones.";
+            return Json(resultResponse, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+         }
 
          try
          {
@@ -297,6 +306,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          Logger.InfoStart();
 
          ResultResponse resultResponse = new();
+
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para desaprobar cotizaciones.";
+            return Json(resultResponse, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+         }
 
          try
          {

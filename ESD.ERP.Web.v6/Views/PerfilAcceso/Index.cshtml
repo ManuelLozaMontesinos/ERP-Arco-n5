@@ -1,4 +1,4 @@
-﻿@{
+@{
    Layout = null;
 }
 @using ESD.ERP.Web.Infrastructure;
@@ -171,6 +171,7 @@
                   }
                } else {
                  $("#okButton").prop('disabled', false);
+                 if (response.message) { msgAlert(msgAlertTypeConstant.INFORMATION, response.message); }
                }
             }
          });

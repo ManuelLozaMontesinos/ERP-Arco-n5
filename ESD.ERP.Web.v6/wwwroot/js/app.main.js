@@ -1,4 +1,4 @@
-﻿function getBaseUrl() {
+function getBaseUrl() {
    var url = window.location.href;
    var lastIndex = url.lastIndexOf("/");
    var result = url.substring(0, lastIndex)
@@ -263,6 +263,57 @@ function padLeadingZeros(num, size) {
                if (!$.isNullOrEmpty(settings.container)) {
                   $("#" + settings.container).empty();
                   $("#" + settings.container).html(response);
+               if (settings.urlAction && window.menuUrlMap) {
+                  var targetUrl = settings.urlAction.trim().toLowerCase().split('?')[0];
+                  var noSlash = targetUrl.replace(/^\/+/, '');
+                  var foundPath = window.menuUrlMap[targetUrl] || window.menuUrlMap[noSlash] || window.menuUrlMap['/' + noSlash];
+                  if (foundPath && window.updateNavbarBreadcrumb) {
+                     window.updateNavbarBreadcrumb(foundPath);
+                  }
+               }
+               }
+
+               var headerSoloLectura = jqXHR ? jqXHR.getResponseHeader('X-App-SoloLectura') : null;
+               var isSoloLectura = false;
+               if (headerSoloLectura !== null) {
+                  isSoloLectura = (headerSoloLectura === 'true');
+                  window.esSoloLectura = isSoloLectura;
+               } else {
+                  isSoloLectura = (window.esSoloLectura === true || $('#__esSoloLectura').val() === 'true');
+               }
+
+               if (isSoloLectura) {
+                  var c = !$.isNullOrEmpty(settings.container) ? $("#" + settings.container) : $('#workspace');
+
+                  c.find('#menuBar_opt_edit, [id$="_opt_edit"]').each(function() {
+                     var btn = $(this);
+                     btn.find('span').attr('class', 'fas fa-search');
+                     var textNode = btn.contents().filter(function() { return this.nodeType === 3; });
+                     if (textNode.length > 0) {
+                        textNode[0].nodeValue = ' Consultar';
+                     } else {
+                        btn.html('<span class="fas fa-search"></span> Consultar');
+                     }
+                  });
+
+                  c.find('[id$="_opt_new"], [id$="_opt_delete"], [id$="_opt_save"], [id$="_opt_cancel"], [id$="_opt_soli_auto"], [id$="_opt_gen_pedido"], [id$="_opt_gen_compro"], [id$="_opt_cambiar_cotizacion"], [id$="_opt_cambiar_estado"], [id$="_opt_enviar_prod"], [id$="_opt_cerrar"], [id$="_opt_extornar"]').hide();
+
+                  var isBandejaView = c.find('#bandejaGrid, #bandejaContainer, #app-search-card, #app-search-input-group, .ui-jqgrid').length > 0;
+
+                  if (isBandejaView) {
+                     if (window.removeBreadcrumbSubAction) { window.removeBreadcrumbSubAction(); }
+                     // In Bandeja / Index / Search views: Filters, search fields and buttons must remain 100% active and operative!
+                     c.find('#app-search-card input, #app-search-card select, #app-search-card textarea, #app-search-input-group input, #app-search-input-group select, #app-search-input-group textarea').prop('disabled', false);
+                     c.find('#app-search-card button, #app-search-card .input-group-append, #app-search-card .input-group-append *, #app-search-card .app-button-textbox button, #app-search-card .btn, #clearButton, [id$="clearButton"], [id$="searchButton"]').prop('disabled', false).show();
+                  } else if (settings.editAction === 'Edit' || c.find('#app-content').length > 0) {
+                     if (settings.editAction === 'Edit' && window.appendNavbarBreadcrumb) { window.appendNavbarBreadcrumb('Consultar'); }
+                     // In detail/consult views (CreateEdit): form fields are locked for consultation
+                     c.find('#app-content input:not([type=hidden]), #app-content select, #app-content textarea').not('#app-search-card *, #app-search-input-group *').prop('disabled', true);
+                     c.find('.input-group-append button, .app-button-textbox button').not('#app-search-card *, #app-search-input-group *').prop('disabled', true).hide();
+                     c.find('.esd-menubar:not(#menuBar)').hide();
+                  }
+               } else {
+                  window.esSoloLectura = false;
                }
 
                if (typeof settings.onSuccess === 'function')
@@ -843,6 +894,57 @@ function createSelectedItemList(selModel) {
                if (!$.isNullOrEmpty(settings.container)) {
                   $("#" + settings.container).empty();
                   $("#" + settings.container).html(response);
+               if (settings.urlAction && window.menuUrlMap) {
+                  var targetUrl = settings.urlAction.trim().toLowerCase().split('?')[0];
+                  var noSlash = targetUrl.replace(/^\/+/, '');
+                  var foundPath = window.menuUrlMap[targetUrl] || window.menuUrlMap[noSlash] || window.menuUrlMap['/' + noSlash];
+                  if (foundPath && window.updateNavbarBreadcrumb) {
+                     window.updateNavbarBreadcrumb(foundPath);
+                  }
+               }
+               }
+
+               var headerSoloLectura = jqXHR ? jqXHR.getResponseHeader('X-App-SoloLectura') : null;
+               var isSoloLectura = false;
+               if (headerSoloLectura !== null) {
+                  isSoloLectura = (headerSoloLectura === 'true');
+                  window.esSoloLectura = isSoloLectura;
+               } else {
+                  isSoloLectura = (window.esSoloLectura === true || $('#__esSoloLectura').val() === 'true');
+               }
+
+               if (isSoloLectura) {
+                  var c = !$.isNullOrEmpty(settings.container) ? $("#" + settings.container) : $('#workspace');
+
+                  c.find('#menuBar_opt_edit, [id$="_opt_edit"]').each(function() {
+                     var btn = $(this);
+                     btn.find('span').attr('class', 'fas fa-search');
+                     var textNode = btn.contents().filter(function() { return this.nodeType === 3; });
+                     if (textNode.length > 0) {
+                        textNode[0].nodeValue = ' Consultar';
+                     } else {
+                        btn.html('<span class="fas fa-search"></span> Consultar');
+                     }
+                  });
+
+                  c.find('[id$="_opt_new"], [id$="_opt_delete"], [id$="_opt_save"], [id$="_opt_cancel"], [id$="_opt_soli_auto"], [id$="_opt_gen_pedido"], [id$="_opt_gen_compro"], [id$="_opt_cambiar_cotizacion"], [id$="_opt_cambiar_estado"], [id$="_opt_enviar_prod"], [id$="_opt_cerrar"], [id$="_opt_extornar"]').hide();
+
+                  var isBandejaView = c.find('#bandejaGrid, #bandejaContainer, #app-search-card, #app-search-input-group, .ui-jqgrid').length > 0;
+
+                  if (isBandejaView) {
+                     if (window.removeBreadcrumbSubAction) { window.removeBreadcrumbSubAction(); }
+                     // In Bandeja / Index / Search views: Filters, search fields and buttons must remain 100% active and operative!
+                     c.find('#app-search-card input, #app-search-card select, #app-search-card textarea, #app-search-input-group input, #app-search-input-group select, #app-search-input-group textarea').prop('disabled', false);
+                     c.find('#app-search-card button, #app-search-card .input-group-append, #app-search-card .input-group-append *, #app-search-card .app-button-textbox button, #app-search-card .btn, #clearButton, [id$="clearButton"], [id$="searchButton"]').prop('disabled', false).show();
+                  } else if (settings.editAction === 'Edit' || c.find('#app-content').length > 0) {
+                     if (settings.editAction === 'Edit' && window.appendNavbarBreadcrumb) { window.appendNavbarBreadcrumb('Consultar'); }
+                     // In detail/consult views (CreateEdit): form fields are locked for consultation
+                     c.find('#app-content input:not([type=hidden]), #app-content select, #app-content textarea').not('#app-search-card *, #app-search-input-group *').prop('disabled', true);
+                     c.find('.input-group-append button, .app-button-textbox button').not('#app-search-card *, #app-search-input-group *').prop('disabled', true).hide();
+                     c.find('.esd-menubar:not(#menuBar)').hide();
+                  }
+               } else {
+                  window.esSoloLectura = false;
                }
 
                if (typeof settings.onSuccess === 'function')
@@ -1271,13 +1373,19 @@ function isEmptyRecord(rowId) {
       privateEditGridMenuBar: function (isNew, isEditableGrid) {
          this.disabled();
 
-         this.disabledButton({ buttonId: 'new', disabled: false });
+         var isSoloLectura = window.esSoloLectura === true || $('#__esSoloLectura').val() === 'true';
+
+         if (!isSoloLectura) {
+            this.disabledButton({ buttonId: 'new', disabled: false });
+         }
 
          if (isNew === true)
             return;
 
          var list;
-         if (isEditableGrid)
+         if (isSoloLectura) {
+            list = 'edit,preview,exportxls,dataxls,consulta,reporte_anticipo';
+         } else if (isEditableGrid)
             list = 'copy,edit,delete,preview,exportxls,dataxls';
          else
             list = 'copy,edit,delete,save,cancel,exit,preview,exportxls,dataxls';

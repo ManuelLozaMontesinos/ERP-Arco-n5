@@ -1,5 +1,6 @@
-using ESD.Core;
+﻿using ESD.Core;
 using ESD.Core.Cryptography;
+using ESD.Core.Web;
 using ESD.Core.Service.DTO;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
@@ -24,6 +25,7 @@ namespace ESD.ERP.Web.Infrastructure
       private IPeriodoEmpresaSedeProxy periodoEmpresaSedeProxy;
       private IRolUsuarioProxy rolUsuarioProxy;
       private IParametroSistemaProxy parametroSistemaProxy;
+      private IRolMenuProxy rolMenuProxy;
 
       [InjectionMethod]
       public void UseUsuarioProxy(IUsuarioProxy usuarioProxy)
@@ -44,6 +46,11 @@ namespace ESD.ERP.Web.Infrastructure
       public void UseParametroSistemaProxy(IParametroSistemaProxy parametroSistemaProxy)
       {
          this.parametroSistemaProxy = parametroSistemaProxy;
+      }
+      [InjectionMethod]
+      public void UseRolMenuProxy(IRolMenuProxy rolMenuProxy)
+      {
+         this.rolMenuProxy = rolMenuProxy;
       }
       public int ObtenerMaximoRegistrosBusqueda()
       {
@@ -123,6 +130,348 @@ namespace ESD.ERP.Web.Infrastructure
          });
 
          return rolUsuarioDTOList.Count > 0;
+      }
+      public List<RolMenuDTO> ObtenerPermisosUsuario()
+      {
+         if (HttpContext != null && HttpContext.Items.ContainsKey("USER_MENU_PERMISSIONS"))
+         {
+            return (List<RolMenuDTO>)HttpContext.Items["USER_MENU_PERMISSIONS"];
+         }
+
+         if (rolMenuProxy == null && HttpContext != null)
+         {
+            rolMenuProxy = HttpContext.RequestServices?.GetService(typeof(IRolMenuProxy)) as IRolMenuProxy;
+         }
+
+         List<string> roles = ObtenerRoles();
+         if (roles == null || roles.Count == 0 || rolMenuProxy == null)
+            return new List<RolMenuDTO>();
+
+         List<RolMenuDTO> rolMenuDTOList = rolMenuProxy.Search(new RolMenuDTO()
+         {
+            RolCodigoList = roles,
+            Lectura = SiNoConstante.S
+         });
+
+         if (HttpContext != null && rolMenuDTOList != null)
+         {
+            HttpContext.Items["USER_MENU_PERMISSIONS"] = rolMenuDTOList;
+         }
+
+         return rolMenuDTOList ?? new List<RolMenuDTO>();
+      }
+      public bool TienePermisoEscritura(string menuUrl = null)
+      {
+         if (EsAdministrador())
+            return true;
+
+         string controllerName;
+         if (string.IsNullOrEmpty(menuUrl))
+         {
+            controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
+         }
+         else
+         {
+            controllerName = menuUrl.TrimStart('/').Split('/')[0];
+         }
+
+         if (string.IsNullOrEmpty(controllerName))
+            return false;
+
+         if (controllerName.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase))
+         {
+            return true;
+         }
+
+         List<RolMenuDTO> permisos = ObtenerPermisosUsuario();
+         if (permisos == null || permisos.Count == 0)
+            return false;
+
+         string target = controllerName.Trim().ToLower();
+
+         return permisos.Any(p =>
+            p.Escritura == SiNoConstante.S &&
+            p.MenuDTO != null &&
+            !string.IsNullOrEmpty(p.MenuDTO.Url) &&
+            p.MenuDTO.Url.TrimStart('/').Split('/')[0].Trim().ToLower() == target
+         );
+      }
+      public bool TienePermisoLectura(string menuUrl = null)
+      {
+         if (EsAdministrador())
+            return true;
+
+         string controllerName;
+         if (string.IsNullOrEmpty(menuUrl))
+         {
+            controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
+         }
+         else
+         {
+            controllerName = menuUrl.TrimStart('/').Split('/')[0];
+         }
+
+         if (string.IsNullOrEmpty(controllerName))
+            return false;
+
+         if (controllerName.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase))
+         {
+            return true;
+         }
+
+         List<RolMenuDTO> permisos = ObtenerPermisosUsuario();
+         if (permisos == null || permisos.Count == 0)
+            return false;
+
+         string target = controllerName.Trim().ToLower();
+
+         return permisos.Any(p =>
+            p.Lectura == SiNoConstante.S &&
+            p.MenuDTO != null &&
+            !string.IsNullOrEmpty(p.MenuDTO.Url) &&
+            p.MenuDTO.Url.TrimStart('/').Split('/')[0].Trim().ToLower() == target
+         );
+      }
+      public override void OnActionExecuting(ActionExecutingContext context)
+      {
+         base.OnActionExecuting(context);
+
+         string currentController = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
+         if (currentController.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
+             currentController.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
+             currentController.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
+             currentController.Equals("Login", StringComparison.OrdinalIgnoreCase))
+         {
+            return;
+         }
+
+         bool tieneEscritura = TienePermisoEscritura();
+         ViewData["TienePermisoEscritura"] = tieneEscritura;
+         ViewData["EsSoloLectura"] = !tieneEscritura;
+         if (ViewBag != null)
+         {
+            ViewBag.TienePermisoEscritura = tieneEscritura;
+            ViewBag.EsSoloLectura = !tieneEscritura;
+         }
+         if (context.HttpContext != null)
+         {
+            context.HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
+            context.HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
+         }
+
+         // Universal backend write protection for read-only roles
+         if (!tieneEscritura && Microsoft.AspNetCore.Http.HttpMethods.IsPost(context.HttpContext.Request.Method))
+         {
+            string actionName = context.ActionDescriptor?.RouteValues["action"]?.ToLower() ?? string.Empty;
+            if (actionName == "grabar" || 
+                actionName == "eliminar" || 
+                actionName == "aprobar" || 
+                actionName == "desaprobar" || 
+                actionName == "generarpedido" || 
+                actionName == "generarcomprobante" || 
+                actionName == "cambiarestado" ||
+                actionName == "enviarproduccion" ||
+                actionName == "cerraranticipo" ||
+                actionName == "extornar")
+            {
+               context.Result = new JsonResult(new ResultResponse
+               {
+                  Success = false,
+                  Message = "No cuenta con permisos de escritura para realizar modificaciones en este mÃ³dulo."
+               });
+               return;
+            }
+         }
+      }
+
+      public override ViewResult View()
+      {
+         procesarPermisosModelo(null);
+         return base.View();
+      }
+      public override ViewResult View(object model)
+      {
+         procesarPermisosModelo(model);
+         return base.View(model);
+      }
+      public override ViewResult View(string viewName)
+      {
+         procesarPermisosModelo(null);
+         return base.View(viewName);
+      }
+      public override ViewResult View(string viewName, object model)
+      {
+         procesarPermisosModelo(model);
+         return base.View(viewName, model);
+      }
+
+      public override PartialViewResult PartialView()
+      {
+         procesarPermisosModelo(null);
+         return base.PartialView();
+      }
+      public override PartialViewResult PartialView(object model)
+      {
+         procesarPermisosModelo(model);
+         return base.PartialView(model);
+      }
+      public override PartialViewResult PartialView(string viewName)
+      {
+         procesarPermisosModelo(null);
+         return base.PartialView(viewName);
+      }
+      public override PartialViewResult PartialView(string viewName, object model)
+      {
+         procesarPermisosModelo(model);
+         return base.PartialView(viewName, model);
+      }
+
+      public override void OnActionExecuted(ActionExecutedContext context)
+      {
+         base.OnActionExecuted(context);
+         bool tieneEscritura = TienePermisoEscritura();
+         ViewData["TienePermisoEscritura"] = tieneEscritura;
+         ViewData["EsSoloLectura"] = !tieneEscritura;
+         if (ViewBag != null)
+         {
+            ViewBag.TienePermisoEscritura = tieneEscritura;
+            ViewBag.EsSoloLectura = !tieneEscritura;
+         }
+         if (context.HttpContext != null)
+         {
+            context.HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
+            context.HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
+            if (!tieneEscritura)
+            {
+               context.HttpContext.Response.Headers["X-App-SoloLectura"] = "true";
+            }
+         }
+
+         if (context.Result is ViewResult viewResult)
+         {
+            procesarPermisosModelo(viewResult.Model);
+         }
+         else if (context.Result is PartialViewResult partialViewResult)
+         {
+            procesarPermisosModelo(partialViewResult.Model);
+         }
+      }
+
+      private void procesarPermisosModelo(object model)
+      {
+         bool tieneEscritura = TienePermisoEscritura();
+         ViewData["TienePermisoEscritura"] = tieneEscritura;
+         ViewData["EsSoloLectura"] = !tieneEscritura;
+         if (ViewBag != null)
+         {
+            ViewBag.TienePermisoEscritura = tieneEscritura;
+            ViewBag.EsSoloLectura = !tieneEscritura;
+         }
+         if (HttpContext != null)
+         {
+            HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
+            HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
+            if (!tieneEscritura)
+            {
+               HttpContext.Response.Headers["X-App-SoloLectura"] = "true";
+            }
+         }
+
+         if (model == null)
+            return;
+
+         try
+         {
+            var props = model.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var prop in props)
+            {
+               if (typeof(List<MenuItem>).IsAssignableFrom(prop.PropertyType))
+               {
+                  var list = prop.GetValue(model) as List<MenuItem>;
+                  if (list != null && list.Count > 0)
+                  {
+                     AplicarPermisosMenu(list);
+                  }
+               }
+            }
+         }
+         catch
+         {
+         }
+      }
+
+      public void AplicarPermisosMenu(List<MenuItem> menuItemList, string menuUrl = null)
+      {
+         if (menuItemList == null || menuItemList.Count == 0)
+            return;
+
+         bool tieneEscritura = TienePermisoEscritura(menuUrl);
+         ViewData["TienePermisoEscritura"] = tieneEscritura;
+         ViewData["EsSoloLectura"] = !tieneEscritura;
+         if (ViewBag != null)
+         {
+            ViewBag.TienePermisoEscritura = tieneEscritura;
+            ViewBag.EsSoloLectura = !tieneEscritura;
+         }
+         if (HttpContext != null)
+         {
+            HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
+            HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
+            if (!tieneEscritura)
+            {
+               HttpContext.Response.Headers["X-App-SoloLectura"] = "true";
+            }
+         }
+
+         if (tieneEscritura)
+            return;
+
+         menuItemList.RemoveAll(item =>
+            item.MenuItemType == MenuItemType.New ||
+            item.MenuItemType == MenuItemType.Delete ||
+            item.MenuItemType == MenuItemType.Save ||
+            item.MenuItemType == MenuItemType.Cancel ||
+            item.MenuItemType == MenuItemType.ImportXLS ||
+            item.Key == MenuItemKey.NEW ||
+            item.Key == MenuItemKey.DELETE ||
+            item.Key == MenuItemKey.SAVE ||
+            item.Key == MenuItemKey.CANCEL ||
+            item.Key == MenuItemKey.IMPORT_XLS ||
+            item.Key == "new" ||
+            item.Key == "delete" ||
+            item.Key == "save" ||
+            item.Key == "cancel" ||
+            item.Key == "aprobar" ||
+            item.Key == "desaprobar" ||
+            item.Key == "soli_auto" ||
+            item.Key == "gen_pedido" ||
+            item.Key == "gen_compro" ||
+            item.Key == "cambiar_cotizacion" ||
+            item.Key == "cambiar_estado" ||
+            item.Key == "enviar_prod" ||
+            item.Key == "cerrar" ||
+            item.Key == "extornar"
+         );
+
+         foreach (var item in menuItemList)
+         {
+            if (item.MenuItemType == MenuItemType.Edit || 
+                item.Key == MenuItemKey.EDIT || 
+                item.Key == "edit" || 
+                (item.Content != null && item.Content.Trim().Equals("Editar", StringComparison.OrdinalIgnoreCase)))
+            {
+               item.MenuItemType = MenuItemType.Custom;
+               item.Key = MenuItemKey.EDIT;
+               item.Content = "Consultar";
+               item.FontImage = "fas fa-search";
+            }
+         }
       }
       public int ObtenerPeriodoId(string cid)
       {
@@ -274,3 +623,6 @@ namespace ESD.ERP.Web.Infrastructure
       }
    }
 } 
+
+
+

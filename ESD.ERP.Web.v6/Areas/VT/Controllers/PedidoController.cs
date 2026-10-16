@@ -116,6 +116,8 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
             pedidoViewModel.MenuItemList.Add(new MenuItem() { Key = "cambiar_estado", Content = "Cambiar Estado" });
          }
 
+         AplicarPermisosMenu(pedidoViewModel.MenuItemList);
+
          configurarServicioImpresion(pedidoViewModel);
 
          if (!EsAdministrador())
@@ -359,6 +361,9 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          model.MenuAnticipoList.Add(new MenuItem() { Key = "cerrar", Content = "Cerrar Anticipo" });
          model.MenuAnticipoList.Add(new MenuItem() { MenuItemType = MenuItemType.Delete });
          model.MenuAnticipoList.Add(new MenuItem() { Key = "extornar", Content = "Extornar" });
+
+         AplicarPermisosMenu(model.MenuItemList);
+         AplicarPermisosMenu(model.MenuAnticipoList);
       }
       private int obtenerOrderProduccionId(int cotizacionId)
       {
@@ -585,6 +590,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          ResultResponse resultResponse = new();
 
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para registrar o modificar pedidos.";
+            return Json(resultResponse);
+         }
+
          try
          {
             CotizacionDTO cotizacionDTO = cargarCotizacionDTO(model);
@@ -688,6 +700,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          Logger.InfoStart();
 
          ResultResponse resultResponse = new();
+
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para anular pedidos.";
+            return Json(resultResponse);
+         }
 
          try
          {
@@ -1774,6 +1793,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          ResultResponse resultResponse = new();
 
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para cambiar estado.";
+            return Json(resultResponse);
+         }
+
          try
          {
             AuditDTO(model.CotizacionDTO);
@@ -1799,6 +1825,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          Logger.InfoStart();
 
          ResultResponse resultResponse = new();
+
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para cambiar a cotización.";
+            return Json(resultResponse);
+         }
 
          try
          {

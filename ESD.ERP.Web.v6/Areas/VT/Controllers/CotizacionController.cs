@@ -1,4 +1,4 @@
-using ESD.Core;
+﻿using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service.DTO;
 using ESD.Core.Web;
@@ -105,6 +105,7 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          cotizacionViewModel.MenuItemList = menuBarTagHelper.CreateMenuStyleList(MenuItemStyle.CRUDAndPreview);
 
          cotizacionViewModel.MenuItemList.Add(new MenuItem() { Key = "consulta", Content = "Consulta de Precios" });
+         AplicarPermisosMenu(cotizacionViewModel.MenuItemList);
 
          if (!EsAdministrador())
          {
@@ -313,6 +314,10 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          model.MenuAnticipoList.Add(new MenuItem() { Key = "cerrar", Content = "Cerrar Anticipo" });
          model.MenuAnticipoList.Add(new MenuItem() { MenuItemType = MenuItemType.Delete });
          model.MenuAnticipoList.Add(new MenuItem() { Key = "extornar", Content = "Extornar" });
+
+         AplicarPermisosMenu(model.MenuItemList);
+         AplicarPermisosMenu(model.MenuProductoList);
+         AplicarPermisosMenu(model.MenuAnticipoList);
       }
       private string obtenerAutorizacionPendiente(CotizacionViewModel model, int id)
       {
@@ -568,6 +573,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          ResultResponse resultResponse = new();
 
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para registrar o actualizar cotizaciones.";
+            return Json(resultResponse);
+         }
+
          try
          {
             CotizacionDTO cotizacionDTO = cargarCotizacionDTO(model);
@@ -687,6 +699,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          ResultResponse resultResponse = new();
 
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para anular cotizaciones.";
+            return Json(resultResponse);
+         }
+
          try
          {
             model.CotizacionDTO.DTOState = DTOState.Modified;
@@ -796,6 +815,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          ResultResponse resultResponse = new();
 
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para generar pedidos.";
+            return Json(resultResponse);
+         }
+
          try
          {
             DateTime fecha = model.CotizacionDTO.Fecha;
@@ -827,6 +853,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          Logger.InfoStart();
 
          ResultResponse resultResponse = new();
+
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para generar comprobantes.";
+            return Json(resultResponse);
+         }
 
          try
          {
@@ -1097,6 +1130,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
 
          ResultResponse resultResponse = new();
 
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para modificar productos de la cotización.";
+            return Json(resultResponse);
+         }
+
          try
          {
             CotizacionProductoDTO cotizacionProductoDTO = cargarCotizacionProductoDTO(model);
@@ -1187,6 +1227,13 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          Logger.InfoStart();
 
          ResultResponse resultResponse = new();
+
+         if (!TienePermisoEscritura())
+         {
+            resultResponse.Success = false;
+            resultResponse.Message = "No cuenta con permisos de escritura para eliminar productos de la cotización.";
+            return Json(resultResponse);
+         }
 
          try
          {
