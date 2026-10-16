@@ -1,0 +1,378 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.CotizaAutorizaViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.CotizacionDTO.Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.CotizacionDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" selected-value="@Model.CotizacionDTO.MonedaId" col-position="col-lg-2" label="Moneda"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.CotizacionDTO.MontoTipoCambio" col-position="col-lg-2" label="T/C" col-label-position="col-lg-2" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.CotizacionDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente"
+                               col-label-position="col-lg-2" onclick="proveedorOnClick" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.CotizacionDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="VendedorNombre" value="@Model.CotizacionDTO.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-4" label="Vendedor"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-dropdownlist id="ListaPrecioId" for="@Model.ListaPrecioList" selected-value="@Model.CotizacionDTO.ListaPrecioId" col-position="col-lg-4" label="Lista Precio"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoCondicionPagoId" for="@Model.TipoCondicionPagoList" col-position="col-lg-4" label="Cond. Pago"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.CotizacionDTO.Observacion" col-position="col-lg-6" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3" enable="false"></esd-textarea>
+               </div>
+               <div class="form-group row">
+                  <label class="col-lg-10 offset-2" style="text-align: left">
+                     <span class="badge badge-warning">Item ya tiene dcto desde la Lista de Precios.</span>
+                     <span class="badge badge-success">Item ya tiene el incremento del 5% en el P.U.</span>
+                     <span class="badge badge-danger">Item sin Saldo</span>
+                  </label>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoCotizacionNombre" value="@Model.CotizacionDTO.EstadoCotizacionDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoNeto" value="@Model.CotizacionDTO.MontoNeto" col-position="col-lg-6" label="Mto. Neto" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoIgv" value="@Model.CotizacionDTO.MontoIgv" col-position="col-lg-6" label="IGV" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoTotal" value="@Model.CotizacionDTO.MontoTotal" col-position="col-lg-6" label="Total" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.CotizacionAutorizacionDTO.CotizacionAutorizacionId"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.CotizacionId"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.MonedaDTO.EsLocal"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.ImpuestoTasaDTO.Tasa"></esd-hidden>
+      <esd-hidden id="TipoAutorizacion" value="@Model.CotizacionAutorizacionDTO.TipoAutorizacionDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.PorcentajeFraccionPU"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<style type="text/css">
+   .jqgrid-cell-warning {
+      background: #ffc107;
+      color: #212529;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #4EA049;
+      font-weight: bold;
+   }
+
+   .jqgrid-cell-success {
+      background: #28a745;
+      color: #fff;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #FFFFFF;
+      font-weight: bold;
+   }
+
+   .jqgrid-cell-item-sold-out {
+      background: #dc3545;
+      color: #fff;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #FFFFFF;
+      font-weight: bold;
+   }
+</style>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarCotizacionProducto", "CotizaAutoriza")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "CotizacionProductoDTO.CotizacionId", value: $('#CotizacionId').val() || '0', type: 'int' },
+                     { name: "CotizacionProductoDTO.SolicitaAutorizacionDescuento", value: '@SiNoConstante.S' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Código', 'Producto', '', '', '', 'U.M.', '', 'Detalle', 'Cantidad', '', '', '', 'P.U.',
+            'Nuevo P.U.','', '', '','', '', 'IGV', 'Total', '', '', ''],
+         colModel: [
+            { name: 'CotizacionProductoId', hidden: true },
+            { name: 'CotizacionId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 90, formatter: codigoFormatter },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'UsarIncrementoFraccion', hidden: true },
+            { name: 'TipoProducto', hidden: true },
+            { name: 'UnidadMedidaId', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 80, editable: false },
+            { name: 'TipoIgv', hidden: true },
+            { name: 'Descripcion', width: 220, editable: false },
+            {
+               name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'ValorUnitarioLista', hidden: true },
+            { name: 'PrecioUnitarioLista', hidden: true },
+            { name: 'ValorUnitario', hidden: true },
+            {
+               name: "PrecioUnitario", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            {
+               name: "PrecioAutorizado", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal($(elem).attr('rowid'));
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'IncluyeDescuentoListaPrecio', hidden: true },
+            { name: 'SinSaldo', hidden: true },
+            { name: 'SolicitaAutorizacionDescuento', hidden: true },
+            { name: 'MontoBruto', hidden: true },
+            { name: 'MontoNeto', hidden: true },
+            { name: 'MontoIgv', width: 100, align: 'right', formatter: 'number' },
+            {
+               name: "MontoTotal", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'TipoAfectacionIgvId', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+
+            if ($('#TipoAutorizacion').val() !== '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO') {
+               $("#productoGrid").jqGrid('hideCol', 'PrecioAutorizado');
+            }
+         },
+         loadComplete: function () {
+
+            if ($('#TipoAutorizacion').val() !== '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO')
+               return;
+
+            var $this = $(this), rows = this.rows, l = rows.length, i, row;
+            for (i = 0; i < l; i++) {
+               row = rows[i];
+               if ($.inArray('jqgrow', row.className.split(' ')) >= 0) {
+
+                  var data = $("#productoGrid").appGrid('getRow', row.id);
+                  if (data.SolicitaAutorizacionDescuento === '@SiNoConstante.S')
+                     $this.jqGrid('editRow', row.id, false);
+               }
+            }
+         },
+         height: calculateGridHeight('productoContainer')
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'aprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case 'desaprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "CotizaAutoriza")'
+            });
+            break;
+      }
+   };
+   function aprobarDesaprobar(key) {
+
+      var cotizacionProductoList = [];
+      if ($('#TipoAutorizacion').val() === '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO') {
+
+         var list = $('#productoGrid').appGrid('getDataIDs');
+         for (i in list) {
+            var rowId = list[i];
+            var row = $('#productoGrid').appGrid('getRow', rowId);
+
+            if (row.SolicitaAutorizacionDescuento === '@SiNoConstante.N')
+               continue;
+
+            if (!$('#' + rowId + '_PrecioAutorizado').validateNumeric('@SR.GetString("VT_nuevo_precio_unitario_requerido")'))
+               return;
+
+            var cotizacionProducto = [
+               { name: "CotizacionProductoId", value: row.CotizacionProductoId, type: 'int' },
+               { name: "PrecioAutorizado", value: $('#' + rowId + '_PrecioAutorizado').val(), type: 'decimal' }
+            ];
+
+            cotizacionProductoList.push(cotizacionProducto);
+         }
+
+         $("#productoGrid").jqGrid('hideCol', 'PrecioAutorizado');
+      }
+
+      var urlAction = key === 'aprobar' ? '@Url.Action("Aprobar", "CotizaAutoriza")' : '@Url.Action("Desaprobar", "CotizaAutoriza")';
+
+      $(this).saveView({
+         viewModel: [
+            { name: "CotizacionAutorizacionDTO.CotizacionAutorizacionId", value: $('#CotizacionAutorizacionId').val(), type: 'int' },
+            { name: "CotizacionAutorizacionDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' },
+            { name: "CotizacionProductoDTOList", value: cotizacionProductoList, type: 'list' }
+         ],
+         buttonId: key,
+         urlAction: urlAction,
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $(this).getView({
+                  urlAction: '@Url.Action("Index", "CotizaAutoriza")'
+               });
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function calcularTotal(rowId) {
+
+      var row = $('#productoGrid').appGrid('getRow',rowId);
+
+      $(this).postAction({
+         viewModel: [
+            { name: "CalculadorVentaItemDTO.PrecioUnitario", value: $('#' + rowId + '_PrecioAutorizado').val(), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.Cantidad", value: $('#' + rowId + '_Cantidad').val(), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.TipoIgv", value: row.TipoIgv },
+            { name: "CalculadorVentaItemDTO.ImpuestoTasa", value: $('#Tasa').val(), type: 'decimal'}
+         ],
+         urlAction: '@Url.Action("CalcularMontos", "CotizaAutoriza")',
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#productoGrid').jqGrid('setCell', rowId, 'ValorUnitario', response.data.ValorUnitario);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoBruto', response.data.MontoBruto);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoNeto', response.data.MontoNeto);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoIgv', response.data.MontoImpuesto);
+               $('#' + rowId + '_MontoTotal').val(response.data.MontoTotal);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function codigoFormatter(cellvalue, options, rowObject) {
+
+      if (rowObject.IncluyeDescuentoListaPrecio === '@SiNoConstante.S') {
+         return '<div class="jqgrid-cell-warning">' + cellvalue + '</div>'
+      }
+      if (rowObject.UsarIncrementoFraccion === '@SiNoConstante.S') {
+         var fracPart = (rowObject.Cantidad % 1);
+
+         if(fracPart != 0)
+            return '<div class="jqgrid-cell-success">' + cellvalue + '</div>'
+      }
+      if (rowObject.SinSaldo === '@SiNoConstante.S') {
+         return '<div class="jqgrid-cell-item-sold-out">' + cellvalue + '</div>'
+      }
+
+      if(cellvalue == null)
+         return '';
+
+      return cellvalue;
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#CotizacionId").validateNumeric()) {
+         $("#menuBar").appMenu('disabledButton', { buttonList: 'soli_auto,gen_compro', disabled: true });
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

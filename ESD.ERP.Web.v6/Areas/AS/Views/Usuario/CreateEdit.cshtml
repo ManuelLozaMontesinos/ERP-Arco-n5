@@ -1,0 +1,737 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.UsuarioViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.UsuarioDTO.UsuarioLogon" col-position="col-lg-4" label="Usuario" col-label-position="col-lg-2"
+                               max-length="30" enable="@Model.IsNew" use-textcase="false"></esd-textbox>
+                  <esd-textbox for="@Model.UsuarioDTO.NombreCompleto" col-position="col-lg-4" label="Nombre Completo" col-label-position="col-lg-2"
+                               max-length="100" use-textcase="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.UsuarioDTO.Email" col-position="col-lg-4" label="Correo" col-label-position="col-lg-2"
+                               max-length="50" use-textcase="false"></esd-textbox>
+                  <esd-textbox for="@Model.UsuarioDTO.EmailAlterno" col-position="col-lg-4" label="Correo Alterno" col-label-position="col-lg-2"
+                               max-length="50" use-textcase="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Proveedor" button-style="List" value="@Model.UsuarioDTO?.ProveedorDTO?.RazonSocial" col-position="col-lg-7" label="Proveedor"
+                                     col-label-position="col-lg-2" onclick="proveedorOnClick"></esd-buttontextbox>
+                  <esd-textbox for="@Model.UsuarioDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               @if (Model.IsNew)
+               {
+                  <div class="form-group row">
+                     <esd-textbox for="@Model.Contrasena" col-position="col-lg-4" label="Contraseña" col-label-position="col-lg-2"
+                                  max-length="50" is-password="true"></esd-textbox>
+                  </div>
+                  <div class="form-group row">
+                     <esd-textbox for="@Model.ContrasenaConfirmada" col-position="col-lg-4" label="Confirmar Contraseña" col-label-position="col-lg-2"
+                                  max-length="50" is-password="true"></esd-textbox>
+                  </div>
+               }
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.UsuarioDTO.CambiarContrasenaProximo" col-position="offset-lg-2 col-lg-10"
+                                label="El usuario debe cambiar la contraseña en la proxima sesión"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.UsuarioDTO.NoPuedeCambiarContrasena" col-position="offset-lg-2 col-lg-10"
+                                label="El usuario no puede cambiar la contraseña"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.UsuarioDTO.NoExpira" col-position="offset-lg-2 col-lg-3" label="La cuenta nunca expira"
+                                onchange="noExpiraOnChange()"></esd-checkbox>
+                  <esd-datetimepicker for="@Model.UsuarioDTO.FechaExpiracion" col-position="col-lg-2" label="Expira el" col-label-position="col-lg-1"
+                                      enable="@(Model.UsuarioDTO.NoExpira != EstadoConstante.ACTIVO)"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.UsuarioDTO.Estado" col-position="offset-lg-2 col-lg-10" label="Cuenta Habilitada"></esd-checkbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.UsuarioDTO.UsuarioId"></esd-hidden>
+      <esd-hidden for="@Model.UsuarioDTO.ProveedorId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#directivaTab" role="tab" data-toggle="tab">Directivas</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#rolUsuarioTab" role="tab" data-toggle="tab">Roles</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#usuarioHorarioTab" role="tab" data-toggle="tab">Horarios</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="directivaTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-dropdownlist id="DirectivaReglaId" for="@Model.DirectivaReglaList" col-position="col-lg-4" label="Directiva" col-label-position="col-lg-2"
+                                       onchange="directivaReglaIdOnChange()"></esd-dropdownlist>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="directivaMenuBar" size="Small" menu-style="NewDelete" onclick="directivaMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="rolUsuarioTab" role="tabpanel">
+            <div>
+               <esd-menubar id="rolUsuarioMenuBar" size="Small" menu-style="NewDelete" onclick="rolUsuarioMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="rolUsuarioContainer">
+               <table id="rolUsuarioGrid"></table>
+               <div id="rolUsuarioPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="usuarioHorarioTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-checkbox for="@Model.UsuarioDTO.TieneHorario" col-position="offset-lg-1 col-lg-10"
+                                   label="Usar Horario de Acceso"></esd-checkbox>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="usuarioHorarioMenuBar" size="Small" for="@Model.MenuItemList" onclick="usuarioHorarioMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="usuarioHorarioContainer">
+               <table id="usuarioHorarioGrid"></table>
+               <div id="usuarioHorarioPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="proveedorListPopup" title="Cliente" onclick="proveedorListPopupOnClick" size="Large">
+   <div id="proveedorListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="rolListPopup" title="Rol" onclick="rolListPopupOnClick">
+   <div id="rolListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="sedeListPopup" title="Sede" onclick="sedeListPopupOnClick">
+   <div id="sedeListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarDirectivaRegla", "Usuario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "DirectivaUsuarioDTO.DirectivaReglaId", value: $('#DirectivaReglaId').val()||0, type: 'int' },
+                     { name: "DirectivaUsuarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','Codigo', 'Nombre'],
+         colModel: [
+            { name: 'DirectivaUsuarioId', hidden: true },
+            { name: 'Valor', hidden: true },
+            { name: 'Codigo', width: 120 },
+            { name: "Descripcion", width: 250 }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            editCustomGridMenuBar('directivaMenuBar', 'bandejaGrid');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('directivaMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+      $("#rolUsuarioGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarRoles", "Usuario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "RolUsuarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','', 'Nombre'],
+         colModel: [
+            { name: 'RolUsuarioId', hidden: true },
+            { name: 'RolId', hidden: true },
+            { name: "Nombre", width: 250 }
+         ],
+         pager: "#rolUsuarioPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            editCustomGridMenuBar('rolUsuarioMenuBar', 'rolUsuarioGrid');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('rolUsuarioMenuBar', 'rolUsuarioGrid');
+            $("#rolUsuarioGrid").appGrid('resizeGrid', 'rolUsuarioContainer');
+         },
+         height: calculateGridHeight('rolUsuarioContainer')
+      });
+      $("#usuarioHorarioGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarUsuarioHorarios", "Usuario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "UsuarioHorarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','','Dia','H. Inicio','H.Fin','',''],
+         colModel: [
+            { name: 'UsuarioHorarioId', hidden: true },
+            { name: 'UsuarioId', hidden: true },
+            { name: 'DiaId', hidden: true },
+            { name: 'Codigo', hidden: true },
+            { name: "Nombre", width: 200 },
+            {
+               name: 'HoraInicio', width: 100, editable: true, edittype: 'text', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 5,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask({ alias: "datetime", inputFormat: "HH:MM" });
+                  }
+               }
+            },
+            {
+               name: "HoraFin", width: 100, editable: true, edittype: 'text', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 5,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask({ alias: "datetime", inputFormat: "HH:MM" });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#usuarioHorarioPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#usuarioHorarioGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('usuarioHorarioMenuBar', 'usuarioHorarioGrid');
+               if ($("#UsuarioId").validateNumeric())
+                  $('#usuarioHorarioMenuBar').appMenu('disabledButton', { buttonList: 'selectLS,selectAll,selectNone', disabled: false });
+            }
+            else
+               $("#usuarioHorarioMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('usuarioHorarioMenuBar', 'usuarioHorarioGrid');
+            $("#usuarioHorarioGrid").appGrid('resizeGrid', 'usuarioHorarioContainer');
+
+            if ($("#UsuarioId").validateNumeric())
+               $('#usuarioHorarioMenuBar').appMenu('disabledButton', { buttonList: 'selectLS,selectAll,selectNone', disabled: false });
+         },
+         height: calculateGridHeight('usuarioHorarioContainer')
+      });
+
+      $('#proveedorListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Proveedor", new { Area = "MG" })',
+               viewModel: [
+                  { name: "ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo", value: '@TipoNaturalezaJuridicaConstante.NATURAL' }
+               ],
+               container: 'proveedorListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#sedeListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("SedeListPopup", "Empresa")',
+               container: 'sedeListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#rolListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Rol")',
+               container: 'rolListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#rolUsuarioTab':
+               $('#rolUsuarioGrid').appGrid('resizeGrid', 'rolUsuarioContainer');
+               $('#rolUsuarioGrid').jqGrid('setGridHeight', calculateGridHeight('rolUsuarioContainer'));
+               break;
+            case '#usuarioHorarioTab':
+               $('#usuarioHorarioGrid').appGrid('resizeGrid', 'usuarioHorarioContainer');
+               $('#usuarioHorarioGrid').jqGrid('setGridHeight', calculateGridHeight('usuarioHorarioContainer'));
+               break;
+         }
+      })
+   });
+   function proveedorOnClick() {
+      $('#proveedorListPopup').showDialog();
+   };
+   function proveedorListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      proveedorSelectedPopup('',row);
+   };
+   function proveedorSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_proveedor_seleccion_requerida")');
+         return false;
+      }
+
+      $('#ProveedorId').val(row.ProveedorId);
+      $('#Proveedor').val(row.RazonSocial);
+      $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+
+      $('#proveedorListPopup').hideDialog();
+   };
+   function noExpiraOnChange() {
+
+      if ($("#NoExpira").prop('checked')) {
+         $("#FechaExpiracion").prop('readonly', true);
+         $("#FechaExpiracion").val('');
+      }
+      else {
+         $('#FechaExpiracion').attr("readonly", false);
+      }
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Usuario")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#UsuarioLogon').validateString('@SR.GetString("AS_usuario_requerido")'))
+         return false;
+      if (!$('#NombreCompleto').validateString('@SR.GetString("AS_usuario_nombre_requerido")'))
+         return false;
+      if (!$('#Email').validateString('@SR.GetString("GEN_email_requerido")'))
+         return false;
+
+      if ($('#Contrasena').length > 0){
+         if (!$('#Contrasena').validateString('@SR.GetString("AS_contrasena_requerida")'))
+            return false;
+         if (!$('#ContrasenaConfirmada').validateString('@SR.GetString("AS_contrasena_confirmada_requerida")'))
+            return false;
+
+         if ($('#Contrasena').val() !== $('#ContrasenaConfirmada').val()) {
+            msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("AS_verificar_contrasena_invalida")');
+            return false;
+         }
+      }
+
+      if (!$('#NoExpira').prop('checked')) {
+         if (!$('#FechaExpiracion').validateString('@SR.GetString("AS_fecha_expira_requerida")'))
+            return false;
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "UsuarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' },
+            { name: "UsuarioDTO.UsuarioLogon", value: $('#UsuarioLogon').val(), textCase:'none' },
+            { name: "UsuarioDTO.NombreCompleto", value: $('#NombreCompleto').val(), textCase: 'none' },
+            { name: "UsuarioDTO.Email", value: $('#Email').val(), textCase: 'none' },
+            { name: "UsuarioDTO.EmailAlternativo", value: $('#EmailAlterno').val(), textCase: 'none' },
+            { name: "UsuarioDTO.Password", value: $('#Contrasena').val() || '', textCase: 'none' },
+            { name: "UsuarioDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "UsuarioDTO.CambiarContrasenaProximo", value: $('#CambiarContrasenaProximo').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "UsuarioDTO.NoPuedeCambiarContrasena", value: $('#NoPuedeCambiarContrasena').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "UsuarioDTO.NoExpira", value: $('#NoExpira').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "UsuarioDTO.FechaExpiracion", value: $('#FechaExpiracion').val(), type: 'date' },
+            { name: "UsuarioDTO.TieneHorario", value: $('#TieneHorario').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "UsuarioDTO.Estado", value: $('#Estado').prop('checked') ? '@EstadoConstante.ACTIVO' : '@EstadoConstante.INACTIVO' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Usuario")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#UsuarioId").val(response.data.Id);
+               $("#Codigo").prop('readonly', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function directivaReglaIdOnChange() {
+      $("#bandejaGrid").appGrid('reloadJSON');
+   };
+   function directivaMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      if (!$('#DirectivaReglaId').validateNumeric('@SR.GetString("AS_directiva_seleccion_requerida")'))
+         return;
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+
+            $('#sedeListPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_eliminar_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_eliminar_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarDirectivaUsuario", "Usuario")',
+                     viewModel: [
+                        { name: "DirectivaUsuarioDTO.DirectivaUsuarioId", value: row.DirectivaUsuarioId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function sedeListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      sedeSelectedPopup('',row);
+   };
+   function sedeSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("AS_rol_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#bandejaGrid").appGrid('getData');
+      var selectedData = _.where(data, { Valor: parseInt(row.EmpresaSedeId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AS_empresa_sede_seleccion_requerida")');
+         return false;
+      }
+
+      $('#sedeListPopup').hideDialog();
+
+      $(this).saveView({
+         urlAction: '@Url.Action("GrabarDirectivaUsuario", "Usuario")',
+         viewModel: [
+            { name: "DirectivaUsuarioDTO.DirectivaReglaId", value: $('#DirectivaReglaId').val(), type: 'int' },
+            { name: "DirectivaUsuarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' },
+            { name: "DirectivaUsuarioDTO.Valor", value: row.EmpresaSedeId, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#bandejaGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#directivaMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+   function rolUsuarioMenuBarOnClick(key) {
+
+      var row = $('#rolUsuarioGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+
+            $('#rolListPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_eliminar_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_eliminar_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarRol", "Usuario")',
+                     viewModel: [
+                        { name: "RolUsuarioDTO.RolUsuarioId", value: row.RolUsuarioId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#rolUsuarioGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function rolListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      rolSelectedPopup('',row);
+   };
+   function rolSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("AS_rol_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#rolUsuarioGrid").appGrid('getData');
+      var selectedData = _.where(data, { RolId: parseInt(row.RolId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AS_rol_ya_seleccionado")');
+         return false;
+      }
+
+      $('#rolListPopup').hideDialog();
+
+      $(this).saveView({
+         urlAction: '@Url.Action("GrabarRol", "Usuario")',
+         viewModel: [
+            { name: "RolUsuarioDTO.RolId", value: row.RolId, type: 'int' },
+            { name: "RolUsuarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#rolUsuarioGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#rolUsuarioMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+   function usuarioHorarioMenuBarOnClick(key) {
+
+      var row = $('#usuarioHorarioGrid').appGrid('getSelectedRow');
+
+      switch (key) {
+
+         case '@MenuItemKey.EDIT':
+            editarUsuarioHorarioInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#usuarioHorarioGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#usuarioHorarioGrid").appGrid("getSelectedRowId");
+
+            var horaInicio = $('#' + rowId+'_HoraInicio').val();
+            var horaFin = $('#' + rowId +'_HoraFin').val();
+
+            if ($.isNullOrEmpty(horaInicio) && !$.isNullOrEmpty(horaFin)) {
+               msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("AS_usuario_horario_hora_inicio_requerido")');
+               return;
+            }
+            if (!$.isNullOrEmpty(horaInicio) && $.isNullOrEmpty(horaFin)) {
+               msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("AS_usuario_horario_hora_fin_requerido")');
+               return;
+            }
+
+            $("#usuarioHorarioGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#usuarioHorarioGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarUsuarioHorario", "Usuario")',
+                  viewModel: [
+                     { name: "UsuarioHorarioDTO.UsuarioHorarioId", value: row.UsuarioHorarioId, type: 'int' },
+                     { name: "UsuarioHorarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' },
+                     { name: "UsuarioHorarioDTO.DiaId", value: row.DiaId, type: 'int' },
+                     { name: "UsuarioHorarioDTO.HoraInicio", value: row.HoraInicio },
+                     { name: "UsuarioHorarioDTO.HoraFin", value: row.HoraFin },
+                     { name: "UsuarioHorarioDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#usuarioHorarioGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#usuarioHorarioMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case 'selectLS':
+            $(this).saveView({
+               viewModel: [
+                  { name: "UsuarioHorarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' },
+               ],
+               urlAction: '@Url.Action("GrabarUsuarioHorarioLunesSabado", "Usuario")',
+               onSuccess: function (response) {
+
+                  if (response.success) {
+                     $("#usuarioHorarioGrid").appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+
+         case 'selectAll':
+            $(this).saveView({
+               viewModel: [
+                  { name: "UsuarioHorarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' },
+               ],
+               urlAction: '@Url.Action("GrabarUsuarioHorarioDiario", "Usuario")',
+               onSuccess: function (response) {
+
+                  if (response.success) {
+                     $("#usuarioHorarioGrid").appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+
+         case 'selectNone':
+            $(this).saveView({
+               viewModel: [
+                  { name: "UsuarioHorarioDTO.UsuarioId", value: $('#UsuarioId').val(), type: 'int' },
+               ],
+               urlAction: '@Url.Action("EliminarUsuarioHorario", "Usuario")',
+               onSuccess: function (response) {
+
+                  if (response.success) {
+                     $("#usuarioHorarioGrid").appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+   function editarUsuarioHorarioInGrid() {
+      var rowId = $("#usuarioHorarioGrid").appGrid("getSelectedRowId");
+      var row = $('#usuarioHorarioGrid').appGrid('getSelectedRow');
+
+      $('#usuarioHorarioGrid').jqGrid('editRow', rowId);
+      if ($.isNullOrEmpty(row.HoraInicio))
+         $('#' + rowId + '_HoraInicio').val('@Model.HoraInicio');
+      if ($.isNullOrEmpty(row.HoraFin))
+         $('#' + rowId + '_HoraFin').val('@Model.HoraFin');
+
+      $("#usuarioHorarioMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#UsuarioId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+
+</script>

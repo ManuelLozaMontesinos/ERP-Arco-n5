@@ -1,0 +1,56 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.ColorViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ColorDTO.Nombre" col-position="col-lg-6" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100" in-modal="true"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.ColorDTO.ColorId" in-modal="true"></esd-hidden>
+</div>
+<script type="text/javascript">
+   function mp_validarDatos() {
+
+      if (!$('#mp-Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      return true;
+   };
+   function mp_grabarDatos() {
+
+      if (!mp_validarDatos())
+         return false;
+
+      $('#mp-edit-panel').saveView({
+         viewModel: [
+            { name: "ColorDTO.ColorId", value: $('#mp-ColorId').val(), type: 'int' },
+            { name: "ColorDTO.Nombre", value: $('#mp-Nombre').val() }
+         ],
+         urlAction: '@Url.Action("GrabarPopup", "Color", new { Area = "MG" })',
+         onSuccess: function (response) {
+
+            if (response.success) {
+
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               var row = {
+                  ColorId: response.data.Id,
+                  Nombre: response.data.Nombre
+               };
+
+               colorCreatedPopup(row);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+</script>

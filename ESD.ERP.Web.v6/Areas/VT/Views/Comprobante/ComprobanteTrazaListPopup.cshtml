@@ -1,0 +1,39 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.VT.Models.ComprobanteViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+   </div>
+</div>
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $("#bandejaPopupGrid").jqGrid({
+      @GridHelper.DefaultProperties()
+      url: "@Url.Action("ListarComprobanteTraza", "Comprobante")",
+      postData: {
+         jsonModel: function () {
+            return JSON.stringify(modelToObject(
+               [
+                  { name: "ComprobanteTrazaDTO.ComprobanteId", value: @Model.ComprobanteDTO.Id, type:'int' }
+               ]
+            ));
+         }
+      },
+      colNames: ['', 'Accion', 'Fecha Hora', 'Descripcion', 'Usuario'],
+      colModel: [
+         { name: 'ComprobanteTrazaId', hidden: true },
+         { name: "TipoAccionAuditoria", width: 100 },
+         { name: "Fecha", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+         { name: "Descripcion", width: 400 },
+         { name: "Usuario", width: 100 }
+      ],
+      pager: "#bandejaPopupPager",
+      gridComplete: function () {
+         $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+      },
+      height: 250
+   });
+</script>

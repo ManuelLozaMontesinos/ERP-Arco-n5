@@ -1,0 +1,75 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.RelojViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.RelojDTO.Nombre" col-position="col-lg-8" label="Nombre"
+                               col-label-position="col-lg-2" max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.RelojDTO.RutaArchivo" col-position="col-lg-8" label="Ruta Archivo"
+                               col-label-position="col-lg-2" max-length="100"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.RelojDTO.RelojId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Reloj")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#RutaArchivo').validateString('@SR.GetString("GEN_ruta_archivo_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "RelojDTO.RelojId", value: $('#RelojId').val(), type: 'int' },
+            { name: "RelojDTO.Nombre", value: $('#Nombre').val() },
+            { name: "RelojDTO.RutaArchivo", value: $('#RutaArchivo').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Reloj")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#RelojId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

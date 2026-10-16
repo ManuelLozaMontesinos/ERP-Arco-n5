@@ -1,0 +1,176 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.TransfeIngresoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.MovimientoAlmacenDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      ></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-2" label="Almacen Origen" col-label-position="col-lg-2"
+                                    enable="@Model.IsNew"></esd-dropdownlist>
+                  <esd-dropdownlist id="AlmacenDestinoId" for="@Model.AlmacenDestinoList" col-position="col-lg-2" label="Almacen Destino" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.NumeroGuiaRemision" col-position="col-lg-2" label="#G/R" col-label-position="col-lg-2" max-length="20"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.MovimientoAlmacenDTO?.ProveedorDTO?.RazonSocial" col-position="col-lg-6"
+                               label="Cliente/Proveedor" col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox id="NumeroDocumentoIdentidad" value="@Model.MovimientoAlmacenDTO?.ProveedorDTO?.NumeroDocumentoIdentidad" col-position="col-lg-2"
+                               label="#Docu." col-label-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.MovimientoAlmacenDTO.Observacion" col-position="col-lg-6" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3"></esd-textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.MovimientoAlmacenId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.ProveedorId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.MesContableId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.AfectaSaldo"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarMovimientoAlmacenProducto", "TransfeIngreso")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','', '','Código','Producto','Detalle','','', '','U.M.','Cantidad','',''],
+         colModel: [
+            { name: 'MovimientoAlmacenProductoId', hidden: true },
+            { name: 'MovimientoAlmacenId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'Descripcion', width: 200, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'CantidadDocumento', hidden: true },
+            { name: 'PesoNetoDocumento', hidden: true },
+            { name: 'PesoBrutoDocumento', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 100, editable: false },
+            {
+               name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "TransfeIngreso")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#AlmacenId').validateNumeric('@SR.GetString("IV_almacen_seleccion_requerida")'))
+         return false;
+      if (!$('#AlmacenDestinoId').validateNumeric('@SR.GetString("IV_almacen_destino_seleccion_requerida")'))
+         return false;
+      if (!$('#NumeroGuiaRemision').validateString('@SR.GetString("IV_guia_remision_numero_requerido")'))
+         return false;
+      if (!$('#Proveedor').validateString('@SR.GetString("MG_proveedor_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "MovimientoAlmacenDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val(), type: 'int' },
+            { name: "MovimientoAlmacenDTO.AlmacenId", value: $('#AlmacenDestinoId').val(), type: 'int' },
+            { name: "MovimientoAlmacenDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "MovimientoAlmacenDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+            { name: "MovimientoAlmacenDTO.NumeroGuiaRemision", value: $('#NumeroGuiaRemision').val() },
+            { name: "MovimientoAlmacenDTO.Observacion", value: $('#Observacion').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "TransfeIngreso")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $(this).getView({
+                  urlAction: '@Url.Action("Index", "TransfeIngreso")'
+               });
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#MovimientoAlmacenId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

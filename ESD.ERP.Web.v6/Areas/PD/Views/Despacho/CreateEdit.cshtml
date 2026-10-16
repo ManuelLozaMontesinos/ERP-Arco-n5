@@ -1,0 +1,474 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.PD.Models.DespachoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ComprobanteDTO.TipoDocumentoComercialDTO.Abreviatura" col-position="col-lg-1" label="Doc. Com."
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.Serie" col-position="col-lg-1" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.Numero" col-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.ComprobanteDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-1"
+                                      enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Cotizacion" button-style="List" value="@Model.ComprobanteDTO?.CotizacionDTO?.Codigo" col-position="col-lg-2" label="Pedido"
+                                     col-label-position="col-lg-2" enable="false"></esd-buttontextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.ComprobanteDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="VendedorNombre" value="@Model.ComprobanteDTO.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Vendedor"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.ComprobanteDTO.Observacion" col-position="col-lg-4" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3" enable="false"></esd-textarea>
+                  <esd-textarea for="@Model.ComprobanteDTO.ObservacionDespacho" col-position="col-lg-5" label="Obs. Despacho" col-label-position="col-lg-1"
+                                max-length="400" rows="3" enable="false"></esd-textarea>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoComprobanteNombre" value="@Model.ComprobanteDTO.EstadoComprobanteDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ComprobanteDTO.ComprobanteId"></esd-hidden>
+      <esd-hidden id="EstadoComprobante" value="@Model.ComprobanteDTO.EstadoComprobanteDTO.Codigo"></esd-hidden>
+      <esd-hidden id="EstadoDespacho" value="@Model.ComprobanteDTO?.EstadoDespachoDTO?.Codigo"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div class="form-inline">
+               <div class="col-6">
+                  <esd-menubar id="productoMenuBar" size="Small" for="@Model.MenuItemList2" onclick="productoMenuBarOnClick"></esd-menubar>
+               </div>
+            </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="cerrarPopup" title="Cerrar Despacho" onclick="cerrarPopupOnClick" size="Large">
+   <div id="cerrarPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="entregaMultiplePopup" title="Despacho Seleccionado" onclick="entregaMultiplePopupOnClick" size="Large">
+   <div id="entregaMultiplePopupContent"></div>
+</esd-dialog>
+<esd-dialog id="entregaEditPopup" title="Entregas" onclick="entregaEditPopupOnClick" size="Large" button-style="Close" enable-dismissclick="true">
+   <div id="entregaEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="personalListPopup" title="Atendido Por" onclick="personalListPopupOnClick" size="Large">
+   <div id="personalListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="personalListPopup2" title="Atendido Por" onclick="personalListPopup2OnClick" size="Large">
+   <div id="personalListPopup2Content"></div>
+</esd-dialog>
+<esd-dialog id="personalListPopup3" title="Atendido Por" onclick="personalListPopup3OnClick" size="Large">
+   <div id="personalListPopup3Content"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      var enableMultiselect = true;
+
+      if ($('#EstadoDespacho').val() === '@EstadoDespachoConstante.ATENDIDO') {
+         $("#menuBar").appMenu('disabledButton', { buttonId: 'cerrar', disabled: true });
+         enableMultiselect = false;
+      }
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarComprobanteProducto", "Despacho")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteProductoDTO.ComprobanteId", value: $('#ComprobanteId').val() || '0', type: 'int' },
+                     { name: "ComprobanteProductoDTO.Estado", value: '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Producto', '', '', 'U.M.', 'Detalle', '', '', '', 'Cantidad', 'Cant. Ent.',
+            '', 'Atendido Por','Fecha Despacho', 'Entregado a', 'Observación','', ''],
+         colModel: [
+            { name: 'ComprobanteProductoId', hidden: true },
+            { name: 'Codigo', width: 90},
+            { name: 'ProductoNombre', width: 350 },
+            { name: 'EsCombo', hidden: true },
+            { name: 'TipoProducto', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 50 },
+            { name: 'Descripcion', width: 150 },
+            { name: 'Cantidad', hidden: true },
+            { name: 'CantidadPresentacion', hidden: true },
+            { name: 'CantidadEquivalente', hidden: true },
+            {
+               name: "CantidadVenta", width: 90, align: 'right', formatter: 'number', editable: false, sortable: false
+            },
+            {
+               name: "CantidadEntregada", width: 90, align: 'right', formatter: 'number', editable: false, sortable: false
+            },
+            { name: 'PersonalId', hidden: true },
+            { name: "PersonalDespacho", width: 200 },
+            { name: "FechaDespacho", width: 100, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: "EntregaDespacho", width: 150, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm app-text-transform', maxlength: 100 } },
+            { name: "ObservacionDespacho", width: 220, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm app-text-transform', maxlength: 200 } },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            if ($('#EstadoDespacho').val() === '@EstadoDespachoConstante.ATENDIDO') {
+               $('#productoMenuBar').appMenu('disabled');
+               return;
+            }
+
+            $("#productoMenuBar").appMenu('disabledButton', { buttonId: 'seleccion', disabled: false });
+            $("#productoMenuBar").appMenu('disabledButton', { buttonId: 'parcial', disabled: false });
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+
+            if ($('#EstadoDespacho').val() === '@EstadoDespachoConstante.ATENDIDO') {
+               $('#productoMenuBar').appMenu('disabled');
+               return;
+            }
+
+            $("#productoMenuBar").appMenu('disabledButton', { buttonId: 'seleccion', disabled: false });
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         multiselect: enableMultiselect,
+         height: calculateGridHeight('productoContainer')
+      });
+
+      $('#personalListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal", new { Area = "RH" })',
+               container: 'personalListPopupContent',
+               viewModel: [
+                  { name: "PersonalDTO.NullFechaCese", value: '@EstadoConstante.ACTIVO' },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#personalListPopup2').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal", new { Area = "RH" })',
+               container: 'personalListPopup2Content',
+               viewModel: [
+                  { name: "PersonalDTO.NullFechaCese", value: '@EstadoConstante.ACTIVO' },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#personalListPopup3').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal", new { Area = "RH" })',
+               container: 'personalListPopup3Content',
+               viewModel: [
+                  { name: "PersonalDTO.NullFechaCese", value: '@EstadoConstante.ACTIVO' },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#cerrarPopup').setDialog({
+         onShow: function (p) {
+            $('#' + p.dialogId).getView({
+               urlAction: '@Url.Action("CerrarPopup", "Despacho")',
+               container: 'cerrarPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         }
+      });
+      $('#entregaMultiplePopup').setDialog({
+         onShow: function (p) {
+            $('#' + p.dialogId).getView({
+               urlAction: '@Url.Action("CerrarPopup", "Despacho")',
+               container: 'entregaMultiplePopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         }
+      });
+      $('#entregaEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#productoGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+               urlAction: '@Url.Action("CantidadParcialEditPopup", "Despacho")',
+               container: 'entregaEditPopupContent',
+               viewModel: [
+                  { name: "ComprobanteProductoDTO.ComprobanteProductoId", value: row.ComprobanteProductoId, type: 'int' },
+                  { name: "ComprobanteProductoDTO.ProductoDTO.Codigo", value: row.Codigo },
+                  { name: "ComprobanteProductoDTO.ProductoDTO.Descripcion", value: row.ProductoNombre },
+                  { name: "ComprobanteProductoDTO.Cantidad", value: row.CantidadVenta, type: 'decimal' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#parcialPopupGrid").appGrid('resizeGrid', 'parcialPopupContainer');
+         }
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#productoTab':
+               $('#productoGrid').appGrid('resizeGrid', 'productoContainer');
+               $('#productoGrid').jqGrid('setGridHeight', calculateGridHeight('productoContainer'));
+               break;
+         }
+      })
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'cerrar':
+            $('#cerrarPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Despacho")'
+            });
+            break;
+      }
+   };
+   function personalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('personalListPopup', row);
+   };
+   function personalListPopup2OnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('personalListPopup2', row);
+   };
+   function personalListPopup3OnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('personalListPopup3', row);
+   };
+   function personalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_personal_seleccion_requerida")');
+         return false;
+      }
+
+      var dialogName = '';
+      var rowId;
+
+      switch (sourceId) {
+         case 'personalListPopup':
+            $('#mp-PersonalId').val(row.PersonalId);
+            $('#mp-Personal').val(row.RazonSocial);
+            dialogName = 'personalListPopup';
+            break;
+
+         case 'personalListPopup2':
+            rowId = $('#productoGrid').appGrid('getSelectedRowId');
+            $('#productoGrid').jqGrid('setCell', rowId, 'PersonalId', row.PersonalId);
+            $('#productoGrid').jqGrid('setCell', rowId, 'PersonalDespacho', row.RazonSocial);
+            dialogName = 'personalListPopup2';
+            break;
+
+         case 'personalListPopup3':
+            rowId = $('#parcialPopupGrid').appGrid('getSelectedRowId');
+            $('#parcialPopupGrid').jqGrid('setCell', rowId, 'PersonalId', row.PersonalId);
+            $('#parcialPopupGrid').jqGrid('setCell', rowId, 'PersonalNombre', row.RazonSocial);
+            dialogName = 'personalListPopup3';
+            break;
+      }
+
+      $('#' + dialogName).hideDialog();
+   };
+   function cerrarPopupOnClick() {
+      if (!mp_validarDatos())
+         return;
+
+      $('#cerrarPopup').saveView({
+         viewModel: [
+            { name: "ComprobanteDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+            { name: "ComprobanteDTO.PersonalId", value: $('#mp-PersonalId').val(), type: 'int' },
+            { name: "ComprobanteDTO.ObservacionDespacho", value: $('#mp-ObservacionDespacho').val() },
+            { name: "ComprobanteDTO.EntregaDespacho", value: $('#mp-EntregaDespacho').val() }
+         ],
+         urlAction: '@Url.Action("Cerrar", "Despacho")',
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#EstadoDespacho').val(response.data.EstadoDespacho);
+               $('#ObservacionDespacho').val(response.data.ObservacionDespacho);
+
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'cerrar', disabled: true });
+               $('#cerrarPopup').hideDialog();
+               $("#productoGrid").appGrid('reloadJSON');
+               $('#productoMenuBar').appMenu('disabled');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function entregaMultiplePopupOnClick() {
+      if (!mp_validarDatos())
+         return;
+
+      var list = $('#productoGrid').appGrid('getSelectedRowIdList');
+      var selectedList = [];
+      for (i in list) {
+
+         var row = $('#productoGrid').appGrid('getRow', list[i]);
+         if (parseFloatEx(row.CantidadEntregada) === 0)
+            selectedList.push(row.ComprobanteProductoId);
+      }
+
+      if (selectedList.length === 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("PD_comprobante_producto_entrega_agregada")');
+         $('#entregaMultiplePopup').hideDialog();
+         return;
+      }
+
+      $('#entregaMultiplePopup').saveView({
+         viewModel: [
+            { name: "ComprobanteProductoDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+            { name: "ComprobanteProductoDTO.ComprobanteProductoIdList", value: selectedList, type: 'listInt' },
+            { name: "ComprobanteProductoDTO.PersonalId", value: $('#mp-PersonalId').val(), type: 'int' },
+            { name: "ComprobanteProductoDTO.EntregaDespacho", value: $('#mp-EntregaDespacho').val() },
+            { name: "ComprobanteProductoDTO.ObservacionDespacho", value: $('#mp-ObservacionDespacho').val() }
+
+         ],
+         urlAction: '@Url.Action("AgregarDespacho", "Despacho")',
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $(this).getAction({
+                  urlAction: '@Url.Action("ObtenerComprobanteEstadoDespacho", "Despacho")',
+                  id: $('#ComprobanteId').val(),
+                  onSuccess: function (response) {
+                     if (response.success) {
+
+                        $('#EstadoDespacho').val(response.data.EstadoDespacho);
+                        $('#ObservacionDespacho').val(response.data.ObservacionDespacho);
+
+                        if ($('#EstadoDespacho').val() === '@EstadoDespachoConstante.ATENDIDO') {
+                           $("#menuBar").appMenu('disabledButton', { buttonId: 'cerrar', disabled: true });
+                           $('#productoMenuBar').appMenu('disabled');
+                        }
+                        $("#productoGrid").appGrid('reloadJSON');
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                     }
+                  }
+               });
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+      $('#entregaMultiplePopup').hideDialog();
+   };
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['seleccion'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case 'seleccion':
+            var list = $('#productoGrid').appGrid('getSelectedRowIdList');
+            if (list.length === 0) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_comprobante_producto_entrega_multiple_seleccion_requerida1")');
+               return false;
+            }
+            $('#entregaMultiplePopup').showDialog();
+            break;
+
+         case 'parcial':
+            $('#entregaEditPopup').showDialog();
+            break;
+
+      }
+      return true;
+   };
+   function entregaEditPopupOnClick() {
+
+      if (!$.isNullOrEmpty($('#mp-ReloadGrid').val())) {
+         $('#productoGrid').appGrid('reloadJSON');
+      }
+
+      $('#personalListPopup2').hideDialog();
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#ComprobanteId").validateNumeric()) {
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

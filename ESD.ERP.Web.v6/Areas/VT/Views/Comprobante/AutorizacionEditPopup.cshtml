@@ -1,0 +1,174 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@model ESD.ERP.Web.Areas.VT.Models.ComprobanteViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div id="bandejaPopupContainer">
+         <table id="bandejaPopupGrid"></table>
+      </div>
+      <div class="form-group row">
+         <br />
+      </div>
+      <div id="productoPopupContainer">
+         <table id="productoPopupGrid"></table>
+         <div id="productoPopupPager"></div>
+      </div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarComprobanteAutorizacion", "Comprobante")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteAutorizacionDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+                     { name: "AutorizacionPendiente", value: $('#AutorizacionPendiente').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','Autorizacion a Solicitar','','Usuario', 'Fecha','Estado','',''],
+         colModel: [
+            { name: 'ComprobanteAutorizacionId', hidden: true },
+            { name: 'TipoAutorizacionId', hidden: true },
+            { name: 'TipoAutorizacion', hidden: true },
+            { name: 'TipoAutorizacionNombre', width: 200 },
+            { name: 'UsuarioId', hidden: true },
+            { name: 'UsuarioNombre', width: 150 },
+            { name: 'FechaAutorizacion', width: 100, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: 'EstadoAprobacionNombre', width: 200 },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         multiselect: true,
+         onSelectRow: function (rowid, status) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var row = $("#bandejaPopupGrid").appGrid('getRow', rowid);
+            if (status) {
+               mp_habilitarSeleccionItems(row);
+               $('#bandejaPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Modified).ToString())');
+            }
+            else {
+               mp_deshabilitarSeleccionItems(row);
+               $('#bandejaPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Unchanged).ToString())');
+            }
+         },
+         onSelectAll: function (aRowids, status) {
+            $.each(aRowids, function (index, rowid) {
+
+               var row = $("#bandejaPopupGrid").appGrid('getRow', rowid);
+               if (status) {
+                  mp_habilitarSeleccionItems(row);
+                  $('#bandejaPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Modified).ToString())');
+               }
+               else {
+                  mp_deshabilitarSeleccionItems(row);
+                  $('#bandejaPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Unchanged).ToString())');
+               }
+            });
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         height: 100
+      });
+
+      $("#productoPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarProductoAutorizacion", "Comprobante")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteProductoDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Producto','','Cantidad','P.U.','Total',''],
+         colModel: [
+            { name: 'ComprobanteProductoId', hidden: true },
+            { name: 'Codigo', width: 80, formatter: codigoFormatter },
+            { name: 'ProductoNombre', width: 300, editable: false },
+            { name: 'SolicitaAutorizacionDescuento', hidden: true },
+            { name: 'Cantidad', width: 90, align: 'right', formatter: 'number' },
+            { name: 'PrecioUnitario', width: 90, align: 'right', formatter: 'number' },
+            { name: 'MontoTotal', width: 90, align: 'right', formatter: 'number' },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPopupPager",
+         multiselect: true,
+         beforeSelectRow: function (rowid, e) {
+            var $myGrid = $(this),
+               i = $.jgrid.getCellIndex($(e.target).closest('td')[0]),
+               cm = $myGrid.jqGrid('getGridParam', 'colModel');
+            return (cm[i].name === 'cb');
+         },
+         onSelectRow: function (rowid, status) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var data = $('#bandejaPopupGrid').appGrid('getData');
+            var selectList = _.where(data, { 'TipoAutorizacion': '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO' });
+
+            if (status) {
+               $('#productoPopupGrid').jqGrid('setCell', rowid, 'SolicitaAutorizacionDescuento', '@SiNoConstante.S');
+               $('#productoPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Modified).ToString())');
+            }
+            else {
+               $('#productoPopupGrid').jqGrid('setCell', rowid, 'SolicitaAutorizacionDescuento', '@SiNoConstante.N');
+
+               if (parseIntEx(selectList[0].ComprobanteAutorizacionId) === 0)
+                  $('#productoPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Unchanged).ToString())');
+               else
+                  $('#productoPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Modified).ToString())');
+            }
+         },
+         onSelectAll: function (aRowids, status) {
+            $.each(aRowids, function (index, rowid) {
+
+               var data = $('#bandejaPopupGrid').appGrid('getData');
+               var selectList = _.where(data, { 'TipoAutorizacion': '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO' });
+
+               if (status) {
+                  $('#productoPopupGrid').jqGrid('setCell', rowid, 'SolicitaAutorizacionDescuento', '@SiNoConstante.S');
+                  $('#productoPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Modified).ToString())');
+               }
+               else {
+                  $('#productoPopupGrid').jqGrid('setCell', rowid, 'SolicitaAutorizacionDescuento', '@SiNoConstante.N');
+
+                  if (parseIntEx(selectList[0].ComprobanteAutorizacionId) === 0)
+                     $('#productoPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Unchanged).ToString())');
+                  else
+                     $('#productoPopupGrid').jqGrid('setCell', rowid, '@AppConstante.DTO_STATE', '@(((int) DTOState.Modified).ToString())');
+               }
+            });
+         },
+         gridComplete: function () {
+            $("#productoPopupGrid").jqGrid('hideCol', 'cb');
+            $("#productoPopupGrid").appGrid('resizeGrid', 'productoPopupContainer');
+         },
+         height: 130
+      });
+   });
+   function mp_habilitarSeleccionItems(row) {
+      if(row.TipoAutorizacion !== '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO')
+         return;
+
+      $("#productoPopupGrid").jqGrid('showCol', 'cb');
+   };
+   function mp_deshabilitarSeleccionItems(row) {
+      if(row.TipoAutorizacion !== '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO')
+         return;
+
+      $("#productoPopupGrid").jqGrid('hideCol', 'cb');
+   };
+</script>

@@ -1,0 +1,179 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.IV.Models.GuiaRemiAutoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-4" label="Almacen" col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-datetimepicker for="@Model.GuiaRemisionDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2" enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.GuiaRemisionDTO.Serie" col-position="col-lg-1" label="Serie" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-masktextbox for="@Model.GuiaRemisionDTO.Numero" col-position="col-lg-1" mask="[99999999]" place-holder="" enable="false"></esd-masktextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MotivoTrasladoId" for="@Model.MotivoTrasladoList" col-position="col-lg-4" label="Motivo Traslado" col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-datetimepicker for="@Model.GuiaRemisionDTO.FechaInicioTraslado" col-position="col-lg-2" label="Fecha Partida" col-label-position="col-lg-2" enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Movimiento" value="@Model.GuiaRemisionDTO.MovimientoAlmacenDTO.Codigo" col-position="col-lg-2"
+                                     label="Movimiento" col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.GuiaRemisionDTO.MovimientoAlmacenDTO.ProveedorDTO.RazonSocial" col-position="col-lg-5" label="Cliente" col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TransportistaId" for="@Model.TransportistaList" col-position="col-lg-4" label="Transportista" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+                  <esd-dropdownlist id="TransportistaConductorId" for="@Model.TransportistaConductorList" col-position="col-lg-4" label="Conductor" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TransportistaUnidadId" for="@Model.TransportistaUnidadList" col-position="col-lg-4" label="Unidad" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.GuiaRemisionDTO.CostoFlete" col-position="col-lg-2" label="Costo Flete" col-label-position="col-lg-2" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.GuiaRemisionDTO.PuntoPartida" col-position="col-lg-4" label="Punto de Partida" col-label-position="col-lg-2"
+                               max-length="100" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.GuiaRemisionDTO.PuntoLlegada" col-position="col-lg-4" label="Punto de Llegada" col-label-position="col-lg-2"
+                               max-length="100" enable="false"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.GuiaRemisionDTO.GuiaRemisionId"></esd-hidden>
+      <esd-hidden for="@Model.GuiaRemisionDTO.EsModificacion"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarGuiaRemisionProducto", "GuiaRemi")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "GuiaRemisionProductoDTO.GuiaRemisionId", value: $('#GuiaRemisionId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','', '','Código','Producto','Detalle','U.M.','Cantidad','P. Neto','P. Bruto','',''],
+         colModel: [
+            { name: 'GuiaRemisionProductoId', hidden: true },
+            { name: 'GuiaRemisionId', hidden: true },
+            { name: 'MovimientoAlmacenProductoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'Descripcion', width: 200, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'UnidadMedidaNombre', width: 100, editable: false },
+            { name: "Cantidad", width: 100, align: 'right', formatter: 'number' },
+            {
+               name: "PesoNeto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "PesoBruto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         gridComplete: function () {
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'aprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case 'desaprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "GuiaRemiAuto")'
+            });
+            break;
+      }
+   };
+   function aprobarDesaprobar(key) {
+
+      var urlAction = key === 'aprobar' ? '@Url.Action("Aprobar", "GuiaRemiAuto")' : '@Url.Action("Desaprobar", "GuiaRemiAuto")';
+
+      $(this).saveView({
+         viewModel: [
+            { name: "GuiaRemisionDTO.GuiaRemisionId", value: $('#GuiaRemisionId').val(), type: 'int' }
+         ],
+         buttonId: key,
+         urlAction: urlAction,
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $(this).getView({
+                  urlAction: '@Url.Action("Index", "GuiaRemiAuto")'
+               });
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+</script>

@@ -1,0 +1,182 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.DocuComSerieViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="EmpresaSedeId" for="@Model.EmpresaSedeList" col-position="col-lg-4" label="Sede" col-label-position="col-lg-2"
+                                    enable="@Model.IsNew" onchange="empresaSedeIdOnChange();"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-4" label="Tipo de Documento"
+                                    col-label-position="col-lg-2" enable="@Model.IsNew" onchange="tipoDocumentoComercialIdOnChange();"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.DocumentoComercialSerieDTO.Serie" col-position="col-lg-2" label="Serie" col-label-position="col-lg-2" max-length="4"
+                               enable="@Model.IsNew"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.DocumentoComercialSerieDTO.Correlativo" col-position="col-lg-2" label="Correlativo" col-label-position="col-lg-2"
+                                      enable="false" numeric-type="Integer"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.DocumentoComercialSerieDTO.EsContingencia" col-position="offset-lg-2 col-lg-3"
+                                label="Es Contingencia"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.DocumentoComercialSerieDTO.EnvioEnLinea" col-position="offset-lg-2 col-lg-3"
+                                label="Envío en Linea"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.DocumentoComercialSerieDTO.Formato" col-position="col-lg-2" label="Formato" col-label-position="col-lg-2" max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.DocumentoComercialSerieDTO.MaximoItemImpresion" col-position="col-lg-2" label="Max. Items Impresión" col-label-position="col-lg-2"
+                                      enable="false" numeric-type="Integer"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.DocumentoComercialSerieDTO.ArchivoFormato" col-position="col-lg-3" label="Archivo Formato" col-label-position="col-lg-2" max-length="30"
+                               use-textcase="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialRelacionadoId" for="@Model.TipoDocumentoComercialRelacionadoList" col-position="col-lg-4" label="Tipo Doc. Relacionado"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-4" label="Almacén" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.DocumentoComercialSerieDTO.DocumentoComercialSerieId"></esd-hidden>
+      <esd-hidden for="@Model.DocumentoComercialSerieDTO.TipoDocumentoComercialDTO.EsElectronico"></esd-hidden>
+      <esd-hidden for="@Model.DocumentoComercialSerieDTO.TipoDocumentoComercialDTO.EsComprobantePago"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   function empresaSedeIdOnChange() {
+
+      var empresaSedeId = $("#EmpresaSedeId").val();
+      if ($.isNullOrEmpty(empresaSedeId)) {
+         $('#AlmacenId').find('option').remove().end();
+         return;
+      }
+
+      $(this).postAction({
+         urlAction: '@Url.Action("ListarAlmacen", "DocuComSerie")',
+         viewModel: [
+            { name: "DocumentoComercialSerieDTO.EmpresaSedeId", value: empresaSedeId, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#AlmacenId').find('option').remove().end();
+               $("#AlmacenId").addItems(response.data.list);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function tipoDocumentoComercialIdOnChange() {
+      var tipoDocumentoComercialId = $("#TipoDocumentoComercialId").val();
+      if ($.isNullOrEmpty(tipoDocumentoComercialId)) {
+         $('#EsElectronico').val('');
+         $('#EsComprobantePago').val('');
+         activarEsLectronico();
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoDocumentoComercial", "DocuComSerie")',
+         id: tipoDocumentoComercialId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#EsElectronico').val(response.data.EsElectronico);
+               $('#EsComprobantePago').val(response.data.EsComprobantePago);
+               activarEsLectronico();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function activarEsLectronico() {
+      if ($('#EsElectronico').val() === '@SiNoConstante.S')
+         $('#Correlativo').prop('readonly', true);
+      else
+         $('#Correlativo').prop('readonly', false);
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "DocuComSerie")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#EmpresaSedeId').validateNumeric('@SR.GetString("AS_empresa_sede_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoDocumentoComercialId').validateNumeric('@SR.GetString("MG_tipo_documento_comercial_seleccion_requerida")'))
+         return false;
+      if (!$('#Serie').validateString('@SR.GetString("GEN_serie_requerida")'))
+         return false;
+      if (!$('#Formato').validateString('@SR.GetString("VT_documento_comercial_formato_requerido")'))
+         return false;
+
+      if ($('#EsComprobantePago').val() === '@SiNoConstante.S') {
+         if (!$('#AlmacenId').validateNumeric('@SR.GetString("IV_almacen_seleccion_requerida")'))
+            return false;
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "DocumentoComercialSerieDTO.DocumentoComercialSerieId", value: $('#DocumentoComercialSerieId').val(), type: 'int' },
+            { name: "DocumentoComercialSerieDTO.EmpresaSedeId", value: $('#EmpresaSedeId').val(), type: 'int' },
+            { name: "DocumentoComercialSerieDTO.TipoDocumentoComercialId", value: $('#TipoDocumentoComercialId').val(), type: 'int' },
+            { name: "DocumentoComercialSerieDTO.Serie", value: $('#Serie').val() },
+            { name: "DocumentoComercialSerieDTO.Correlativo", value: $('#Correlativo').val(), type: 'int' },
+            { name: "DocumentoComercialSerieDTO.EsContingencia", value: $('#EsContingencia').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "DocumentoComercialSerieDTO.EnvioEnLinea", value: $('#EnvioEnLinea').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "DocumentoComercialSerieDTO.Formato", value: $('#Formato').val() },
+            { name: "DocumentoComercialSerieDTO.MaximoItemImpresion", value: $('#MaximoItemImpresion').val(), type: 'int' },
+            { name: "DocumentoComercialSerieDTO.ArchivoFormato", value: $('#ArchivoFormato').val(), textCase: 'none' },
+            { name: "DocumentoComercialSerieDTO.TipoDocumentoComercialRelacionadoId", value: $('#TipoDocumentoComercialRelacionadoId').val(), type: 'int' },
+            { name: "DocumentoComercialSerieDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "DocuComSerie")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#DocumentoComercialSerieId").val(response.data.Id);
+               $('#EmpresaSedeId').prop('disabled', true);
+               $('#TipoDocumentoComercialId').prop('disabled', true);
+               $('#Serie').prop('readonly', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

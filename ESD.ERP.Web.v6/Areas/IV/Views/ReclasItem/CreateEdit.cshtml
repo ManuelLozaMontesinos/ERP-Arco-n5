@@ -1,0 +1,451 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.ReclasItemViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.MovimientoReclasificacionDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.MovimientoReclasificacionDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-1"
+                                      enable="@Model.IsNew"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-5" label="Almacen" col-label-position="col-lg-2" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Movimiento" value="@Model.MovimientoReclasificacionDTO.MovimientoAlmacenDTO.Codigo" col-position="col-lg-2"
+                                     label="Movimiento" col-label-position="col-lg-2" onclick="movimientoOnClick" enable="@Model.IsNew"></esd-buttontextbox>
+                  <esd-textbox for="@Model.MovimientoReclasificacionDTO.MovimientoAlmacenDTO.ProveedorDTO.RazonSocial" col-position="col-lg-5" label="Cliente" col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.MovimientoReclasificacionDTO.Observacion" col-position="col-lg-8" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3"></esd-textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.MovimientoReclasificacionDTO.MovimientoReclasificacionId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoReclasificacionDTO.MesContableId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoReclasificacionDTO.MovimientoAlmacenId"></esd-hidden>
+      <esd-hidden id="EstadoMovimientoReclasificacion" value="@Model.MovimientoReclasificacionDTO.EstadoMovimientoReclasificacionDTO.Codigo"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="productoMenuBar" size="Small" menu-style="EditAndSaveCancel" onclick="productoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="movimientoListPopup" title="Movimientos de Almacen" onclick="movimientoListPopupOnClick" size="Large">
+   <div id="movimientoListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="saldoListPopup" title="Saldos" onclick="saldoListPopupOnClick" size="Large">
+   <div id="saldoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      if ($('#EstadoMovimientoReclasificacion').val() === '@EstadoMovimientoReclasificacionConstante.APROBADO' ||
+          $('#EstadoMovimientoReclasificacion').val() === '@EstadoMovimientoReclasificacionConstante.PENDIENTE') {
+          $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+          $("#menuBar").appMenu('disabledButton', { buttonId: 'Solicitar', disabled: true });
+      }
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarMovimientoAlmacenProducto", "ReclasItem")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Producto', 'U.M.', 'Cantidad','', 'Cod.Recla.', 'Producto Recla.','', 'Cant. Rec.', '',''],
+         colModel: [
+            { name: 'MovimientoAlmacenProductoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'ProductoNombre', width: 320, editable: false },
+            { name: 'UnidadMedidaNombre', width: 100, editable: false },
+            { name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: false, sortable: false},
+            { name: 'ProductoReclasificacionId', hidden: true },
+            { name: 'ProductoReclasificacion', width: 100, editable: false },
+            { name: 'ProductoReclasificacionNombre', width: 320, editable: false },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Producto" id="' + options.rowId + '_productoButton" disabled onclick="mostrarProducto('
+                     + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            {
+               name: "CantidadReclasificacion", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            if ($('#EstadoMovimientoReclasificacion').val() === '@EstadoMovimientoReclasificacionConstante.APROBADO' ||
+                $('#EstadoMovimientoReclasificacion').val() === '@EstadoMovimientoReclasificacionConstante.PENDIENTE') {
+                $('#productoMenuBar').appMenu('disabled');
+                $("#menuBar").appMenu('disabledButton', { buttonId: 'Solicitar', disabled: true });
+               return;
+            }
+
+            var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            }
+            else
+               $("#productoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+
+            if ($('#EstadoMovimientoReclasificacion').val() === '@EstadoMovimientoReclasificacionConstante.APROBADO' ||
+                $('#EstadoMovimientoReclasificacion').val() === '@EstadoMovimientoReclasificacionConstante.PENDIENTE') {
+                $('#productoMenuBar').appMenu('disabled');
+                $("#menuBar").appMenu('disabledButton', { buttonId: 'Solicitar', disabled: true });
+            }
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+
+      $('#movimientoListPopup').setDialog({
+         onShow: function (p) {
+
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "MovAlmacen")',
+               container: 'movimientoListPopupContent',
+               viewModel: [
+                  { name: "MovimientoAlmacenDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+                  { name: "MovimientoAlmacenDTO.TipoMovimientoAlmacenDTO.Codigo", value: '@TipoMovimientoAlmacenConstante.SALIDA' },
+                  { name: "MovimientoAlmacenDTO.NotTransaccionAlmacenList", value: ['@TransaccionAlmacenConstante.RECLASIFICACION_DE_ITEMS_INGRESO','@TransaccionAlmacenConstante.RECLASIFICACION_DE_ITEMS_SALIDA'], type: 'listString' }
+               ],
+               selModel: [
+                  { name: "AlmacenId",  value: $('#AlmacenId').val() , disabled: true }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#saldoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "MovAlmacenSaldo")',
+               viewModel: [
+                  { name: "MovimientoAlmacenSaldoDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+                  { name: "MovimientoAlmacenSaldoDTO.MesContableId", value: $('#MesContableId').val(), type: 'int' }
+               ],
+               container: 'saldoListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function movimientoOnClick() {
+      if (!$('#AlmacenId').validateNumeric('@SR.GetString("IV_almacen_seleccion_requerida")'))
+         return false;
+
+      $('#movimientoListPopup').showDialog();
+   };
+   function movimientoListPopupOnClick() {
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      movimientoAlmacenSelectedPopup('', row);
+   };
+   function movimientoAlmacenSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("IV_movimiento_almacen_seleccion_requerida")');
+         return false;
+      }
+
+      $('#MovimientoAlmacenId').val(row.MovimientoAlmacenId);
+      $('#Movimiento').val(row.Codigo);
+      $('#RazonSocial').val(row.RazonSocial);
+
+      $('#movimientoListPopup').hideDialog();
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+            case 'Solicitar':
+            solicitarAuto();
+            break;
+            
+            case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "ReclasItem")'
+            });
+            break;
+                    
+      }
+   };
+
+   function solicitarAuto() {
+     if (!validarDatos())
+            return false;
+
+        $(this).saveView({
+            viewModel: grabarDatosCrearModelo(),
+            buttonId: 'Solicitar',
+            urlAction: '@Url.Action("Solicitar", "ReclasItem")',
+            onSuccess: function (response) {
+
+                if (response.success) {
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+                    $(this).getView({
+                        urlAction: '@Url.Action("Index", "ReclasItem")'
+                    });
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+                $("#menuBar").appMenu('disabledButton', { buttonId: 'Solicitar', disabled: false });
+            }
+        });
+    };
+     function validarDatos() {
+      if (!$('#Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#AlmacenId').validateNumeric('@SR.GetString("IV_almacen_seleccion_requerida")'))
+         return false;
+      if (!$('#MovimientoAlmacenId').validateNumeric('@SR.GetString("IV_movimiento_almacen_seleccion_requerida")'))
+         return false;
+
+      return true;
+   }
+   function grabarDatosCrearModelo() {
+      var viewModel = [
+         { name: "MovimientoReclasificacionDTO.MovimientoReclasificacionId", value: $('#MovimientoReclasificacionId').val(), type: 'int' },
+         { name: "MovimientoReclasificacionDTO.Codigo", value: $('#Codigo').val() },
+         { name: "MovimientoReclasificacionDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+         { name: "MovimientoReclasificacionDTO.MesContableId", value: $('#MesContableId').val(), type: 'int' },
+         { name: "MovimientoReclasificacionDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val(), type: 'int' },
+         { name: "MovimientoReclasificacionDTO.Observacion", value: $('#Observacion').val() }
+      ];
+
+      return viewModel;
+   };
+   function grabarDatos() {
+
+      if (!validarDatos())
+         return false;
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "ReclasItem")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#MovimientoReclasificacionId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $("#MesContableId").val(response.data.MesContableId);
+
+               $('#Fecha').prop('readonly', true);
+               $('#AlmacenId').prop('disabled', true);
+               $('#productoGrid').appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+  
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarProducto();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#productoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+
+            if ($.isNullOrEmpty(row.ProductoReclasificacion)){
+               msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+               return false;
+            }
+
+            if (!$('#' + rowId + '_CantidadReclasificacion').validateNumeric('@SR.GetString("IV_cantidad_reclasificacion_requerida")'))
+               return false;
+
+            var cantidadReclasificacion = parseFloatEx($('#' + rowId + '_CantidadReclasificacion').val()) || 0;
+            var cantidad = parseFloatEx(row.Cantidad);
+
+            if (cantidadReclasificacion > cantidad){
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_cantidad_reclasificacion_no_mayor")');
+               $('#' + rowId + '_CantidadReclasificacion').val(cantidadReclasificacion);
+               return false;
+            }
+
+            $("#productoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#productoGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarMovimientoAlmacenProducto", "ReclasItem")',
+                  viewModel: [
+                     { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenProductoId", value: row.MovimientoAlmacenProductoId, type: 'int' },
+                     { name: "MovimientoAlmacenProductoDTO.ProductoReclasificacionId", value: row.ProductoReclasificacionId, type: 'int' },
+                     { name: "MovimientoAlmacenProductoDTO.CantidadReclasificacion", value: row.CantidadReclasificacion, type: 'decimal' },
+                     { name: "MovimientoAlmacenProductoDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#productoGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#productoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarMovimientoAlmacenProducto", "ReclasItem")',
+                     viewModel: [
+                        { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenProductoId", value: row.MovimientoAlmacenProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#productoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+   function mostrarProducto() {
+      $('#saldoListPopup').showDialog();
+   };
+   function saldoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      saldoSelectedPopup('',row);
+   };
+   function saldoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+      $('#productoGrid').jqGrid('setCell', rowId, 'ProductoReclasificacionId', row.ProductoId);
+      $('#productoGrid').jqGrid('setCell', rowId, 'ProductoReclasificacion', row.Codigo);
+      $('#productoGrid').jqGrid('setCell', rowId, 'ProductoReclasificacionNombre', row.Descripcion);
+
+      $('#saldoListPopup').hideDialog();
+   }
+   function editarProductoInGrid() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+      $('#productoGrid').jqGrid('editRow', rowId);
+
+      $('#' + rowId + '_productoButton').prop('disabled', false);
+
+      $("#productoMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#MovimientoReclasificacionId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

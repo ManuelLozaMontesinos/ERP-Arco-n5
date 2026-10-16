@@ -1,0 +1,278 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.MarcacionViewModel
+<style type="text/css">
+   .jqgrid-marcacionModificada { color: blue; }
+</style>
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <label class="col-lg-10 offset-1 col-form-label text-blue" style="text-align:left">- Marcación agregada o modificada</label>
+               </div>
+               <div class="form-group row">
+                  <label class="col-lg-10 offset-1 col-form-label text-red" style="text-align:left">- Marcación anulada</label>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="mp-detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#mp-marcacionTab" role="tab" data-toggle="tab">Marcaciones</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="mp-marcacionTab" role="tabpanel">
+            <div>
+               <esd-menubar id="mp-marcacionMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="mp_marcacionMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaPopupContainer">
+               <table id="bandejaPopupGrid"></table>
+               <div id="bandejaPopupPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.PersonalMarcacionDTO.PersonalMarcacionId" in-modal="true"></esd-hidden>
+   <esd-hidden for="@Model.PersonalMarcacionDTO.PersonalId" in-modal="true"></esd-hidden>
+   <esd-hidden id="RelojList" value="@Model.RelojString"></esd-hidden>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarRelojMarcacion", "Marcacion")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "RelojMarcacionDTO.PersonalId", value: @Model.PersonalMarcacionDTO.PersonalId, type:'int' },
+                     { name: "RelojMarcacionDTO.Fecha", value: '@Model.PersonalMarcacionDTO.Fecha.ToShortDateString()', type:'date' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','Reloj','M. Reloj','M. Sistema','Observacion','','',''],
+         colModel: [
+            { name: 'RelojMarcacionId', hidden: true },
+            {
+               name: 'RelojId', width: 180, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#RelojList').val()
+               },
+               editrules: { required: true }
+            },
+            { name: "FechaOriginal", width: 140, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            {
+               name: "FechaFinal", width: 140, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            { name: 'Observacion', width: 300, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 200} },
+            { name: 'Estado', hidden: true },
+            { name: 'Modificada', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPopupPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaPopupGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('mp-marcacionMenuBar', 'bandejaPopupGrid');
+            }
+            else
+               $("#mp-marcacionMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('mp-marcacionMenuBar', 'bandejaPopupGrid');
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         rowattr: function (rd) {
+            if (rd.Estado === '@EstadoConstante.INACTIVO'){
+	            return { 'class': 'jqgrid-deletedrow' };
+            }
+
+            if (rd.Modificada === '@SiNoConstante.S'){
+               return { 'class': 'jqgrid-marcacionModificada' };
+            }
+         },
+         height: 250
+      });
+   });
+   function mp_editCustomGridMenuBar(key, gridName) {
+      $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+   function mp_marcacionMenuBarOnClick(key) {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               RelojMarcacionId: 0,
+               PersonalId: $('#mp-PersonalId').val(),
+               FechaFinal: moment('@Model.PersonalMarcacionDTO.Fecha.ToShortDateString()', '@JavaScriptConstant.DATE_FORMAT').format('@JavaScriptConstant.DATE_FORMAT'),
+               Estado: '@EstadoConstante.ACTIVO',
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())'
+            };
+            $("#bandejaPopupGrid").appGrid('addRow', initdata);
+            $("#mp-marcacionMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            mp_editarMarcacionInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaPopupGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#bandejaPopupGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_FechaFinal').validateString('@SR.GetString("GEN_fecha_requerida")'))
+               return false;
+
+            if (!$('#' + rowId + '_FechaFinal').inputmask("isComplete")){
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_fecha_invalida")');
+               return false;
+            }
+
+            if (!$('#' + rowId + '_Observacion').validateString('@SR.GetString("AS_justificacion_requerida")'))
+               return false;
+
+            $("#bandejaPopupGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaPopupGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarRelojMarcacion", "Marcacion")',
+                  viewModel: [
+                     { name: "RelojMarcacionDTO.RelojMarcacionId", value: row.RelojMarcacionId, type: 'int' },
+                     { name: "RelojMarcacionDTO.RelojId", value: row.RelojId, type: 'int' },
+                     { name: "RelojMarcacionDTO.PersonalId", value: $('#mp-PersonalId').val(), type: 'int' },
+                     { name: "RelojMarcacionDTO.Fecha", value: '@Model.PersonalMarcacionDTO.Fecha.ToShortDateString()', type: 'date' },
+                     { name: "RelojMarcacionDTO.FechaFinal", value: row.FechaFinal, type: 'datetime' },
+                     { name: "RelojMarcacionDTO.Observacion", value: row.Observacion },
+                     { name: "RelojMarcacionDTO.DTOState", value: row.DTOState, type: 'int' },
+                     { name: "PersonalMarcacionDTO.PersonalMarcacionId", value: $('#mp-PersonalMarcacionId').val(), type: 'int' },
+                     { name: "PersonalMarcacionDTO.PersonalId", value: $('#mp-PersonalId').val(), type: 'int' },
+                     { name: "PersonalMarcacionDTO.FechaDesde", value: '@Model.PersonalMarcacionDTO.Fecha.ToShortDateString()', type: 'date' },
+                     { name: "PersonalMarcacionDTO.FechaHasta", value: '@Model.PersonalMarcacionDTO.Fecha.ToShortDateString()', type: 'date' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#bandejaPopupGrid").appGrid('reloadJSON');
+
+                        if (response.data.rows.length > 0) {
+                           var cell = response.data.rows[0].cell;
+
+                           var dict = {};
+                           var arrTmp = $('#horaList').val().split('@SeparadorConstante.COMA');
+                           arrTmp.forEach(function (elm) {
+                              var elmkv = elm.split('@SeparadorConstante.DOS_PUNTOS');
+                              dict[elmkv[0]] = elmkv[1];
+                           });
+
+                           var p = getPopupParam('mp-edit-panel');
+                           $('#bandejaGrid').jqGrid('setCell', p.rowId, 'HoraMinuto', cell.HoraMinuto);
+                           $.each(dict, function (k, v) {
+                              $('#bandejaGrid').jqGrid('setCell', p.rowId, k, cell[k]);
+                           });
+                        }
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#mp-marcacionMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarRelojMarcacion", "Marcacion")',
+                     viewModel: [
+                        { name: "RelojMarcacionDTO.RelojMarcacionId", value: row.RelojMarcacionId, type: 'int' },
+                        { name: "PersonalMarcacionDTO.PersonalMarcacionId", value: $('#mp-PersonalMarcacionId').val(), type: 'int' },
+                        { name: "PersonalMarcacionDTO.PersonalId", value: $('#mp-PersonalId').val(), type: 'int' },
+                        { name: "PersonalMarcacionDTO.FechaDesde", value: '@Model.PersonalMarcacionDTO.Fecha.ToShortDateString()', type: 'date' },
+                        { name: "PersonalMarcacionDTO.FechaHasta", value: '@Model.PersonalMarcacionDTO.Fecha.ToShortDateString()', type: 'date' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaPopupGrid').appGrid('reloadJSON');
+
+                           if (response.data.rows.length > 0) {
+                              var cell = response.data.rows[0].cell;
+
+                              var dict = {};
+                              var arrTmp = $('#horaList').val().split('@SeparadorConstante.COMA');
+                              arrTmp.forEach(function (elm) {
+                                 var elmkv = elm.split('@SeparadorConstante.DOS_PUNTOS');
+                                 dict[elmkv[0]] = elmkv[1];
+                              });
+
+                              var p = getPopupParam('mp-edit-panel');
+                              $('#bandejaGrid').jqGrid('setCell', p.rowId, 'HoraMinuto', cell.HoraMinuto);
+                              $.each(dict, function (k, v) {
+                                 $('#bandejaGrid').jqGrid('setCell', p.rowId, k, cell[k]);
+                              });
+                           }
+
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function mp_editarMarcacionInGrid() {
+      var rowId = $("#bandejaPopupGrid").appGrid("getSelectedRowId");
+      $('#bandejaPopupGrid').jqGrid('editRow', rowId);
+
+      $("#mp-marcacionMenuBar").appMenu('saveMenu');
+   };
+</script>

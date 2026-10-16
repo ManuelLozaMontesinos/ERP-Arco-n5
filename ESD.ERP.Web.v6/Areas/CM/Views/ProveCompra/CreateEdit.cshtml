@@ -1,0 +1,1376 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.CM.Models.ProveCompraViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.Codigo" col-position="col-lg-1" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-checkbox for="@Model.ProveedorDTO.EsLocal" col-position="col-lg-1" label="Es Local" onchange="esLocalOnChange()"></esd-checkbox>
+                  <esd-dropdownlist id="TipoNaturalezaJuridicaId" for="@Model.TipoNaturalezaJuridicaList" selected-value="@Model.ProveedorDTO.TipoNaturalezaJuridicaId"
+                                    col-position="col-lg-2" label="Tipo de Persona" col-label-position="col-lg-2" enable="@Model.IsNew" onchange="tipoNaturalezaJuridicaIdOnChange();"></esd-dropdownlist>
+                  <esd-masktextbox for="@Model.ProveedorDTO.NumeroRuc" col-position="col-lg-2" label="RUC" col-label-position="col-lg-2"
+                                   mask="99999999999" onchange="numeroRucOnChange()"></esd-masktextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2"
+                               max-length="150"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Abreviatura" col-position="col-lg-2" label="Nombre. Comer." col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.ApellidoPaterno" col-position="col-lg-2" label="Apellido Paterno" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.ApellidoMaterno" col-position="col-lg-2" label="Apellido Materno" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Nombres" col-position="col-lg-2" label="Nombres" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoIdentidadId" for="@Model.TipoDocumentoIdentidadList" selected-value="@Model.ProveedorDTO.TipoDocumentoIdentidadId" col-position="col-lg-2"
+                                    label="Tipo Doc. Identidad" col-label-position="col-lg-2" onchange="tipoDocumentoIdentidadIdOnChange();"></esd-dropdownlist>
+                  <esd-textbox for="@Model.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoViaId" for="@Model.TipoViaList" selected-value="@Model.ProveedorDTO.TipoViaId" col-position="col-lg-2" label="Tipo de Via"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.ProveedorDTO.NombreVia" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.NumeroVia" col-position="col-lg-1" label="Numero" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Interior" col-position="col-lg-1" label="Interior" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.Departamento" col-position="col-lg-1" label="#Dpto" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Lote" col-position="col-lg-2" label="Lote" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Manzana" col-position="col-lg-1" label="Manzana" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Kilometro" col-position="col-lg-1" label="KM" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.Block" col-position="col-lg-1" label="Block" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Etapa" col-position="col-lg-2" label="Etapa" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ProveedorDTO.ProveedorId"></esd-hidden>
+      <esd-hidden id="TipoNaturalezaJuridica" value="@Model.ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.ProveedorDTO.TipoDocumentoIdentidadDTO.FormatoValidacion"></esd-hidden>
+      <esd-hidden for="@Model.MonedaString"></esd-hidden>
+      <esd-hidden for="@Model.ImpuestoTasaString"></esd-hidden>
+      <esd-hidden id="Tasa" value="@decimal.Zero"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#complementaTab" role="tab" data-toggle="tab">Datos Complementarios</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#listaPrecioTab" role="tab" data-toggle="tab">Lista de Precios</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#listaProductoTab" role="tab" data-toggle="tab">Lista de Precios - Productos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="complementaTab" role="tabpanel">
+            <div class="card">
+               <div class="card-body">
+                  <div class="row">
+                     <div class="col-12">
+                        <div class="form-group row">
+                           <esd-dropdownlist id="TipoZonaId" for="@Model.TipoZonaList" selected-value="@Model.ProveedorDTO.TipoZonaId" col-position="col-lg-2" label="Tipo de Zona"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-textbox for="@Model.ProveedorDTO.NombreZona" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                                        max-length="50"></esd-textbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Departamento"
+                                             col-label-position="col-lg-2" onchange="departamentoIdOnChange();"></esd-dropdownlist>
+                           <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-3" label="Provincia"
+                                             col-label-position="col-lg-1" onchange="provinciaIdOnChange();"></esd-dropdownlist>
+                           <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.ProveedorDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                             col-label-position="col-lg-1"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-textbox for="@Model.ProveedorDTO.Contacto" col-position="col-lg-4" label="Contacto" col-label-position="col-lg-2"
+                                        max-length="150"></esd-textbox>
+                           <esd-textbox for="@Model.ProveedorDTO.Telefono" col-position="col-lg-2" label="#Telefono" col-label-position="col-lg-2"
+                                        max-length="15"></esd-textbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-textbox for="@Model.ProveedorDTO.Email" col-position="col-lg-4" label="Correo Electronico" col-label-position="col-lg-2"
+                                        max-length="60"></esd-textbox>
+                           <esd-textbox for="@Model.ProveedorDTO.Web" col-position="col-lg-4" label="Web" col-label-position="col-lg-2"
+                                        max-length="60"></esd-textbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="CondicionPagoId" for="@Model.CondicionPagoList" selected-value="@Model.ProveedorDTO.CondicionPagoId" col-position="col-lg-2" label="Condición de Pago"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+         </div>
+         <div id="productoTab" class="tab-pane" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-textbox id="Descripcion" col-position="col-lg-6" label="Producto" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="productoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="productoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+         <div id="listaPrecioTab" class="tab-pane" role="tabpanel">
+            <div>
+               <esd-menubar id="listaPrecioMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="listaPrecioMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="listaPrecioContainer">
+               <table id="listaPrecioGrid"></table>
+               <div id="listaPrecioPager"></div>
+            </div>
+         </div>
+         <div id="listaProductoTab" class="tab-pane" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-dropdownlist id="ProveedorListaPrecioId" for="@Model.ProveedorListaPrecioList" col-position="col-lg-4" label="Lista de Precio" col-label-position="col-lg-2"
+                                       onchange="proveedorListaPrecioIdOnChange()"></esd-dropdownlist>
+                  </div>
+                  <div class="form-group row">
+                     <esd-textbox id="Descripcion2" col-position="col-lg-6" label="Producto" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="listaProductoMenuBar" size="Small" for="@Model.MenuItemList" onclick="listaProductoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="listaProductoContainer">
+               <table id="listaProductoGrid"></table>
+               <div id="listaProductoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="productoListPopup" title="Producto" onclick="productoListPopupOnClick" size="Large">
+   <div id="productoListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="saveEditPopup" title="Guardar" onclick="saveEditPopupOnClick">
+   <div id="saveEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="importarEditPopup" title="Importar desde XLS" size="Default">
+   <div id="importarEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="logPopup" title="Inconsistencias" size="Large">
+   <div id="logPopupContent">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-lg-12">
+               <div class="callout callout-warning">
+                  <h6>El archivo procesado presenta las siguientes inconsistencias</h6>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-textarea id="logTextArea" enable="false" rows="15" use-textcase="false"></esd-textarea>
+   </div>
+</esd-dialog>
+<esd-dialog id="proveedorProductoListPopup" title="Producto" onclick="proveedorProductoListPopupOnClick" size="Large">
+   <div id="proveedorProductoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+      habilitarImportarExportar();
+      habilitarPorNaturaleza();
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarProveedorProducto", "ProveCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ProveedorProductoDTO.ProveedorId", value: $('#ProveedorId').val() || '0', type: 'int' },
+                     { name: "ProveedorProductoDTO.ProductoDTO.Descripcion", value: $('#Descripcion').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Código', 'Producto', '','U.M.', 'Cod.Refen.','Peso Bruto', 'Peso Neto', 'Master Pack','Volumen','',''],
+         colModel: [
+            { name: 'ProveedorProductoId', hidden: true },
+            { name: 'ProveedorId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 80, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.ProveedorProductoId) && rowObject.ProveedorProductoId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Producto" name="productoButton"' + disabled + ' onclick="mostrarProducto(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            { name: 'UnidadMedidaNombre', width: 70, editable: false },
+            { name: 'CodigoReferencial', width: 150, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 20 } },
+            {
+               name: "PesoBruto", width: 90, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "PesoNeto", width: 90, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "MasterPack", width: 80, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('integer', { allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "Volumen", width: 90, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            }
+            else
+               $("#productoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+      $("#listaPrecioGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarProveedorListaPrecio", "ProveCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ProveedorListaPrecioDTO.ProveedorId", value: $('#ProveedorId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Moneda','', 'Tipo de Afectación', '',''],
+         colModel: [
+            { name: 'ProveedorListaPrecioId', hidden: true },
+            { name: 'ProveedorId', hidden: true },
+            {
+               name: 'MonedaId', width: 200, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#MonedaString').val()
+               },
+               editrules: { required: false }
+            },
+            { name: 'MonedaNombre', hidden: true },
+            {
+               name: 'ImpuestoTasaId', width: 200, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#ImpuestoTasaString').val()
+               },
+               editrules: { required: false }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#listaPrecioPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#listaPrecioGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('listaPrecioMenuBar', 'listaPrecioGrid');
+            }
+            else
+               $("#listaPrecioMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('listaPrecioMenuBar', 'listaPrecioGrid');
+            $("#listaPrecioGrid").appGrid('resizeGrid', 'listaPrecioContainer');
+
+            $('#ProveedorListaPrecioId').find('option').remove().end();
+            $('#ProveedorListaPrecioId').append(new Option('@SelectListFirstOptionNameConstant.SELECT', ''));
+            var data = $("#listaPrecioGrid").appGrid('getData');
+            $.each(data, function (index, item) {
+               if (item.Estado === '@EstadoConstante.ACTIVO') {
+                  var option = new Option(item.MonedaNombre, item.ProveedorListaPrecioId);
+                  $('#ProveedorListaPrecioId').append(option);
+               }
+            });
+
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('listaPrecioContainer')
+      });
+      $("#listaProductoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarProveedorListaPrecioProducto", "ProveCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ProveedorListaPrecioProductoDTO.ProveedorListaPrecioId", value: $('#ProveedorListaPrecioId').val() || '0', type: 'int' },
+                     { name: "ProveedorListaPrecioProductoDTO.ProductoDTO.Descripcion", value: $('#Descripcion2').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Código', 'Producto', '', '', 'P.U.', 'V.U. Ant', 'P.U. Ant', 'Fecha Ant.', 'V.U.', 'P.U.','Fecha Vig.','',''],
+         colModel: [
+            { name: 'ProveedorListaPrecioProductoId', hidden: true },
+            { name: 'ProveedorListaPrecioId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'Descripcion', width: 350, editable: false },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.ProveedorListaPrecioProductoId) && rowObject.ProveedorListaPrecioProductoId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Producto" name="productoButton"' + disabled + ' onclick="mostrarProveedorProducto(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            { name: 'TipoIgvId', hidden: true },
+            { name: 'TipoIgv', hidden: true },
+            { name: "ValorUnitarioAnterior", width: 100, align: 'right', formatter: 'number', editable: false, sortable: false, formatoptions: { decimalPlaces: 4 } },
+            { name: "PrecioUnitarioAnterior", width: 100, align: 'right', formatter: 'number', editable: false, sortable: false, formatoptions: { decimalPlaces: 4 } },
+            { name: "FechaAnterior", width: 80, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            {
+               name: "ValorUnitario", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularPrecio($(elem), false);
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "PrecioUnitario", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularPrecio($(elem), true);
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "FechaVigente", width: 90, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#listaProductoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#listaProductoGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('listaProductoMenuBar', 'listaProductoGrid',true);
+            }
+            else
+               $("#listaProductoMenuBar").appMenu('saveMenu');
+
+            habilitarImportarExportar();
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('listaProductoMenuBar', 'listaProductoGrid',true);
+            $("#listaProductoGrid").appGrid('resizeGrid', 'listaProductoContainer');
+
+            habilitarImportarExportar();
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('listaProductoContainer')
+      });
+
+      $('#productoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Producto", new { Area = "MG" })',
+               container: 'productoListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#saveEditPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("SaveEditPopup", "ProveCompra")',
+               container: 'saveEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#mp-actualizarMaestroCheckBox").prop('checked', true);
+         }
+      });
+      $('#proveedorProductoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ProductoListPopup", "ProveCompra")',
+               container: 'proveedorProductoListPopupContent',
+               viewModel: [
+                  { name: "ProveedorProductoDTO.ProveedorId", value: $("#ProveedorId").val(), type: 'int' },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#importarEditPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ImportarEditPopup", "ProveCompra")',
+               container: 'importarEditPopupContent',
+               showLoading: false,
+               hideLoading: false,
+               onSuccess: function () {
+
+               }
+            });
+         }
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#productoTab':
+               $('#productoGrid').appGrid('resizeGrid', 'productoContainer');
+               $('#productoGrid').jqGrid('setGridHeight', calculateGridHeight('productoContainer'));
+               break;
+            case '#listaPrecioTab':
+               $('#listaPrecioGrid').appGrid('resizeGrid', 'listaPrecioContainer');
+               $('#listaPrecioGrid').jqGrid('setGridHeight', calculateGridHeight('listaPrecioContainer'));
+               break;
+            case '#listaProductoTab':
+               $('#listaProductoGrid').appGrid('resizeGrid', 'listaProductoContainer');
+               $('#listaProductoGrid').jqGrid('setGridHeight', calculateGridHeight('listaProductoContainer'));
+               break;
+         }
+      })
+   });
+   function esLocalOnChange() {
+      tipoNaturalezaJuridicaIdOnChange();
+   };
+   function habilitarPorNaturaleza() {
+      if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.NATURAL') {
+         $('#RazonSocial').prop('readonly', true);
+         $('#Abreviatura').prop('readonly', true);
+         $('#ApellidoPaterno').prop('readonly', false);
+         $('#ApellidoMaterno').prop('readonly', false);
+         $('#Nombres').prop('readonly', false);
+         $('#TipoDocumentoIdentidadId').prop('disabled', false);
+         $('#NumeroDocumentoIdentidad').prop('readonly', false);
+      }else {
+         $('#RazonSocial').prop('readonly', false);
+         $('#Abreviatura').prop('readonly', false);
+         $('#ApellidoPaterno').prop('readonly', true);
+         $('#ApellidoMaterno').prop('readonly', true);
+         $('#Nombres').prop('readonly', true);
+         $('#TipoDocumentoIdentidadId').prop('disabled', true);
+         $('#NumeroDocumentoIdentidad').prop('readonly', true);
+      }
+
+      if (!$('#EsLocal').prop('checked')) {
+         $('#NumeroDocumentoIdentidad').prop('readonly', false);
+         $('#NumeroRuc').prop('readonly', true);
+      }
+   }
+   function tipoNaturalezaJuridicaIdOnChange() {
+
+      var tipoNaturalezaJuridicaId = $('#TipoNaturalezaJuridicaId').val();
+
+      if ($.isNullOrEmpty(tipoNaturalezaJuridicaId))
+         return;
+
+      $(this).postAction({
+         urlAction: '@Url.Action("ObtenerPorTipoNaturalezaJuridica", "ProveCompra")',
+         viewModel: [
+            { name: "ProveedorDTO.TipoNaturalezaJuridicaId", value: tipoNaturalezaJuridicaId, type: 'int' },
+            { name: "ProveedorDTO.EsLocal", value: $('#EsLocal').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#TipoNaturalezaJuridica').val(response.data.codigo);
+               $('#TipoDocumentoIdentidadId').find('option').remove().end();
+               $("#TipoDocumentoIdentidadId").addItems(response.data.list);
+               $('#FormatoValidacion').val(response.data.formatoValidacion);
+               habilitarPorNaturaleza();
+
+               if (response.data.tipoDocumentoIdentidadId === 0)
+                  $("#TipoDocumentoIdentidadId").val($("#TipoDocumentoIdentidadId option:first").val());
+               else
+                  $("#TipoDocumentoIdentidadId").val(response.data.tipoDocumentoIdentidadId);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function numeroRucOnChange() {
+
+      var numeroRuc = $('#NumeroRuc').val();
+
+      if ($.isNullOrEmpty(numeroRuc))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerDesdeSunat", "ProveCompra", new { Area = "MG" })',
+         id: numeroRuc,
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#TipoNaturalezaJuridicaId').val(response.data.tipoNaturalezaJuridicaId);
+               $('#TipoNaturalezaJuridica').val(response.data.tipoNaturalezaJuridica);
+               $('#RazonSocial').val(response.data.razonSocial);
+               $('#TipoViaId').val(response.data.tipoViaId);
+               $('#NombreVia').val(response.data.nombreVia);
+               $('#NumeroVia').val(response.data.numeroVia);
+               $('#Interior').val(response.data.interior);
+               $('#Departamento').val(response.data.departamento);
+               $('#Lote').val(response.data.lote);
+               $('#Manzana').val(response.data.manzana);
+               $('#Kilometro').val(response.data.kilometro);
+               $('#TipoZonaId').val(response.data.tipoZonaId);
+               $('#NombreZona').val(response.data.nombreZona);
+
+               tipoNaturalezaJuridicaIdOnChange();
+               sleep(200);
+               tipoDocumentoIdentidadIdOnChange();
+               sleep(200);
+               if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.JURIDICO')
+                  $('#NumeroDocumentoIdentidad').val(numeroRuc);
+
+               $('#DepartamentoId').val(response.data.departamentoId);
+
+               $('#ProvinciaId').find('option').remove().end();
+               $("#ProvinciaId").addItems(response.data.provinciaList);
+               $('#ProvinciaId').val(response.data.provinciaId);
+
+               $('#DistritoId').find('option').remove().end();
+               $("#DistritoId").addItems(response.data.distritoList);
+               $('#DistritoId').val(response.data.distritoId);
+            }
+         }
+      });
+   };
+   function tipoDocumentoIdentidadIdOnChange()
+   {
+      var tipoDocumentoIdentidadId = $('#TipoDocumentoIdentidadId').val();
+
+      if ($.isNullOrEmpty(tipoDocumentoIdentidadId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoDocumentoIdentidad", "ProveCompra")',
+         id: tipoDocumentoIdentidadId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#NumeroDocumentoIdentidad').inputmask('remove');
+
+               if (!$.isNullOrEmpty(response.data.FormatoValidacion))
+                  $('#NumeroDocumentoIdentidad').inputmask(response.data.FormatoValidacion);
+               else
+                  $('#NumeroDocumentoIdentidad').inputmask('remove');
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function validarTipoDocumentoIdentidadId(){
+
+      if (!$('#NumeroDocumentoIdentidad').inputmask("isComplete")){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_numero_doc_identidad_incorrecto")');
+         return false;
+      }
+
+      if (!$('#EsLocal').prop('checked'))
+         return true;
+
+      if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.JURIDICO') {
+         if (!$('#NumeroRuc').inputmask("isComplete")){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_numero_ruc_incorrecto")');
+            return false;
+         }
+      }
+
+      return true;
+   };
+   function departamentoIdOnChange() {
+
+      var departamentoId = $("#DepartamentoId").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#ProvinciaId").prop('disabled', true);
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#ProvinciaId").val('');
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "ProveCompra")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#ProvinciaId').find('option').remove().end();
+               $("#ProvinciaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#DepartamentoId").val())) {
+                  $("#ProvinciaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function provinciaIdOnChange() {
+
+      var provinciaId = $("#ProvinciaId").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "ProveCompra")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#DistritoId').find('option').remove().end();
+               $("#DistritoId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#DistritoId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "ProveCompra")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.NATURAL') {
+         if (!$('#ApellidoPaterno').validateString('@SR.GetString("RH_apellido_paterno_requerido")'))
+            return false;
+         if (!$('#Nombres').validateString('@SR.GetString("GEN_nombres_requerido")'))
+            return false;
+         if (!$('#TipoDocumentoIdentidadId').validateNumeric('@SR.GetString("GEN_tipo_doc_identidad_seleccion_requerida")'))
+            return false;
+         if (!$('#NumeroDocumentoIdentidad').validateString('@SR.GetString("GEN_numero_doc_identidad_requerido")'))
+            return false;
+         if (!$.isNullOrEmpty($('#NumeroRuc').val())) {
+            if (!$('#NumeroRuc').inputmask("isComplete")){
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_numero_ruc_incorrecto")');
+               return false;
+            }
+         }
+      } else {
+         if (!$('#RazonSocial').validateString('@SR.GetString("MG_razon_social_requerida")'))
+            return false;
+
+         if ($('#EsLocal').prop('checked'))
+            if (!$('#NumeroRuc').validateString('@SR.GetString("MG_numero_ruc_requerido")'))
+               return false;
+      }
+
+      if(!validarTipoDocumentoIdentidadId())
+         return false;
+      if (!$('#TipoViaId').validateNumeric('@SR.GetString("MG_tipo_via_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoZonaId').validateNumeric('@SR.GetString("MG_tipo_zona_seleccion_requerida")'))
+         return false;
+      if (!$('#DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+         return false;
+      if (!$('#ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+         return false;
+      if (!$('#DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "ProveedorDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "ProveedorDTO.TipoNaturalezaJuridicaId", value: $('#TipoNaturalezaJuridicaId').val(), type: 'int' },
+            { name: "ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo", value: $('#TipoNaturalezaJuridica').val() },
+            { name: "ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+            { name: "ProveedorDTO.Abreviatura", value: $('#Abreviatura').val() },
+            { name: "ProveedorDTO.ApellidoPaterno", value: $('#ApellidoPaterno').val() },
+            { name: "ProveedorDTO.ApellidoMaterno", value: $('#ApellidoMaterno').val() },
+            { name: "ProveedorDTO.Nombres", value: $('#Nombres').val() },
+            { name: "ProveedorDTO.TipoDocumentoIdentidadId", value: $('#TipoDocumentoIdentidadId').val(), type: 'int' },
+            { name: "ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+            { name: "ProveedorDTO.NumeroRuc", value: $('#NumeroRuc').val() },
+            { name: "ProveedorDTO.Contacto", value: $('#Contacto').val() },
+            { name: "ProveedorDTO.Telefono", value: $('#Telefono').val() },
+            { name: "ProveedorDTO.TipoViaId", value: $('#TipoViaId').val(), type: 'int' },
+            { name: "ProveedorDTO.NombreVia", value: $('#NombreVia').val() },
+            { name: "ProveedorDTO.NumeroVia", value: $('#NumeroVia').val() },
+            { name: "ProveedorDTO.Interior", value: $('#Interior').val() },
+            { name: "ProveedorDTO.Departamento", value: $('#Departamento').val() },
+            { name: "ProveedorDTO.Lote", value: $('#Lote').val() },
+            { name: "ProveedorDTO.Manzana", value: $('#Manzana').val() },
+            { name: "ProveedorDTO.Kilometro", value: $('#Kilometro').val() },
+            { name: "ProveedorDTO.Block", value: $('#Block').val() },
+            { name: "ProveedorDTO.Etapa", value: $('#Etapa').val() },
+            { name: "ProveedorDTO.TipoZonaId", value: $('#TipoZonaId').val(), type: 'int' },
+            { name: "ProveedorDTO.NombreZona", value: $('#NombreZona').val() },
+            { name: "ProveedorDTO.Referencia", value: $('#Referencia').val() },
+            { name: "ProveedorDTO.DistritoId", value: $('#DistritoId').val(), type: 'int' },
+            { name: "ProveedorDTO.Email", value: $('#Email').val() },
+            { name: "ProveedorDTO.Web", value: $('#Web').val() },
+            { name: "ProveedorDTO.CondicionPagoId", value: $('#CondicionPagoId').val(), type: 'int' },
+            { name: "ProveedorDTO.EsLocal", value: $('#EsLocal').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "ProveCompra")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#ProveedorId").val(response.data.Id);
+               $('#TipoNaturalezaJuridicaId').prop('disabled', true);
+               $("#bandejaGrid").appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarProducto();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#productoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+            $('#saveEditPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarProveedorProducto", "ProveCompra")',
+                     viewModel: [
+                        { name: "ProveedorProductoDTO.ProveedorProductoId", value: row.ProveedorProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#productoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+   $(function () {
+      $("#Descripcion").change(function () {
+         $('#productoGrid').appGrid('reloadJSON');
+      });
+      $("#Descripcion2").change(function () {
+         $('#listaProductoGrid').appGrid('reloadJSON');
+      });
+   });
+   function mostrarProducto() {
+      $('#productoListPopup').showDialog();
+   };
+   function productoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      productoSelectedPopup('',row);
+   };
+   function productoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            ProveedorProductoId: 0,
+            ProductoId: row.ProductoId,
+            Codigo: row.Codigo,
+            ProductoNombre: row.Descripcion,
+            UnidadMedidaNombre: row.UnidadMedidaNombre,
+            PesoNeto : 0,
+            PesoBruto: 0,
+            MasterPack: 0,
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#productoGrid").appGrid('addRow', initdata);
+         $("#productoMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoId', row.ProductoId);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Codigo', row.Codigo);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoNombre', row.Descripcion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaNombre', row.UnidadMedidaNombre);
+      }
+
+      $('#productoListPopup').hideDialog();
+   }
+   function editarProductoInGrid() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+      $('#productoGrid').jqGrid('editRow', rowId);
+      $("#productoMenuBar").appMenu('saveMenu');
+   };
+   function saveEditPopupOnClick() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+
+      $("#productoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+         row = $("#productoGrid").appGrid('getSelectedRow');
+
+         setModifiedDTO(row);
+         $(this).saveView({
+            urlAction: '@Url.Action("GrabarProveedorProducto", "ProveCompra")',
+            viewModel: [
+               { name: "ProveedorProductoDTO.ProveedorProductoId", value: row.ProveedorProductoId, type: 'int' },
+               { name: "ProveedorProductoDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+               { name: "ProveedorProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+               { name: "ProveedorProductoDTO.CodigoReferencial", value: row.CodigoReferencial },
+               { name: "ProveedorProductoDTO.PesoNeto", value: row.PesoNeto, type: 'decimal' },
+               { name: "ProveedorProductoDTO.PesoBruto", value: row.PesoBruto, type: 'decimal' },
+               { name: "ProveedorProductoDTO.MasterPack", value: row.MasterPack, type: 'int' },
+               { name: "ProveedorProductoDTO.Volumen", value: row.Volumen, type: 'decimal' },
+               { name: "ProveedorProductoDTO.DTOState", value: row.DTOState, type: 'int' },
+               { name: "ActualizarMaestro", value: $('#mp-actualizarMaestroCheckBox').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' }
+            ],
+            onSuccess: function (response) {
+               if (response.success) {
+                  $("#productoGrid").appGrid('reloadJSON');
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  $("#productoGrid").appMenu('saveMenu');
+               }
+               $('#saveEditPopup').hideDialog();
+            }
+         });
+      }});
+   };
+   function listaPrecioMenuBarOnClick(key) {
+
+      var row = $('#listaPrecioGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               ProveedorListaPrecioId: 0,
+               ProveedorId: $('#ProveedorId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#listaPrecioGrid").appGrid('addRow', initdata);
+            $("#listaPrecioMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarProveedorListaPrecioInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#listaPrecioGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+            var rowId = $("#listaPrecioGrid").appGrid("getSelectedRowId");
+
+            $("#listaPrecioGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#listaPrecioGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarProveedorListaPrecio", "ProveCompra")',
+                  viewModel: [
+                     { name: "ProveedorListaPrecioDTO.ProveedorListaPrecioId", value: row.ProveedorListaPrecioId, type: 'int' },
+                     { name: "ProveedorListaPrecioDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+                     { name: "ProveedorListaPrecioDTO.MonedaId", value: row.MonedaId, type: 'int' },
+                     { name: "ProveedorListaPrecioDTO.ImpuestoTasaId", value: row.ImpuestoTasaId, type: 'int' },
+                     { name: "ProveedorListaPrecioDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#listaPrecioGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#listaPrecioGrid").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarProveedorListaPrecio", "ProveCompra")',
+                     viewModel: [
+                        { name: "ProveedorListaPrecioDTO.ProveedorListaPrecioId", value: row.ProveedorListaPrecioId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#listaPrecioGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+   function editarProveedorListaPrecioInGrid() {
+      var rowId = $("#listaPrecioGrid").appGrid("getSelectedRowId");
+      $('#listaPrecioGrid').jqGrid('editRow', rowId);
+      $("#listaPrecioMenuBar").appMenu('saveMenu');
+   };
+   function proveedorListaPrecioIdOnChange() {
+
+      var proveedorListaPrecioId = $("#ProveedorListaPrecioId").val();
+      if ($.isNullOrEmpty(proveedorListaPrecioId)) {
+         $('#Tasa').val('@decimal.Zero');
+         $('#listaProductoGrid').appGrid('reloadJSON');
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerImpuestoTasa", "ProveCompra")',
+         id: proveedorListaPrecioId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#Tasa').val(response.data.Tasa);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+      $('#listaProductoGrid').appGrid('reloadJSON');
+   };
+   function calcularPrecio(element, esPU) {
+
+      var row = $('#listaProductoGrid').appGrid('getSelectedRow');
+
+      $(this).postAction({
+         viewModel: [
+            { name: "CalculadorVentaItemDTO.PrecioUnitario", value: (esPU === true ? element.val() : 0), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.ValorUnitario", value: (esPU === false ? element.val() : 0), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.TipoIGV", value: row.TipoIgv },
+            { name: "CalculadorVentaItemDTO.ImpuestoTasa", value: $('#Tasa').val(), type: 'decimal'}
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("CalcularPrecio", "ProveCompra")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               var rowId = $('#listaProductoGrid').appGrid('getSelectedRowId');
+
+               if (esPU)
+                  $("#" + rowId + "_ValorUnitario").val(response.data.ValorUnitario);
+               else
+                  $("#" + rowId + "_PrecioUnitario").val(response.data.PrecioUnitario);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function habilitarImportarExportar() {
+      if ($("#ProveedorListaPrecioId").validateNumeric()) {
+         $("#listaProductoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.IMPORT_XLS', disabled: false });
+         $("#listaProductoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EXPORT_XLS', disabled: false });
+      }
+   };
+   function listaProductoMenuBarOnClick(key) {
+
+      if (!$('#ProveedorListaPrecioId').validateNumeric('@SR.GetString("CM_lista_precio_seleccion_requerida")'))
+         return false;
+
+      var row = $('#listaProductoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW','@MenuItemKey.IMPORT_XLS','@MenuItemKey.EXPORT_XLS'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarProveedorProducto();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarListaPrecioProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#listaProductoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#listaProductoGrid").appGrid("getSelectedRowId");
+
+            if ($.isNullOrEmpty(row.Codigo)) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("CM_producto_servicio_seleccion_requerida")');
+               return false;
+            }
+            if (!$('#' + rowId + '_ValorUnitario').validateNumeric('@SR.GetString("VT_valor_unitario_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_PrecioUnitario').validateNumeric('@SR.GetString("VT_precio_unitario_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_FechaVigente').validateString('@SR.GetString("CM_lista_precio_producto_fecha_vigente_requerida")'))
+               return false;
+
+            $("#listaProductoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#listaProductoGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarProveedorListaPrecioProducto", "ProveCompra")',
+                  viewModel: [
+                     { name: "ProveedorListaPrecioProductoDTO.ProveedorListaPrecioProductoId", value: row.ProveedorListaPrecioProductoId, type: 'int' },
+                     { name: "ProveedorListaPrecioProductoDTO.ProveedorListaPrecioId", value: row.ProveedorListaPrecioId, type: 'int' },
+                     { name: "ProveedorListaPrecioProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+                     { name: "ProveedorListaPrecioProductoDTO.ValorUnitario", value: row.ValorUnitario, type: 'decimal' },
+                     { name: "ProveedorListaPrecioProductoDTO.PrecioUnitario", value: row.PrecioUnitario, type: 'decimal' },
+                     { name: "ProveedorListaPrecioProductoDTO.FechaVigente", value: row.FechaVigente, type: 'datetime' },
+                     { name: "ProveedorListaPrecioProductoDTO.Estado", value: row.Estado === '@DigitoConstante.UNO' ? '@EstadoConstante.ACTIVO' : '@EstadoConstante.INACTIVO' },
+                     { name: "ProveedorListaPrecioProductoDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#listaProductoGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#listaProductoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarProveedorListaPrecioProducto", "ProveCompra")',
+                     viewModel: [
+                        { name: "ProveedorListaPrecioProductoDTO.ProveedorListaPrecioProductoId", value: row.ProveedorListaPrecioProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#listaProductoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+         case '@MenuItemKey.IMPORT_XLS':
+            $('#importarEditPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.EXPORT_XLS':
+
+            var reportParam = "proveedorListaPrecioId=" + $("#ProveedorListaPrecioId").val();
+
+            $(this).getReport({
+               buttonId: key,
+               urlAction: '@Url.Action("ReportToExcel", "ProveCompra")',
+               parameters: reportParam,
+               onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+            });
+            $('#listaProductoMenuBar').appMenu('disabledButton', { buttonId: key, disabled: false });
+            break;
+      }
+      return true;
+   };
+   function mostrarProveedorProducto() {
+      $('#proveedorProductoListPopup').showDialog();
+   };
+   function proveedorProductoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      proveedorProductoSelectedPopup('',row);
+   };
+   function proveedorProductoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var editableRows = $('#listaProductoGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            ProveedorListaPrecioProductoId: 0,
+            ProveedorListaPrecioId: $('#ProveedorListaPrecioId').val(),
+            ProductoId: row.ProductoId,
+            Codigo: row.Codigo,
+            Descripcion: row.ProductoNombre,
+            TipoIgvId: row.TipoIgvId,
+            TipoIgv: row.TipoIgv,
+            ValorUnitarioAnterior: 0,
+            PrecioUnitarioAnterior: 0,
+            ValorUnitario: 0,
+            PrecioUnitario: 0,
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#listaProductoGrid").appGrid('addRow', initdata);
+         $("#listaProductoMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#listaProductoGrid').appGrid('getSelectedRowId');
+
+         $('#listaProductoGrid').jqGrid('setCell', rowId, 'ProductoId', row.ProductoId);
+         $('#listaProductoGrid').jqGrid('setCell', rowId, 'Codigo', row.Codigo);
+         $('#listaProductoGrid').jqGrid('setCell', rowId, 'Descripcion', row.ProductoNombre);
+         $('#listaProductoGrid').jqGrid('setCell', rowId, 'TipoIgvId', row.TipoIgvId);
+         $('#listaProductoGrid').jqGrid('setCell', rowId, 'TipoIgv', row.TipoIgv);
+      }
+
+      $('#proveedorProductoListPopup').hideDialog();
+   }
+   function editarListaPrecioProductoInGrid() {
+      var rowId = $("#listaProductoGrid").appGrid("getSelectedRowId");
+      $('#listaProductoGrid').jqGrid('editRow', rowId);
+      $("#listaProductoMenuBar").appMenu('saveMenu');
+   };
+   function logPopupInconsistencias(data) {
+      if (!$.isNullOrEmpty(data)) {
+         $('#logTextArea').val('');
+         $('#logTextArea').val(data);
+         $('#logPopup').showDialog();
+      } else
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("GEN_proceso_concluido")');
+
+      $("#listaProductoGrid").appGrid('reloadJSON');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#ProveedorId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

@@ -1,0 +1,257 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.PersonalViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PersonalDependienteDTO.FechaAlta" col-position="col-lg-2" label="Fecha Alta" col-label-position="col-lg-2"
+                                      in-modal="true"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoIdentidadId" for="@Model.TipoDocumentoIdentidadList" col-position="col-lg-2" label="Tipo Doc. Identidad"
+                                    col-label-position="col-lg-2" onchange="mp_tipoDocumentoIdentidadIdOnChange()" in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2"
+                               max-length="20" in-modal="true"></esd-textbox>
+                  <esd-buttontextbox id="PaisEmisor" button-style="List" value="@Model.PersonalDependienteDTO.PaisEmisorDTO?.Nombre" col-position="col-lg-2" label="Pais Emisor"
+                                     col-label-position="col-lg-2" enable="false" onclick="mp_paisEmisorOnClick" in-modal="true"></esd-buttontextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDependienteDTO.ApellidoPaterno" col-position="col-lg-2" label="Apellido Paterno" col-label-position="col-lg-2"
+                               max-length="50" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.ApellidoMaterno" col-position="col-lg-2" label="Apellido Materno" col-label-position="col-lg-2"
+                               max-length="50" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Nombres" col-position="col-lg-2" label="Nombres" col-label-position="col-lg-2"
+                               max-length="50" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PersonalDependienteDTO.FechaNacimiento" col-position="col-lg-2" label="Fecha Nacimiento" col-label-position="col-lg-2"
+                                      in-modal="true"></esd-datetimepicker>
+                  <esd-dropdownlist id="SexoId" for="@Model.SexoList" col-position="col-lg-2" label="Sexo" col-label-position="col-lg-2"
+                                    in-modal="true"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="VinculoFamiliarId" for="@Model.VinculoFamiliarList" selected-value="@Model.PersonalDependienteDTO.VinculoFamiliarId" col-position="col-lg-2"
+                                    label="Vinculo Fam." col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+                  <esd-dropdownlist id="TipoDocumentoVinculoFamiliarId" for="@Model.TipoDocumentoVinculoFamiliarList" selected-value="@Model.PersonalDependienteDTO.TipoDocumentoVinculoFamiliarId"
+                                    col-position="col-lg-3" label="T/D Vinc.F" col-label-position="col-lg-1" in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.NumeroDocumentoVinculoFamiliar" col-position="col-lg-3" label="#Doc. Vinc."
+                               col-label-position="col-lg-1" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PersonalDependienteDTO.FechaConcepcion" col-position="col-lg-2" label="Fecha Concepción" col-label-position="col-lg-2"
+                                      in-modal="true"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoViaId" for="@Model.TipoViaList" col-position="col-lg-2" label="Tipo de Via"
+                                    col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.NombreVia" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.NumeroVia" col-position="col-lg-1" label="Numero" col-label-position="col-lg-1"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Interior" col-position="col-lg-1" label="Interior" col-label-position="col-lg-1"
+                               max-length="10" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Departamento" col-position="col-lg-1" label="#Dpto" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Lote" col-position="col-lg-2" label="Lote" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Manzana" col-position="col-lg-1" label="Manzana" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Kilometro" col-position="col-lg-1" label="KM" col-label-position="col-lg-1"
+                               max-length="10" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Block" col-position="col-lg-1" label="Block" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Etapa" col-position="col-lg-2" label="Etapa" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoZonaId" for="@Model.TipoZonaList" col-position="col-lg-2" label="Tipo de Zona"
+                                    col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.NombreZona" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Departamento"
+                                    col-label-position="col-lg-2" onchange="mp_departamentoIdOnChange();" in-modal="true"></esd-dropdownlist>
+                  <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-3" label="Provincia"
+                                    col-label-position="col-lg-1" onchange="mp_provinciaIdOnChange();" in-modal="true"></esd-dropdownlist>
+                  <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.PersonalDependienteDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                    col-label-position="col-lg-1" in-modal="true"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Telefono" col-position="col-lg-2" label="Telefono" col-label-position="col-lg-2"
+                               in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDependienteDTO.Email" col-position="col-lg-6" label="Correo" col-label-position="col-lg-2"
+                               in-modal="true"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-hidden for="@Model.PersonalDependienteDTO.PersonalDependienteId" in-modal="true"></esd-hidden>
+      <esd-hidden for="@Model.PersonalDependienteDTO.PaisEmisorId" in-modal="true"></esd-hidden>
+      <esd-hidden for="@Model.TipoDocumentoIdentidad" in-modal="true"></esd-hidden>
+   </div>
+</div>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $('#mp-NumeroDocumentoIdentidad').inputmask('@Model.FormatoValidacion');
+   });
+   function mp_tipoDocumentoIdentidadIdOnChange()
+   {
+      var tipoDocumentoIdentidadId = $('#mp-TipoDocumentoIdentidadId').val();
+
+      if ($.isNullOrEmpty(tipoDocumentoIdentidadId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoDocumentoIdentidad", "Proveedor", new { area = "MG" })',
+         id: tipoDocumentoIdentidadId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-NumeroDocumentoIdentidad').inputmask('remove');
+               $('#mp-PaisEmisor').appButtonTextBox({ disabled:true });
+               $('#mp-PaisEmisor').val('');
+               $('#mp-PaisEmisorId').val('');
+
+               $('#mp-TipoDocumentoIdentidad').val(response.data.Codigo);
+
+               if (!$.isNullOrEmpty(response.data.FormatoValidacion))
+                  $('#mp-NumeroDocumentoIdentidad').inputmask(response.data.FormatoValidacion);
+               else
+                  $('mp-#NumeroDocumentoIdentidad').inputmask('remove');
+
+               if ('@Model.RestriccionPaisEmisorXTipoDocumento'.indexOf(response.data.Codigo) != -1) {
+                  $('#mp-PaisEmisor').appButtonTextBox('disabled', { disabled: false });
+               } else {
+                  $('#mp-PaisEmisor').appButtonTextBox('disabled', { disabled: true });
+               }
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_validarTipoDocumentoIdentidadId(){
+      if (!$('#mp-NumeroDocumentoIdentidad').inputmask("isComplete")){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_numero_doc_identidad_incorrecto")');
+         return false;
+      }
+
+      if ('@Model.RestriccionPaisEmisorXTipoDocumento'.indexOf($('#mp-TipoDocumentoIdentidad').val()) != -1){
+         if (!$('#mp-PaisEmisor').validateString('@SR.GetString("RH_pais_emisor_seleccion_requerida")'))
+            return false;
+      }
+
+      return true;
+   };
+   function mp_paisEmisorOnClick() {
+      $('#emisorDepListPopup').showDialog();
+   };
+   function mp_departamentoIdOnChange() {
+
+      var departamentoId = $("#mp-DepartamentoId").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#mp-ProvinciaId").prop('disabled', true);
+         $("#mp-DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#mp-ProvinciaId").val('');
+      $("#mp-DistritoId").val('');
+      $("#mp-DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "Personal")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-ProvinciaId').find('option').remove().end();
+               $("#mp-ProvinciaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#mp-DepartamentoId").val())) {
+                  $("#mp-ProvinciaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_provinciaIdOnChange() {
+
+      var provinciaId = $("#mp-ProvinciaId").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#mp-DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#mp-DistritoId").val('');
+      $("#mp-DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "Personal")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-DistritoId').find('option').remove().end();
+               $("#mp-DistritoId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#mp-DistritoId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_validarDatos() {
+
+      if (!$('#mp-FechaAlta').validateString('@SR.GetString("GEN_fecha_alta_requerida")'))
+         return false;
+
+      if (!$('#mp-TipoDocumentoIdentidadId').validateNumeric('@SR.GetString("GEN_tipo_doc_identidad_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-NumeroDocumentoIdentidad').validateString('@SR.GetString("GEN_numero_doc_identidad_requerido")'))
+         return false;
+      if(!mp_validarTipoDocumentoIdentidadId())
+         return false;
+
+      if (!$('#mp-ApellidoPaterno').validateString('@SR.GetString("RH_apellido_paterno_requerido")'))
+         return false;
+      if (!$('#mp-Nombres').validateString('@SR.GetString("GEN_nombres_requerido")'))
+         return false;
+      if (!$('#mp-FechaNacimiento').validateString('@SR.GetString("RH_fecha_nacimiento_requerida")'))
+         return false;
+      if (!$('#mp-SexoId').validateNumeric('@SR.GetString("RH_sexo_seleccion_requerida")'))
+         return false;
+
+      if (!$('#mp-VinculoFamiliarId').validateNumeric('@SR.GetString("RH_vinculo_familiar_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-TipoDocumentoVinculoFamiliarId').validateNumeric('@SR.GetString("RH_tipo_doc_vinculo_familiar_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-NumeroDocumentoVinculoFamiliar').validateString('@SR.GetString("RH_numero_doc_vinculo_familiar_requerido")'))
+         return false;
+
+      if (!$('#mp-TipoViaId').validateNumeric('@SR.GetString("MG_tipo_via_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-TipoZonaId').validateNumeric('@SR.GetString("MG_tipo_zona_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+         return false;
+
+      return true;
+   };
+</script>

@@ -1,0 +1,373 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.TS.Models.BancarizaViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="Exit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-textbox id="TipoDocumentoComercialId" value="@Model.ComprobanteDTO.TipoDocumentoComercialDTO.Abreviatura" col-position="col-lg-1" 
+                               label="Doc. Com." col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.Serie" col-position="col-lg-1" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.Numero" col-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.ComprobanteDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-1"
+                                      enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Cotizacion" value="@Model.ComprobanteDTO?.CotizacionDTO?.Codigo" col-position="col-lg-2" label="Pedido"
+                                     col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox id="MonedaId" value="@Model.ComprobanteDTO.MonedaDTO.Nombre" col-position="col-lg-2" label="Moneda"
+                                    col-label-position="col-lg-1" enable="false"></esd-textbox>
+                  <esd-numerictextbox for="@Model.ComprobanteDTO.MontoTipoCambio" col-position="col-lg-1" label="T/C" col-label-position="col-lg-1" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ComprobanteDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="VendedorNombre" value="@Model.ComprobanteDTO.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-4" label="Vendedor"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-dropdownlist id="ListaPrecioId" for="@Model.ListaPrecioList" col-position="col-lg-4" label="Lista Precio"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoCondicionPagoId" for="@Model.TipoCondicionPagoList" col-position="col-lg-4" label="Cond. Pago"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-dropdownlist id="MedioPagoId" for="@Model.MedioPagoList" col-position="col-lg-4" label="Medio de Pago"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.ComprobanteDTO.Observacion" col-position="col-lg-6" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="2" enable="false"></esd-textarea>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoComprobanteNombre" value="@Model.ComprobanteDTO.EstadoComprobanteDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoNeto" value="@Model.ComprobanteDTO.MontoNeto" col-position="col-lg-6" label="Mto. Neto" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoIgv" value="@Model.ComprobanteDTO.MontoIgv" col-position="col-lg-6" label="IGV" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoTotal" value="@Model.ComprobanteDTO.MontoTotal" col-position="col-lg-6" label="Total" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+            </div>
+
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ComprobanteDTO.ComprobanteId"></esd-hidden>
+      <esd-hidden for="@Model.EmpresaCuentaBancariaString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#cobranzaTab" role="tab" data-toggle="tab">Cobranza</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="cobranzaTab" role="tabpanel">
+            <div>
+               <esd-menubar id="cobranzaMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="cobranzaMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="cobranzaContainer">
+               <table id="cobranzaGrid"></table>
+               <div id="cobranzaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#cobranzaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarComprobanteCobranza", "Bancariza")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteCobranzaDTO.ComprobanteId", value: $('#ComprobanteId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','Fecha','# Operación','Monto','Cuenta','',''],
+         colModel: [
+            { name: 'ComprobanteCobranzaId', hidden: true },
+            { name: 'ComprobanteId', hidden: true },
+            {
+               name: "Fecha", width: 90, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            { name: 'NumeroOperacion', width: 150, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 30 } },
+            {
+               name: "Monto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                  }
+               }
+            },
+            {
+               name: 'EmpresaCuentaBancariaId', width: 300, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#EmpresaCuentaBancariaString').val(),
+               },
+               editrules: { required: true }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#cobranzaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#cobranzaGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('cobranzaMenuBar', 'cobranzaGrid');
+            }
+            else
+               $("#cobranzaMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('cobranzaMenuBar', 'cobranzaGrid');
+            $("#cobranzaGrid").appGrid('resizeGrid', 'cobranzaContainer');
+
+            $('#TransaccionComprobanteId').find('option').remove().end();
+            $('#TransaccionComprobanteId').append(new Option('@SelectListFirstOptionNameConstant.SELECT', ''));
+            var data = $("#cobranzaGrid").appGrid('getData');
+            $.each(data, function (index, item) {
+               if (item.Estado === '@EstadoConstante.ACTIVO') {
+                  var option = new Option(item.Nombre, item.ComprobanteCobranzaId);
+                  $('#TransaccionComprobanteId').append(option);
+               }
+            });
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('cobranzaContainer')
+      });
+
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Bancariza")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#EmpresaSedeId').validateNumeric('@SR.GetString("AS_empresa_sede_seleccion_requerida")'))
+         return false;
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#Abreviatura').validateString('@SR.GetString("GEN_nombre_corto_requerido")'))
+         return false;
+      if (!$('#TipoViaId').validateNumeric('@SR.GetString("MG_tipo_via_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoZonaId').validateNumeric('@SR.GetString("MG_tipo_zona_seleccion_requerida")'))
+         return false;
+      if (!$('#DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+         return false;
+      if (!$('#ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+         return false;
+      if (!$('#DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "ComprobanteDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+            { name: "ComprobanteDTO.EmpresaSedeId", value: $('#EmpresaSedeId').val(), type: 'int' },
+            { name: "ComprobanteDTO.Nombre", value: $('#Nombre').val() },
+            { name: "ComprobanteDTO.Abreviatura", value: $('#Abreviatura').val() },
+            { name: "ComprobanteDTO.TipoViaId", value: $('#TipoViaId').val(), type: 'int' },
+            { name: "ComprobanteDTO.NombreVia", value: $('#NombreVia').val() },
+            { name: "ComprobanteDTO.NumeroVia", value: $('#NumeroVia').val() },
+            { name: "ComprobanteDTO.Interior", value: $('#Interior').val() },
+            { name: "ComprobanteDTO.Departamento", value: $('#Departamento').val() },
+            { name: "ComprobanteDTO.Lote", value: $('#Lote').val() },
+            { name: "ComprobanteDTO.Manzana", value: $('#Manzana').val() },
+            { name: "ComprobanteDTO.Kilometro", value: $('#Kilometro').val() },
+            { name: "ComprobanteDTO.Block", value: $('#Block').val() },
+            { name: "ComprobanteDTO.Etapa", value: $('#Etapa').val() },
+            { name: "ComprobanteDTO.TipoZonaId", value: $('#TipoZonaId').val(), type: 'int' },
+            { name: "ComprobanteDTO.NombreZona", value: $('#NombreZona').val() },
+            { name: "ComprobanteDTO.DistritoId", value: $('#DistritoId').val(), type: 'int' },
+            { name: "ComprobanteDTO.EsVenta", value: $('#EsVenta').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "ComprobanteDTO.ServidorImpresion", value: $('#ServidorImpresion').val(), textCase:'none' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Bancariza")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#ComprobanteId").val(response.data.Id);
+               $('#EmpresaSedeId').prop('disabled', true);
+               $("#cobranzaGrid").appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function cobranzaMenuBarOnClick(key) {
+
+      var row = $('#cobranzaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               ComprobanteCobranzaId: 0,
+               ComprobanteId: $('#ComprobanteId').val(),
+               Fecha: moment('@DateTime.Today.ToShortDateString()', '@JavaScriptConstant.DATE_FORMAT').format('@JavaScriptConstant.DATE_FORMAT'),
+               Monto : 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#cobranzaGrid").appGrid('addRow', initdata);
+            $("#cobranzaMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarCobranzaInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#cobranzaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#cobranzaGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_NumeroOperacion').validateString('@SR.GetString("TS_numero_operacion_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_Monto').validateNumeric('@SR.GetString("GEN_codigo_monto")'))
+               return false;
+            if (!$('#' + rowId + '_EmpresaCuentaBancariaId').validateNumeric('@SR.GetString("TS_cuenta_bancaria_seleccion_requerida")'))
+               return false;
+
+            $("#cobranzaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#cobranzaGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarComprobanteCobranza", "Bancariza")',
+                  viewModel: [
+                     { name: "ComprobanteCobranzaDTO.ComprobanteCobranzaId", value: row.ComprobanteCobranzaId, type: 'int' },
+                     { name: "ComprobanteCobranzaDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+                     { name: "ComprobanteCobranzaDTO.Fecha", value: row.Fecha, type: 'datetime' },
+                     { name: "ComprobanteCobranzaDTO.NumeroOperacion", value: row.NumeroOperacion },
+                     { name: "ComprobanteCobranzaDTO.EmpresaCuentaBancariaId", value: row.EmpresaCuentaBancariaId, type: 'int' },
+                     { name: "ComprobanteCobranzaDTO.Monto", value: row.Monto, type: 'decimal' },
+                     { name: "ComprobanteCobranzaDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#cobranzaGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#cobranzaGrid").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarComprobanteCobranza", "Bancariza")',
+                     viewModel: [
+                        { name: "ComprobanteCobranzaDTO.ComprobanteCobranzaId", value: row.ComprobanteCobranzaId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#cobranzaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editarCobranzaInGrid() {
+      var rowId = $("#cobranzaGrid").appGrid("getSelectedRowId");
+      $('#cobranzaGrid').jqGrid('editRow', rowId);
+
+      $('#' + rowId + '_Fecha').prop('readonly', true);
+      $("#cobranzaMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#ComprobanteId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

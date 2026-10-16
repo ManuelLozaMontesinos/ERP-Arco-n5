@@ -1,0 +1,142 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.GuiaRemiAutoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="Serie" col-position="col-lg-2" label="Serie" col-label-position="col-lg-2" max-length="4"></esd-textbox>
+                  <esd-textbox id="Numero" col-position="col-lg-2" label="Número" col-label-position="col-lg-2" max-length="8"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc. Iden" col-label-position="col-lg-2" max-length="35"></esd-textbox>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "GuiaRemiAuto")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "GuiaRemisionDTO.Serie", value: $('#Serie').val() },
+                     { name: "GuiaRemisionDTO.Numero", value: $('#Numero').val() },
+                     { name: "GuiaRemisionDTO.MovimientoAlmacenDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                     { name: "GuiaRemisionDTO.MovimientoAlmacenDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "GuiaRemisionDTO.NumeroDocumentoAdicional", value: $('#NumeroDocumentoAdicional').val() },
+                     { name: "GuiaRemisionDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "GuiaRemisionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Serie', 'Numero', 'Fecha', 'Movimiento', 'Cliente', '#Doc','F.Traslado', '','Estado','Usuario', '',''],
+         colModel: [
+            { name: 'GuiaRemisionId', hidden: true },
+            { name: "Serie", width: 50 },
+            { name: "Numero", width: 80 },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "MovimientoAlmacen", width: 80 },
+            { name: "RazonSocial", width: 270 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: "FechaInicioTraslado", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "EstadoGuiaRemision", hidden: true },
+            { name: "EstadoGuiaRemisionNombre", width: 120 },
+            { name: "Usuario", width: 120 },
+            { name: 'Impreso', hidden: true },
+            { name: 'Estado', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#Serie,#Numero,#NumeroDocumentoIdentidad,#RazonSocial").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "GuiaRemisionDTO.GuiaRemisionId", value: row.GuiaRemisionId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "GuiaRemiAuto")'
+            });
+            break;
+
+      }
+      return true;
+   };
+</script>

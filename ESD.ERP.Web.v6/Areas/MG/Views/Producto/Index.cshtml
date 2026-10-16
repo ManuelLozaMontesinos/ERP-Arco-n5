@@ -1,0 +1,334 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.ProductoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="CRUDAndExport" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div id="app-search-card" class="card">
+        <div class="card-body">
+            <div class="row">
+                <div id="app-search-input-group" class="col-11">
+                    <div class="form-group row">
+                        <esd-dropdownlist id="TipoProductoId" for="@Model.TipoProductoList" col-position="col-lg-4" label="Tipo de Producto" col-label-position="col-lg-2"
+                                          onchange="tipoProductoIdOnChange()"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="GrupoProductoId" for="@Model.GrupoProductoList" col-position="col-lg-4" label="Grupo" col-label-position="col-lg-2"
+                                          enable="false" onchange="grupoProductoIdOnChange()"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="ClaseProductoId" for="@Model.ClaseProductoList" col-position="col-lg-4" label="Clase" col-label-position="col-lg-2"
+                                          enable="false" onchange="claseProductoIdOnChange()"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="FamiliaProductoId" for="@Model.FamiliaProductoList" col-position="col-lg-4" label="Familia" col-label-position="col-lg-2"
+                                          enable="false"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox id="Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2" max-length="12"></esd-textbox>
+                        <esd-checkbox id="VerAnulado" col-position="col-lg-2" label="Mostrar Anulados" onchange="VerAnuladoOnChange()"
+                                checkbox-style="Default"></esd-checkbox> 
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox id="Descripcion" col-position="col-lg-6" label="Descripcion" col-label-position="col-lg-2" max-length="100"></esd-textbox>
+                    </div>
+                </div>
+                <div class="col-1">
+                    <div class="form-group row">
+                        <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()" ></esd-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="bandejaContainer">
+        <table id="bandejaGrid"></table>
+        <div id="bandejaPager"></div>
+    </div>
+</section>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        habilitarExportar();
+
+        $("#bandejaGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarBandeja", "Producto")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.TipoProductoDTO.TipoProductoId", value: $('#TipoProductoId').val() || 0, type: 'int' },
+                        { name: "ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.TipoProductoId", value: $('#TipoProductoId').val() || 0, type: 'int' },
+                        { name: "ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.EsCombo", value: '@SiNoConstante.N' },
+                        { name: "ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoId", value: $('#GrupoProductoId').val() || 0, type: 'int' },
+                        { name: "ProductoDTO.FamiliaProductoDTO.ClaseProductoId", value: $('#ClaseProductoId').val() || 0, type: 'int' },
+                        { name: "ProductoDTO.FamiliaProductoId", value: $('#FamiliaProductoId').val() || 0, type: 'int' },
+                        { name: "ProductoDTO.Codigo", value: $('#Codigo').val() },
+                        { name: "ProductoDTO.Descripcion", value: $('#Descripcion').val() },
+                        { name: "ProductoDTO.EsOperacion", value: '@SiNoConstante.N' },
+                        { name: "ProductoDTO.EstadoProductoDTO.Codigo", value: $('#VerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                    ]
+                ));
+            }
+        },
+            colNames: ['', 'Codigo', 'Descripción', 'U.M.', 'Familia', 'Color', 'Estado', 'Estado Comercial', 'Fecha Baja', ''],
+            colModel: [
+            { name: 'ProductoId', hidden: true },
+            { name: "Codigo", width: 90 },
+            { name: "Descripcion", width: 350 },
+            { name: "UnidadMedidaNombre", width: 100 },
+            { name: "FamiliaNombre", width: 200 },
+            { name: "ColorNombre", width: 150 },
+            { name: "EatadoProducto", width: 100 },
+            { name: "EatadoComercialProducto", width: 120 },
+            { name: "FechaBaja", width: 80, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'Estado', hidden: true },
+        ],
+            pager: "#bandejaPager",
+            onSelectRow: function (rowid) {
+                if (rowid == null || rowid == 0)
+                    return;
+
+                $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+                habilitarExportar();
+                var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            },
+            gridComplete: function () {
+                $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+                $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+                habilitarExportar();
+            },
+    @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+            height: calculateGridHeight('bandejaContainer')
+          });
+       });
+    function clearButtonOnClick() {
+        $('#app-search-input-group').find('input:text').val('');
+        $("#TipoProductoId").val('');
+        $("#GrupoProductoId").val('');
+        $("#ClaseProductoId").val('');
+        $("#FamiliaProductoId").val('');
+        $('#bandejaGrid').appGrid('reloadJSON');
+    }
+    $(function () {
+        $("#Codigo,#Descripcion,#FamiliaProductoId").change(function () {
+            $('#bandejaGrid').appGrid('reloadJSON');
+        });
+    });
+    function tipoProductoIdOnChange() {
+
+        var tipoProductoId = $("#TipoProductoId").val();
+        if ($.isNullOrEmpty(tipoProductoId)) {
+            $("#GrupoProductoId").prop('disabled', true);
+            $("#ClaseProductoId").prop('disabled', true);
+            $("#FamiliaProductoId").prop('disabled', true);
+
+            $("#GrupoProductoId").val('');
+            $("#ClaseProductoId").val('');
+            $("#FamiliaProductoId").val('');
+            $('#bandejaGrid').appGrid('reloadJSON');
+            return;
+        }
+
+        $("#GrupoProductoId").val('');
+        $("#ClaseProductoId").val('');
+        $("#FamiliaProductoId").val('');
+        $("#GrupoProductoId").prop('disabled', true);
+        $("#ClaseProductoId").prop('disabled', true);
+        $("#FamiliaProductoId").prop('disabled', true);
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ListarGrupoProducto", "Producto")',
+            id: tipoProductoId,
+            onSuccess: function (response) {
+                if (response.success) {
+
+                    $('#GrupoProductoId').find('option').remove().end();
+                    $("#GrupoProductoId").addItems(response.data);
+                    $("#GrupoProductoId").prop('disabled', false);
+
+                    $('#bandejaGrid').appGrid('reloadJSON');
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+    function grupoProductoIdOnChange() {
+        var grupoProductoId = $("#GrupoProductoId").val();
+        if ($.isNullOrEmpty(grupoProductoId)) {
+            $("#ClaseProductoId").prop('disabled', true);
+            $("#FamiliaProductoId").prop('disabled', true);
+
+            $("#ClaseProductoId").val('');
+            $("#FamiliaProductoId").val('');
+            $('#bandejaGrid').appGrid('reloadJSON');
+            return;
+        }
+
+        $("#ClaseProductoId").val('');
+        $("#FamiliaProductoId").val('');
+        $("#ClaseProductoId").prop('disabled', true);
+        $("#FamiliaProductoId").prop('disabled', true);
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ListarClaseProducto", "Producto")',
+            id: grupoProductoId,
+            onSuccess: function (response) {
+                if (response.success) {
+
+                    $('#ClaseProductoId').find('option').remove().end();
+                    $("#ClaseProductoId").addItems(response.data);
+                    $("#ClaseProductoId").prop('disabled', false);
+
+                    $('#bandejaGrid').appGrid('reloadJSON');
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+    function claseProductoIdOnChange() {
+
+        var claseProductoId = $("#ClaseProductoId").val();
+        if ($.isNullOrEmpty(claseProductoId)) {
+            $("#FamiliaProductoId").prop('disabled', true);
+
+            $("#FamiliaProductoId").val('');
+            $('#bandejaGrid').appGrid('reloadJSON');
+            return;
+        }
+
+        $("#FamiliaProductoId").val('');
+        $("#FamiliaProductoId").prop('disabled', true);
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ListarFamiliaProducto", "Producto")',
+            id: claseProductoId,
+            onSuccess: function (response) {
+                if (response.success) {
+
+                    $('#FamiliaProductoId').find('option').remove().end();
+                    $("#FamiliaProductoId").addItems(response.data);
+                    $("#FamiliaProductoId").prop('disabled', false);
+
+                    $('#bandejaGrid').appGrid('reloadJSON');
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+
+    function VerAnuladoOnChange() {
+       $("#bandejaGrid").appGrid('reloadJSON');
+    };
+
+    function habilitarExportar() {
+        $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EXPORT_XLS', disabled: false });
+    }
+    function menuBarOnClick(key) {
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        var excludeKeys = ['@MenuItemKey.NEW', '@MenuItemKey.EXPORT_XLS'];
+        if (excludeKeys.indexOf(key) == -1) {
+            if ($.isEmpty(row)) {
+                msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+                return;
+            }
+        }
+
+        switch (key) {
+
+            case '@MenuItemKey.NEW':
+                $(this).getView({
+                    editAction: '@ViewModelEditAction.New',
+                    buttonId: key,
+                    viewModel: [
+                        { name: "ProductoDTO.ProductoId", value: 0, type: 'int' }
+                    ],
+                    urlAction: '@Url.Action("Crear", "Producto")'
+                });
+                break;
+
+            case '@MenuItemKey.EDIT':
+                $(this).getView({
+                    editAction: '@ViewModelEditAction.Edit',
+                    buttonId: key,
+                    viewModel: [
+                        { name: "ProductoDTO.ProductoId", value: row.ProductoId, type: 'int' }
+                    ],
+                    urlAction: '@Url.Action("Editar", "Producto")'
+                });
+                break;
+
+            case '@MenuItemKey.DELETE':
+                $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+                $(this).confirm({
+                    title: '@SR.GetString("APPMP_anular_titulo")',
+                    message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+                    onConfirm: function () {
+
+                        $(this).saveView({
+                            urlAction: '@Url.Action("Eliminar", "Producto")',
+                            viewModel: [
+                                { name: "ProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+                                { name: "ProductoDTO.Codigo", value: $('#Codigo').val(), type: 'int' }
+                            ],
+                            onSuccess: function (response) {
+                                if (response.success) {
+                                    $('#bandejaGrid').appGrid('reloadJSON');
+                                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                                } else {
+                                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                                }
+                            }
+                        });
+                    }
+                });
+                break;
+
+            /*case '@MenuItemKey.EXPORT_XLS':
+                $(this).getReport({
+                    buttonId: key,
+                    urlAction: '@Url.Action("ReportToExcel", "Producto")',
+                    onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                });
+                $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            break;*/
+
+            case '@MenuItemKey.EXPORT_XLS':
+
+                var checkbox = $('#VerAnulado').prop('checked')
+
+                if (checkbox == true) {
+                    $(this).confirm({
+                    title: 'Reporte',
+                    message: '¿Desea descargar el Reporte con productos anulados?',
+                    onConfirm: function () {
+
+                        $(this).getReport({
+                            buttonId: key,
+                            urlAction: '@Url.Action("ReportToExcelAnulados", "Producto")',
+                            onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                        });
+                        }
+                    });
+                } else {
+                    $(this).getReport({
+                        buttonId: key,
+                        urlAction: '@Url.Action("ReportToExcel", "Producto")',
+                        onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                    });
+                }               
+
+                $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            break;
+        }
+        return true;
+    };
+</script>

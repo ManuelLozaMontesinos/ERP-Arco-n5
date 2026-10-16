@@ -1,0 +1,117 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.CM.Models.OrdenCompraViewModel
+<div id="@Model.ModalEditId">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-10">
+               <div class="form-group row">
+                  <esd-textbox id="Codigo" col-position="col-lg-3" label="Código" col-label-position="col-lg-2" max-length="5" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="RazonSocial" col-position="col-lg-10" label="Razon Social" col-label-position="col-lg-2" max-length="150"
+                               in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-3" label="Desde" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-3" label="Hasta" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()" in-modal="true"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "OrdenCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenCompraDTO.Codigo", value: $('#mp-Codigo').val() },
+                     { name: "OrdenCompraDTO.ProveedorDTO.RazonSocial", value: $('#mp-RazonSocial').val() },
+                     { name: "OrdenCompraDTO.FechaDesde", value: $('#mp-FechaDesde').val(), type: 'date' },
+                     { name: "OrdenCompraDTO.FechaHasta", value: $('#mp-FechaHasta').val(), type: 'date' },
+                     { name: "OrdenCompraDTO.TipoProductoDTO.Codigo", value: '@Model.OrdenCompraDTO.TipoProductoDTO.Codigo' },
+                     { name: "OrdenCompraDTO.EstadoAprobacionDTO.Codigo", value: '@Model.OrdenCompraDTO.EstadoAprobacionDTO.Codigo' },
+                     { name: "OrdenCompraDTO.EstadoOrdenCompraList", value: JSON.parse('@Html.Raw(Model.ToJson(Model.OrdenCompraDTO?.EstadoOrdenCompraList))'), type: 'listString' },
+                     { name: "OrdenCompraDTO.Estado", value: '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Tipo', 'Fecha', '','Cliente', '#Doc', 'Mon.', 'Total', '', 'Estado'],
+         colModel: [
+            { name: 'OrdenCompraId', hidden: true },
+            { name: "Codigo", width: 70 },
+            { name: "TipoProducto", width: 80 },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'ProveedorId', hidden: true },
+            { name: "RazonSocial", width: 300 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: "Moneda", width: 50 },
+            { name: "MontoTotal", width: 100, align: 'right', formatter: 'number', sorttype: 'number' },
+            { name: "EstadoOrdenCompra", hidden: true },
+            { name: "EstadoOrdenCompraNombre", width: 200 }
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('@Model.ModalEditId')
+
+            var row = $(this).getRowData(rowid);
+            ordenCompraSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         height: 250
+      });
+   });
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-Codigo, #mp-RazonSocial").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+      $("#mp-Codigo").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#mp-Codigo").val())) {
+               var valueFmt = padLeadingZeros($("#mp-Codigo").val(), 5)
+               $("#mp-Codigo").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaPopupGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#mp-FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#mp-FechaHasta").val($("#mp-FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaPopupGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#mp-FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaPopupGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+</script>

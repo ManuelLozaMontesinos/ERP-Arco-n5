@@ -1,0 +1,453 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.PlanillaHoraViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="PlanillaId" for="@Model.PlanillaList" col-position="col-lg-4" label="Planilla"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MesId" for="@Model.MesList" col-position="col-lg-2" label="Mes"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.PlanillaProcesoDTO.ProcesoAnual" col-position="col-lg-1" label="# de Proceso"
+                                      col-label-position="col-lg-1" numeric-type="Integer" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-2" label="Moneda" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.PlanillaProcesoDTO.MontoTipoCambio" col-position="col-lg-1" label="T/C"
+                                      col-label-position="col-lg-1" enable="false"></esd-numerictextbox>
+                  <esd-datetimepicker for="@Model.PlanillaProcesoDTO.FechaDesde" col-position="col-lg-2" label="Fecha Inicio"
+                                      col-label-position="col-lg-1" enable="false"></esd-datetimepicker>
+                  <esd-datetimepicker for="@Model.PlanillaProcesoDTO.FechaHasta" col-position="col-lg-2" label="Fecha Fin"
+                                      col-label-position="col-lg-1" enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PlanillaProcesoDTO.PlanillaProcesoId"></esd-hidden>
+      <esd-hidden id="EstadoPlanillaProceso" value="@Model.PlanillaProcesoDTO.EstadoPlanillaProcesoDTO.Codigo"></esd-hidden>
+      <esd-hidden id="gridColModel" value="@Model.GridColModel"></esd-hidden>
+      <esd-hidden id="gridColName" value="@Model.GridColNames"></esd-hidden>
+      <esd-hidden id="horaList" value="@Model.HoraList"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#horaTab" role="tab" data-toggle="tab">Horas</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="horaTab" role="tabpanel">
+            <div>
+               <esd-menubar id="horaMenuBar" size="Small" for="@Model.MenuItemList" onclick="horaMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="personalListPopup" title="Personal" onclick="personalListPopupOnClick" size="Large">
+   <div id="personalListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="importarEditPopup" title="Importar Horas" size="Large" onclick="importarEditPopupOnClick">
+   <div id="importarEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="logPopup" title="Inconsistencias" size="Large">
+   <div id="logPopupContent">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-lg-12">
+               <div class="form-group">
+                  <span>El archivo procesado presenta las siguientes inconsistencias</span>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-textarea id="logTextArea" enable="false" rows="22"></esd-textarea>
+   </div>
+</esd-dialog>
+<esd-dialog id="personalHoraListPopup" title="Seleccionar Personal" onclick="personalHoraListPopupOnClick" size="Large">
+   <div id="personalHoraListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      if ($('#EstadoPlanillaProceso').val() === '@EstadoPlanillaProcesoConstante.CERRADA') {
+         $("#horaMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+      }
+
+      var columnModel = JSON.parse($('#gridColModel').val());
+      for (i = 0; i < columnModel.length; i++) {
+         cm = columnModel[i];
+         if (cm.formatter === 'number') {
+            cm.editoptions.dataInit = function (elem) {
+               $(elem).inputmask('decimal');
+            };
+         }
+      }
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties(new Dictionary<string, string>() { { "rowNum", "1000" }, { "rowList", "[1000]" } })
+         url: "@Url.Action("ListarPlanillaProcesoHora", "PlanillaHora")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PlanillaProcesoHoraDTO.PlanillaProcesoId", value: $('#PlanillaProcesoId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: $('#gridColName').val().split(','),
+         colModel: columnModel,
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            if ($('#EstadoPlanillaProceso').val() === '@EstadoPlanillaProcesoConstante.CERRADA')
+               return;
+
+            editCustomGridMenuBar('horaMenuBar', 'bandejaGrid');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('horaMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         loadComplete: function () {
+            if ($('#EstadoPlanillaProceso').val() === '@EstadoPlanillaProcesoConstante.CERRADA')
+               return;
+
+            var $this = $(this), rows = this.rows, l = rows.length, i, row;
+            for (i = 0; i < l; i++) {
+               row = rows[i];
+               if ($.inArray('jqgrow', row.className.split(' ')) >= 0) {
+                  $this.jqGrid('editRow', row.id, false);
+               }
+            }
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+      $('#personalListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal")',
+               container: 'personalListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#importarEditPopup').setDialog({
+         onShow: function (p) {
+
+            $(this).getView({
+               urlAction: '@Url.Action("ImportarEditPopup", "PlanillaHora")',
+               container: 'importarEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+      $('#personalHoraListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("PersonalHoraListPopup", "PlanillaHora")',
+               container: 'personalHoraListPopupContent',
+               viewModel: [
+                  { name: "PersonalMarcacionDTO.FechaDesde", value: $('#FechaDesde').val(), type:'date' },
+                  { name: "PersonalMarcacionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+      $(this).uploadFile({
+         browseButton: 'mp-ArchivoExcelButton',
+         urlAction: '@Url.Action("SubirArchivoHora", "PlanillaHora")',
+         title: "Archivo (XLS)",
+         extensions: "xls,xlsx",
+         parameters: { planillaProcesoId: $('#PlanillaProcesoId').val() },
+         onInit: function (uploader) {
+            $("#uploadFilePopup-OkButton").click(function () {
+               if (!$('#mp-ArchivoExcel').validateString('@SR.GetString("GEN_archivo_seleccion_requerida")'))
+                  return false;
+
+               uploader.start();
+               $('#uploadFilePopupContent').showLoadingOverlay();
+            });
+         },
+         onFilesAdded: function (files) {
+            files.forEach(function (file) {
+               $('#mp-ArchivoExcel').val(file.name);
+            });
+         },
+         onCompleted: function (info) {
+            var response = JSON.parse(info.response);
+            msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("GEN_proceso_concluido")');
+
+            if (!$.isNullOrEmpty(response.data)) {
+               $('#logTextArea').val('');
+               $('#logTextArea').val(response.data);
+               $('#logPopup').showDialog();
+            }
+            else
+               $("#bandejaGrid").appGrid('reloadJSON');
+
+            $('#uploadFilePopup').hideDialog();
+         },
+      });
+   });
+   function personalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('',row);
+   };
+   function personalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_personal_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#bandejaGrid").appGrid('getData');
+      var selectedData = _.where(data, { PersonalId: parseInt(row.PersonalId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("RH_personal_ya_seleccionado")');
+         return false;
+      }
+
+      var initdata = {
+         PersonalId: row.PersonalId,
+         RazonSocial: row.RazonSocial,
+         Estado: '@EstadoConstante.ACTIVO'
+      };
+
+      var arrTmp = $('#horaList').val().split('@SeparadorConstante.COMA');
+      arrTmp.forEach(function (elm) {
+         var elmkv = elm.split('@SeparadorConstante.DOS_PUNTOS');
+         initdata[elmkv[0]] = 0.00;
+      });
+
+      $("#bandejaGrid").appGrid('addRow', initdata);
+
+      $('#personalListPopup').hideDialog();
+   }
+   function menuBarOnClick(key) {
+
+      switch (key) {
+
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "PlanillaHora")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      var dict = {};
+      var arrTmp = $('#horaList').val().split('@SeparadorConstante.COMA');
+      arrTmp.forEach(function (elm) {
+         var elmkv = elm.split('@SeparadorConstante.DOS_PUNTOS');
+         dict[elmkv[0]] = elmkv[1];
+      });
+
+      var planillaProcesoHoraList = [];
+
+      var list = $('#bandejaGrid').appGrid('getDataIDs');
+      for (i in list) {
+         var rowId = list[i];
+         if (isEmptyRecord(rowId))
+            continue;
+
+         var row = $('#bandejaGrid').appGrid('getRow', rowId);
+         $.each(dict, function (k, v) {
+
+            var planillaProcesoHora = [
+               { name: "PlanillaProcesoId", value: $('#PlanillaProcesoId').val(), type: 'int' },
+               { name: "PersonalId", value: row.PersonalId, type: 'int' },
+               { name: "HoraRemunerativaId", value: v, type: 'int' },
+               { name: "Cantidad", value: $('#' + rowId + '_' + k).val(), type: 'decimal' },
+               { name: "Estado", value: row.Estado }
+            ];
+
+            planillaProcesoHoraList.push(planillaProcesoHora);
+         });
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PlanillaProcesoHoraDTOList", value: planillaProcesoHoraList, type: 'list' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "PlanillaHora")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function horaMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW','importar'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            $('#personalListPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+                  var rowId = $('#bandejaGrid').appGrid('getSelectedRowId');
+
+                  $('#bandejaGrid').jqGrid('setCell', rowId, 'Estado', '@EstadoConstante.INACTIVO');
+                  var arrTmp = $('#horaList').val().split('@SeparadorConstante.COMA');
+                  arrTmp.forEach(function (elm) {
+                     var elmkv = elm.split('@SeparadorConstante.DOS_PUNTOS');
+                     var textElm = '#' + rowId + '_' + elmkv[0];
+                     $(textElm).parent().parent().addClass("jqgrid-deletedrow");
+                     $(textElm).prop('readonly', true);
+                  });
+               }
+            });
+            break;
+
+         case 'importar':
+            $('#importarEditPopup').showDialog();
+            break;
+      }
+      return true;
+   };
+   function importarEditPopupOnClick() {
+
+      if ($('#mp-DesdeMarcacion').prop('checked')) {
+
+         $(this).saveView({
+            viewModel: [
+               { name: "PlanillaProcesoHoraDTO.PlanillaProcesoId", value: $('#PlanillaProcesoId').val(), type: 'int' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("ActualizarDesdeMarcacion", "PlanillaHora")',
+            onSuccess: function (response) {
+
+               if (response.success) {
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  $("#bandejaGrid").appGrid('reloadJSON');
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               }
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+            }
+         });
+         $('#importarEditPopup').hideDialog();
+         return;
+      };
+
+      $('#importarEditPopup').hideDialog();
+   };
+   function mp_descargarFormatoOnClick() {
+
+      $(this).getReport({
+         urlAction: '@Url.Action("DescargarFormato", "PlanillaHora")',
+         onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+      });
+   };
+   function personalHoraListPopupOnClick() {
+      var list = $('#bandejaPopupGrid').appGrid('getSelectedRowIdList');
+
+      if (list.length === 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("RH_personal_multiple_seleccion_requerida")');
+         return false;
+      }
+      $('#personalHoraListPopup').hideDialog();
+
+      var personalIdList = [];
+      for (i in list) {
+         var row = $('#bandejaPopupGrid').appGrid('getRow', list[i]);
+         personalIdList.push(row.PersonalId);
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PlanillaProcesoHoraDTO.PlanillaProcesoId", value: $('#PlanillaProcesoId').val(), type: 'int' },
+            { name: "PlanillaProcesoHoraDTO.PersonalIdList", value: personalIdList, type: 'listInt' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("GrabarListaPersonaId", "PlanillaHora")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $("#bandejaGrid").appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function editCustomGridMenuBar(key, gridName) {
+
+      if ($('#EstadoPlanillaProceso').val() === '@EstadoPlanillaProcesoConstante.CERRADA') {
+         $('#' + key).appMenu('disabled');
+         return;
+      }
+
+      if (!$("#PlanillaProcesoId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+
+      $('#' + key).appMenu('disabledButton', { buttonId: 'importar', disabled: false });
+   };
+</script>

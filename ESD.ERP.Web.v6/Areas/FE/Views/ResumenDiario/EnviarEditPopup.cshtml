@@ -1,0 +1,29 @@
+﻿@model ESD.ERP.Web.Areas.FE.Models.DocEmitidoViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <h6 class="card-header">Resumen de Documentos</h6>
+      <div class="card-body">
+         <div class="table-responsive">
+            <table class="table table-sm">
+               <thead>
+                  <tr>
+                     <th scope="col">Nombre</th>
+                     <th scope="col">Cantidad</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  @foreach (var item in Model.ComprobanteDTOList)
+                  {
+                     <tr>
+                        <td>@item.EstadoSunatDTO.Nombre</td>
+                        <td class="font-weight-bold">@Convert.ToInt32(item.MontoBruto).ToString()</td>
+                     </tr>
+                  }
+               </tbody>
+            </table>
+         </div>
+      </div>
+   </div>
+</div>
+<esd-hidden for="@Model.DocumentosValidos" in-modal="true"></esd-hidden>
+<esd-hidden for="@Model.DocumentosConError" in-modal="true"></esd-hidden>

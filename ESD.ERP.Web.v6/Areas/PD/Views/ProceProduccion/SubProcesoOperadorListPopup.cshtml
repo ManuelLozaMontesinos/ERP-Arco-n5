@@ -1,0 +1,73 @@
+﻿@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.PD.Models.ProceProduccionViewModel
+<div id="@Model.ModalEditId">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-10">
+               <div class="form-group row">
+                  <esd-textbox id="RazonSocial" col-position="col-lg-10" label="Apellidos y Nombres" col-label-position="col-lg-2" max-length="150" in-modal="true"></esd-textbox>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()" in-modal="true"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarSubProcesoProduccionPersonal", "ProceProduccion")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "SubProcesoProduccionPersonalDTO.SubProcesoProduccionId", value: '@Model.SubProcesoProduccionPersonalDTO.SubProcesoProduccionId', type: 'int' },
+                     { name: "SubProcesoProduccionPersonalDTO.PersonalDTO.ProveedorDTO.RazonSocial", value: $('#mp-RazonSocial').val() },
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Apellidos y Nombres', ''],
+         colModel: [
+            { name: 'SubProcesoProduccionPersonalId', hidden: true },
+            { name: 'PersonalId', hidden: true },
+            { name: 'RazonSocial', width: 400, editable: false },
+            { name: 'Estado', hidden: true }
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('@Model.ModalEditId')
+
+            var row = $(this).getRowData(rowid);
+            subProcesoProduccionPersonalSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: 250
+      });
+   });
+   function mp_clearButtonOnClick() {
+      $('#@Model.ModalEditId').find('input:text').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-RazonSocial").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

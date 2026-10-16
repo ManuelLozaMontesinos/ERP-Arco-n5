@@ -1,0 +1,327 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.CajaCobranzaViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ComprobanteDTO.TipoDocumentoComercialDTO.Abreviatura" col-position="col-lg-1" label="T/D" col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.Serie" col-position="col-lg-1" enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.ComprobanteDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" selected-value="@Model.ComprobanteDTO.MonedaId" col-position="col-lg-2" label="Moneda"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.ComprobanteDTO.MontoTipoCambio" col-position="col-lg-2" label="T/C" col-label-position="col-lg-2" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.ComprobanteDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente"
+                               col-label-position="col-lg-2" onclick="proveedorOnClick" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="VendedorNombre" value="@Model.ComprobanteDTO.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-4" label="Vendedor"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-dropdownlist id="ListaPrecioId" for="@Model.ListaPrecioList" selected-value="@Model.ComprobanteDTO.ListaPrecioId" col-position="col-lg-4" label="Lista Precio"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoCondicionPagoId" for="@Model.TipoCondicionPagoList" col-position="col-lg-4" label="Cond. Pago"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-dropdownlist id="TipoCondicionPagoId" for="@Model.MedioPagoList" col-position="col-lg-4" label="Cond. Pago"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.ComprobanteDTO.Observacion" col-position="col-lg-6" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3" enable="false"></esd-textarea>
+               </div>
+               <div class="form-group row">
+                  <label class="col-lg-10 offset-2" style="text-align: left">
+                     <span class="badge badge-warning">Item ya tiene dcto desde la Lista de Precios.</span>
+                     <span class="badge badge-success">Item ya tiene el incremento del 5% en el P.U.</span>
+                  </label>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoComprobanteNombre" value="@Model.ComprobanteDTO.EstadoComprobanteDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoNeto" value="@Model.ComprobanteDTO.MontoNeto" col-position="col-lg-6" label="Mto. Neto" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoIgv" value="@Model.ComprobanteDTO.MontoIgv" col-position="col-lg-6" label="IGV" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoTotal" value="@Model.ComprobanteDTO.MontoTotal" col-position="col-lg-6" label="Total" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ComprobanteDTO.ComprobanteId"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.CajaId"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.MonedaDTO.EsLocal"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.ImpuestoTasaDTO.Tasa"></esd-hidden>
+      <esd-hidden for="@Model.PorcentajeFraccionPU"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="emitirEditPopup" title="Emitir Comprobante" onclick="emitirEditPopupOnClick">
+   <div id="emitirEditPopupContent"></div>
+</esd-dialog>
+<style type="text/css">
+   .jqgrid-cell-warning {
+      background: #ffc107;
+      color: #212529;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #4EA049;
+      font-weight: bold;
+   }
+
+   .jqgrid-cell-success {
+      background: #28a745;
+      color: #fff;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #FFFFFF;
+      font-weight: bold;
+   }
+
+   .jqgrid-cell-item-sold-out {
+      background: #dc3545;
+      color: #fff;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #FFFFFF;
+      font-weight: bold;
+   }
+</style>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarComprobanteProducto", "CajaCobranza")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteProductoDTO.ComprobanteId", value: $('#ComprobanteId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Código', 'Producto', '', '', '', 'U.M.', '', 'Detalle', 'Cantidad', '', '', '', 'P.U.',
+            'Nuevo P.U.','', '', '','', '', 'IGV', 'Total', '', '', ''],
+         colModel: [
+            { name: 'ComprobanteProductoId', hidden: true },
+            { name: 'ComprobanteId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 90, formatter: codigoFormatter },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'UsarIncrementoFraccion', hidden: true },
+            { name: 'TipoProducto', hidden: true },
+            { name: 'UnidadMedidaId', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 80, editable: false },
+            { name: 'TipoIgv', hidden: true },
+            { name: 'Descripcion', width: 220, editable: false },
+            {
+               name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'ValorUnitarioLista', hidden: true },
+            { name: 'PrecioUnitarioLista', hidden: true },
+            { name: 'ValorUnitario', hidden: true },
+            {
+               name: "PrecioUnitario", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            {
+               name: "PrecioAutorizado", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'IncluyeDescuentoListaPrecio', hidden: true },
+            { name: 'SinSaldo', hidden: true },
+            { name: 'SolicitaAutorizacionDescuento', hidden: true },
+            { name: 'MontoBruto', hidden: true },
+            { name: 'MontoNeto', hidden: true },
+            { name: 'MontoIgv', width: 100, align: 'right', formatter: 'number' },
+            {
+               name: "MontoTotal", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'TipoAfectacionIgvId', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+         },
+         height: calculateGridHeight('productoContainer')
+      });
+      $('#emitirEditPopup').setDialog({
+         onShow: function (p) {
+
+            $(this).getView({
+               urlAction: '@Url.Action("EmitirEditPopup", "CajaCobranza")',
+               viewModel: [
+                  { name: "ComprobanteDTO.ComprobanteId", value: $("#ComprobanteId").val(), type: 'int' }
+               ],
+               container: 'emitirEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'emitir':
+            $('#emitirEditPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "CajaCobranza")'
+            });
+            break;
+      }
+   };
+   function emitirEditPopupOnClick() {
+
+      if ($.isNullOrEmpty($('#CajaId').val())) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_caja_no_configurada")');
+         return;
+      }
+
+      if (!$('#mp-MedioPagoId').validateNumeric('@SR.GetString("VT_medio_pago_seleccion_requerida")'))
+         return false;
+
+      $('#emitirEditPopup').saveView({
+         viewModel: [
+            { name: "ComprobanteDTO.ComprobanteId", value: $("#ComprobanteId").val(), type: 'int' },
+            { name: "ComprobanteDTO.CajaId", value: $('#CajaId').val(), type: 'int' }
+         ],
+         urlAction: '@Url.Action("Emitir", "CajaCobranza")',
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#emitirEditPopup').hideDialog();
+
+               var reportParam = "comprobanteId=" + $("#ComprobanteId").val()
+                  + "&copia1=S"
+                  + "&copia2=" + ($('#mp-paraAdmCheckBox').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N')
+                  + "&copia3=" + ($('#mp-paraDespachoCheckBox').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N');
+
+               $(this).getReport({
+                  urlAction: '@Url.Action("ReporteEmitido", "CajaCobranza")',
+                  parameters: reportParam,
+                  onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+               });
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'emitir', disabled: true });
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'emitir', disabled: false });
+            }
+
+         }
+      });
+   };
+   function codigoFormatter(cellvalue, options, rowObject) {
+
+      if (rowObject.IncluyeDescuentoListaPrecio === '@SiNoConstante.S') {
+         return '<div class="jqgrid-cell-warning">' + cellvalue + '</div>'
+      }
+      if (rowObject.UsarIncrementoFraccion === '@SiNoConstante.S') {
+         var fracPart = (rowObject.Cantidad % 1);
+
+         if(fracPart != 0)
+            return '<div class="jqgrid-cell-success">' + cellvalue + '</div>'
+      }
+      if (rowObject.SinSaldo === '@SiNoConstante.S') {
+         return '<div class="jqgrid-cell-item-sold-out">' + cellvalue + '</div>'
+      }
+
+      if(cellvalue == null)
+         return '';
+
+      return cellvalue;
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#ComprobanteId").validateNumeric()) {
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

@@ -1,0 +1,100 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.ComprobanteViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-2" label="Doc. Com."
+                                    col-label-position="col-lg-2" onchange="mp_tipoDocumentoComercialIdOnChange();" in-modal="true"></esd-dropdownlist>
+                  <esd-dropdownlist id="Serie" for="@Model.SerieList" col-position="col-lg-2" onchange="serieOnChange();"
+                                    in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.ComprobanteDTO.Numero" col-position="col-lg-2" enable="false" in-modal="true"></esd-textbox>
+                  <esd-datetimepicker for="@Model.ComprobanteDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      in-modal="true"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Proveedor2" button-style="List" value="@Model.ComprobanteDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente"
+                                     col-label-position="col-lg-2" onclick="mp_proveedorOnClick" in-modal="true"></esd-buttontextbox>
+                  <esd-textbox id="NumeroDocumentoIdentidad2" value="@Model.ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false" in-modal="true"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.ComprobanteDTO.ProveedorId" in-modal="true"></esd-hidden>
+   <esd-hidden for="@Model.ComprobanteDTO.AlmacenId" in-modal="true"></esd-hidden>
+   <esd-hidden for="@Model.ComprobanteDTO.EsContingencia" in-modal="true"></esd-hidden>
+</div>
+<script type="text/javascript">
+   function mp_tipoDocumentoComercialIdOnChange() {
+
+      var tipoDocumentoComercialId = $("#mp-TipoDocumentoComercialId").val();
+      if ($.isNullOrEmpty(tipoDocumentoComercialId)) {
+         $('#mp-Serie').val('');
+         $('#mp-AlmacenId').val('');
+         $('#mp-EsContingencia').val('');
+         return;
+      }
+
+      var popupParams = getPopupParam('mp-edit-panel')
+
+      $('#' + popupParams.dialogId).postAction({
+         urlAction: '@Url.Action("ListarSerie", "Comprobante")',
+         viewModel: [
+            { name: "ComprobanteDTO.TipoDocumentoComercialId", value: tipoDocumentoComercialId, type: 'int' },
+            { name: "ComprobanteDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-Serie').find('option').remove().end();
+               $("#mp-Serie").addItems(response.data.list);
+               $('#mp-AlmacenId').val(response.data.almacenId);
+               $('#mp-EsContingencia').val(response.data.esContingencia);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_serieOnChange() {
+
+      var documentoComercialSerieId = $("#mp-Serie").val();
+      if ($.isNullOrEmpty(documentoComercialSerieId)) {
+         $('#mp-AlmacenId').val('');
+         $('#mp-EsContingencia').val('');
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerDocumentoSerie", "Comprobante")',
+         id: documentoComercialSerieId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#mp-AlmacenId").val(response.data.AlmacenId);
+               $("#mp-EsContingencia").val(response.data.EsContingencia);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_validarDatos() {
+
+      if (!$('#mp-TipoDocumentoComercialId').validateNumeric('@SR.GetString("MG_tipo_documento_comercial_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-Serie').validateString('@SR.GetString("GEN_serie_requerida")'))
+         return false;
+      if (!$('#mp-Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#mp-ProveedorId').validateNumeric('@SR.GetString("MG_proveedor_seleccion_requerida")'))
+         return false;
+
+      return true;
+   };
+   function mp_proveedorOnClick() {
+      $('#provComproListPopup').showDialog();
+   };
+</script>

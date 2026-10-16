@@ -1,0 +1,58 @@
+﻿html,
+body {
+   /*height: 100%;
+   margin: 0;
+   padding: 0;
+   border: none;*/
+   font-size: 14px;
+   /*background-color: #f6f9fa;*/
+}
+
+/*
+ * --------------------------------------------
+ * Bootstrap : Customize
+ * --------------------------------------------
+ */
+.col-form-label {
+   font-size: 0.8571428571428571rem !important;
+   text-align: right;
+   padding-top: 3px;
+   padding-right: 0px;
+   padding-left: 0px;
+}
+
+.form-control {
+   box-shadow: none;
+   /*font-size: 0.8571428571428571rem !important;*/
+}
+.form-control-sm {
+   height: calc(1.8125rem);
+   padding: .2rem .4rem;
+}
+.form-check-label {
+   font-size: 0.8571428571428571rem !important;
+}
+.form-group {
+   margin-bottom: 3px;
+}
+
+.card {
+   margin-bottom: 5px;
+   border-radius: .2rem;
+}
+.card-body {
+   padding: 0.7142857142857143rem;
+}
+
+/*.btn {
+   font-size: 0.8571428571428571rem !important;
+}*/
+
+/*
+ * --------------------------------------------
+ * AdminLTE : Customize
+ * --------------------------------------------
+ */
+.layout-footer-fixed .wrapper .content-wrapper {
+   padding-bottom: 5px!important;
+}

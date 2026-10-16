@@ -1,0 +1,142 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.PlanillaProcesoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="PlanillaId" for="@Model.PlanillaList" col-position="col-lg-4" label="Planilla"
+                                    col-label-position="col-lg-2" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MesId" for="@Model.MesList" col-position="col-lg-4" label="Mes"
+                                    col-label-position="col-lg-2" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="PeriodicidadRemunerativaId" for="@Model.PeriodicidadRemunerativaList" col-position="col-lg-4" label="Periodo de Pago"
+                                    col-label-position="col-lg-2" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.PlanillaProcesoDTO.ProcesoAnual" col-position="col-lg-2" label="# de Proceso"
+                                      col-label-position="col-lg-2" numeric-type="Integer"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-2" label="Moneda" col-label-position="col-lg-2"
+                                    onchange="monedaIdOnChange"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.PlanillaProcesoDTO.MontoTipoCambio" col-position="col-lg-2" label="T/C"
+                                      col-label-position="col-lg-2" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PlanillaProcesoDTO.FechaDesde" col-position="col-lg-2" label="Fecha Inicio"
+                                      col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker for="@Model.PlanillaProcesoDTO.FechaHasta" col-position="col-lg-2" label="Fecha Fin"
+                                      col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PlanillaProcesoDTO.PlanillaProcesoId"></esd-hidden>
+      <esd-hidden for="@Model.PlanillaProcesoDTO.MonedaDTO.EsLocal"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      habilitarSiMonedaLocal();
+   });
+   function habilitarSiMonedaLocal() {
+      if($("#EsLocal").val() === '@SiNoConstante.S')
+         $("#MontoTipoCambio").prop('readonly',true);
+      else
+         $("#MontoTipoCambio").prop('readonly',false);
+   }
+   function monedaIdOnChange() {
+      var monedaId = $("#MonedaId").val();
+      if ($.isNullOrEmpty(monedaId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerMoneda", "PlanillaProceso")',
+         id: monedaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#EsLocal').val(response.data.EsLocal);
+               habilitarSiMonedaLocal();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "PlanillaProceso")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#PlanillaId').validateNumeric('@SR.GetString("RH_planilla_seleccion_requerida")'))
+         return false;
+      if (!$('#MesId').validateNumeric('@SR.GetString("GEN_mes_seleccion_requerida")'))
+         return false;
+      if (!$('#PeriodicidadRemunerativaId').validateNumeric('@SR.GetString("RH_periodicidad_renunerativa_seleccion_requerida")'))
+         return false;
+      if (!$('#ProcesoAnual').validateNumeric('@SR.GetString("RH_planilla_proceso_numero_requerido")'))
+         return false;
+      if ($('#EsLocal').val() === '@SiNoConstante.N') {
+         if (!$('#MontoTipoCambio').validateNumeric('@SR.GetString("GEN_tipo_cambio_monto_requerido")'))
+            return false;
+      }
+      if (!$('#MonedaId').validateNumeric('@SR.GetString("GEN_moneda_seleccion_requerida")'))
+         return false;
+      if (!$('#FechaDesde').validateNumeric('@SR.GetString("RH_planilla_proceso_fecha_rango_requerida")'))
+         return false;
+      if (!$('#FechaHasta').validateNumeric('@SR.GetString("RH_planilla_proceso_fecha_rango_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PlanillaProcesoDTO.PlanillaProcesoId", value: $('#PlanillaProcesoId').val(), type: 'int' },
+            { name: "PlanillaProcesoDTO.PlanillaId", value: $('#PlanillaId').val(), type: 'int' },
+            { name: "PlanillaProcesoDTO.ProcesoAnual", value: $('#ProcesoAnual').val(), type: 'int' },
+            { name: "PlanillaProcesoDTO.MesId", value: $('#MesId').val(), type: 'int' },
+            { name: "PlanillaProcesoDTO.MonedaId", value: $('#MonedaId').val(), type: 'int' },
+            { name: "PlanillaProcesoDTO.MontoTipoCambio", value: $('#MontoTipoCambio').val(), type: 'decimal' },
+            { name: "PlanillaProcesoDTO.PeriodicidadRemunerativaId", value: $('#PeriodicidadRemunerativaId').val(), type: 'int' },
+            { name: "PlanillaProcesoDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+            { name: "PlanillaProcesoDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "PlanillaProceso")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#PlanillaProcesoId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

@@ -1,0 +1,493 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.ComboProductoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoProductoId" for="@Model.TipoProductoList" col-position="col-lg-4" label="Tipo de Producto" col-label-position="col-lg-2"
+                                    onchange="tipoProductoIdOnChange()" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="GrupoProductoId" for="@Model.GrupoProductoList" col-position="col-lg-4" label="Grupo" col-label-position="col-lg-2"
+                                    enable="false" onchange="grupoProductoIdOnChange()"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="ClaseProductoId" for="@Model.ClaseProductoList" col-position="col-lg-4" label="Clase" col-label-position="col-lg-2"
+                                    enable="false" onchange="claseProductoIdOnChange()"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="FamiliaProductoId" for="@Model.FamiliaProductoList" col-position="col-lg-4" label="Familia" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProductoDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProductoDTO.Descripcion" col-position="col-lg-6" label="Descripcion" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="UnidadMedidaId" for="@Model.UnidadMedidaList" col-position="col-lg-3" label="Unidad de Medida" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="EstadoProductoId" for="@Model.EstadoProductoList" col-position="col-lg-2" label="Estado" col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-dropdownlist id="EstadoComercialProductoId" for="@Model.EstadoComercialProductoList" col-position="col-lg-2" label="Estado Comercial" col-label-position="col-lg-1"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ProductoDTO.ProductoId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos en Combo</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="productoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="productoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="productoListPopup" title="Productos" onclick="productoListPopupOnClick" size="Large">
+   <div id="productoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarComboProducto", "ComboProducto")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComboProductoDTO.ProductoId", value: $('#ProductoId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Codigo', 'Producto', '', 'U.M.', 'Cantidad', '% P. Lista', '#Dec. Redon.','',''],
+         colModel: [
+            { name: 'ComboProductoId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'ProductoIncluidoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'Descripcion', width: 350, editable: false },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.ComboProductoId) && rowObject.ComboProductoId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Producto" name="productoButton"' + disabled + ' onclick="mostrarProducto(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            { name: 'UnidadMedidaNombre', width: 150, editable: false },
+            {
+               name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                  }
+               }
+            },
+            {
+               name: "PorcentajePrecio", width: 80, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "NumeroDecimalesRedondeo", width: 100, align: 'right', formatter: 'integer', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('integer', { integerDigits: 1, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            }
+            else
+               $("#productoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+      $('#productoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Producto")',
+               container: 'productoListPopupContent',
+               viewModel: [
+                  { name: "ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.EsCombo", value: '@SiNoConstante.N' },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function tipoProductoIdOnChange() {
+
+      var tipoProductoId = $("#TipoProductoId").val();
+      if ($.isNullOrEmpty(tipoProductoId)) {
+         $("#GrupoProductoId").prop('disabled', true);
+         $("#ClaseProductoId").prop('disabled', true);
+         $("#FamiliaProductoId").prop('disabled', true);
+
+         $("#GrupoProductoId").val('');
+         $("#ClaseProductoId").val('');
+         $("#FamiliaProductoId").val('');
+         return;
+      }
+
+      $("#GrupoProductoId").val('');
+      $("#ClaseProductoId").val('');
+      $("#FamiliaProductoId").val('');
+      $("#GrupoProductoId").prop('disabled', true);
+      $("#ClaseProductoId").prop('disabled', true);
+      $("#FamiliaProductoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarGrupoProducto", "ComboProducto")',
+         id: tipoProductoId,
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#GrupoProductoId').find('option').remove().end();
+               $("#GrupoProductoId").addItems(response.data);
+               $("#GrupoProductoId").prop('disabled', false);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function grupoProductoIdOnChange() {
+
+      var grupoProductoId = $("#GrupoProductoId").val();
+      if ($.isNullOrEmpty(grupoProductoId)) {
+         $("#ClaseProductoId").prop('disabled', true);
+         $("#FamiliaProductoId").prop('disabled', true);
+
+         $("#ClaseProductoId").val('');
+         $("#FamiliaProductoId").val('');
+         return;
+      }
+
+      $("#ClaseProductoId").val('');
+      $("#FamiliaProductoId").val('');
+      $("#ClaseProductoId").prop('disabled', true);
+      $("#FamiliaProductoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarClaseProducto", "ComboProducto")',
+         id: grupoProductoId,
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#ClaseProductoId').find('option').remove().end();
+               $("#ClaseProductoId").addItems(response.data);
+               $("#ClaseProductoId").prop('disabled', false);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function claseProductoIdOnChange() {
+
+      var claseProductoId = $("#ClaseProductoId").val();
+      if ($.isNullOrEmpty(claseProductoId)) {
+         $("#FamiliaProductoId").prop('disabled', true);
+
+         $("#FamiliaProductoId").val('');
+         return;
+      }
+
+      $("#FamiliaProductoId").val('');
+      $("#FamiliaProductoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarFamiliaProducto", "ComboProducto")',
+         id: claseProductoId,
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#FamiliaProductoId').find('option').remove().end();
+               $("#FamiliaProductoId").addItems(response.data);
+               $("#FamiliaProductoId").prop('disabled', false);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "ComboProducto")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#TipoProductoId').validateNumeric('@SR.GetString("MG_tipo_producto_seleccion_requerida")'))
+         return false;
+      if (!$('#GrupoProductoId').validateNumeric('@SR.GetString("MG_grupo_producto_seleccion_requerida")'))
+         return false;
+      if (!$('#ClaseProductoId').validateNumeric('@SR.GetString("MG_clase_producto_seleccion_requerida")'))
+         return false;
+      if (!$('#FamiliaProductoId').validateNumeric('@SR.GetString("MG_familia_producto_seleccion_requerida")'))
+         return false;
+      if (!$('#Descripcion').validateString('@SR.GetString("GEN_descripcion_requerida")'))
+         return false;
+      if (!$('#UnidadMedidaId').validateNumeric('@SR.GetString("MG_unidad_medida_seleccion_requerida")'))
+         return false;
+      if (!$('#EstadoProductoId').validateNumeric('@SR.GetString("MG_estado_producto_seleccion_requerida")'))
+         return false;
+      if (!$('#EstadoComercialProductoId').validateNumeric('@SR.GetString("MG_estado_comercial_producto_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "ProductoDTO.ProductoId", value: $('#ProductoId').val(), type: 'int' },
+            { name: "ProductoDTO.FamiliaProductoId", value: $('#FamiliaProductoId').val(), type: 'int' },
+            { name: "ProductoDTO.Descripcion", value: $('#Descripcion').val() },
+            { name: "ProductoDTO.UnidadMedidaId", value: $('#UnidadMedidaId').val(), type: 'int' },
+            { name: "ProductoDTO.EstadoProductoId", value: $('#EstadoProductoId').val(), type: 'int' },
+            { name: "ProductoDTO.EstadoComercialProductoId", value: $('#EstadoComercialProductoId').val(), type: 'int' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "ComboProducto")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#ProductoId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $('#TipoProductoId').prop('disabled', true);
+               $('#GrupoProductoId').prop('disabled', true);
+               $('#ClaseProductoId').prop('disabled', true);
+               $('#FamiliaProductoId').prop('disabled', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+               $("#productoGrid").appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarProducto();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarComboProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#productoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_Cantidad').validateNumeric('@SR.GetString("GEN_cantidad_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_PorcentajePrecio').validateNumeric('@SR.GetString("TS_porcentaje_precio_lista_requerido")'))
+               return false;
+
+            $("#productoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#productoGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarComboProducto", "ComboProducto")',
+                  viewModel: [
+                     { name: "ComboProductoDTO.ComboProductoId", value: row.ComboProductoId, type: 'int' },
+                     { name: "ComboProductoDTO.ProductoId", value: $('#ProductoId').val(), type: 'int' },
+                     { name: "ComboProductoDTO.ProductoIncluidoId", value: row.ProductoIncluidoId, type: 'int' },
+                     { name: "ComboProductoDTO.Cantidad", value: row.Cantidad, type: 'decimal' },
+                     { name: "ComboProductoDTO.PorcentajePrecio", value: row.PorcentajePrecio, type: 'decimal' },
+                     { name: "ComboProductoDTO.NumeroDecimalesRedondeo", value: row.NumeroDecimalesRedondeo, type: 'decimal' },
+                     { name: "ComboProductoDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#productoGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#productoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarComboProducto", "ComboProducto")',
+                     viewModel: [
+                        { name: "ComboProductoDTO.ComboProductoId", value: row.ComboProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#productoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function mostrarProducto() {
+      $('#productoListPopup').showDialog();
+   };
+   function productoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      productoSelectedPopup('',row);
+   };
+   function productoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#productoGrid").appGrid('getData');
+      var selectedData = _.where(data, { ProductoIncluidoId: parseInt(row.ProductoId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_producto_ya_seleccionado")');
+         return false;
+      }
+
+      var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            ComboProductoId: 0,
+            ProductoId: $('#ProductoId').val(),
+            Codigo: row.Codigo,
+            ProductoIncluidoId: row.ProductoId,
+            Descripcion: row.Descripcion,
+            UnidadMedidaNombre: row.UnidadMedidaNombre,
+            Cantidad: 0,
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#productoGrid").appGrid('addRow', initdata);
+         $("#productoMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+         $('#productoGrid').jqGrid('setCell', rowId, 'Codigo', row.Codigo);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoIncluidoId', row.ProductoId);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Descripcion', row.Descripcion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaNombre', row.UnidadMedidaNombre);
+      }
+
+      $('#productoListPopup').hideDialog();
+   }
+   function editarComboProductoInGrid() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+      $('#productoGrid').jqGrid('editRow', rowId);
+
+      $('#' + rowId + '_UnidadMedidaId').prop('disabled', true);
+      $("#productoMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#GrupoProductoId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

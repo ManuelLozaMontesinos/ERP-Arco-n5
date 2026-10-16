@@ -1,0 +1,95 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.ReporteGenViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="PreviewExportList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div id="app-search-card" class="card">
+        <div class="card-body">
+            <div class="row">
+                <div id="app-search-input-group" class="col-12">
+                    <div class="form-group row">
+                        <esd-buttontextbox id="Vendedor" col-position="col-lg-4" label="Vendedor" col-label-position="col-lg-1" onclick="vendedorOnClick"></esd-buttontextbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-radiobutton id="PorProducto" group-name="seleccionRadio" label="Agrupado por Producto/Servicio" col-position="offset-lg-1 col-lg-4" checked="true"></esd-radiobutton>
+                    </div>
+                    <div class="form-group row">
+                        <esd-radiobutton id="PorDocumento" group-name="seleccionRadio" label="Agrupado por Documento" col-position="offset-lg-1 col-lg-4"></esd-radiobutton>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <esd-hidden id="VendedorId"></esd-hidden>
+    </div>
+</section>
+<esd-dialog id="vendedorListPopup" title="Vendedor" onclick="vendedorListPopupOnClick" size="Large">
+    <div id="vendedorListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+       $('#vendedorListPopup').setDialog({
+          onShow: function (p) {
+             $(this).getView({
+                urlAction: '@Url.Action("ListPopup", "Vendedor")',
+                container: 'vendedorListPopupContent',
+                showLoading: false,
+                hideLoading: false
+             });
+          },
+          onShown: function () {
+             $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+          }
+       });
+    });
+    function vendedorOnClick(key) {
+       $('#vendedorListPopup').showDialog();
+    };
+    function vendedorListPopupOnClick() {
+
+       var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+       vendedorSelectedPopup('', row);
+    };
+    function vendedorSelectedPopup(sourceId, row) {
+
+       if($.isEmpty(row)){
+          msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("VT_vendedor_seleccion_requerida")');
+          return false;
+       }
+
+       $('#VendedorId').val(row.VendedorId);
+       $('#Vendedor').val(row.RazonSocial);
+
+       $('#vendedorListPopup').hideDialog();
+    };
+    function menuBarOnClick(key) {
+
+       var reportParam = "tipoGrupo=" + ($("#PorProducto").is(':checked') ? '@DigitoConstante.CERO' : '@DigitoConstante.UNO')
+          + '&vendedorId='+$("#VendedorId").val();
+
+       var format = '';
+       switch (key) {
+
+          case '@MenuItemKey.PREVIEW':
+             format = '@ReportFormatConstant.PDF'
+             break;
+          case '@MenuItemKey.EXPORT_XLS':
+             format = '@ReportFormatConstant.EXCEL'
+             break;
+          case '@MenuItemKey.EXPORT_DATA_XLS':
+             format = '@ReportFormatConstant.EXCELDATA'
+             break;
+       }
+
+       $(this).getReport({
+          urlAction: '@Url.Action("ReportTo", "RepoDocuReserva")',
+          parameters: reportParam,
+          format: format,
+          onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+       });
+
+       return true;
+    };
+</script>

@@ -1,0 +1,187 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.VariableCalcViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.VariableCalculoDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="@Model.IsNew" use-textcase="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.VariableCalculoDTO.Nombre" col-position="col-lg-6" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDatoId" for="@Model.TipoDatoList" col-position="col-lg-2" label="Tipo de Valor" col-label-position="col-lg-2"
+                                    onchange="tipoDatoIdOnChange" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div id="valorNumericoDiv" class="form-group row" style="display:none">
+                  <esd-numerictextbox for="@Model.VariableCalculoDTO.ValorNumericoVerdad" col-position="col-lg-2" label="Valor"
+                                      col-label-position="col-lg-2" generate-label-id="true"></esd-numerictextbox>
+                  <esd-numerictextbox for="@Model.VariableCalculoDTO.ValorNumericoFalso" col-position="col-lg-2" label="Valor Falso"
+                                      col-label-position="col-lg-2" generate-label-id="true"></esd-numerictextbox>
+               </div>
+               <div id="valorCadenaDiv" class="form-group row" style="display:none">
+                  <esd-textbox for="@Model.VariableCalculoDTO.ValorCadenaVerdad" col-position="col-lg-2" label="Valor"
+                               col-label-position="col-lg-2" max-length="50" generate-label-id="true"></esd-textbox>
+                  <esd-textbox for="@Model.VariableCalculoDTO.ValorCadenaFalso" col-position="col-lg-2" label="Valor Falso"
+                               col-label-position="col-lg-2" max-length="50" generate-label-id="true"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.VariableCalculoDTO.VariableCalculoId"></esd-hidden>
+      <esd-hidden for="@Model.TipoDato"></esd-hidden>
+      <esd-hidden for="@Model.TieneCondicion"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      configurarXTipoDato();
+
+   });
+   function tipoDatoIdOnChange() {
+      var tipoDatoId = $("#TipoDatoId").val();
+      if ($.isNullOrEmpty(tipoDatoId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoDato", "VariableCalc")',
+         id: tipoDatoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#TipoDato').val(response.data.Codigo);
+               configurarXTipoDato();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function configurarXTipoDato() {
+      switch ($('#TipoDato').val()) {
+         case '@TipoDatoConstante.CADENA':
+            $('#valorNumericoDiv').hide();
+            $('#valorCadenaDiv').show();
+            if ($('#TieneCondicion').val() === '@SiNoConstante.N') {
+               $('#ValorCadenaFalso').hide();
+               $('#ValorCadenaFalsoLabel').hide();
+            }
+            else {
+               $('#ValorCadenaFalso').show();
+               $('#ValorCadenaFalsoLabel').show();
+            }
+            break;
+
+         default:
+            $('#valorCadenaDiv').hide();
+            $('#valorNumericoDiv').show();
+
+            var valV = $("#ValorNumericoVerdad").val();
+            var valF = $("#ValorNumericoFalso").val();
+
+            $('#ValorNumericoVerdad').inputmask('remove');
+            $('#ValorNumericoFalso').inputmask('remove');
+
+            if ($('#TipoDato').val() === '@TipoDatoConstante.DECIMAL') {
+               $("#ValorNumericoVerdad").inputmask("decimal", {
+                  allowMinus: false, allowPlus: false, autoGroup: true,
+                  radixPoint: ".", groupSeparator: ",", groupSize: 3, digits: "2"
+               });
+               $("#ValorNumericoFalso").inputmask("decimal", {
+                  allowMinus: false, allowPlus: false, autoGroup: true,
+                  radixPoint: ".", groupSeparator: ",", groupSize: 3, digits: "2"
+               });
+               valV = parseFloat(valV);
+               valF = parseFloat(valF);
+            } else {
+               $("#ValorNumericoVerdad").inputmask("integer", {
+                  allowMinus: false, allowPlus: false
+               });
+               $("#ValorNumericoFalso").inputmask("integer", {
+                  allowMinus: false, allowPlus: false
+               });
+               valV = parseInt(valV);
+               valF = parseInt(valF);
+            }
+
+            $("#ValorNumericoVerdad").inputmask('setvalue', valV);
+            $("#ValorNumericoFalso").inputmask('setvalue', valF);
+
+            if ($('#TieneCondicion').val() === '@SiNoConstante.N') {
+               $('#ValorNumericoFalso').hide();
+               $('#ValorNumericoFalsoLabel').hide();
+            }
+            else {
+               $('#ValorNumericoFalso').show();
+               $('#ValorNumericoFalsoLabel').show();
+            }
+            break;
+      }
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "VariableCalc")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Codigo').validateString('@SR.GetString("RH_nombre_variable_requerido")'))
+         return false;
+      if (!$('#Nombre').validateString('@SR.GetString("RH_descripcion_variable_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "VariableCalculoDTO.VariableCalculoId", value: $('#VariableCalculoId').val(), type: 'int' },
+            { name: "VariableCalculoDTO.Codigo", value: $('#Codigo').val(), textCase: 'none' },
+            { name: "VariableCalculoDTO.Nombre", value: $('#Nombre').val() },
+            { name: "VariableCalculoDTO.TipoDatoId", value: $('#TipoDatoId').val(), type: 'int' },
+            { name: "VariableCalculoDTO.ValorNumericoVerdad", value: $('#ValorNumericoVerdad').val(), type: 'decimal' },
+            { name: "VariableCalculoDTO.ValorNumericoFalso", value: $('#ValorNumericoFalso').val(), type: 'decimal' },
+            { name: "VariableCalculoDTO.ValorCadenaVerdad", value: $('#ValorCadenaVerdad').val() },
+            { name: "VariableCalculoDTO.ValorCadenaFalso", value: $('#ValorCadenaFalso').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "VariableCalc")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#VariableCalculoId").val(response.data.Id);
+               $('#Codigo').prop('readonly', true);
+               $('#TipoDatoId').prop('disabled', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#EmpresaId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

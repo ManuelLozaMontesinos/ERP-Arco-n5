@@ -1,0 +1,2115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AJX_servicio_impresion_no_activo" xml:space="preserve">
+    <value>El Servicio de Impresión de Formatos no esta activo.</value>
+  </data>
+  <data name="AJX_servicio_impresion_no_configurado" xml:space="preserve">
+    <value>El Servicio de Impresión de Formatos no esta configurado.</value>
+  </data>
+  <data name="APPMP_anular_titulo" xml:space="preserve">
+    <value>Anular.</value>
+  </data>
+  <data name="APPMP_eliminar_titulo" xml:space="preserve">
+    <value>Eliminar.</value>
+  </data>
+  <data name="APPMP_extornar_titulo" xml:space="preserve">
+    <value>Extornar.</value>
+  </data>
+  <data name="APP_MP_aperturar_titulo" xml:space="preserve">
+    <value>Aperturar.</value>
+  </data>
+  <data name="APP_MP_cerrar_titulo" xml:space="preserve">
+    <value>Cerrar.</value>
+  </data>
+  <data name="APP_MP_reprocesar_titulo" xml:space="preserve">
+    <value>Reprocesar.</value>
+  </data>
+  <data name="APP_MP_titulo_deshabilitar_usuario" xml:space="preserve">
+    <value>Deshabilitar Usuario</value>
+  </data>
+  <data name="APP_MP_titulo_habilitar_usuario" xml:space="preserve">
+    <value>Habilitar Usuario</value>
+  </data>
+  <data name="AS_codigo_sunat_requerido" xml:space="preserve">
+    <value>Ingrese el código asignado por la SUNAT.</value>
+  </data>
+  <data name="AS_contrasena_actualizada" xml:space="preserve">
+    <value>La contraseña ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="AS_contrasena_anterior_requerida" xml:space="preserve">
+    <value>Ingrese la Contraseña anterior.</value>
+  </data>
+  <data name="AS_contrasena_confirmada_requerida" xml:space="preserve">
+    <value>Ingrese la Contraseña a confirmar.</value>
+  </data>
+  <data name="AS_contrasena_requerida" xml:space="preserve">
+    <value>Ingrese la Contraseña.</value>
+  </data>
+  <data name="AS_directiva_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Directiva.</value>
+  </data>
+  <data name="AS_directiva_usuario_agregado" xml:space="preserve">
+    <value>La Directiva ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="AS_directiva_usuario_eliminada" xml:space="preserve">
+    <value>La Directiva ha sido eliminada satisfactoriamente.</value>
+  </data>
+  <data name="AS_empresa_actualizada" xml:space="preserve">
+    <value>La Empresa {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="AS_empresa_agregada" xml:space="preserve">
+    <value>La Empresa {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="AS_empresa_sede_actualizada" xml:space="preserve">
+    <value>La Sede ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="AS_empresa_sede_agregada" xml:space="preserve">
+    <value>La Sede ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="AS_empresa_sede_anulada" xml:space="preserve">
+    <value>La Sede ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="AS_empresa_sede_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Sede.</value>
+  </data>
+  <data name="AS_empresa_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Empresa.</value>
+  </data>
+  <data name="AS_fecha_expira_requerida" xml:space="preserve">
+    <value>Ingrese la fecha de expiración para la cuenta del Usuario</value>
+  </data>
+  <data name="AS_inicio_sesion_incorrecto" xml:space="preserve">
+    <value>El usuario o contraseña ingresadas no son correctas.</value>
+  </data>
+  <data name="AS_justificacion_requerida" xml:space="preserve">
+    <value>Ingrese la Justificación.</value>
+  </data>
+  <data name="AS_nombre_sede_requerido" xml:space="preserve">
+    <value>Ingrese el nombre de la Sede.</value>
+  </data>
+  <data name="AS_observacion_requerida" xml:space="preserve">
+    <value>Ingrese la Observación.</value>
+  </data>
+  <data name="AS_periodo_actualizado" xml:space="preserve">
+    <value>El Periodo {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="AS_periodo_agregado" xml:space="preserve">
+    <value>El Periodo {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="AS_periodo_empresa_sede_actualizada" xml:space="preserve">
+    <value>La Sede ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="AS_periodo_empresa_sede_agregada" xml:space="preserve">
+    <value>La Sede ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="AS_periodo_empresa_sede_anulada" xml:space="preserve">
+    <value>La Sede ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="AS_periodo_requerido" xml:space="preserve">
+    <value>Ingrese el Periodo.</value>
+  </data>
+  <data name="AS_periodo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Periodo.</value>
+  </data>
+  <data name="AS_proceso_integracion_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el(los) proceso(s) a ejecutar.</value>
+  </data>
+  <data name="AS_rol_actualizado" xml:space="preserve">
+    <value>El Rol {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="AS_rol_agregado" xml:space="preserve">
+    <value>El Rol {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="AS_rol_eliminado" xml:space="preserve">
+    <value>El Rol ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="AS_rol_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Rol.</value>
+  </data>
+  <data name="AS_rol_usuario_2_agregado" xml:space="preserve">
+    <value>El Rol ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="AS_rol_usuario_agregado" xml:space="preserve">
+    <value>El Usuario ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="AS_rol_usuario_eliminado" xml:space="preserve">
+    <value>El Usuario ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="AS_rol_ya_seleccionado" xml:space="preserve">
+    <value>El Rol ya fue seleccionado.</value>
+  </data>
+  <data name="AS_sector_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Sector.</value>
+  </data>
+  <data name="AS_usuario_actualizado" xml:space="preserve">
+    <value>El Usuario {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="AS_usuario_agregado" xml:space="preserve">
+    <value>El Usuario {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="AS_usuario_deshabilitado" xml:space="preserve">
+    <value>El Usuario {0} ha sido deshabilitado satisfactoriamente.</value>
+  </data>
+  <data name="AS_usuario_habilitado" xml:space="preserve">
+    <value>El Usuario {0} ha sido habilitado satisfactoriamente.</value>
+  </data>
+  <data name="AS_usuario_nombre_requerido" xml:space="preserve">
+    <value>Ingrese el Nombre completo del Usuario.</value>
+  </data>
+  <data name="AS_usuario_requerido" xml:space="preserve">
+    <value>Ingrese el Usuario.</value>
+  </data>
+  <data name="AS_usuario_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Usuario.</value>
+  </data>
+  <data name="AS_usuario_ya_seleccionado" xml:space="preserve">
+    <value>El Usuario ya fue seleccionado.</value>
+  </data>
+  <data name="AS_verificar_contrasena_invalida" xml:space="preserve">
+    <value>Las contraseñas no coinciden.</value>
+  </data>
+  <data name="FE_documento_generado" xml:space="preserve">
+    <value>Se ha generado el Documento Electrónico.</value>
+  </data>
+  <data name="FE_resumen_documentos_invalidos" xml:space="preserve">
+    <value>No se puede enviar el Resumen. Hay documentos no válidos.</value>
+  </data>
+  <data name="FE_resumen_enviado" xml:space="preserve">
+    <value>Se ha enviado el Resumen.</value>
+  </data>
+  <data name="FE_resumen_generado" xml:space="preserve">
+    <value>Se ha generado el Resumen.</value>
+  </data>
+  <data name="FE_resumen_sin_pendientes" xml:space="preserve">
+    <value>No hay documentos pendientes de Envío .</value>
+  </data>
+  <data name="FE_servicio_no_disponible" xml:space="preserve">
+    <value>El Servicio de Facturacion Electronica no esta disponible.</value>
+  </data>
+  <data name="GEN_abreviatura_requerida" xml:space="preserve">
+    <value>Ingrese la Abreviatura.</value>
+  </data>
+  <data name="GEN_archivo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Archivo.</value>
+  </data>
+  <data name="GEN_cantidad_requerida" xml:space="preserve">
+    <value>Ingrese la Cantidad.</value>
+  </data>
+  <data name="GEN_codigo_monto" xml:space="preserve">
+    <value>Ingrese el Monto.</value>
+  </data>
+  <data name="GEN_codigo_requerido" xml:space="preserve">
+    <value>Ingrese el Código.</value>
+  </data>
+  <data name="GEN_correlativo_requerido" xml:space="preserve">
+    <value>Ingrese el Correlativo.</value>
+  </data>
+  <data name="GEN_descripcion_requerida" xml:space="preserve">
+    <value>Ingrese la Descripción.</value>
+  </data>
+  <data name="GEN_email_requerido" xml:space="preserve">
+    <value>Ingrese el Correo Electrónico.</value>
+  </data>
+  <data name="GEN_fecha_alta_requerida" xml:space="preserve">
+    <value>Ingrese la fecha de Alta.</value>
+  </data>
+  <data name="GEN_fecha_baja_requerida" xml:space="preserve">
+    <value>Ingrese la fecha de Baja.</value>
+  </data>
+  <data name="GEN_fecha_inicio_requerida" xml:space="preserve">
+    <value>Ingrese la fecha de Inicio.</value>
+  </data>
+  <data name="GEN_fecha_invalida" xml:space="preserve">
+    <value>La Fecha ingresada no es válida.</value>
+  </data>
+  <data name="GEN_fecha_requerida" xml:space="preserve">
+    <value>Ingrese la fecha.</value>
+  </data>
+  <data name="GEN_formula_condicion_error_sintaxis" xml:space="preserve">
+    <value>Error de sintaxis en la Condición de la Fórmula.</value>
+  </data>
+  <data name="GEN_formula_condicion_token_error" xml:space="preserve">
+    <value>&lt; {0} &gt; no existe o no puede ser usado en la condición.</value>
+  </data>
+  <data name="GEN_formula_error_sintaxis" xml:space="preserve">
+    <value>Error de sintaxis en la Fórmula.</value>
+  </data>
+  <data name="GEN_formula_token_error" xml:space="preserve">
+    <value>&lt; {0} &gt; no existe o no puede ser usado en la fórmula.</value>
+  </data>
+  <data name="GEN_mes_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Mes.</value>
+  </data>
+  <data name="GEN_moneda_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Moneda.</value>
+  </data>
+  <data name="GEN_nombres_requerido" xml:space="preserve">
+    <value>Ingrese los Nombres.</value>
+  </data>
+  <data name="GEN_nombre_corto_requerido" xml:space="preserve">
+    <value>Ingrese el Nombre Corto.</value>
+  </data>
+  <data name="GEN_nombre_requerido" xml:space="preserve">
+    <value>Ingrese el Nombre.</value>
+  </data>
+  <data name="GEN_numero_doc_identidad_incorrecto" xml:space="preserve">
+    <value>El Número del Documento de Identidad ingresado no es correcto.</value>
+  </data>
+  <data name="GEN_numero_doc_identidad_requerido" xml:space="preserve">
+    <value>Ingrese el Número del Documento de Identidad.</value>
+  </data>
+  <data name="GEN_porcentaje_descuento_requerido" xml:space="preserve">
+    <value>Ingrese el Porcentaje de Descuento.</value>
+  </data>
+  <data name="TS_porcentaje_precio_lista_requerido" xml:space="preserve">
+    <value>Ingrese el Porcentaje de la Lista de Precios.</value>
+  </data>
+  <data name="GEN_porcentaje_requerido" xml:space="preserve">
+    <value>Ingrese la Porcentaje.</value>
+  </data>
+  <data name="GEN_proceso_concluido" xml:space="preserve">
+    <value>El Proceso ha concluido satisfactoriamente.</value>
+  </data>
+  <data name="GEN_proceso_concluido_con_incosistencias" xml:space="preserve">
+    <value>El Proceso ha concluido con incosistencias.</value>
+  </data>
+  <data name="GEN_registro_seleccionado_anular_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea anular el registro seleccionado?</value>
+  </data>
+  <data name="GEN_registro_seleccionado_eliminar_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea eliminar el registro seleccionado?</value>
+  </data>
+  <data name="GEN_registro_seleccionado_requerido" xml:space="preserve">
+    <value>Seleccione un registro.</value>
+  </data>
+  <data name="GEN_reporte_sin_datos" xml:space="preserve">
+    <value>El reporte solicitado no tiene Datos.</value>
+  </data>
+  <data name="GEN_ruta_archivo_requerido" xml:space="preserve">
+    <value>Ingrese la Ruta del Archivo.</value>
+  </data>
+  <data name="GEN_serie_requerida" xml:space="preserve">
+    <value>Ingrese la Serie.</value>
+  </data>
+  <data name="GEN_tipo_cambio_monto_requerido" xml:space="preserve">
+    <value>Ingrese el Tipo de Cambio.</value>
+  </data>
+  <data name="GEN_tipo_doc_identidad_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Documento de Identidad.</value>
+  </data>
+  <data name="GEN_usuario_seleccionado_deshabilitar_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea deshabilitar el Usuario seleccionado?</value>
+  </data>
+  <data name="GEN_usuario_seleccionado_habilitar_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea habilitar el Usuario seleccionado?</value>
+  </data>
+  <data name="IV_almacen_actualizado" xml:space="preserve">
+    <value>El Almacén {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_agregado" xml:space="preserve">
+    <value>El Almacén {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_anulado" xml:space="preserve">
+    <value>El Almacén {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_destino_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Almacén Destino.</value>
+  </data>
+  <data name="IV_almacen_saldo_aperturar_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea aperturar el mes seleccionado?</value>
+  </data>
+  <data name="IV_almacen_saldo_cerrar_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea cerrar el mes seleccionado?</value>
+  </data>
+  <data name="IV_almacen_saldo_reprocesar_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea reprocesar el mes seleccionado?</value>
+  </data>
+  <data name="IV_almacen_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Almacén.</value>
+  </data>
+  <data name="IV_almacen_transaccion_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Transacción.</value>
+  </data>
+  <data name="IV_almacen_transferencia_ingreso_recepcionada" xml:space="preserve">
+    <value>La Transferencia {0} ha sido recepcionada satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_trasaccion_actualizada" xml:space="preserve">
+    <value>La Transacción ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_trasaccion_agregada" xml:space="preserve">
+    <value>La Transacción ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_trasaccion_anulada" xml:space="preserve">
+    <value>La Transacción ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_trasaccion_config_actualizada" xml:space="preserve">
+    <value>La Configuración ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="IV_almacen_trasaccion_no_permite_agregar" xml:space="preserve">
+    <value>La Transacción seleccionada no permite agregar Productos.</value>
+  </data>
+  <data name="IV_almacen_trasaccion_no_permite_eliminar" xml:space="preserve">
+    <value>La Transacción seleccionada no permite eliminar Productos.</value>
+  </data>
+  <data name="IV_atributo_NumeroDocumentoAdicional" xml:space="preserve">
+    <value>Ingrese el Documento Referencial.</value>
+  </data>
+  <data name="IV_atributo_NumeroGuiaRemision" xml:space="preserve">
+    <value>Ingrese la Guía de Remisión.</value>
+  </data>
+  <data name="IV_atributo_NumeroOrdenCompra" xml:space="preserve">
+    <value>Ingrese la Orden de Compra.</value>
+  </data>
+  <data name="IV_atributo_OrdenCompraId" xml:space="preserve">
+    <value>Seleccione la Orden de Compra.</value>
+  </data>
+  <data name="IV_atributo_ProveedorId" xml:space="preserve">
+    <value>Seleccione el Cliente/Proveedor.</value>
+  </data>
+  <data name="IV_cantidad_reclasificacion_no_mayor" xml:space="preserve">
+    <value>La Cantidad a Reclasificar no puede ser superior al del Movimiento.</value>
+  </data>
+  <data name="IV_cantidad_reclasificacion_requerida" xml:space="preserve">
+    <value>Ingrese la Cantidad a Reclasificar.</value>
+  </data>
+  <data name="IV_guia_remision_actualizada" xml:space="preserve">
+    <value>La Guía de Remisión ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="IV_guia_remision_agregada" xml:space="preserve">
+    <value>La Guía de Remisión ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="IV_guia_remision_anulada" xml:space="preserve">
+    <value>La Guía de Remisión ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="IV_guia_remision_fecha_traslado_requerida" xml:space="preserve">
+    <value>Ingrese la Fecha de Traslado.</value>
+  </data>
+  <data name="IV_guia_remision_numero_requerido" xml:space="preserve">
+    <value>Ingrese el Número de la Guía de Remisión.</value>
+  </data>
+  <data name="IV_mes_aperturado" xml:space="preserve">
+    <value>El Mes {0} ha sido aperturado satisfactoriamente.</value>
+  </data>
+  <data name="IV_mes_cerrado" xml:space="preserve">
+    <value>El Mes {0} ha sido cerrado satisfactoriamente.</value>
+  </data>
+  <data name="IV_mes_reprocesado" xml:space="preserve">
+    <value>El Mes {0} ha sido reprocesado satisfactoriamente.</value>
+  </data>
+  <data name="IV_mes_reprocesado_anual" xml:space="preserve">
+    <value>Se realizo el reprocesado satisfactoriamente.</value>
+  </data>
+  <data name="IV_mes_valorizado" xml:space="preserve">
+    <value>El Mes {0} ha sido valorizado satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_almacen_actualizado" xml:space="preserve">
+    <value>El Movimiento {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_almacen_agregado" xml:space="preserve">
+    <value>El Movimiento {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_almacen_anulado" xml:space="preserve">
+    <value>El Movimiento {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_almacen_aprobacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Aprobación para el Movimiento {0}.</value>
+  </data>
+  <data name="IV_movimiento_almacen_autorizacion_aprobada" xml:space="preserve">
+    <value>Se aprobó la Autorización solicitada.</value>
+  </data>
+  <data name="IV_movimiento_almacen_autorizacion_desaprobada" xml:space="preserve">
+    <value>Se desaprobó la Autorización solicitada.</value>
+  </data>
+  <data name="IV_movimiento_almacen_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Movimiento de Almacén.</value>
+  </data>
+  <data name="IV_movimiento_reclasificacion_actualizado" xml:space="preserve">
+    <value>La Reclasificación {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_reclasificacion_agregado" xml:space="preserve">
+    <value>La Reclasificación {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_reclasificacion_anulado" xml:space="preserve">
+    <value>La Reclasificación {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_reclasificacion_generado" xml:space="preserve">
+    <value>La Reclasificación {0} ha sido generada satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_reclasificacion_solicitar" xml:space="preserve">
+    <value>La Solicitud para la Reclasificacion {0} fue enviada a revision </value>
+  </data>
+  <data name="IV_movimiento_reclasificacion_desaprobado" xml:space="preserve">
+    <value>La Reclasificación {0} ha sido desaprobada satisfactoriamente.</value>
+  </data>
+  <data name="IV_movimiento_reclasificacion_aprobado" xml:space="preserve">
+    <value>La Reclasificación {0} ha sido aprobada satisfactoriamente.</value>
+  </data>
+  <data name="IV_producto_actualizado" xml:space="preserve">
+    <value>El Producto ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="IV_producto_agregado" xml:space="preserve">
+    <value>El Producto ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="IV_producto_anulado" xml:space="preserve">
+    <value>El Producto ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="IV_punto_llegada_requerida" xml:space="preserve">
+    <value>Ingrese la Dirección de Llegada.</value>
+  </data>
+  <data name="IV_punto_partida_requerida" xml:space="preserve">
+    <value>Ingrese la Dirección de Partida.</value>
+  </data>
+  <data name="IV_solicitante_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Solicitante.</value>
+  </data>
+  <data name="IV_tipo_movimiento_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Movimiento.</value>
+  </data>
+  <data name="IV_transaccion_almacen_actualizada" xml:space="preserve">
+    <value>La Transacción {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="IV_transaccion_almacen_agregada" xml:space="preserve">
+    <value>La Transacción {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="IV_transaccion_almacen_anulada" xml:space="preserve">
+    <value>La Transacción {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="IV_transaccion_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Transacción.</value>
+  </data>
+  <data name="MG_centro_costo_actualizado" xml:space="preserve">
+    <value>El Centro de Costo {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_centro_costo_agregado" xml:space="preserve">
+    <value>El Centro de Costo {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_centro_costo_anulado" xml:space="preserve">
+    <value>El Centro de Costo {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MG_centro_costo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Centro de Costo.</value>
+  </data>
+  <data name="MG_clase_producto_actualizada" xml:space="preserve">
+    <value>La Clase ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MG_clase_producto_agregada" xml:space="preserve">
+    <value>La Clase ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MG_clase_producto_anulada" xml:space="preserve">
+    <value>La Clase ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="MG_clase_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Clase.</value>
+  </data>
+  <data name="MG_combo_producto_actualizado" xml:space="preserve">
+    <value>El Producto ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_combo_producto_agregado" xml:space="preserve">
+    <value>El Producto ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_combo_producto_eliminado" xml:space="preserve">
+    <value>El Producto ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="MG_departamento_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Departamento.</value>
+  </data>
+  <data name="MG_distrito_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Distrito.</value>
+  </data>
+  <data name="MG_estado_comercial_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Estado Comercial del Producto.</value>
+  </data>
+  <data name="MG_estado_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Estado del Producto.</value>
+  </data>
+  <data name="MG_familia_producto_actualizada" xml:space="preserve">
+    <value>La Familia ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MG_familia_producto_agregada" xml:space="preserve">
+    <value>La Familia ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MG_familia_producto_anulada" xml:space="preserve">
+    <value>La Familia ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="MG_familia_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Familia.</value>
+  </data>
+  <data name="MG_grupo_producto_actualizado" xml:space="preserve">
+    <value>El Grupo {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_grupo_producto_agregado" xml:space="preserve">
+    <value>El Grupo {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_grupo_producto_anulado" xml:space="preserve">
+    <value>El Grupo {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MG_grupo_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Grupo.</value>
+  </data>
+  <data name="MG_numero_ruc_incorrecto" xml:space="preserve">
+    <value>El Número del RUC no es correcto.</value>
+  </data>
+  <data name="MG_numero_ruc_requerido" xml:space="preserve">
+    <value>Ingrese el Número de RUC.</value>
+  </data>
+  <data name="MG_producto_actualizado" xml:space="preserve">
+    <value>El Producto {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_agregado" xml:space="preserve">
+    <value>El Producto {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_anulado" xml:space="preserve">
+    <value>El Producto {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_presentacion_actualizada" xml:space="preserve">
+    <value>La Presentación ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_presentacion_agregada" xml:space="preserve">
+    <value>La Presentación ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_presentacion_eliminada" xml:space="preserve">
+    <value>La Presentación ha sido eliminada satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Producto.</value>
+  </data>
+  <data name="MG_producto_ya_seleccionado" xml:space="preserve">
+    <value>El Producto ya fue seleccionado con anterioridad.</value>
+  </data>
+  <data name="MG_proveedor_actualizado" xml:space="preserve">
+    <value>El Cliente/Proveedor {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_proveedor_agregado" xml:space="preserve">
+    <value>El Cliente/Proveedor {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_proveedor_anulado" xml:space="preserve">
+    <value>El Cliente/Proveedor{0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MG_proveedor_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Cliente/Proveedor.</value>
+  </data>
+  <data name="MG_proveedor_ya_seleccionado" xml:space="preserve">
+    <value>El Cliente/Proveedor ya fue seleccionado.</value>
+  </data>
+  <data name="MG_provincia_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Provincia.</value>
+  </data>
+  <data name="MG_razon_social_requerida" xml:space="preserve">
+    <value>Ingrese la Razón Social.</value>
+  </data>
+  <data name="MG_rmv_actualizada" xml:space="preserve">
+    <value>La Remuneración Mínima Vital ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MG_rmv_agregada" xml:space="preserve">
+    <value>La Remuneración Mínima Vital ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MG_rmv_anulada" xml:space="preserve">
+    <value>La Remuneración Mínima Vital ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="MG_tipo_cambio_actualizado" xml:space="preserve">
+    <value>El Tipo de Cambio ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_tipo_cambio_agregado" xml:space="preserve">
+    <value>El Tipo de Cambio ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_tipo_cambio_anulado" xml:space="preserve">
+    <value>El Tipo de Cambio ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MG_tipo_cambio_compra_requerido" xml:space="preserve">
+    <value>Ingrese el Monto para para la Compra.</value>
+  </data>
+  <data name="MG_tipo_cambio_dia_no_registrado" xml:space="preserve">
+    <value>No se ha registrado el Tipo de Cambio para el Día {0}.</value>
+  </data>
+  <data name="MG_tipo_cambio_venta_requerido" xml:space="preserve">
+    <value>Ingrese el Monto para para la Venta.</value>
+  </data>
+  <data name="MG_tipo_documento_comercial_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Documento.</value>
+  </data>
+  <data name="MG_tipo_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Producto.</value>
+  </data>
+  <data name="MG_tipo_via_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Via.</value>
+  </data>
+  <data name="MG_tipo_zona_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Zona.</value>
+  </data>
+  <data name="MG_uit_actualizada" xml:space="preserve">
+    <value>La UIT ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MG_uit_agregada" xml:space="preserve">
+    <value>La UIT ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MG_uit_anulada" xml:space="preserve">
+    <value>La UIT ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="MG_unidad_medida_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Unidad de Medida.</value>
+  </data>
+  <data name="RH_apellido_paterno_requerido" xml:space="preserve">
+    <value>Ingrese el Apellido Paterno.</value>
+  </data>
+  <data name="RH_banco_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Banco para el Deposito en Cuenta.</value>
+  </data>
+  <data name="RH_cant_cuotas_requerida" xml:space="preserve">
+    <value>Ingrese la cantidad de cuotas para el Adelanto/Prestamo.</value>
+  </data>
+  <data name="RH_cargo_actualizado" xml:space="preserve">
+    <value>El Cargo {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_cargo_agregado" xml:space="preserve">
+    <value>El Cargo {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_cargo_anulado" xml:space="preserve">
+    <value>El Cargo {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_cargo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Cargo.</value>
+  </data>
+  <data name="RH_categoria_educacional_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Categoría Educacional.</value>
+  </data>
+  <data name="RH_categoria_ocupacional_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Categoría Ocupacional.</value>
+  </data>
+  <data name="RH_codigo_variable_requerido" xml:space="preserve">
+    <value>Ingrese el Nombre de la Variable.</value>
+  </data>
+  <data name="RH_concepto_remunerativo_actualizado" xml:space="preserve">
+    <value>El Concepto Remunerativo {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_concepto_remunerativo_agregado" xml:space="preserve">
+    <value>El Concepto Remunerativo {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_concepto_remunerativo_anulado" xml:space="preserve">
+    <value>El Concepto Remunerativo {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_concepto_remunerativo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Concepto Remunerativo.</value>
+  </data>
+  <data name="RH_concepto_remunerativo_sin_nombre_anulado" xml:space="preserve">
+    <value>El Concepto Remunerativo ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_concepto_remunerativo_ya_seleccionado" xml:space="preserve">
+    <value>El Concepto Remunerativo ya fue seleccionado.</value>
+  </data>
+  <data name="RH_convenio_doble_tributacion_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Convenio de Doble Tributación.</value>
+  </data>
+  <data name="RH_descripcion_variable_requerida" xml:space="preserve">
+    <value>Ingrese la Descripción de la Variable.</value>
+  </data>
+  <data name="RH_dias_cuota_requerida" xml:space="preserve">
+    <value>Ingrese la cantidad de dias de intervalo entre cada cuota.</value>
+  </data>
+  <data name="RH_eps_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la EPS.</value>
+  </data>
+  <data name="RH_estado_civil_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Estado Civil.</value>
+  </data>
+  <data name="RH_fecha_ingreso_pla_requerida" xml:space="preserve">
+    <value>Registre la Fecha de Ingreso a Planilla.</value>
+  </data>
+  <data name="RH_fecha_ingreso_requerida" xml:space="preserve">
+    <value>Registre la Fecha de Ingreso.</value>
+  </data>
+  <data name="RH_fecha_inicio_prestamo_requerida" xml:space="preserve">
+    <value>Ingrese la Fecha de la 1ra Cuota.</value>
+  </data>
+  <data name="RH_fecha_inscripcion_regimen_pensionario_requerida" xml:space="preserve">
+    <value>Ingrese la Fecha de Inscripción al Régimen Pensionario.</value>
+  </data>
+  <data name="RH_fecha_nacimiento_requerida" xml:space="preserve">
+    <value>Ingrese la Fecha de Nacimiento.</value>
+  </data>
+  <data name="RH_fecha_prestamo_requerida" xml:space="preserve">
+    <value>Ingrese la Fecha del Prestamo/Adelanto.</value>
+  </data>
+  <data name="RH_feriado_actualizado" xml:space="preserve">
+    <value>El Feriado ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_feriado_agregado" xml:space="preserve">
+    <value>El Feriado ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_formula_correcta" xml:space="preserve">
+    <value>La Formula ingresada está correcta.</value>
+  </data>
+  <data name="RH_formula_remunerativa_requerida" xml:space="preserve">
+    <value>Ingrese la Formula.</value>
+  </data>
+  <data name="RH_hora_rem_actualizada" xml:space="preserve">
+    <value>La Hora {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="RH_hora_rem_agregada" xml:space="preserve">
+    <value>La Hora {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="RH_hora_rem_anulada" xml:space="preserve">
+    <value>La Hora {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="RH_jornada_laboral_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Jornada Laboral.</value>
+  </data>
+  <data name="RH_monto_prestamo_rango_requerida" xml:space="preserve">
+    <value>Ingrese el Monto del Adelanto/Prestamo.</value>
+  </data>
+  <data name="RH_monto_regularizacion_requerido" xml:space="preserve">
+    <value>Ingrese el Monto de la regularización</value>
+  </data>
+  <data name="RH_motivo_baja_dependiente_seleccion" xml:space="preserve">
+    <value>Seleccione el Motivo de Baja para el Derecho Habiente.</value>
+  </data>
+  <data name="RH_motivo_fin_periodo_seleccion" xml:space="preserve">
+    <value>Seleccione el Motivo de Cese.</value>
+  </data>
+  <data name="RH_nacionalidad_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Nacionalidad.</value>
+  </data>
+  <data name="RH_numero_cta_abono_requerido" xml:space="preserve">
+    <value>Ingrese el Numero de Cuenta Bancaria para el Depósito en Cuenta.</value>
+  </data>
+  <data name="RH_numero_cussp_requerida" xml:space="preserve">
+    <value>Ingrese el CUSSP.</value>
+  </data>
+  <data name="RH_numero_doc_vinculo_familiar_requerido" xml:space="preserve">
+    <value>Ingrese el Número de Documento para el Vínculo Familiar.</value>
+  </data>
+  <data name="RH_ocupacion_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Ocupacion.</value>
+  </data>
+  <data name="RH_pais_emisor_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Pais Emisor del Documento de Identidad.</value>
+  </data>
+  <data name="RH_periodicidad_renunerativa_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Periodo de Pago.</value>
+  </data>
+  <data name="RH_personal_actualizado" xml:space="preserve">
+    <value>El Trabajador {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_agregado" xml:space="preserve">
+    <value>El Trabajador {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_dependiente_actualizado" xml:space="preserve">
+    <value>El(La) Derecho Habiente {0} ha sido actualizado(a) satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_dependiente_agregado" xml:space="preserve">
+    <value>El(La) Derecho Habiente {0} ha sido agregado(a) satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_dependiente_anulado" xml:space="preserve">
+    <value>El(La) Derecho Habiente {0} ha sido anulado(a) satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_dependiente_baja" xml:space="preserve">
+    <value>El(La) Derecho Habiente {0} ha sido dado de baja satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_marcacion_actualizada" xml:space="preserve">
+    <value>Se han actualizado las marcaciones satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_marcacion_agregada" xml:space="preserve">
+    <value>El Trabajador ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_marcacion_anulada" xml:space="preserve">
+    <value>La Marcación ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_multiple_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el o los Trabajadores.</value>
+  </data>
+  <data name="RH_personal_planilla_agregada" xml:space="preserve">
+    <value>La Planilla ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_planilla_anulada" xml:space="preserve">
+    <value>La Planilla ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_regularizacion_actualizada" xml:space="preserve">
+    <value>La Regularización ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_regularizacion_agregada" xml:space="preserve">
+    <value>La Regularización ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_regularizacion_anulada" xml:space="preserve">
+    <value>La Regularización ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_remuneracion_actualizada" xml:space="preserve">
+    <value>La Remuneración ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_remuneracion_agregada" xml:space="preserve">
+    <value>La Remuneración ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Trabajador.</value>
+  </data>
+  <data name="RH_personal_ya_seleccionado" xml:space="preserve">
+    <value>El Trabajador ya fue seleccionado con anterioridad.</value>
+  </data>
+  <data name="RH_planilla_actualizada" xml:space="preserve">
+    <value>La Planilla {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_agregada" xml:space="preserve">
+    <value>La Planilla {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_anulada" xml:space="preserve">
+    <value>La Planilla {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_proceso_actualizado" xml:space="preserve">
+    <value>El Proceso ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_proceso_agregado" xml:space="preserve">
+    <value>El Proceso ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_proceso_anual_requerido" xml:space="preserve">
+    <value>Ingrese el Número de Procesos.</value>
+  </data>
+  <data name="RH_planilla_proceso_anulado" xml:space="preserve">
+    <value>El Proceso ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_proceso_calculada" xml:space="preserve">
+    <value>La planilla ha sido calculada satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_proceso_fecha_rango_requerida" xml:space="preserve">
+    <value>Ingrese el Rango de Fechas para el Proceso.</value>
+  </data>
+  <data name="RH_planilla_proceso_hora_actualizada" xml:space="preserve">
+    <value>Se han actualizado las horas satisfactoriamente.</value>
+  </data>
+  <data name="RH_planilla_proceso_numero_requerido" xml:space="preserve">
+    <value>Ingrese el Número de Proceso.</value>
+  </data>
+  <data name="RH_planilla_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Planilla.</value>
+  </data>
+  <data name="RH_prestamo_actualizado" xml:space="preserve">
+    <value>El Préstamo {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_prestamo_agregado" xml:space="preserve">
+    <value>El Préstamo {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_prestamo_anulado" xml:space="preserve">
+    <value>El Préstamo {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_regimen_laboral_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Régimen Laboral.</value>
+  </data>
+  <data name="RH_regimen_pensionario_actualizado" xml:space="preserve">
+    <value>El Régimen Pensionario {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_regimen_pensionario_agregado" xml:space="preserve">
+    <value>El Régimen Pensionario {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_regimen_pensionario_anulado" xml:space="preserve">
+    <value>El Régimen Pensionario {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_regimen_pensionario_comision_actualizado" xml:space="preserve">
+    <value>El Aporte/Comisión {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_regimen_pensionario_comision_agregado" xml:space="preserve">
+    <value>El Aporte/Comisión {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_regimen_pensionario_comision_anulado" xml:space="preserve">
+    <value>El Aporte/Comisión ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_regimen_pensionario_comision_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Comisión.</value>
+  </data>
+  <data name="RH_regimen_pensionario_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Régimen Pensionario.</value>
+  </data>
+  <data name="RH_regimen_salud_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Régimen de Salud.</value>
+  </data>
+  <data name="RH_sctr_pension_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el SCRT Pensión.</value>
+  </data>
+  <data name="RH_sctr_salud_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el SCRT Salud.</value>
+  </data>
+  <data name="RH_sexo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Sexo.</value>
+  </data>
+  <data name="RH_sincronizar_marca_actualizada" xml:space="preserve">
+    <value>Las Marcaciones han sido actualizadas satisfactoriamente.</value>
+  </data>
+  <data name="RH_sincronizar_marca_fecha_desde_requerida" xml:space="preserve">
+    <value>Ingrese el Rango de Fechas para sincronizar las marcaciones.</value>
+  </data>
+  <data name="RH_sincronizar_marca_fecha_hasta_requerida" xml:space="preserve">
+    <value>Ingrese el Rango de Fechas para sincronizar las marcaciones.</value>
+  </data>
+  <data name="RH_situacion_educativa_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Situación Educativa.</value>
+  </data>
+  <data name="RH_situacion_especial_trabajador_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Situación Especial del Trabajador.</value>
+  </data>
+  <data name="RH_tipo_concepto_remunerativo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Concepto Remunerativo.</value>
+  </data>
+  <data name="RH_tipo_contrato_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Contrato.</value>
+  </data>
+  <data name="RH_tipo_cuenta_banco_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Cuenta Bancaria.</value>
+  </data>
+  <data name="RH_tipo_doc_vinculo_familiar_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Documento para el Vínculo Familiar.</value>
+  </data>
+  <data name="RH_tipo_esquema_pension_actualizado" xml:space="preserve">
+    <value>El Tipo de Comisión {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_tipo_esquema_pension_agregado" xml:space="preserve">
+    <value>El Tipo de Comisión {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_tipo_esquema_pension_anulado" xml:space="preserve">
+    <value>El Tipo de Comisión ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_tipo_igv_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de IGV.</value>
+  </data>
+  <data name="RH_tipo_pago_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Pago.</value>
+  </data>
+  <data name="RH_tipo_prestamo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Prestamo.</value>
+  </data>
+  <data name="RH_tipo_remunera_actualizado" xml:space="preserve">
+    <value>El Tipo de Remuneración {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_tipo_remunera_agregado" xml:space="preserve">
+    <value>El Tipo de Remuneración {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_tipo_remunera_anulado" xml:space="preserve">
+    <value>El Tipo de Remuneración {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="RH_tipo_trabajador_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Trabajador.</value>
+  </data>
+  <data name="RH_variable_calculo_actualizada" xml:space="preserve">
+    <value>La Variable de Cálculo {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="RH_variable_calculo_agregada" xml:space="preserve">
+    <value>La Variable de Cálculo {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="RH_variable_calculo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Variable de Cálculo.</value>
+  </data>
+  <data name="RH_vinculo_familiar_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Vínculo Familiar.</value>
+  </data>
+  <data name="TS_banco_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Banco.</value>
+  </data>
+  <data name="TS_cuenta_bancaria_actualizada" xml:space="preserve">
+    <value>La Cuenta ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="TS_cuenta_bancaria_agregada" xml:space="preserve">
+    <value>La Cuenta ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="TS_cuenta_bancaria_anulada" xml:space="preserve">
+    <value>La Cuenta ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="TS_cuenta_bancaria_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Cuenta Bancaria.</value>
+  </data>
+  <data name="TS_nombre_cuenta_requerido" xml:space="preserve">
+    <value>Ingrese el Nombre de la Cuenta.</value>
+  </data>
+  <data name="TS_numero_cuenta_requerido" xml:space="preserve">
+    <value>Ingrese el Número de la Cuenta.</value>
+  </data>
+  <data name="VT_anticipo_actualizado" xml:space="preserve">
+    <value>El Anticipo ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_anticipo_agregado" xml:space="preserve">
+    <value>El Anticipo ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_anticipo_anulado" xml:space="preserve">
+    <value>El Anticipo ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_anticipo_extornado" xml:space="preserve">
+    <value>El Anticipo ha sido extornado satisfactoriamente.</value>
+  </data>
+  <data name="VT_anticipo_seleccionado_extornar_pregunta" xml:space="preserve">
+    <value>¿Está seguro que desea extornar el registro seleccionado?</value>
+  </data>
+  <data name="VT_caja_actualizada" xml:space="preserve">
+    <value>La Caja {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="VT_caja_agregada" xml:space="preserve">
+    <value>La Caja {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="VT_caja_anulada" xml:space="preserve">
+    <value>La Caja ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="VT_caja_no_configurada" xml:space="preserve">
+    <value>No estan configurada la Caja para el Usuario.</value>
+  </data>
+  <data name="VT_caja_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Caja.</value>
+  </data>
+  <data name="VT_cantidad_ingreso_no_decimal" xml:space="preserve">
+    <value>La Cantidad ingresada para el Producto/Servicio no permite decimales, debe ser entera.</value>
+  </data>
+  <data name="VT_cliente_actualizado" xml:space="preserve">
+    <value>El Cliente ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_cliente_agregado" xml:space="preserve">
+    <value>El Cliente ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_cliente_eliminado" xml:space="preserve">
+    <value>El Cliente ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_actualizado" xml:space="preserve">
+    <value>El Comprobante {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_agregado" xml:space="preserve">
+    <value>El Comprobante {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_anulado" xml:space="preserve">
+    <value>El Comprobante {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_aprobada" xml:space="preserve">
+    <value>Se aprobó la Autorización solicitada.</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_cancelada" xml:space="preserve">
+    <value>Se ha cancelado las Autorizaciones solicitadas.</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_desaprobada" xml:space="preserve">
+    <value>Se desaprobó la Autorización solicitada.</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_pendiente_aprobacion" xml:space="preserve">
+    <value>El Comprobante tiene autorizaciones pendientes de Aprobación.</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Autorización a Solicitar.</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Autorización satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_canje_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Comprobante a Canjear.</value>
+  </data>
+  <data name="VT_comprobante_cerrado" xml:space="preserve">
+    <value>El Comprobante ha sido cerrado satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_emitido" xml:space="preserve">
+    <value>El Comprobante {0} ha sido emitido satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_nota_credito_cantidad_mayor_al_saldo" xml:space="preserve">
+    <value>La cantidad no puede ser mayor a {0}</value>
+  </data>
+  <data name="VT_comprobante_productos_en_edicion" xml:space="preserve">
+    <value>Existen Productos/Servicios en edición.</value>
+  </data>
+  <data name="VT_comprobante_producto_multiple_seleccion_agregado" xml:space="preserve">
+    <value>Los Productos/Servicios ha sido agregados satisfactoriamente.</value>
+  </data>
+  <data name="VT_comprobante_producto_multiple_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el o los Productos o Servicios.</value>
+  </data>
+  <data name="VT_comprobante_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Productos o Servicio.</value>
+  </data>
+  <data name="VT_comprobante_ya_esta_anulado" xml:space="preserve">
+    <value>El Comprobante está anulado.</value>
+  </data>
+  <data name="VT_comprobante_ya_esta_emitido" xml:space="preserve">
+    <value>El Comprobante ya está emitido.</value>
+  </data>
+  <data name="VT_cotizacion_actualizada" xml:space="preserve">
+    <value>La Cotización {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="VT_cotizacion_agregada" xml:space="preserve">
+    <value>La Cotización {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="VT_cotizacion_anulada" xml:space="preserve">
+    <value>La Cotización {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_aprobada" xml:space="preserve">
+    <value>Se aprobó la Autorización solicitada.</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_cancelada" xml:space="preserve">
+    <value>Se ha cancelado las Autorizaciones solicitidas.</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_desaprobada" xml:space="preserve">
+    <value>Se desaprobó la Autorización solicitada.</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_pendiente_aprobacion" xml:space="preserve">
+    <value>La Cotización tiene autorizaciones pendientes de Aprobación.</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Autorización a Solicitar.</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Autorización satisfactoriamente.</value>
+  </data>
+  <data name="VT_cotizacion_estado_actualizado" xml:space="preserve">
+    <value>El estado ha sido Actualizado.</value>
+  </data>
+  <data name="VT_cotizacion_productos_en_edicion" xml:space="preserve">
+    <value>Existen Productos/Servicios en edición.</value>
+  </data>
+  <data name="VT_cotizacion_producto_multiple_seleccion_agregado" xml:space="preserve">
+    <value>Los Productos/Servicios ha sido agregados satisfactoriamente.</value>
+  </data>
+  <data name="VT_cotizacion_producto_multiple_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el o los Productos o Servicios.</value>
+  </data>
+  <data name="VT_cotizacion_producto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Productos o Servicio.</value>
+  </data>
+  <data name="VT_cta_cte_actualizada" xml:space="preserve">
+    <value>La Operación ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="VT_cta_cte_agregada" xml:space="preserve">
+    <value>La Operación ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="VT_cta_cte_anulada" xml:space="preserve">
+    <value>La Operación ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="VT_detraccion_actualizada" xml:space="preserve">
+    <value>La detracción ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="VT_documento_comercial_actualizado" xml:space="preserve">
+    <value>El Documento {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_documento_comercial_agregado" xml:space="preserve">
+    <value>El Documento {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_documento_comercial_anulado" xml:space="preserve">
+    <value>El Documento ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_documento_comercial_cliente_no_permitido" xml:space="preserve">
+    <value>El Tipo de Documento seleccionado no es permitido para el Cliente.</value>
+  </data>
+  <data name="VT_documento_comercial_formato_requerido" xml:space="preserve">
+    <value>Ingrese el Formato para el Documento.</value>
+  </data>
+  <data name="VT_documento_comercial_serie_agregado" xml:space="preserve">
+    <value>El Tipo de Documento y Serie ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_documento_comercial_serie_anulado" xml:space="preserve">
+    <value>El Tipo de Documento y Serie ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_documento_comercial_serie_multiple_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el o los Tipos de Documento y Serie.</value>
+  </data>
+  <data name="VT_documento_comercial_serie_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Documento y Serie.</value>
+  </data>
+  <data name="VT_documento_comercial_serie_ya_seleccionado" xml:space="preserve">
+    <value>El Tipo de Documento y Serie ya fue seleccionado.</value>
+  </data>
+  <data name="VT_grupo_cliente_actualizado" xml:space="preserve">
+    <value>El Grupo de Clientes {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_grupo_cliente_agregado" xml:space="preserve">
+    <value>El Grupo de Clientes {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_grupo_cliente_anulado" xml:space="preserve">
+    <value>El Grupo de Clientes {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_grupo_proveedor_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Grupo de Clientes.</value>
+  </data>
+  <data name="VT_grupo_proveedor_ya_seleccionado" xml:space="preserve">
+    <value>El Grupo de Clientes ya fue seleccionado.</value>
+  </data>
+  <data name="VT_guia_remision_generada" xml:space="preserve">
+    <value>Se ha generado la Guía de Remisión satisfactoriamente.</value>
+  </data>
+  <data name="VT_impuesto_tasa_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Afectación.</value>
+  </data>
+  <data name="VT_lista_precio_actualizada" xml:space="preserve">
+    <value>La Lista de Precios ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="VT_lista_precio_agregada" xml:space="preserve">
+    <value>La Lista de Precios ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="VT_lista_precio_anulada" xml:space="preserve">
+    <value>La Lista de Precios ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="VT_lista_precio_proveedor_agregado" xml:space="preserve">
+    <value>El Cliente/Proveedor ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="VT_lista_precio_proveedor_eliminado" xml:space="preserve">
+    <value>El Cliente/Proveedor ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="VT_lista_precio_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Lista de Precios.</value>
+  </data>
+  <data name="VT_medio_pago_actualizado" xml:space="preserve">
+    <value>El Medio de Pago {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_medio_pago_agregado" xml:space="preserve">
+    <value>El Medio de Pago {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_medio_pago_anulado" xml:space="preserve">
+    <value>El Medio de Pago ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_medio_pago_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Medio de Pago.</value>
+  </data>
+  <data name="VT_monto_cargo_detraccion_requerido" xml:space="preserve">
+    <value>Ingrese el Cargo.</value>
+  </data>
+  <data name="VT_monto_pago_detraccion_requerido" xml:space="preserve">
+    <value>Ingrese el Monto.</value>
+  </data>
+  <data name="VT_motivo_traslado_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Motivo del Traslado.</value>
+  </data>
+  <data name="VT_nota_credito_actualizada" xml:space="preserve">
+    <value>La Nota de Crédito {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="VT_nota_credito_agregada" xml:space="preserve">
+    <value>La Nota de Crédito {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="VT_nota_credito_anulada" xml:space="preserve">
+    <value>La Nota de Crédito {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="VT_nota_credito_comprobante_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Comprobante a Modificar.</value>
+  </data>
+  <data name="VT_nota_credito_emitida" xml:space="preserve">
+    <value>La Nota de Crédito {0} ha sido emitida satisfactoriamente.</value>
+  </data>
+  <data name="VT_nota_credito_sustento_requerido" xml:space="preserve">
+    <value>Ingrese el Sustento.</value>
+  </data>
+  <data name="VT_nuevo_precio_unitario_requerido" xml:space="preserve">
+    <value>Ingrese el nuevo Precio Unitario.</value>
+  </data>
+  <data name="VT_numero_operacion_detraccion_requerido" xml:space="preserve">
+    <value>Ingrese el Número de Operación</value>
+  </data>
+  <data name="TS_numero_operacion_requerido" xml:space="preserve">
+    <value>Ingrese el Número de Operación</value>
+  </data>
+  <data name="VT_pedido_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Pedido.</value>
+  </data>
+  <data name="VT_precio_unitario_requerido" xml:space="preserve">
+    <value>Ingrese el Precio Unitario.</value>
+  </data>
+  <data name="VT_producto_actualizado" xml:space="preserve">
+    <value>El Producto ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_producto_agregado" xml:space="preserve">
+    <value>El Producto ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_producto_anulado" xml:space="preserve">
+    <value>El Producto ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_producto_autorizacion_descuento_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el(los) Producto(s)/Servicio(s) a para los que va solicitar Descuento.</value>
+  </data>
+  <data name="VT_producto_sin_saldo" xml:space="preserve">
+    <value>El Producto seleccionado no tiene Saldo.</value>
+  </data>
+  <data name="VT_tipo_cargo_abono_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Cargo/Abono.</value>
+  </data>
+  <data name="VT_tipo_condicion_pago_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Condición de Pago.</value>
+  </data>
+  <data name="VT_tipo_nota_credito_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Nota.</value>
+  </data>
+  <data name="VT_tipo_operacion_cta_cte_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Operación.</value>
+  </data>
+  <data name="VT_valor_unitario_requerido" xml:space="preserve">
+    <value>Ingrese el Valor Unitario.</value>
+  </data>
+  <data name="VT_vendedor_actualizado" xml:space="preserve">
+    <value>El Vendedor {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="VT_vendedor_agregado" xml:space="preserve">
+    <value>El Vendedor {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_vendedor_almacen_no_configurado" xml:space="preserve">
+    <value>No estan configurados los Almacenes para el Vendedor.</value>
+  </data>
+  <data name="VT_vendedor_anulado" xml:space="preserve">
+    <value>El Vendedor {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="VT_vendedor_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Vendedor.</value>
+  </data>
+  <data name="TS_comprobante_cobranza_actualizada" xml:space="preserve">
+    <value>La Operación ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="TS_comprobante_cobranza_agregada" xml:space="preserve">
+    <value>La Operación ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="TS_comprobante_cobranza_anulada" xml:space="preserve">
+    <value>La Operación ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="VT_numero_operacion_referencia_requerido" xml:space="preserve">
+    <value>Ingrese el Número de la Operación.</value>
+  </data>
+  <data name="AS_contrasena_nueva_confirmada_no_coinciden" xml:space="preserve">
+    <value>La Contraseña nueva no coincide con la confirmada.</value>
+  </data>
+  <data name="AS_contrasena_nueva_requerida" xml:space="preserve">
+    <value>Ingrese la nueva Contraseña.</value>
+  </data>
+  <data name="MG_numero_inscripcion_vehicular_requerido" xml:space="preserve">
+    <value>Ingrese el Número de Inscripción Vehicular.</value>
+  </data>
+  <data name="MG_conductor_apellido_paterno_requerido" xml:space="preserve">
+    <value>Ingrese el Apellido Paterno.</value>
+  </data>
+  <data name="MG_conductor_licencia_conducir_requerido" xml:space="preserve">
+    <value>Ingrese el Número de la licencia de Conducir.</value>
+  </data>
+  <data name="MG_conductor_nombres_requerido" xml:space="preserve">
+    <value>Ingrese el(los) Nombre(s).</value>
+  </data>
+  <data name="MG_transportista_actualizado" xml:space="preserve">
+    <value>El Transportista {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_agregado" xml:space="preserve">
+    <value>El Transportista {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_anulado" xml:space="preserve">
+    <value>El Transportista {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_conductor_actualizado" xml:space="preserve">
+    <value>El Conductor ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_conductor_agregado" xml:space="preserve">
+    <value>El Conductor ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_conductor_anulado" xml:space="preserve">
+    <value>El Conductor ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_unidad_actualizado" xml:space="preserve">
+    <value>El Vehículo ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_unidad_agregado" xml:space="preserve">
+    <value>El Vehículo ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_transportista_unidad_anulado" xml:space="preserve">
+    <value>El Vehículo ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="MG_vehiculo_marca_requerido" xml:space="preserve">
+    <value>Ingrese la Marca del Vehículo.</value>
+  </data>
+  <data name="MG_vehiculo_modelo_requerido" xml:space="preserve">
+    <value>Ingrese el Modelo del Vehículo.</value>
+  </data>
+  <data name="MG_vehiculo_placa_requerido" xml:space="preserve">
+    <value>Ingrese la Placa del Vehículo.</value>
+  </data>
+  <data name="RH_fecha_cese_requerida" xml:space="preserve">
+    <value>Ingrese la fecha de Cese.</value>
+  </data>
+  <data name="RH_personal_periodo_laboral_actualizado" xml:space="preserve">
+    <value>El Periodo Laboral ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_periodo_laboral_agregado" xml:space="preserve">
+    <value>El Periodo Laboral ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="RH_personal_periodo_laboral_cese" xml:space="preserve">
+    <value>El Personal ha sido cesado satisfactoriamente.</value>
+  </data>
+  <data name="AS_proceso_integracion_ejecutado" xml:space="preserve">
+    <value>El Proceso {0} ha sido ejecutado satisfactoriamente.</value>
+  </data>
+  <data name="CM_orden_compra_actualizada" xml:space="preserve">
+    <value>La Orden {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="CM_orden_compra_agregada" xml:space="preserve">
+    <value>La Orden {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="CM_orden_compra_anulada" xml:space="preserve">
+    <value>La Orden {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="CM_lugar_entrega_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Lugar de Entrega.</value>
+  </data>
+  <data name="CM_fecha_entrega_requerida" xml:space="preserve">
+    <value>Ingrese la Fecha de Entrega.</value>
+  </data>
+  <data name="CM_plazo_entrega_requerido" xml:space="preserve">
+    <value>Ingrese el Plazo de Entrega.</value>
+  </data>
+  <data name="MG_condicion_pago_anulada" xml:space="preserve">
+    <value>La Condición de Pago ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="MG_condicion_pago_actualizada" xml:space="preserve">
+    <value>La Condición de Pago {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MG_condicion_pago_agregada" xml:space="preserve">
+    <value>La Condición de Pago {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MG_tipo_condicion_pago_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Condición de Pago.</value>
+  </data>
+  <data name="GEN_upload_columna_diferente_estructura" xml:space="preserve">
+    <value>Error General : Las columnas no estan de acuerdo a la estructura requerida</value>
+  </data>
+  <data name="GEN_upload_data_diferente_estructura" xml:space="preserve">
+    <value>Error General : La información del archivo debe estar de acuerdo a la estructura requerida</value>
+  </data>
+  <data name="GEN_upload_fila_columna_diferente_estructura" xml:space="preserve">
+    <value>Fila {0} : Las columnas no estan de acuerdo a la estructura requerida</value>
+  </data>
+  <data name="CM_orden_compra_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Orden de Compra.</value>
+  </data>
+  <data name="IV_orden_compra_producto_multiple_seleccion_agregado" xml:space="preserve">
+    <value>Los Productos han sido agregados satisfactoriamente.</value>
+  </data>
+  <data name="IV_orden_compra_producto_multiple_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el o los Productos.</value>
+  </data>
+  <data name="AS_proceso_integracion_correo_actualizado" xml:space="preserve">
+    <value>El(los) Correo(s) Electrónico(s) ha(n) sido actualizado(s) satisfactoriamente.</value>
+  </data>
+  <data name="AS_proceso_integracion_correo_requerido" xml:space="preserve">
+    <value>Ingrese el(los) Correo(s) Electrónico(s).</value>
+  </data>
+  <data name="CM_proveedor_agregado" xml:space="preserve">
+    <value>El Proveedor ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="CM_tipo_orden_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Orden de Compra.</value>
+  </data>
+  <data name="CM_tipo_pedido_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Pedido de Compra.</value>
+  </data>
+  <data name="MG_producto_multiple_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el o los Producto(s).</value>
+  </data>
+  <data name="CM_pedido_compra_actualizado" xml:space="preserve">
+    <value>El Pedido {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="CM_pedido_compra_agregado" xml:space="preserve">
+    <value>El Pedido {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="CM_pedido_compra_anulado" xml:space="preserve">
+    <value>El Pedido {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="CM_pedido_compra_aprobacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Aprobación para el Pedido {0}.</value>
+  </data>
+  <data name="CM_pedido_compra_autorizacion_aprobada" xml:space="preserve">
+    <value>Se aprobó el Pedido solicitado.</value>
+  </data>
+  <data name="CM_pedido_compra_autorizacion_desaprobada" xml:space="preserve">
+    <value>Se desaprobó el Pedido solicitado.</value>
+  </data>
+  <data name="MG_condicion_pago_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Condición de Pago.</value>
+  </data>
+  <data name="CM_entrega_actualizada" xml:space="preserve">
+    <value>La Entrega ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="CM_entrega_agregada" xml:space="preserve">
+    <value>La Entrega ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="CM_entrega_anulada" xml:space="preserve">
+    <value>La Entrega ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="CM_producto_servicio_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Producto o Servicio.</value>
+  </data>
+  <data name="CM_productos_entregables_agregados" xml:space="preserve">
+    <value>Los Productos han sido agregados satisfactoriamente.</value>
+  </data>
+  <data name="MG_tipo_cambio_oficial_dia_no_registrado" xml:space="preserve">
+    <value>No se ha registrado el Tipo de Cambio Oficial para el Día {0}.</value>
+  </data>
+  <data name="CM_orden_compra_comprobante_actualizado" xml:space="preserve">
+    <value>El Comprobante ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="CM_producto_detalle_requerido" xml:space="preserve">
+    <value>Ingrese el Detalle del Producto.</value>
+  </data>
+  <data name="VT_tipo_comprobante_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Comprobante.</value>
+  </data>
+  <data name="VT_descripcion_comprobante_anticipo_requerido" xml:space="preserve">
+    <value>Ingrese la Descripción del Anticipo.</value>
+  </data>
+  <data name="VT_monto_total_comprobante_requerido" xml:space="preserve">
+    <value>Ingrese el Monto Total.</value>
+  </data>
+  <data name="CM_orden_compra_aprobacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Aprobación para la Orden {0}.</value>
+  </data>
+  <data name="CM_orden_compra_autorizacion_aprobada" xml:space="preserve">
+    <value>Se aprobó la Orden solicitada.</value>
+  </data>
+  <data name="CM_orden_compra_autorizacion_desaprobada" xml:space="preserve">
+    <value>Se desaprobó la Orden solicitada.</value>
+  </data>
+  <data name="VT_anticipo_cerrado" xml:space="preserve">
+    <value>El Anticipo ha sido cerrado satisfactoriamente.</value>
+  </data>
+  <data name="VT_anticipo_emitido" xml:space="preserve">
+    <value>El Anticipo {0} ha sido emitido satisfactoriamente.</value>
+  </data>
+  <data name="VT_nota_credito_cerrada" xml:space="preserve">
+    <value>La Nota de Crédito ha sido cerrada satisfactoriamente.</value>
+  </data>
+  <data name="CM_orden_compra_estado_actualizado" xml:space="preserve">
+    <value>El estado ha sido Actualizado.</value>
+  </data>
+  <data name="VT_caja_personal_agregado" xml:space="preserve">
+    <value>El Usuario ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="VT_caja_personal_eliminado" xml:space="preserve">
+    <value>El Usuario ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="CM_orden_compra_comprobante_agregado" xml:space="preserve">
+    <value>El Comprobante ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="CM_orden_compra_comprobante_eliminado" xml:space="preserve">
+    <value>El Comprobante ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="GEN_numero_doc_comercial_requerido" xml:space="preserve">
+    <value>Ingrese el Número del Documento Comercial.</value>
+  </data>
+  <data name="CM_lista_precio_actualizada" xml:space="preserve">
+    <value>La Lista de Precios ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="CM_lista_precio_agregada" xml:space="preserve">
+    <value>La Lista de Precios ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="CM_lista_precio_anulada" xml:space="preserve">
+    <value>La Lista de Precios ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="CM_lista_precio_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Lista de Precios.</value>
+  </data>
+  <data name="CM_lista_precio_producto_fecha_vigente_requerida" xml:space="preserve">
+    <value>Ingrese la fecha de Vigencia.</value>
+  </data>
+  <data name="CM_orden_compra_modificacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Modificación para la Orden {0}.</value>
+  </data>
+  <data name="VT_anticipo_aplicado" xml:space="preserve">
+    <value>El Anticipo ha sido aplicado satisfactoriamente.</value>
+  </data>
+  <data name="VT_anticipo_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Anticipo.</value>
+  </data>
+  <data name="VT_anticipo_solo_un_documento_permitido" xml:space="preserve">
+    <value>Solo se permite un Anticipo asociado a un Documento Comercial.</value>
+  </data>
+  <data name="VT_anticipo_multiple_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el o los Anticipos.</value>
+  </data>
+  <data name="APPMP_anticipo_aplicacion_pendiente_titulo" xml:space="preserve">
+    <value>Anticipos pendientes.</value>
+  </data>
+  <data name="VT_anticipo_aplicacion_pregunta" xml:space="preserve">
+    <value>Desea aplicar los anticipos pendientes?.</value>
+  </data>
+  <data name="VT_anticipo_monto_distribuido_suma_diferente_saldo" xml:space="preserve">
+    <value>La suma de los Montos distribuidos debe ser igual al Monto Disponible.</value>
+  </data>
+  <data name="VT_anticipo_monto_no_distribuido" xml:space="preserve">
+    <value>Ingrese los montos distribuidos.</value>
+  </data>
+  <data name="VT_anticipo_eliminado" xml:space="preserve">
+    <value>El Anticipo ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="VT_anticipo_ya_emitido" xml:space="preserve">
+    <value>El Anticipo ya ha sido emitido.</value>
+  </data>
+  <data name="VT_anticipo_cobranza_notificacion_descripcion" xml:space="preserve">
+    <value>Se realizó el cobro del Anticipo: {0}, Cliente: {1}.</value>
+  </data>
+  <data name="VT_anticipo_cobranza_notificacion_titulo" xml:space="preserve">
+    <value>COBRANZA DE ANTICIPO</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_notificacion_descripcion" xml:space="preserve">
+    <value>Se autorizó el Comprobante: {0}, Cliente: {1}.</value>
+  </data>
+  <data name="VT_comprobante_autorizacion_notificacion_titulo" xml:space="preserve">
+    <value>AUTORIZACION DE COMPROBANTE</value>
+  </data>
+  <data name="VT_comprobante_cobranza_notificacion_descripcion" xml:space="preserve">
+    <value>Se realizó el cobro del Comprobante: {0}, Cliente: {1}.</value>
+  </data>
+  <data name="VT_comprobante_cobranza_notificacion_titulo" xml:space="preserve">
+    <value>COBRANZA DE COMPROBANTE</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_notificacion_descripcion" xml:space="preserve">
+    <value>Se autorizó la Cotización: {0}, Cliente: {1}.</value>
+  </data>
+  <data name="VT_cotizacion_autorizacion_notificacion_titulo" xml:space="preserve">
+    <value>AUTORIZACION DE COTIZACION</value>
+  </data>
+  <data name="VT_pedido_autorizacion_notificacion_descripcion" xml:space="preserve">
+    <value>Se autorizó el Pedido: {0}, Cliente: {1}.</value>
+  </data>
+  <data name="VT_pedido_autorizacion_notificacion_titulo" xml:space="preserve">
+    <value>AUTORIZACION DE PEDIDO</value>
+  </data>
+  <data name="MG_color_actualizado" xml:space="preserve">
+    <value>El Color {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_color_agregado" xml:space="preserve">
+    <value>El Color {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_color_anulado" xml:space="preserve">
+    <value>El Color {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MG_color_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Color.</value>
+  </data>
+  <data name="VT_comprobante_atendido" xml:space="preserve">
+    <value>El Comprobante ha sido atendido satisfactoriamente.</value>
+  </data>
+  <data name="PD_nombre_proceso_requerido" xml:space="preserve">
+    <value>Ingrese el nombre del Proceso.</value>
+  </data>
+  <data name="PD_nombre_sub_proceso_requerido" xml:space="preserve">
+    <value>Ingrese el nombre del Sub-Proceso.</value>
+  </data>
+  <data name="PD_proceso_actualizado" xml:space="preserve">
+    <value>El Proceso ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="PD_proceso_agregado" xml:space="preserve">
+    <value>El Proceso ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="PD_proceso_anulado" xml:space="preserve">
+    <value>El Proceso ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="PD_sub_proceso_actualizado" xml:space="preserve">
+    <value>El Sub-Proceso ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="PD_sub_proceso_agregado" xml:space="preserve">
+    <value>El Sub-Proceso ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="PD_sub_proceso_anulado" xml:space="preserve">
+    <value>El Sub-Proceso ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="GEN_numero_orden_requerido" xml:space="preserve">
+    <value>Ingrese el Número de Orden.</value>
+  </data>
+  <data name="MG_producto_sub_proceso_actualizado" xml:space="preserve">
+    <value>El Sub-Proceso ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_sub_proceso_agregado" xml:space="preserve">
+    <value>El Sub-Proceso ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_sub_proceso_eliminado" xml:space="preserve">
+    <value>El Sub-Proceso ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="PS_sub_proceso_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Sub-Proceso.</value>
+  </data>
+  <data name="PD_orden_produccion_actualizada" xml:space="preserve">
+    <value>La Orden {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="PD_orden_produccion_agregada" xml:space="preserve">
+    <value>La Orden {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="PD_orden_produccion_anulada" xml:space="preserve">
+    <value>La Orden {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="CM_pedido_compra_modificacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Modificación para el Pedido {0}.</value>
+  </data>
+  <data name="VT_pedido_enviado_produccion" xml:space="preserve">
+    <value>El Pedido ha sido enviado a Producción.</value>
+  </data>
+  <data name="PD_orden_produccion_req_insumo_atendido" xml:space="preserve">
+    <value>Se ha atendido satisfactoriamente los Insumos para la Orden de Produccion: {0}.</value>
+  </data>
+  <data name="PD_operador_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Operador.</value>
+  </data>
+  <data name="PD_operador_ya_seleccionado" xml:space="preserve">
+    <value>El Operador ya fue seleccionado con anterioridad.</value>
+  </data>
+  <data name="PD_operador_actualizado" xml:space="preserve">
+    <value>El Operador ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="PD_operador_agregado" xml:space="preserve">
+    <value>El Operador ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="PD_operador_eliminado" xml:space="preserve">
+    <value>El Operador ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="PD_sub_proceso_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Sub-Proceso.</value>
+  </data>
+  <data name="GEN_justificacion_anulacion_requerida" xml:space="preserve">
+    <value>Ingrese la Justificación para la Anulación.</value>
+  </data>
+  <data name="PD_personal_atendido_por_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Personal que atiende el Despacho.</value>
+  </data>
+  <data name="IV_guia_remision_emitida" xml:space="preserve">
+    <value>La Guía de Remisión ha sido emitida satisfactoriamente.</value>
+  </data>
+  <data name="IV_guia_remision_modificacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Modificación para la Guia de Remisión: {0}.</value>
+  </data>
+  <data name="IV_guia_remision_aprobacion_solicitada" xml:space="preserve">
+    <value>Se ha solicitado la Aprobación para la G/R {0}.</value>
+  </data>
+  <data name="IV_guia_remision_autorizacion_aprobada" xml:space="preserve">
+    <value>Se aprobó la Autorización solicitada.</value>
+  </data>
+  <data name="IV_guia_remision_autorizacion_desaprobada" xml:space="preserve">
+    <value>Se desaprobó la Autorización solicitada.</value>
+  </data>
+  <data name="VT_descuento_valor_mayor_cantidad_venta" xml:space="preserve">
+    <value>El Descuento no puede ser mayor a la Venta.</value>
+  </data>
+  <data name="MG_producto_detalle_actualizado" xml:space="preserve">
+    <value>El Detalle ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_detalle_agregado" xml:space="preserve">
+    <value>El Detalle ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MG_producto_detalle_eliminado" xml:space="preserve">
+    <value>El Detalle ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="PD_comprobante_producto_entrega_actualizada" xml:space="preserve">
+    <value>La Entrega ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="PD_comprobante_producto_entrega_agregada" xml:space="preserve">
+    <value>La Entrega ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="PD_comprobante_producto_entrega_eliminada" xml:space="preserve">
+    <value>La Entrega ha sido eliminada satisfactoriamente.</value>
+  </data>
+  <data name="VT_producto_detalle_requerido" xml:space="preserve">
+    <value>Ingrese el Detalle.</value>
+  </data>
+  <data name="PD_comprobante_entrega_cantidad_mayor_al_documento" xml:space="preserve">
+    <value>La cantidad no puede ser mayor a {0}</value>
+  </data>
+  <data name="VT_comprobante_producto_entrega_multiple_seleccion_requerida1" xml:space="preserve">
+    <value>Seleccione el o los Productos o Servicios a despachar.</value>
+  </data>
+  <data name="MK_tipo_profesion_oficio_actualizado" xml:space="preserve">
+    <value>La Tipificación {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MK_tipo_profesion_oficio_agregado" xml:space="preserve">
+    <value>La Tipificación  {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MK_tipo_profesion_oficio_anulado" xml:space="preserve">
+    <value>La Tipificación  {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="MK_tipo_profesion_oficio_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Tipificación.</value>
+  </data>
+  <data name="MK_oportunidad_actualizada" xml:space="preserve">
+    <value>La Oportunidad {0} ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MK_oportunidad_agregada" xml:space="preserve">
+    <value>La Oportunidad {0} ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MK_oportunidad_anulada" xml:space="preserve">
+    <value>La Oportunidad {0} ha sido anulada satisfactoriamente.</value>
+  </data>
+  <data name="MK_oportunidad_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Oportunidad.</value>
+  </data>
+  <data name="MK_lead_source_actualizado" xml:space="preserve">
+    <value>El Lead Source {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MK_lead_source_agregado" xml:space="preserve">
+    <value>El Lead Source {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MK_lead_source_anulado" xml:space="preserve">
+    <value>El Lead Source {0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MK_lead_source_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Lead Source.</value>
+  </data>
+  <data name="MK_tipo_cliente_venta_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Tipificación de Venta.</value>
+  </data>
+  <data name="MK_cliente_actualizado" xml:space="preserve">
+    <value>El Cliente {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_agregado" xml:space="preserve">
+    <value>El Cliente {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_anulado" xml:space="preserve">
+    <value>El Cliente{0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Cliente.</value>
+  </data>
+  <data name="MK_prospecto_actualizado" xml:space="preserve">
+    <value>El Prospecto {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MK_prospecto_agregado" xml:space="preserve">
+    <value>El Prospecto {0} ha sido agregado satisfactoriamente.</value>
+  </data>
+  <data name="MK_prospecto_anulado" xml:space="preserve">
+    <value>El Prospecto{0} ha sido anulado satisfactoriamente.</value>
+  </data>
+  <data name="MK_prospecto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Prospecto.</value>
+  </data>
+  <data name="MK_cliente_red_social_actualizada" xml:space="preserve">
+    <value>La Red Social ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_red_social_agregada" xml:space="preserve">
+    <value>La Red Social ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_red_social_eliminada" xml:space="preserve">
+    <value>La Red Social ha sido eliminada satisfactoriamente.</value>
+  </data>
+  <data name="MK_red_social_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Red Social.</value>
+  </data>
+  <data name="MK_cliente_contacto_actualizado" xml:space="preserve">
+    <value>El contacto ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_contacto_agregado" xml:space="preserve">
+    <value>El contacto ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_contacto_eliminado" xml:space="preserve">
+    <value>El cliente ha sido eliminado satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_contacto_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Contacto.</value>
+  </data>	
+  <data name="MK_cliente_oportunidad_venta_actualizada" xml:space="preserve">
+    <value>La Oportunidad ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_oportunidad_venta_agregada" xml:space="preserve">
+    <value>La Oportunidad ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="MK_cliente_oportunidad_venta_eliminada" xml:space="preserve">
+    <value>La Oportunidad ha sido eliminada satisfactoriamente.</value>
+  </data>
+  <data name="IV_departamento_llegada_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Departamento de llegada.</value>
+  </data>
+  <data name="IV_departamento_partida_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Departamento de partida.</value>
+  </data>
+  <data name="IV_distrito_llegada_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Distrito de llegada.</value>
+  </data>
+  <data name="IV_distrito_partida_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Distrito de partida.</value>
+  </data>
+  <data name="IV_provincia_llegada_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Provincia de llegada.</value>
+  </data>
+  <data name="IV_provincia_partida_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione la Provincia de partida.</value>
+  </data>
+  <data name="IV_guia_remision_peso_bruto_requerido" xml:space="preserve">
+    <value>Ingrese el Peso Bruto total.</value>
+  </data>
+  <data name="MG_transportista_conductor_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Conductor.</value>
+  </data>
+  <data name="MG_transportista_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Transportista.</value>
+  </data>
+  <data name="MG_transportista_unidad_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Vehículo.</value>
+  </data>
+  <data name="IV_destinatario_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Destinatario.</value>
+  </data>
+  <data name="IV_proveedor_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Proveedor.</value>
+  </data>
+  <data name="GEN_numero_doc_referencia_requerida" xml:space="preserve">
+    <value>Ingrese el Número del Documento de Referencia.</value>
+  </data>
+  <data name="GEN_serie_doc_referencia_requerida" xml:space="preserve">
+    <value>Ingrese la Serie del Documento de Referencia.</value>
+  </data>
+  <data name="IV_codigo_establecimiento_destinatario_requerido" xml:space="preserve">
+    <value>Ingrese el Código SUNAT de Establecimiento del Destinatario.</value>
+  </data>
+  <data name="IV_codigo_establecimiento_proveedor_requerido" xml:space="preserve">
+    <value>Ingrese el Código SUNAT de Establecimiento del Proveedor.</value>
+  </data>
+  <data name="IV_codigo_producto_requerido" xml:space="preserve">
+    <value>Ingrese el Código del Producto</value>
+  </data>
+  <data name="IV_tipo_doc_comercial_referencia_seleccion_requerida" xml:space="preserve">
+    <value>Seleccione el Tipo de Documento de Referencia.</value>
+  </data>
+  <data name="AS_parametro_sistema_actualizado" xml:space="preserve">
+    <value>El Parametro {0} ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="AS_usuario_horario_actualizacion_lote" xml:space="preserve">
+    <value>Los horarios fueron actualizados.</value>
+  </data>
+  <data name="AS_usuario_horario_actualizado" xml:space="preserve">
+    <value>El Horario ha sido actualizado satisfactoriamente.</value>
+  </data>
+  <data name="AS_usuario_horario_hora_fin_requerido" xml:space="preserve">
+    <value>Ingrese la Hora de Fin.</value>
+  </data>
+  <data name="AS_usuario_horario_hora_inicio_requerido" xml:space="preserve">
+    <value>Ingrese la Hora de Inicio.</value>
+  </data>
+  <data name="GEN_rango_hora_incorrecto" xml:space="preserve">
+    <value>El rango de Horas no es correcto.</value>
+  </data>
+  <data name="AS_usuario_horario_hora_solicitada_requerida" xml:space="preserve">
+    <value>Ingrese la Hora Solicitada.</value>
+  </data>
+  <data name="APPMP_aprobar_titulo" xml:space="preserve">
+    <value>Aprobar.</value>
+  </data>
+  <data name="RH_personal_solicitud_acceso_aprobada" xml:space="preserve">
+    <value>Se aprobó la Solicitud de Acceso.</value>
+  </data>
+  <data name="RH_personal_solicitud_acceso_hora_autorizada_requerida" xml:space="preserve">
+    <value>Ingrese la Hora Autorizada.</value>
+  </data>
+  <data name="RH_personal_solicitud_acceso_desaprobada" xml:space="preserve">
+    <value>Se desaprobó la Solicitud de Acceso.</value>
+  </data>
+  <data name="PD_cantidad_cortes_requerido" xml:space="preserve">
+    <value>Ingrese los Cortes.</value>
+  </data>
+  <data name="PD_orden_produccion_fecha_entrega_requerida" xml:space="preserve">
+    <value>Ingrese la Fecha de Entrega.</value>
+  </data>
+  <data name="PD_orden_produccion_hora_entrega_requerida" xml:space="preserve">
+    <value>Ingrese la Hora de Entrega.</value>
+  </data>	
+  <data name="PD_ruta_produccion_actualizada" xml:space="preserve">
+    <value>La Ruta de Producción ha sido actualizada satisfactoriamente.</value>
+  </data>
+  <data name="PD_ruta_produccion_agregada" xml:space="preserve">
+    <value>La Ruta de Producción ha sido agregada satisfactoriamente.</value>
+  </data>
+  <data name="PD_ruta_produccion_anulada" xml:space="preserve">
+    <value>La Ruta de Producción ha sido anulada satisfactoriamente.</value>
+  </data>
+</root>

@@ -1,0 +1,182 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.AccesoExtViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="EstadoAprobacionId" for="@Model.EstadoAprobacionList" col-position="col-lg-2" label="Estado" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<esd-dialog id="aprobarEditPopup" title="@SR.GetString("APPMP_aprobar_titulo")" onclick="aprobarEditPopupOnClick">
+   <div id="aprobarEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "AccesoExt")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PersonalSolicitudAccesoDTO.EstadoAprobacionId", value: $('#EstadoAprobacionId').val() ||0, type:'int' },
+                     { name: "PersonalSolicitudAccesoDTO.CotizacionDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "PersonalSolicitudAccesoDTO.CotizacionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','Fecha','Solicitado Por','Hora Soli.','Autorizado Por','Hora Auto.','Fecha Auto.', '','Estado',''],
+         colModel: [
+            { name: 'PersonalSolicitudAccesoId', hidden: true },
+            { name: "Fecha", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: "Solicitado", width: 320 },
+            { name: "HoraSolicitada", width: 70 },
+            { name: "Autorizado", width: 320 },
+            { name: "HoraAutorizada", width: 70 },
+            { name: "FechaAutoriza", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: 'EstadoAprobacion', hidden: true },
+            { name: "EstadoAprobacionNombre", width: 200 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if (row.EstadoAprobacion === '@EstadoAprobacionConstante.PENDIENTE_APROBACION')
+               $("#menuBar").appMenu('disabledButton', { buttonList: 'aprobar,desaprobar', disabled: false });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#aprobarEditPopup').setDialog({
+         onShow: function (p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+               urlAction: '@Url.Action("AprobarEditPopup", "AccesoExt")',
+               container: 'aprobarEditPopupContent',
+               viewModel: [
+                  { name: "PersonalSolicitudAccesoDTO.PersonalSolicitudAccesoId", value: row.PersonalSolicitudAccesoId, type: 'int' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#Codigo, #NumeroDocumentoIdentidad, #RazonSocial,#Vendedor,#EstadoAprobacionId").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+         return;
+      }
+
+      switch (key) {
+         case 'aprobar':
+            $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            $('#aprobarEditPopup').showDialog();
+            break;
+
+         case 'desaprobar':
+            $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            $(this).postAction({
+               viewModel: [
+                  { name: "PersonalSolicitudAccesoDTO.PersonalSolicitudAccesoId", value: row.PersonalSolicitudAccesoId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Desaprobar", "AccesoExt")',
+               onSuccess: function (response) {
+                  if (response.success) {
+                     $('#bandejaGrid').appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function aprobarEditPopupOnClick() {
+
+      if (!mp_validarDatos())
+         return true;
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      $('#aprobarEditPopup').saveView({
+         urlAction: '@Url.Action("Aprobar", "AccesoExt")',
+         viewModel: [
+            { name: "PersonalSolicitudAccesoDTO.PersonalSolicitudAccesoId", value: row.PersonalSolicitudAccesoId, type: 'int' },
+            { name: "PersonalSolicitudAccesoDTO.HoraAutorizada", value: $('#mp-HoraAutorizada').val() },
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#aprobarEditPopup').hideDialog();
+               $('#bandejaGrid').appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   }
+</script>

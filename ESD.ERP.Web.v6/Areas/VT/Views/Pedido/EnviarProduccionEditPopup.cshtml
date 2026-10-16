@@ -1,0 +1,116 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.PedidoViewModel
+<div id="mp-edit-panel">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <div class="form-group row">
+                    <esd-datetimepicker for="@Model.OrdenProduccionDTO.DiaEntrega" col-position="col-lg-3" label="Fecha Entrega" col-label-position="col-lg-2"
+                                        datetimepicker-type="Date" in-modal="true"></esd-datetimepicker>
+                    <esd-datetimepicker for="@Model.OrdenProduccionDTO.HoraEntrega" col-position="col-lg-3" label="Hora Entrega" col-label-position="col-lg-2"
+                                        datetimepicker-type="Time" in-modal="true"></esd-datetimepicker>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row">
+            <br />
+        </div>
+        <div id="productoPopupContainer">
+            <table id="productoPopupGrid"></table>
+            <div id="productoPopupPager"></div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () { 
+        $("#productoPopupGrid").jqGrid({
+        @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarEnvioProduccion", "Pedido")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "CotizacionProductoDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' },
+                    ]
+                ));
+            }
+        },
+            colNames: ['', 'Código', '', 'Producto', 'Detalle', '', '', '', 'Cortes', 'Cortes Gratis', ''],
+            colModel: [
+            { name: 'CotizacionProductoId', hidden: true },
+            { name: 'Codigo', width: 90, formatter: codigoFormatter },
+            { name: 'ProductoId', hidden: true},
+            { name: 'ProductoNombre', width: 300, editable: false },
+            { name: 'Descripcion', width: 150, editable: false },
+            { name: 'Cantidad', hidden: true },
+            { name: 'CantidadPresentacion', hidden: true },
+            { name: 'CantidadEquivalente', hidden: true },
+            {
+                name: "CantidadVenta", width: 75, align: 'right', formatter: 'number', editable: true, sortable: false,
+                editoptions: {
+                    maxlength: 19,
+                    class: 'form-control-sm',
+                    dataInit: function (elem) {
+                        $(elem).prop('readonly', true);
+                    }
+                }
+            },
+            {
+                name: "CortesGratis", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+                editoptions: {
+                    maxlength: 19,
+                    class: 'form-control-sm',
+                    dataInit: function (elem) {
+                        $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                        $(elem).keydown(function (e) {
+                            if (e.keyCode == 13) {
+                                e.preventDefault();
+                            }
+                        });
+                    }
+                }
+            },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+        ],
+            pager: "#productoPopupPager",
+            loadComplete: function () { 
+                var $this = $(this), rows = this.rows, l = rows.length, i, row;
+                for (i = 0; i < l; i++) {
+                    row = rows[i];
+                    $this.jqGrid('editRow', row.id, false);
+                }
+            },
+            gridComplete: function () {
+                $("#productoPopupGrid").appGrid('resizeGrid', 'productoPopupContainer');
+            },
+            height: 130
+          });
+
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var targetId = e.target.hash;
+
+            $('#productoPopupGrid').appGrid('resizeGrid', 'productoPopupContainer');
+            $('#productoPopupGrid').jqGrid('setGridHeight', calculateGridHeight('productoPopupContainer'));
+
+        })
+});
+    function mp_validarDatos() {
+
+        if (!$('#mp-DiaEntrega').validateString('@SR.GetString("PD_orden_produccion_fecha_entrega_requerida")'))
+            return false;
+
+        if (!$('#mp-HoraEntrega').validateString('@SR.GetString("PD_orden_produccion_hora_entrega_requerida")'))
+            return false;
+
+        var list = $('#productoPopupGrid').appGrid('getDataIDs');
+        for (i in list) {
+            var rowId = list[i];
+            if (isEmptyRecord(rowId))
+                continue;
+        }
+        return true;
+    };
+</script>

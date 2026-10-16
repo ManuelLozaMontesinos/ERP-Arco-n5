@@ -1,0 +1,500 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.ComproAnticipoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-1" label="Doc. Com."
+                                    col-label-position="col-lg-2" onchange="tipoDocumentoComercialIdOnChange();" enable="@Model.IsNew"></esd-dropdownlist>
+                  @{
+                     if (Model.IsNew)
+                     {
+                        <esd-dropdownlist id="Serie" for="@Model.SerieList" col-position="col-lg-1" onchange="serieOnChange();"
+                                          enable="@Model.IsNew"></esd-dropdownlist>
+                     }
+                     else
+                     {
+                        <esd-textbox for="@Model.ComprobanteDTO.Serie" col-position="col-lg-1" enable="false"></esd-textbox>
+                     }
+                  }
+                  <esd-textbox for="@Model.ComprobanteDTO.Numero" col-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.ComprobanteDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-1"
+                                      enable="@Model.IsNew"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-2" label="Moneda"
+                                    col-label-position="col-lg-2" onchange="monedaIdOnChange();" enable="@Model.IsNew"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.ComprobanteDTO.MontoTipoCambio" col-position="col-lg-1" label="T/C" col-label-position="col-lg-1" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Proveedor" button-style="ListNew" value="@Model.ComprobanteDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente"
+                                     col-label-position="col-lg-2" onclick="proveedorOnClick"></esd-buttontextbox>
+                  <esd-textbox for="@Model.ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="VendedorNombre" value="@Model.ComprobanteDTO.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-4" label="Vendedor"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-dropdownlist id="MedioPagoId" for="@Model.MedioPagoList" col-position="col-lg-4" label="Medio de Pago"
+                                    col-label-position="col-lg-2" onchange="medioPagoIdOnChange();" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.Descripcion" col-position="col-lg-10" label="Descripcion" col-label-position="col-lg-2"
+                                max-length="150" rows="2"></esd-textarea>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoNeto" value="@Model.ComprobanteDTO.MontoNeto" col-position="col-lg-2" label="Mto. Neto" col-label-position="col-lg-2"
+                                      enable="false"></esd-numerictextbox>
+                  <esd-numerictextbox id="MontoIgv" value="@Model.ComprobanteDTO.MontoIgv" col-position="col-lg-2" label="IGV" col-label-position="col-lg-2"
+                                      enable="false"></esd-numerictextbox>
+                  <esd-numerictextbox id="MontoTotal" value="@Model.ComprobanteDTO.MontoTotal" col-position="col-lg-2" label="Total" col-label-position="col-lg-2"
+                                      ></esd-numerictextbox>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoComprobanteNombre" value="@Model.ComprobanteDTO.EstadoComprobanteDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ComprobanteDTO.ComprobanteId"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.ProveedorId"></esd-hidden>
+      <esd-hidden id="TipoDocumentoComercial" value="@Model.ComprobanteDTO.TipoDocumentoComercialDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.TipoDocumentoComercialDTO.ValidarProveedor"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.TipoDocumentoComercialDTO.MontoMaximoSinProveedor"></esd-hidden>
+      <esd-hidden id="TipoNaturalezaJuridica" value="@Model.ComprobanteDTO.ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo"></esd-hidden>
+      <esd-hidden id="ProveedorCodigo" value="@Model.ComprobanteDTO.ProveedorDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.VendedorId"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.MonedaDTO.EsLocal"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.ListaPrecioId"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.ImpuestoTasaDTO.Tasa"></esd-hidden>
+      <esd-hidden for="@Model.ComprobanteDTO.EsContingencia"></esd-hidden>
+      <esd-hidden id="EstadoComprobante" value="@Model.ComprobanteDTO.EstadoComprobanteDTO.Codigo"></esd-hidden>
+   </div>
+</section>
+<esd-dialog id="proveedorListPopup" title="Clientes" onclick="proveedorListPopupOnClick" size="Large">
+   <div id="proveedorListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="proveedorCreatePopup" title="Nuevo Cliente" onclick="proveedorCreatePopupOnClick" size="Large">
+   <div id="proveedorCreatePopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      habilitarCerrado();
+
+      $('#proveedorListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Proveedor", new { Area = "MG" })',
+               container: 'proveedorListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#proveedorCreatePopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("CreatePopup", "Proveedor", new { Area = "MG" })',
+               viewModel: [
+                  { name: "ProveedorDTO.ProveedorId", value: 0, type: 'int' }
+               ],
+               container: 'proveedorCreatePopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+
+      $('#MontoTotal').keydown(function (e) {
+         if (e.keyCode == 13) {
+            e.preventDefault();
+            calcularMontos(false);
+         }
+      });
+   });
+   function tipoDocumentoComercialIdOnChange() {
+
+      var tipoDocumentoComercialId = $("#TipoDocumentoComercialId").val();
+      if ($.isNullOrEmpty(tipoDocumentoComercialId)) {
+         $('#TipoDocumentoComercial').val('');
+         $('#ValidarProveedor').val('');
+         $('#MontoMaximoSinProveedor').val(0);
+         $('#Serie').val('');
+         return;
+      }
+
+      $(this).postAction({
+         urlAction: '@Url.Action("ListarSerie", "ComproAnticipo")',
+         viewModel: [
+            { name: "ComprobanteDTO.TipoDocumentoComercialId", value: tipoDocumentoComercialId, type: 'int' },
+            { name: "ComprobanteDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#TipoDocumentoComercial').val(response.data.tipoDocumentoComercial);
+               $('#ValidarProveedor').val(response.data.validarProveedor);
+               $('#MontoMaximoSinProveedor').val(response.data.montoMaximoSinProveedor);
+               $('#Serie').find('option').remove().end();
+               $("#Serie").addItems(response.data.list);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function serieOnChange() {
+
+      var documentoComercialSerieId = $("#Serie").val();
+      if ($.isNullOrEmpty(documentoComercialSerieId)) {
+         $('#EsContingencia').val('');
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerDocumentoSerie", "ComproAnticipo")',
+         id: documentoComercialSerieId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#EsContingencia").val(response.data.EsContingencia);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function monedaIdOnChange() {
+
+      var monedaId = $("#MonedaId").val();
+      if ($.isNullOrEmpty(monedaId)) {
+         $("#ListaPrecioId").val('');
+         $("#MontoTipoCambio").val(@DigitoConstante.CERO);
+         $("#MontoTipoCambio").prop('disabled', true);
+         $("#EsLocal").val('');
+         return;
+      }
+
+      $(this).postAction({
+         urlAction: '@Url.Action("ListarListaPrecio", "ComproAnticipo")',
+         viewModel: [
+            { name: "ComprobanteDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+            { name: "ComprobanteDTO.MonedaId", value: monedaId, type: 'int' },
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#EsLocal').val(response.data.esLocal);
+               $("#MontoTipoCambio").val(response.data.montoTipoCambio);
+               $("#ListaPrecioId").val(response.data.listaPrecioId);
+               $("#Tasa").val(response.data.Tasa);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function proveedorOnClick(key) {
+      if (key === 'list')
+         $('#proveedorListPopup').showDialog();
+      else
+         $('#proveedorCreatePopup').showDialog();
+   };
+   function proveedorListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      proveedorSelectedPopup('',row);
+   };
+   function proveedorSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_proveedor_seleccion_requerida")');
+         return false;
+      }
+
+      $('#ProveedorId').val(row.ProveedorId);
+      $('#ProveedorCodigo').val(row.Codigo);
+      $('#Proveedor').val(row.RazonSocial);
+      $('#TipoNaturalezaJuridica').val(row.TipoNaturalezaJuridica);
+      $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+
+      $('#Proveedor').appButtonTextBox('allowEdit', false);
+      $('#proveedorListPopup').hideDialog();
+   };
+   function proveedorCreatePopupOnClick() {
+
+      if (!mp_validarDatos())
+         return false;
+
+      mp_grabarDatos();
+   };
+   function proveedorCreatedPopup(row) {
+
+      $('#ProveedorId').val(row.ProveedorId);
+      $('#ProveedorCodigo').val(row.Codigo);
+      $('#Proveedor').val(row.RazonSocial);
+      $('#TipoNaturalezaJuridica').val(row.TipoNaturalezaJuridica);
+      $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+
+      $('#Proveedor').appButtonTextBox('allowEdit', false);
+      $('#proveedorCreatePopup').hideDialog();
+   };
+   function medioPagoIdOnChange() {
+
+      var medioPagoId = $("#MedioPagoId").val();
+      if ($.isNullOrEmpty(medioPagoId)) {
+         return;
+      }
+
+      if (!$("#ComprobanteId").validateNumeric())
+         return;
+
+      $(this).postAction({
+         urlAction: '@Url.Action("AplicarTasaPorMedioPago", "ComproAnticipo")',
+         viewModel: [
+            { name: "ComprobanteDTO.ComprobanteId", value: $("#ComprobanteId").val(), type: 'int' },
+            { name: "ComprobanteDTO.MedioPagoId", value: $('#MedioPagoId').val(), type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#productoGrid").appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function habilitarCerrado() {
+
+      if ($('#EstadoComprobante').val() === '@EstadoComprobanteConstante.CERRADO' ||
+         $('#EstadoComprobante').val() === '@EstadoComprobanteConstante.EMITIDO') {
+
+         $("#menuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.SAVE,cerrar', disabled: true });
+
+         $('#Proveedor').appButtonTextBox('disabled', { disabled: true });
+         $('#Cotizacion').appButtonTextBox('disabled', { disabled: true });
+         $("#TipoCondicionPagoId").prop('disabled', true);
+         $("#MedioPagoId").prop('disabled', true);
+         $("#Descripcion").prop('readonly', true);
+         $("#MontoTotal").prop('readonly', true);
+      }
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+
+            if (!validarDatos())
+               return false;
+
+            calcularMontos(true);
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "ComproAnticipo")'
+            });
+            break;
+
+         case 'cerrar':
+            cerrarComprobante();
+            break;
+      }
+   };
+   function validarDatos() {
+
+      if (!$('#TipoDocumentoComercialId').validateNumeric('@SR.GetString("MG_tipo_documento_comercial_seleccion_requerida")'))
+         return false;
+      if (!$('#Serie').validateString('@SR.GetString("GEN_serie_requerida")'))
+         return false;
+      if (!$('#Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#MonedaId').validateNumeric('@SR.GetString("GEN_moneda_seleccion_requerida")'))
+         return false;
+
+      if ($('#EsLocal').val() !== '@SiNoConstante.S') {
+         if (!$('#MontoTipoCambio').validateNumeric('@SR.GetString("GEN_tipo_cambio_monto_requerido")'))
+            return false;
+      }
+      if (!$('#ProveedorId').validateNumeric('@SR.GetString("MG_proveedor_seleccion_requerida")'))
+         return false;
+      if (!validarPorTipoDocumentoComercial())
+         return false;
+      if (!$('#VendedorId').validateNumeric('@SR.GetString("VT_vendedor_seleccion_requerida")'))
+         return false;
+      if (!$('#MedioPagoId').validateNumeric('@SR.GetString("VT_medio_pago_seleccion_requerida")'))
+         return false;
+      if (!$('#Descripcion').validateNumeric('@SR.GetString("VT_descripcion_comprobante_anticipo_requerido")'))
+         return false;
+      if (!$('#MontoTotal').validateNumeric('@SR.GetString("VT_monto_total_comprobante_requerido")'))
+         return false;
+
+      return true;
+   };
+   function validarPorTipoDocumentoComercial() {
+
+      if ($('#ValidarProveedor').val() === '@SiNoConstante.N')
+         return true;
+
+      if ($('#TipoDocumentoComercial').val() === '@TipoDocumentoComercialConstante.BOLETA_VENTA') {
+         if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.JURIDICO') {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_cliente_no_permitido")');
+            return false;
+         }
+      }
+
+      if ($('#TipoDocumentoComercial').val() === '@TipoDocumentoComercialConstante.FACTURA') {
+         if ($('#ProveedorCodigo').val() === '@ProveedorConstante.GENERICO') {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_cliente_no_permitido")');
+            return false;
+         }
+      }
+
+      return true;
+   };
+   function habilitarEdicionCliente() {
+
+      if ($('#EstadoComprobante').val() === '@EstadoComprobanteConstante.EMITIDO') {
+         $('#Proveedor').appButtonTextBox('allowEdit', false);
+         return;
+      }
+
+      if ($('#ValidarProveedor').val() !== '@SiNoConstante.S')
+         return true;
+
+      var montoMaximoSinProveedor = parseFloatEx($('#MontoMaximoSinProveedor').val());
+      var montoTotal = parseFloatEx($('#MontoTotal').val());
+
+      if ($('#TipoDocumentoComercial').val() === '@TipoDocumentoComercialConstante.BOLETA_VENTA') {
+         if (montoTotal > montoMaximoSinProveedor) {
+            $('#Proveedor').appButtonTextBox('allowEdit',false)
+         } else {
+            $('#Proveedor').appButtonTextBox('allowEdit', true)
+         }
+      }
+   };
+   function grabarDatosCrearModelo() {
+      var viewModel = [
+         { name: "ComprobanteDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+         { name: "ComprobanteDTO.TipoDocumentoComercialId", value: $('#TipoDocumentoComercialId').val(), type: 'int' },
+         { name: "ComprobanteDTO.Serie", value: $('#Serie').is('input:text') ? $('#Serie').val() : $("#Serie option:selected").text() },
+         { name: "ComprobanteDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+         { name: "ComprobanteDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+         { name: "ComprobanteDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+         { name: "ComprobanteDTO.MonedaId", value: $('#MonedaId').val(), type: 'int' },
+         { name: "ComprobanteDTO.MontoTipoCambio", value: $('#MontoTipoCambio').val(), type: 'decimal' },
+         { name: "ComprobanteDTO.ListaPrecioId", value: $('#ListaPrecioId').val(), type: 'int' },
+         { name: "ComprobanteDTO.MedioPagoId", value: $('#MedioPagoId').val(), type: 'int' },
+         { name: "ComprobanteDTO.EsContingencia", value: $('#EsContingencia').val() },
+         { name: "ComprobanteDTO.MontoNeto", value: $('#MontoNeto').val(), type: 'decimal' },
+         { name: "ComprobanteDTO.MontoIgv", value: $('#MontoIgv').val(), type: 'decimal' },
+         { name: "ComprobanteDTO.MontoTotal", value: $('#MontoTotal').val(), type: 'decimal' },
+         { name: "Descripcion", value: $('#Descripcion').val() }
+      ];
+
+      return viewModel;
+   };
+   function grabarDatos() {
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "ComproAnticipo")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#ComprobanteId").val(response.data.Id);
+               $("#TipoDocumentoComercialId").prop('disabled', true);
+               if ($('#Serie').is('input:text'))
+                  $('#Serie').prop('readonly', true);
+               else
+                  $('#Serie').prop('disabled', true);
+               $("#Fecha").prop('disabled', true);
+               $("#MonedaId").prop('disabled', true);
+               $("#menuBar").appMenu('disabledButton', { buttonList: 'soli_auto', disabled: false });
+
+               habilitarCerrado();
+               habilitarEdicionCliente();
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function cerrarComprobante() {
+
+      if (!validarDatos())
+         return false;
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Cerrar", "ComproAnticipo")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#Numero").val(response.data.Numero);
+               $("#EstadoComprobante").val(response.data.EstadoComprobante);
+               $("#EstadoComprobanteNombre").val(response.data.EstadoComprobanteNombre);
+               $("#MedioPagoId").prop('disabled', true);
+               habilitarCerrado();
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+            }
+
+         }
+      });
+   };
+   function calcularMontos(grabar) {
+
+      $(this).postAction({
+         viewModel: [
+            { name: "CalculadorVentaItemDTO.PrecioUnitario", value: $('#MontoTotal').val(), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.Cantidad", value: 1, type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.TipoIgv", value: '@TipoIgvConstante.GRAVADO' },
+            { name: "CalculadorVentaItemDTO.ImpuestoTasa", value: $('#Tasa').val(), type: 'decimal' }
+         ],
+         urlAction: '@Url.Action("CalcularMontos", "ComproAnticipo")',
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#MontoNeto').val(response.data.MontoNeto);
+               $('#MontoIgv').val(response.data.MontoImpuesto);
+               $('#MontoTotal').val(response.data.MontoTotal);
+
+               if (grabar)
+                  grabarDatos();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+</script>

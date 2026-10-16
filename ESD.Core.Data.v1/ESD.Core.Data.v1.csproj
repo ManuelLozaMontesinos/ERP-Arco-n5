@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+   <PropertyGroup Label="Globals">
+   </PropertyGroup>
+
+   <PropertyGroup>
+      <TargetFramework>net5.0</TargetFramework>
+      <RootNamespace>ESD.Core.Data</RootNamespace>
+   </PropertyGroup>
+
+   <ItemGroup>
+      <PackageReference Include="Dapper" Version="2.1.35" />
+      <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+   </ItemGroup>
+
+   <ItemGroup>
+     <ProjectReference Include="..\ESD.Core.v1\ESD.Core.v1.csproj" />
+   </ItemGroup>
+
+</Project>

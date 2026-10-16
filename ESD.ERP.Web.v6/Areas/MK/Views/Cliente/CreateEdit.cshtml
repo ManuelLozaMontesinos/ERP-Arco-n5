@@ -1,0 +1,801 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MK.Models.ClienteViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group row">
+                        <esd-textbox for="@Model.ProveedorDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                                     enable="false"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="TipoNaturalezaJuridicaId" for="@Model.TipoNaturalezaJuridicaList" selected-value="@Model.ProveedorDTO.TipoNaturalezaJuridicaId"
+                                          col-position="col-lg-2" label="Tipo de Persona" col-label-position="col-lg-2" enable="@Model.IsNew" onchange="tipoNaturalezaJuridicaIdOnChange();"></esd-dropdownlist>
+                        <esd-masktextbox for="@Model.ProveedorDTO.NumeroRuc" col-position="col-lg-2" label="RUC" col-label-position="col-lg-2"
+                                         mask="99999999999" onchange="numeroRucOnChange()"></esd-masktextbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox for="@Model.ProveedorDTO.RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2"
+                                     max-length="150"></esd-textbox>
+                        <esd-textbox for="@Model.ProveedorDTO.Abreviatura" col-position="col-lg-2" label="Nombre. Comer." col-label-position="col-lg-2"
+                                     max-length="50"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox for="@Model.ProveedorDTO.ApellidoPaterno" col-position="col-lg-2" label="Apellido Paterno" col-label-position="col-lg-2"
+                                     max-length="50"></esd-textbox>
+                        <esd-textbox for="@Model.ProveedorDTO.ApellidoMaterno" col-position="col-lg-2" label="Apellido Materno" col-label-position="col-lg-2"
+                                     max-length="50"></esd-textbox>
+                        +
+                        <esd-textbox for="@Model.ProveedorDTO.Nombres" col-position="col-lg-2" label="Nombres" col-label-position="col-lg-2"
+                                     max-length="50"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="TipoDocumentoIdentidadId" for="@Model.TipoDocumentoIdentidadList" selected-value="@Model.ProveedorDTO.TipoDocumentoIdentidadId" col-position="col-lg-2"
+                                          label="Tipo Doc. Identidad" col-label-position="col-lg-2" onchange="tipoDocumentoIdentidadIdOnChange();"></esd-dropdownlist>
+                        <esd-textbox for="@Model.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2"></esd-textbox>
+                    </div>
+                    <esd-dialog id="puestoListPopup" title="Puestos" onclick="puestoListPopupOnClick" size="Large">
+                        <div id="puestoListPopupContent"></div>
+                    </esd-dialog>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="TipoDocumentoIdentidad2Id" for="@Model.TipoDocumentoIdentidad2List" selected-value="@Model.ProveedorDTO.TipoDocumentoIdentidad2Id" col-position="col-lg-2"
+                                          label="Tipo Doc. Identidad 2" col-label-position="col-lg-2" onchange="tipoDocumentoIdentidad2IdOnChange();"></esd-dropdownlist>
+                        <esd-textbox for="@Model.ProveedorDTO.NumeroDocumentoIdentidad2" col-position="col-lg-2" label="#Documento 2" col-label-position="col-lg-2"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox for="@Model.ProveedorDTO.Telefono" col-position="col-lg-2" label="#Telefono" col-label-position="col-lg-2"
+                                     max-length="15"></esd-textbox>
+                        <esd-textbox for="@Model.ProveedorDTO.Email" col-position="col-lg-4" label="Correo Electronico" col-label-position="col-lg-2"
+                                     max-length="60"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="TipoProfesionOficioId" for="@Model.TipoProfesionOficioList" selected-value="@Model.ProveedorDTO.TipoProfesionOficioId" col-position="col-lg-2"
+                                          label="Tipificación" col-label-position="col-lg-2"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="EmpresaSedeId" for="@Model.EmpresaSedeList" col-position="col-lg-4" label="Sede" col-label-position="col-lg-2"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Departamento"
+                                          col-label-position="col-lg-2" onchange="departamentoIdOnChange();"></esd-dropdownlist>
+                        <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-3" label="Provincia"
+                                          col-label-position="col-lg-1" onchange="provinciaIdOnChange();"></esd-dropdownlist>
+                        <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.ProveedorDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                          col-label-position="col-lg-1"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="TipoVentaClienteId" for="@Model.TipoVentaClienteList" selected-value="@Model.ProveedorDTO.TipoVentaClienteId" col-position="col-lg-2"
+                                          label="Tipificación Venta" col-label-position="col-lg-2"></esd-dropdownlist>
+                        
+                        <esd-datetimepicker for="@Model.ProveedorDTO.FechaNacimiento" col-position="col-lg-2" label="Fec. Nacimiento" col-label-position="col-lg-2"
+                                            datetimepicker-type="Date"></esd-datetimepicker>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox for="@Model.ProveedorDTO.Web" col-position="col-lg-4" label="Web" col-label-position="col-lg-2"
+                                     max-length="60"></esd-textbox>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+        <esd-hidden for="@Model.ProveedorDTO.ProveedorId"></esd-hidden>
+        <esd-hidden for="@Model.ProveedorDTO.FechaNacimiento"></esd-hidden>
+        <esd-hidden id="TipoNaturalezaJuridica" value="@Model.ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo"></esd-hidden>
+        <esd-hidden for="@Model.ProveedorDTO.TipoDocumentoIdentidadDTO.FormatoValidacion"></esd-hidden>
+        <esd-hidden for="@Model.RedSocialString"></esd-hidden>
+        <esd-hidden for="@Model.TipoDocumentoString"></esd-hidden>
+        <esd-hidden for="@Model.PuestoString"></esd-hidden>
+        <esd-hidden for="@Model.ContactosDTO"></esd-hidden>
+    </div>
+    <div>
+        <ul class="nav nav-tabs" role="tablist" id="detailTab">
+            <!-- Pestaña Redes Sociales -->
+            <li class="nav-item">
+                <a class="nav-link active" href="#redSocialTab" role="tab" data-toggle="tab">Redes Sociales</a>
+            </li>
+            <!-- Pestaña Contactos -->
+            <li class="nav-item">
+                <a class="nav-link" href="#contactosTab" role="tab" data-toggle="tab">Contactos</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <!-- Contenido de la pestaña Redes Sociales -->
+            <div class="tab-pane active" id="redSocialTab" role="tabpanel">
+                <div>
+                    <esd-menubar id="redSocialMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="redSocialMenuBarOnClick"></esd-menubar>
+                </div>
+                <div id="redSocialContainer">
+                    <table id="redSocialGrid"></table>
+                    <div id="redSocialPager"></div>
+                </div>
+            </div>
+            <!-- Contenido de la pestaña Contactos -->
+            <div class="tab-pane" id="contactosTab" role="tabpanel">
+                <div>
+                    <esd-menubar id="contactosMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="contactosMenuBarOnClick"></esd-menubar>
+                </div>
+                <div id="contactosContainer">
+                    <table id="contactosGrid"></table>
+                    <div id="contactosPager"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<esd-dialog id="puestoListPopup" title="Puestos" onclick="puestoListPopupOnClick" size="Large">
+    <div id="puestoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        habilitarPorNaturaleza();
+
+        $("#redSocialGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarProveedorRedSocial", "Cliente")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "ProveedorRedSocialDTO.ProveedorId", value: $('#ProveedorId').val() || '0', type: 'int' }
+                    ]
+                ));
+            }
+        },
+            colNames: ['', '', 'Red Social', 'Enlace', '', ''],
+            colModel: [
+            { name: 'ProveedorRedSocialId', hidden: true },
+            { name: 'ProveedorId', hidden: true },
+            {
+                name: 'RedSocialId', width: 150, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+                editoptions: {
+                    class: 'form-control-sm',
+                    value: $('#RedSocialString').val(),
+                },
+                editrules: { required: true }
+            },
+            { name: 'Url', width: 400, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+        ],
+            pager: "#redSocialPager",
+            onSelectRow: function (rowid) {
+                if (rowid == null || rowid == 0)
+                    return;
+
+                var editableRows = $('#redSocialGrid').appGrid('editableRowsCount');
+                if (editableRows == 0) {
+                    editCustomGridMenuBar('redSocialMenuBar', 'redSocialGrid');
+                } else {
+                    $("#redSocialMenuBar").appMenu('saveMenu');
+                }
+
+                var editableRowsC = $('#contactosGrid').appGrid('editableRowsCount');
+                if (editableRowsC == 0) {
+                    editCustomGridMenuBar('contactosMenuBar', 'contactosGrid');
+                } else {
+                    $("#contactosMenuBar").appMenu('saveMenu');
+                }
+            },
+            gridComplete: function () {
+                editCustomGridMenuBar('redSocialMenuBar', 'redSocialGrid');
+                $("#redSocialGrid").appGrid('resizeGrid', 'redSocialContainer');
+                
+                editCustomGridMenuBar('contactosMenuBar', 'contactosGrid');
+                $("#contactosMenuBar").appGrid('resizeGrid', 'contactosContainer');
+
+            },
+    @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+            height: calculateGridHeight('redSocialContainer')
+            })
+
+    $("#contactosGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+        url: "@Url.Action("ListarProveedorContactos", "Cliente")",
+        postData: {
+        jsonModel: function () {
+            return JSON.stringify(modelToObject(
+                [
+                    { name: "ContactosDTO.ProveedorId", value: $('#ProveedorId').val() || '0', type: 'int' }
+                ]
+            ));
+        }
+    },
+        colNames: ['', '', 'Nombre', 'Apellido Pat.', 'Apellido Mat.', 'Tipo D.', 'Documento', 'Ocupacion', 'Telefono', 'Correo', '', ''],
+        colModel: [
+        { name: 'ContactosId', hidden: true },
+        { name: 'ProveedorId', hidden: true },
+        { name: 'Nombre', width: 100, align: 'center', editable: true },
+        { name: 'ApellidoPaterno', width: 100, align: 'center', editable: true },
+        { name: 'ApellidoMaterno', width: 100, align: 'center', editable: true },
+        {
+            name: 'TipoDocumentoIdentidadId', width: 80, align: 'center', editable: true, edittype: 'select', formatter: 'select', sortable: false,
+            editoptions: {
+                class: 'form-control-sm',
+                value: $('#TipoDocumentoString').val(),
+            },
+            editrules: { required: true }
+        },
+        { name: 'NumeroDocumentoIdentidadC', width: 100, align: 'center', editable: true },
+        {
+            name: 'PuestoId', width: 150, align: 'center', editable: true, edittype: 'select', formatter: 'select', sortable: false,
+            editoptions: {
+                class: 'form-control-sm',
+                value: $('#PuestoString').val(),
+            },
+            editrules: { required: true }
+        },
+        { name: 'Telefono', width: 100, align: 'center', editable: true },
+        { name: 'Correo', width: 120, align: 'center', editable: true },
+        { name: 'Estado', hidden: true },
+        { name: '@AppConstante.DTO_STATE', hidden: true }
+    ],
+        pager: "#contactosPager",
+        onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+                return;
+
+            var editableRows = $('#contactosGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+                editCustomGridMenuBar('contactosMenuBar', 'contactosGrid');
+            } else {
+                $("#contactosMenuBar").appMenu('saveMenu');
+            }
+        },
+        gridComplete: function () {
+            editCustomGridMenuBar('contactosMenuBar', 'contactosGrid');
+            $("#contactosGrid").appGrid('resizeGrid', 'contactosContainer');
+        },
+    @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+        height: calculateGridHeight('contactosContainer')
+    })
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var targetId = e.target.hash;
+        switch (targetId) {
+            case '#redSocialTab':
+                $('#redSocialGrid').appGrid('resizeGrid', 'redSocialContainer');
+                $('#redSocialGrid').jqGrid('setGridHeight', calculateGridHeight('redSocialContainer'));
+                break;
+
+            case '#contactosTab':
+                $('#contactosGrid').appGrid('resizeGrid', 'contactosContainer');
+                $('#contactosGrid').jqGrid('setGridHeight', calculateGridHeight('contactosContainer'));
+                break;
+        }
+    })
+    
+});
+
+    function habilitarPorNaturaleza() {
+        if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.NATURAL') {
+            $('#RazonSocial').prop('readonly', true);
+            $('#Abreviatura').prop('readonly', true);
+            $('#ApellidoPaterno').prop('readonly', false);
+            $('#ApellidoMaterno').prop('readonly', false);
+            $('#Nombres').prop('readonly', false);
+            $('#TipoDocumentoIdentidadId').prop('disabled', false);
+            $('#NumeroDocumentoIdentidad').prop('readonly', false);
+        } else {
+            $('#RazonSocial').prop('readonly', false);
+            $('#Abreviatura').prop('readonly', false);
+            $('#ApellidoPaterno').prop('readonly', true);
+            $('#ApellidoMaterno').prop('readonly', true);
+            $('#Nombres').prop('readonly', true);
+            $('#TipoDocumentoIdentidadId').prop('disabled', true);
+            $('#NumeroDocumentoIdentidad').prop('readonly', true);
+        }
+    }
+    function mostrarPuesto() {
+        $('#puestoListPopup').showDialog();
+    };
+
+    function tipoNaturalezaJuridicaIdOnChange() {
+
+        var tipoNaturalezaJuridicaId = $('#TipoNaturalezaJuridicaId').val();
+
+        if ($.isNullOrEmpty(tipoNaturalezaJuridicaId))
+            return;
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ObtenerPorTipoNaturalezaJuridica", "Cliente")',
+            id: tipoNaturalezaJuridicaId,
+            onSuccess: function (response) {
+                if (response.success) {
+
+                    $('#TipoNaturalezaJuridica').val(response.data.codigo);
+                    $('#TipoDocumentoIdentidadId').find('option').remove().end();
+                    $("#TipoDocumentoIdentidadId").addItems(response.data.list);
+                    $('#FormatoValidacion').val(response.data.formatoValidacion);
+                    habilitarPorNaturaleza();
+
+                    if (response.data.tipoDocumentoIdentidadId === 0)
+                        $("#TipoDocumentoIdentidadId").val($("#TipoDocumentoIdentidadId option:first").val());
+                    else
+                        $("#TipoDocumentoIdentidadId").val(response.data.tipoDocumentoIdentidadId);
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+    function numeroRucOnChange() {
+
+        var numeroRuc = $('#NumeroRuc').val();
+
+        if ($.isNullOrEmpty(numeroRuc))
+            return;
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ObtenerDesdeSunat", "Cliente")',
+            id: numeroRuc,
+            onSuccess: function (response) {
+                if (response.success) {
+
+                    $('#TipoNaturalezaJuridicaId').val(response.data.tipoNaturalezaJuridicaId);
+                    $('#TipoNaturalezaJuridica').val(response.data.tipoNaturalezaJuridica);
+                    $('#RazonSocial').val(response.data.razonSocial);
+
+                    tipoNaturalezaJuridicaIdOnChange();
+                    sleep(200);
+                    tipoDocumentoIdentidadIdOnChange();
+                    sleep(200);
+                    if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.JURIDICO')
+                        $('#NumeroDocumentoIdentidad').val(numeroRuc);
+
+                    $('#DepartamentoId').val(response.data.departamentoId);
+
+                    $('#ProvinciaId').find('option').remove().end();
+                    $("#ProvinciaId").addItems(response.data.provinciaList);
+                    $('#ProvinciaId').val(response.data.provinciaId);
+
+                    $('#DistritoId').find('option').remove().end();
+                    $("#DistritoId").addItems(response.data.distritoList);
+                    $('#DistritoId').val(response.data.distritoId);
+                }
+            }
+        });
+    };
+    function tipoDocumentoIdentidadIdOnChange() {
+        var tipoDocumentoIdentidadId = $('#TipoDocumentoIdentidadId').val();
+
+        if ($.isNullOrEmpty(tipoDocumentoIdentidadId))
+            return;
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ObtenerTipoDocumentoIdentidad", "Cliente")',
+            id: tipoDocumentoIdentidadId,
+            onSuccess: function (response) {
+                if (response.success) {
+                    $('#NumeroDocumentoIdentidad').inputmask('remove');
+
+                    if (!$.isNullOrEmpty(response.data.FormatoValidacion))
+                        $('#NumeroDocumentoIdentidad').inputmask(response.data.FormatoValidacion);
+                    else
+                        $('#NumeroDocumentoIdentidad').inputmask('remove');
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+    function tipoDocumentoIdentidad2IdOnChange() {
+        var tipoDocumentoIdentidadId = $('#TipoDocumentoIdentidad2Id').val();
+
+        if ($.isNullOrEmpty(tipoDocumentoIdentidadId))
+            return;
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ObtenerTipoDocumentoIdentidad", "Cliente")',
+            id: tipoDocumentoIdentidadId,
+            onSuccess: function (response) {
+                if (response.success) {
+                    $('#NumeroDocumentoIdentidad2').inputmask('remove');
+
+                    if (!$.isNullOrEmpty(response.data.FormatoValidacion))
+                        $('#NumeroDocumentoIdentidad2').inputmask(response.data.FormatoValidacion);
+                    else
+                        $('#NumeroDocumentoIdentidad2').inputmask('remove');
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+    function validarTipoDocumentoIdentidadId() {
+
+        if (!$('#NumeroDocumentoIdentidad').inputmask("isComplete")) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_numero_doc_identidad_incorrecto")');
+            return false;
+        }
+
+        if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.JURIDICO') {
+            if (!$('#NumeroRuc').inputmask("isComplete")) {
+                msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_numero_ruc_incorrecto")');
+                return false;
+            }
+        }
+
+        return true;
+    };
+    function departamentoIdOnChange() {
+
+        var departamentoId = $("#DepartamentoId").val();
+        if ($.isNullOrEmpty(departamentoId)) {
+            $("#ProvinciaId").prop('disabled', true);
+            $("#DistritoId").prop('disabled', true);
+            return;
+        }
+
+        $("#ProvinciaId").val('');
+        $("#DistritoId").val('');
+        $("#DistritoId").prop('disabled', true);
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ListarProvincia", "Cliente")',
+            id: departamentoId,
+            onSuccess: function (response) {
+                if (response.success) {
+                    $('#ProvinciaId').find('option').remove().end();
+                    $("#ProvinciaId").addItems(response.data);
+
+                    if (!$.isNullOrEmpty($("#DepartamentoId").val())) {
+                        $("#ProvinciaId").removeAttr("disabled");
+                    }
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+    function provinciaIdOnChange() {
+
+        var provinciaId = $("#ProvinciaId").val();
+        if ($.isNullOrEmpty(provinciaId)) {
+            $("#DistritoId").prop('disabled', true);
+            return;
+        }
+
+        $("#DistritoId").val('');
+        $("#DistritoId").prop('disabled', true);
+
+        $(this).getAction({
+            urlAction: '@Url.Action("ListarDistrito", "Cliente")',
+            id: provinciaId,
+            onSuccess: function (response) {
+                if (response.success) {
+                    $('#DistritoId').find('option').remove().end();
+                    $("#DistritoId").addItems(response.data);
+
+                    if (!$.isNullOrEmpty(provinciaId)) {
+                        $("#DistritoId").removeAttr("disabled");
+                    }
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    };
+    function menuBarOnClick(key) {
+
+        switch (key) {
+            case '@MenuItemKey.SAVE':
+                grabarDatos();
+                break;
+
+            case '@MenuItemKey.EXIT':
+                $(this).getView({
+                    urlAction: '@Url.Action("Index", "Cliente")'
+                });
+                break;
+        }
+    };
+    function grabarDatos() {
+
+        if ($('#TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.NATURAL') {
+            if (!$('#ApellidoPaterno').validateString('@SR.GetString("RH_apellido_paterno_requerido")'))
+                return false;
+            if (!$('#Nombres').validateString('@SR.GetString("GEN_nombres_requerido")'))
+                return false;
+            if (!$('#TipoDocumentoIdentidadId').validateNumeric('@SR.GetString("GEN_tipo_doc_identidad_seleccion_requerida")'))
+                return false;
+            if (!$('#NumeroDocumentoIdentidad').validateString('@SR.GetString("GEN_numero_doc_identidad_requerido")'))
+                return false;
+            if (!$.isNullOrEmpty($('#NumeroRuc').val())) {
+                if (!$('#NumeroRuc').inputmask("isComplete")) {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_numero_ruc_incorrecto")');
+                    return false;
+                }
+            }
+        } else {
+            if (!$('#RazonSocial').validateString('@SR.GetString("MG_razon_social_requerida")'))
+                return false;
+            if (!$('#NumeroRuc').validateString('@SR.GetString("MG_numero_ruc_requerido")'))
+                return false;
+        }
+
+        if (!validarTipoDocumentoIdentidadId())
+            return false;
+        if (!$('#DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+            return false;
+        if (!$('#ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+            return false;
+        if (!$('#DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+            return false;
+
+    @*if (!$('#EmpresaSedeId').validateNumeric('@SR.GetString("AS_empresa_sede_seleccion_requerida")'))
+            return false;
+
+            if (!$('#TipoProfesionOficioId').validateNumeric('@SR.GetString("MK_tipo_profesion_oficio_seleccion_requerida")'))
+            return false;
+            if (!$('#TipoVentaClienteId').validateNumeric('@SR.GetString("MK_tipo_cliente_venta_seleccion_requerida")'))
+            return false;*@
+
+            $(this).saveView({
+                viewModel: [
+                    { name: "ProveedorDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+                    { name: "ProveedorDTO.TipoNaturalezaJuridicaId", value: $('#TipoNaturalezaJuridicaId').val(), type: 'int' },
+                    { name: "ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo", value: $('#TipoNaturalezaJuridica').val() },
+                    { name: "ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                    { name: "ProveedorDTO.Abreviatura", value: $('#Abreviatura').val() },
+                    { name: "ProveedorDTO.ApellidoPaterno", value: $('#ApellidoPaterno').val() },
+                    { name: "ProveedorDTO.ApellidoMaterno", value: $('#ApellidoMaterno').val() },
+                    { name: "ProveedorDTO.Nombres", value: $('#Nombres').val() },
+                    { name: "ProveedorDTO.TipoDocumentoIdentidadId", value: $('#TipoDocumentoIdentidadId').val(), type: 'int' },
+                    { name: "ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                    { name: "ProveedorDTO.NumeroRuc", value: $('#NumeroRuc').val() },
+                    { name: "ProveedorDTO.TipoDocumentoIdentidad2Id", value: $('#TipoDocumentoIdentidad2Id').val(), type: 'int' },
+                    { name: "ProveedorDTO.NumeroDocumentoIdentidad2", value: $('#NumeroDocumentoIdentidad2').val() },
+                    { name: "ProveedorDTO.Telefono", value: $('#Telefono').val() },
+                    { name: "ProveedorDTO.Email", value: $('#Email').val() },
+                    { name: "ProveedorDTO.TipoProfesionOficioId", value: $('#TipoProfesionOficioId').val(), type: 'int' },
+                    { name: "ProveedorDTO.DistritoId", value: $('#DistritoId').val(), type: 'int' },
+                    { name: "ProveedorDTO.EmpresaSedeId", value: $('#EmpresaSedeId').val(), type: 'int' },
+                    { name: "ProveedorDTO.TipoVentaClienteId", value: $('#TipoVentaClienteId').val(), type: 'int' },
+                    { name: "ProveedorDTO.FechaNacimiento", value: $('#FechaNacimiento').val(), type:'date' },
+                    { name: "ProveedorDTO.Web", value: $('#Web').val() }
+                ],
+                buttonId: '@MenuItemKey.SAVE',
+                urlAction: '@Url.Action("Grabar", "Cliente")',
+                onSuccess: function (response) {
+
+                    if (response.success) {
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+                        $("#ProveedorId").val(response.data.Id);
+                        $("#Codigo").val(response.data.Codigo);
+                        $("#RazonSocial").val(response.data.RazonSocial);
+                        $('#TipoNaturalezaJuridicaId').prop('disabled', true);
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                        ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+                    } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                    }
+                    $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+                }
+            });
+    };
+    function redSocialMenuBarOnClick(key) {
+
+        var row = $('#redSocialGrid').appGrid('getSelectedRow');
+        var excludeKeys = ['@MenuItemKey.NEW'];
+        if (excludeKeys.indexOf(key) == -1) {
+            if ($.isEmpty(row)) {
+                msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+                return;
+            }
+        }
+
+        switch (key) {
+            case '@MenuItemKey.NEW':
+                var initdata = {
+                    ProveedorRedSocialId: 0,
+                    ProveedorId: $('#ProveedorId').val(),
+                    '@AppConstante.DTO_STATE': '@(((int)DTOState.Added).ToString())',
+                    Estado: '@EstadoConstante.ACTIVO'
+                };
+                $("#redSocialGrid").appGrid('addRow', initdata);
+                $("#redSocialMenuBar").appMenu('saveMenu');
+                break;
+
+            case '@MenuItemKey.EDIT':
+                editarProveedorRedSocialnGrid();
+                break;
+
+            case '@MenuItemKey.CANCEL':
+                $("#redSocialGrid").appGrid('reloadJSON');
+                break;
+
+            case '@MenuItemKey.SAVE':
+
+                var rowId = $("#redSocialGrid").appGrid("getSelectedRowId");
+
+                if (!$('#' + rowId + '_RedSocialId').validateNumeric('@SR.GetString("MK_red_social_seleccion_requerida")'))
+                    return false;
+
+                $("#redSocialGrid").jqGrid('saveRow', rowId, {
+                    url: 'clientArray', aftersavefunc: function (id, response, options) {
+                        row = $("#redSocialGrid").appGrid('getSelectedRow');
+
+                        setModifiedDTO(row);
+                        $(this).saveView({
+                            urlAction: '@Url.Action("GrabarProveedorRedSocial", "Cliente")',
+                            viewModel: [
+                                { name: "ProveedorRedSocialDTO.ProveedorRedSocialId", value: row.ProveedorRedSocialId, type: 'int' },
+                                { name: "ProveedorRedSocialDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+                                { name: "ProveedorRedSocialDTO.RedSocialId", value: row.RedSocialId, type: 'int' },
+                                { name: "ProveedorRedSocialDTO.Url", value: row.Url },
+                                { name: "ProveedorRedSocialDTO.DTOState", value: row.DTOState, type: 'int' }
+                            ],
+                            onSuccess: function (response) {
+                                if (response.success) {
+                                    $("#redSocialGrid").appGrid('reloadJSON');
+                                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                                } else {
+                                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                                    $("#redSocialMenuBar").appMenu('saveMenu');
+                                }
+                            }
+                        });
+                    }
+                });
+                break;
+
+            case '@MenuItemKey.DELETE':
+
+                $(this).confirm({
+                    title: '@SR.GetString("APPMP_anular_titulo")',
+                    message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+                    onConfirm: function () {
+
+                        $(this).saveView({
+                            urlAction: '@Url.Action("EliminarProveedorRedSocial", "Cliente")',
+                            viewModel: [
+                                { name: "ProveedorRedSocialDTO.ProveedorRedSocialId", value: row.ProveedorRedSocialId, type: 'int' }
+                            ],
+                            onSuccess: function (response) {
+                                if (response.success) {
+                                    $('#redSocialGrid').appGrid('reloadJSON');
+                                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                                } else {
+                                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                                }
+                            }
+                        });
+                    }
+                });
+                break;
+        }
+        return true;
+    };
+    function editarProveedorRedSocialnGrid() {
+        var rowId = $("#redSocialGrid").appGrid("getSelectedRowId");
+        $('#redSocialGrid').jqGrid('editRow', rowId);
+
+        $('#' + rowId + '_RedSocialId').prop('disabled', true);
+        $("#redSocialMenuBar").appMenu('saveMenu');
+    };
+
+    function contactosMenuBarOnClick(key) {
+
+        var row = $('#contactosGrid').appGrid('getSelectedRow');
+        var excludeKeys = ['@MenuItemKey.NEW'];
+        if (excludeKeys.indexOf(key) == -1) {
+            if ($.isEmpty(row)) {
+                msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+                return;
+            }
+        }
+
+        switch (key) {
+            case '@MenuItemKey.NEW':
+                var initdata = {
+                    ContactosId: 0,
+                    ProveedorId: $('#ProveedorId').val(),
+                    '@AppConstante.DTO_STATE': '@(((int)DTOState.Added).ToString())',
+                    Estado: '@EstadoConstante.ACTIVO'
+                };
+                $("#contactosGrid").appGrid('addRow', initdata);
+                $("#contactosMenuBar").appMenu('saveMenu');
+                break;
+
+            case '@MenuItemKey.EDIT':
+                editarContactosnGrid();
+            break;
+
+            case '@MenuItemKey.CANCEL':
+                $("#contactosGrid").appGrid('reloadJSON');
+            break;
+
+            case '@MenuItemKey.SAVE':
+
+                var rowId = $("#contactosGrid").appGrid("getSelectedRowId");
+
+                $("#contactosGrid").jqGrid('saveRow', rowId, {
+                    url: 'clientArray', aftersavefunc: function (id, response, options) {
+                        row = $("#contactosGrid").appGrid('getSelectedRow');
+
+                        setModifiedDTO(row);
+                        $(this).saveView({
+                            urlAction: '@Url.Action("GrabarProveedorContactos", "Cliente")',
+                            viewModel: [
+                                { name: "ContactosDTO.ContactosId", value: row.ContactosId, type: 'int' },
+                                { name: "ContactosDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+                                { name: "ContactosDTO.NombreC", value: row.Nombre },
+                                { name: "ContactosDTO.ApellidoPaterno", value: row.ApellidoPaterno },
+                                { name: "ContactosDTO.ApellidoMaterno", value: row.ApellidoMaterno },
+                                { name: "ContactosDTO.TipoDocumentoIdentidadId", value: row.TipoDocumentoIdentidadId, type: 'int' },
+                                { name: "ContactosDTO.NumeroDocumentoIdentidadC", value: row.NumeroDocumentoIdentidadC },
+                                { name: "ContactosDTO.PuestoId", value: row.PuestoId, type: 'int' },
+                                { name: "ContactosDTO.Telefono", value: row.Telefono },
+                                { name: "ContactosDTO.Correo", value: row.Correo},
+                                { name: "ContactosDTO.DTOState", value: row.DTOState, type: 'int' }
+                            ],
+                            onSuccess: function (response) {
+                                if (response.success) {
+                                    $("#contactosGrid").appGrid('reloadJSON');
+                                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                                } else {
+                                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                                    $("#contactosMenuBar").appMenu('saveMenu');
+                                }
+                            }
+                        });
+                    }
+                });
+                break;
+
+            case '@MenuItemKey.DELETE':
+
+                $(this).confirm({
+                    title: '@SR.GetString("APPMP_anular_titulo")',
+                    message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+                    onConfirm: function () {
+
+                        $(this).saveView({
+                            urlAction: '@Url.Action("EliminarProveedorContacto", "Cliente")',
+                            viewModel: [
+                                { name: "ContactosDTO.ContactosId", value: row.ContactosId, type: 'int' }
+                            ],
+                            onSuccess: function (response) {
+                                if (response.success) {
+                                    $('#contactosGrid').appGrid('reloadJSON');
+                                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                                } else {
+                                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                                }   
+                            }
+                        });
+                    }
+                });
+                break;
+        }
+        return true;
+    };
+    function editarContactosnGrid() {
+        var rowId = $("#contactosGrid").appGrid("getSelectedRowId");
+        $('#contactosGrid').jqGrid('editRow', rowId);
+
+        $('#' + rowId + '_ContactosId').prop('disabled', true);
+        $("#contactosMenuBar").appMenu('saveMenu');
+    };
+    function editCustomGridMenuBar(key, gridName) {
+        if (!$("#ProveedorId").validateNumeric())
+            $('#' + key).appMenu('disabled');
+        else
+            $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+    }
+
+</script>

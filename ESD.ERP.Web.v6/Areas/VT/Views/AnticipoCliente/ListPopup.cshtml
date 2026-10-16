@@ -1,0 +1,60 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.VT.Models.AnticipoClienteViewModel
+<div id="@Model.ModalEditId">
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarAnticipoCliente", "AnticipoCliente")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AnticipoClienteDTO.ProveedorId", value: '@Model.AnticipoClienteDTO.ProveedorId', type: 'int' },
+                     { name: "AnticipoClienteDTO.MonedaId", value: '@Model.AnticipoClienteDTO.MonedaId', type: 'int' },
+                     { name: 'AnticipoClienteDTO.TipoOperacionAnticipoDTO.Codigo', value: '@Model.AnticipoClienteDTO?.TipoOperacionAnticipoDTO?.Codigo' },
+                     { name: "AnticipoClienteDTO.CotizacionId", value: '@Model.AnticipoClienteDTO.CotizacionId', type: 'int' },
+                     { name: 'AnticipoClienteDTO.Extornado', value: '@Model.AnticipoClienteDTO.Extornado' },
+                     { name: 'AnticipoClienteDTO.EstadoComprobanteDTO.Codigo', value: '@Model.AnticipoClienteDTO?.EstadoComprobanteDTO?.Codigo' },
+                     { name: 'AnticipoClienteDTO.NullCotizacionId', value: '@Model.AnticipoClienteDTO.NullCotizacionId' },
+                     { name: 'AnticipoClienteDTO.ConSaldo', value: '@Model.AnticipoClienteDTO.ConSaldo' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Recibo', 'Fecha', 'Mon.', 'Monto','Saldo','T/D','Serie-Numero','Descripcion', '','T. Ope.'],
+         colModel: [
+            { name: 'AnticipoClienteId', hidden: true },
+            { name: 'NumeroOperacion', width: 60, sortable: false },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'Moneda', width: 50, sortable: false },
+            { name: "Monto", width: 100, align: 'right', formatter: 'number' },
+            { name: "MontoSaldo", width: 100, align: 'right', formatter: 'number' },
+            { name: 'TipoDocumentoComercial', width: 50, sortable: false },
+            { name: 'SerieNumero', width: 100, sortable: false },
+            { name: 'Observacion', width: 250, sortable: false },
+            { name: 'TipoOperacionAnticipo', hidden: true },
+            { name: 'TipoOperacionAnticipoNombre', width: 60 }
+         ],
+         pager: "#bandejaPopupPager",
+         multiselect: getPopupParam('@Model.ModalEditId').multiselect,
+         ondblClickRow: function (rowid) {
+            var popupParams = getPopupParam('@Model.ModalEditId');
+
+            var row = $(this).getRowData(rowid);
+            anticipoSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         height: 250
+      });
+   });
+</script>

@@ -1,0 +1,88 @@
+﻿@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.TipoCambioViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="NewEdit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "TipoCambio")",
+         colNames: ['','Codigo', 'Nombre', ''],
+         colModel: [
+            { name: 'TipoCambioId', hidden: true },
+            { name: "Codigo", width: 80 },
+            { name: "Nombre", width: 300 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#Nombre").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW','@MenuItemKey.EXIT'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.NEW':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.New',
+               buttonId: key,
+               viewModel: [
+                  { name: "TipoCambioDTO.TipoCambioId", value: 0, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Crear", "TipoCambio")'
+            });
+            break;
+
+         case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "TipoCambioDTO.TipoCambioId", value: row.TipoCambioId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "TipoCambio")'
+            });
+            break;
+      }
+      return true;
+   };
+</script>

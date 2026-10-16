@@ -1,0 +1,110 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.IntegraInventaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card">
+      <div class="card">
+         <div class="card-body">
+            <div class="row">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <label class="col-lg-10 offset-1 col-form-label" style="text-align:left">Seleccione el(los) proceso(s) a ejecutar</label>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div class="card">
+         <div id="checkbox-region" class="card-body">
+            <div class="row">
+               <div id="@("div_" + Model.ProcesoIntegracionDTOList[0].Id.ToString())" class="col-11">
+                  <div class="form-group row">
+                     <esd-checkbox id="@("chk_" + Model.ProcesoIntegracionDTOList[0].Id.ToString())" col-position="offset-lg-1 col-lg-10"
+                                   label="@Model.ProcesoIntegracionDTOList[0].Descripcion"></esd-checkbox>
+                  </div>
+                  <div class="form-group row">
+                     <esd-textbox for="@Model.ParametroSistema01" col-position="col-lg-8" label="Enviar Correo a:" col-label-position="col-lg-2" use-textcase="false"></esd-textbox>
+                  </div>
+               </div>
+               <div class="col-1">
+                  <div class="form-group row">
+                     <esd-button id="parametroSistema01Button" content="Guardar" button-style="Primary" size="Small" block="true" onclick="parametroSistema01ButtonOnClick()"></esd-button>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+   });
+   function menuBarOnClick(key) {
+
+      var selected = [];
+      switch (key) {
+
+         case 'todos':
+            $('#checkbox-region input:checkbox').each(function () {
+               selected.push($(this).attr('name'));
+            });
+            break;
+
+         case 'ejecutar':
+            $('#checkbox-region input:checked').each(function () {
+               selected.push($(this).attr('name'));
+            });
+            break;
+      }
+
+      if (selected.length === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AS_proceso_integracion_seleccion_requerida")');
+         return false;
+      }
+
+      selected.forEach(function (item, index) {
+         var procesoIntegracionId = item.substring(4);
+         var div = "div_" + procesoIntegracionId;
+
+         $("#"+div).saveView({
+            viewModel: [
+               { name: "ProcesoIntegracionDTO.ProcesoIntegracionId", value: procesoIntegracionId, type : 'int' }
+            ],
+            urlAction: '@Url.Action("EjecutarProceso", "IntegraVenta")',
+            onSuccess: function (response) {
+
+               if (response.success) {
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message.replace("\r\n", "<br>"));
+
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               }
+            }
+         });
+      });
+
+      return true;
+   };
+   function parametroSistema01ButtonOnClick() {
+
+      if (!$('#ParametroSistema01').validateString('@SR.GetString("AS_proceso_integracion_correo_requerido")'))
+         return false;
+
+      $("#" + '@("div_" + Model.ProcesoIntegracionDTOList[0].Id.ToString())').saveView({
+         viewModel: [
+            { name: "ParametroSistema01", value: $('#ParametroSistema01').val(), textCase:'lower' }
+         ],
+         urlAction: '@Url.Action("GrabarParametroSistema01", "IntegraInventa")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+      return true;
+   }
+</script>

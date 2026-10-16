@@ -1,0 +1,79 @@
+﻿@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.CM.Models.PuntoPedidoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-dropdownlist id="PeriodoEmpresaSedeId" for="@Model.PeriodoEmpresaSedeList" col-position="col-lg-4" label="Sede" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2" max-length="35"></esd-textbox>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2" max-length="12"></esd-textbox>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-hidden id="gridColModel" value="@Model.GridColModel"></esd-hidden>
+      <esd-hidden id="gridColName" value="@Model.GridColNames"></esd-hidden>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      var columnModel = JSON.parse($('#gridColModel').val());
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties(new Dictionary<string, string>() { { "rowNum", "1000" }, { "rowList", "[1000]" } })
+         url: '@Url.Action("ListarStockMinimoListPopup", "VolumenExisten", new { Area = "IV" })',
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AlmacenVolumenProductoDTO.PeriodoEmpresaSedeId", value: $('#PeriodoEmpresaSedeId').val() || 0, type: 'int' },
+                     { name: "AlmacenVolumenProductoDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                     { name: "AlmacenVolumenProductoDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "AlmacenVolumenProductoDTO.ProductoDTO.Codigo", value: $('#Codigo').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: $('#gridColName').val().split(','),
+         colModel: columnModel,
+         pager: "#bandejaPopupPager",
+         gridComplete: function () {
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         rowattr: function (rd) {
+            if ($.isEmptyObject(rd))
+               return;
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#PeriodoEmpresaSedeId').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#PeriodoEmpresaSedeId, #NumeroDocumentoIdentidad,#RazonSocial,#Codigo").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

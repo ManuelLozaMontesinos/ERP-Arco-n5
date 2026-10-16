@@ -1,0 +1,164 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.ParametroSistemaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox id="GrupoParametroSistema" value="@Model.ParametroSistemaDTO.GrupoParametroSistemaDTO.Nombre" col-position="col-lg-8"
+                               label="Grupo" col-label-position="col-lg-2" max-length="100" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ParametroSistemaDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ParametroSistemaDTO.Nombre" col-position="col-lg-8" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100" enable="false"></esd-textbox>
+               </div>
+               <div id="ValorCadenaDiv" class="form-group row">
+                  <esd-textbox for="@Model.ValorCadena" col-position="col-lg-8" label="Valor" col-label-position="col-lg-2"
+                               max-length="300" use-textcase="false"></esd-textbox>
+               </div>
+               <div id="ValorCadenaOcultaDiv" class="form-group row">
+                  <esd-textbox for="@Model.ValorCadenaOculta" col-position="col-lg-8" label="Valor" col-label-position="col-lg-2"
+                               max-length="50" is-password="true"></esd-textbox>
+               </div>
+               <div id="ValorCadenaEnteroDiv" class="form-group row">
+                  <esd-numerictextbox for="@Model.ValorCadenaEntero" col-position="col-lg-2" label="Valor" col-label-position="col-lg-2" numeric-type="Integer"></esd-numerictextbox>
+               </div>
+               <div id="ValorCadenaDecimalDiv" class="form-group row">
+                  <esd-numerictextbox for="@Model.ValorCadenaDecimal" col-position="col-lg-2" label="Valor" col-label-position="col-lg-2"></esd-numerictextbox>
+               </div>
+               <div id="ValorRangoHoraDiv" class="form-group row">
+                  <esd-textbox for="@Model.ValorHoraDesde" col-position="col-lg-1" label="Desde" col-label-position="col-lg-2"></esd-textbox>
+                  <esd-textbox for="@Model.ValorHoraHasta" col-position="col-lg-1" label="Hasta" col-label-position="col-lg-1"></esd-textbox>
+               </div>
+
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ParametroSistemaDTO.ParametroSistemaId"></esd-hidden>
+      <esd-hidden id="TipoDato" value="@Model.ParametroSistemaDTO.TipoDatoDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.ParametroSistemaDTO.TieneMantenimiento"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      habilitarTieneMantenimiento();
+      configurarElementos();
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "ParametroSistema")'
+            });
+            break;
+
+      }
+   };
+   function habilitarTieneMantenimiento() {
+
+      if ($('#TieneMantenimiento').val() === '@SiNoConstante.N') {
+         $("#ValorCadena").prop('readonly', true);
+         $("#ValorCadenaOculta").prop('readonly', true);
+         $("#ValorCadenaEntero").prop('readonly', true);
+         $("#ValorCadenaDecimal").prop('readonly', true);
+         $("#ValorHoraDesde").prop('readonly', true);
+         $("#ValorHoraHasta").prop('readonly', true);
+      }
+   };
+   function configurarElementos() {
+
+      $('#ValorCadenaDiv').hide();
+      $('#ValorCadenaOcultaDiv').hide();
+      $('#ValorCadenaEnteroDiv').hide();
+      $('#ValorCadenaDecimalDiv').hide();
+      $('#ValorRangoHoraDiv').hide();
+
+      var tipoDato = $('#TipoDato').val();
+
+      switch (tipoDato) {
+         case '@TipoDatoConstante.CADENA':
+            $('#ValorCadenaDiv').show();
+            break;
+
+         case '@TipoDatoConstante.CADENA_OCULTA':
+            $('#ValorCadenaOcultaDiv').show();
+            break;
+
+         case '@TipoDatoConstante.ENTERO':
+            $('#ValorCadenaEnteroDiv').show();
+            break;
+
+         case '@TipoDatoConstante.DECIMAL':
+            $('#ValorCadenaDecimalDiv').show();
+            break;
+
+         case '@TipoDatoConstante.RANGO_HORA':
+            $('#ValorRangoHoraDiv').show();
+            $('#ValorHoraDesde').inputmask({ alias: "datetime", inputFormat: "HH:MM" });
+            $('#ValorHoraHasta').inputmask({ alias: "datetime", inputFormat: "HH:MM" });
+            break;
+      }
+
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      if ($("#ValorHoraDesde").is(":visible")) {
+         if (!$('#ValorHoraDesde').inputmask("isComplete")){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_rango_hora_incorrecto")');
+            return false;
+         }
+         if (!$('#ValorHoraHasta').inputmask("isComplete")){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_rango_hora_incorrecto")');
+            return false;
+         }
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "ParametroSistemaDTO.ParametroSistemaId", value: $('#ParametroSistemaId').val(), type: 'int' },
+            { name: "ParametroSistemaDTO.Codigo", value: $('#Codigo').val() },
+            { name: "ParametroSistemaDTO.Nombre", value: $('#Nombre').val() },
+            { name: "ValorCadena", value: $('#ValorCadena').val(), textCase: 'none' },
+            { name: "ValorCadenaOculta", value: $('#ValorCadenaOculta').val(), textCase: 'none' },
+            { name: "ValorCadenaEntero", value: $('#ValorCadenaEntero').val(), type: 'int' },
+            { name: "ValorCadenaDecimal", value: $('#ValorCadenaDecimal').val(), type: 'decimal' },
+            { name: "ValorHoraDesde", value: $('#ValorHoraDesde').val() },
+            { name: "ValorHoraHasta", value: $('#ValorHoraHasta').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "ParametroSistema")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#ParametroSistemaId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

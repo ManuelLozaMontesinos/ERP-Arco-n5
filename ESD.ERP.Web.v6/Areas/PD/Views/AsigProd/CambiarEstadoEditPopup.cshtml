@@ -1,0 +1,76 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.PD.Models.AsigProdViewModel
+<div id="mp-edit-panel">
+    <div class="card-body">
+        <div id="productoPopupContainer">
+            <table id="productoPopupGrid"></table>
+            <div id="productoPopupPager"></div>
+        </div>
+    </div>
+    <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+    <esd-hidden for="@Model.OrdenProduccionId"></esd-hidden>
+    <esd-hidden for="@Model.MaquinaList"></esd-hidden>
+    <esd-hidden for="@Model.Fecha"></esd-hidden>
+
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#productoPopupGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarOrdenProduccionSubProceso", "AsigProd")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "OrdenProduccionSubProcesoDTO.OrdenProduccionId", value: $('#OrdenProduccionId').val() || '0', type: 'int' },
+                        { name: "OrdenProduccionSubProcesoDTO.SubProcesoProduccionDTO.ProcesoProduccionId", value: '1', type: 'int' },
+                    ]
+                ));
+            }
+        },
+        colNames: ['', '', 'Proceso', 'Maquina', '', 'Operador', '', ''],
+        colModel: [
+            { name: 'OrdenProduccionSubProcesoId', hidden: true },
+            { name: 'OrdenProduccionId', hidden: true },
+            { name: 'SubProcesoProduccionNombre', width: 130, editable: false },
+            {
+                name: 'MaquinaId', width: 100, align: 'center', editable: true, edittype: 'select', formatter: 'select', sortable: false,
+                editoptions: {
+                    class: 'form-control-sm',
+                    value: "0:Selecciona;" + ($('#MaquinaList').val() || ""),
+                },
+                editrules: { required: true }
+            },
+            { name: 'PersonalId', hidden: true },
+            { name: "Operador", width: 233, editable: false },
+            { name: 'Estado', hidden: true },
+
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+        ],
+            pager: "#productoPopupPager",
+            loadComplete: function () {
+                var $this = $(this), rows = this.rows, l = rows.length, i, row;
+                for (i = 0; i < l; i++) {
+                    row = rows[i];
+                    $this.jqGrid('editRow', row.id, false);
+                }
+            },
+            gridComplete: function () {
+                $("#productoPopupGrid").appGrid('resizeGrid', 'productoPopupContainer');
+            },
+            height: 130
+    });
+
+           $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                var targetId = e.target.hash;
+                $('#productoPopupGrid').appGrid('resizeGrid', 'productoPopupContainer');
+                $('#productoPopupGrid').jqGrid('setGridHeight', calculateGridHeight('productoPopupContainer'));
+           })
+
+
+});
+</script>   

@@ -1,0 +1,65 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MK.Models.OportunidadViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.OportunidadVentaDTO.Nombre" col-position="col-lg-8" label="Nombre"
+                               col-label-position="col-lg-2" max-length="100"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.OportunidadVentaDTO.OportunidadVentaId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Oportunidad")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "OportunidadVentaDTO.OportunidadVentaId", value: $('#OportunidadVentaId').val(), type: 'int' },
+            { name: "OportunidadVentaDTO.Nombre", value: $('#Nombre').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Oportunidad")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#OportunidadVentaId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

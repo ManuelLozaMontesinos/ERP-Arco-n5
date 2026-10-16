@@ -1,0 +1,359 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.CM.Models.OrdenComAutoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.OrdenCompraDTO.Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-dropdownlist id="TipoProductoId" for="@Model.TipoProductoList" col-position="col-lg-2" label="Tipo Orden"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-datetimepicker for="@Model.OrdenCompraDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Pedido" value="@Model.OrdenCompraDTO?.PedidoCompraDTO?.Codigo" col-position="col-lg-2" label="Pedido"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.OrdenCompraDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Proveedor"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.OrdenCompraDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" selected-value="@Model.OrdenCompraDTO.MonedaId" col-position="col-lg-2" label="Moneda"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.OrdenCompraDTO.TipoCambio" col-position="col-lg-2" label="T/C" col-label-position="col-lg-2" enable="false"></esd-numerictextbox>
+                  <esd-dropdownlist id="ImpuestoTasaId" for="@Model.ImpuestoTasaList" selected-value="@Model.OrdenCompraDTO.ImpuestoTasaId" col-position="col-lg-2" label="Tipo de Afectacion"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <label class="col-lg-2 col-form-label">Fecha/Plazo Entrega</label>
+                  <esd-radiobutton id="fechaRadio" group-name="entregaRadio" label="Fecha" col-position="col-lg-1" checked="true"></esd-radiobutton>
+                  <esd-datetimepicker for="@Model.OrdenCompraDTO.FechaEntrega" col-position="col-lg-2"></esd-datetimepicker>
+                  <esd-radiobutton id="plazoRadio" group-name="entregaRadio" label="Plazo" col-position="col-lg-1"></esd-radiobutton>
+                  <esd-textbox for="@Model.OrdenCompraDTO.PlazoEntrega" col-position="col-lg-6" max-length="100" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.OrdenCompraDTO.LugarEntrega" col-position="col-lg-8" label="Entrega en" col-label-position="col-lg-2"
+                               max-length="200" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="CondicionPagoId" for="@Model.CondicionPagoList" col-position="col-lg-2" label="Condición de Pago"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.OrdenCompraDTO.Observacion" col-position="col-lg-10" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="1" enable="false"></esd-textarea>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoOrdenCompraNombre" value="@Model.OrdenCompraDTO.EstadoOrdenCompraDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoBruto" value="@Model.OrdenCompraDTO.MontoBruto" col-position="col-lg-6" label="Mto. Neto" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoImpuesto" value="@Model.OrdenCompraDTO.MontoImpuesto" col-position="col-lg-6" label="Impuesto" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoTotal" value="@Model.OrdenCompraDTO.MontoTotal" col-position="col-lg-6" label="Total" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.OrdenCompraDTO.OrdenCompraId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#entregaTab" role="tab" data-toggle="tab">Entregas</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="entregaTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-dropdownlist id="OrdenCompraProductoId" for="@Model.OrdenCompraProductoList" col-position="col-lg-6" label="Producto" col-label-position="col-lg-2"
+                                       onchange="ordenCompraProductoIdOnChange()"></esd-dropdownlist>
+                  </div>
+               </div>
+            </nav>
+            <div id="entregaContainer">
+               <table id="entregaGrid"></table>
+               <div id="entregaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      if ($.isNullOrEmpty($('#PlazoEntrega').val()))
+         $("#fechaRadio").prop('checked', true);
+      else
+         $("#plazoRadio").prop('checked', true);
+      entregaRadioOnChange();
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarOrdenCompraProducto", "OrdenCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenCompraProductoDTO.OrdenCompraId", value: $('#OrdenCompraId').val() || '0', type: 'int' },
+                     { name: "OrdenCompraProductoDTO.Estado", value: '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Código', 'Producto', 'Detalle', 'U.M.','', 'Cantidad', 'V.U.', 'P.U.','Monto Neto','Impuesto','Total','',''],
+         colModel: [
+            { name: 'OrdenCompraProductoId', hidden: true },
+            { name: 'OrdenCompraId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 80, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'Descripcion', width: 200, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'UnidadMedidaNombre', width: 70, editable: false },
+            { name: 'TipoIgv', hidden: true },
+            {
+               name: "Cantidad", width: 80, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(true, false);
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "ValorUnitario", width: 90, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(true,false);
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "PrecioUnitario", width: 90, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(false, false);
+                        }
+                     });
+                  }
+               }
+            },
+            { name: "MontoBruto", width: 90, align: 'right', formatter: 'number' },
+            { name: "MontoImpuesto", width: 80, align: 'right', formatter: 'number' },
+            { name: "MontoTotal", width: 90, align: 'right', formatter: 'number' },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+         },
+         gridComplete: function () {
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+
+            $('#OrdenCompraProductoId').find('option').remove().end();
+            $('#OrdenCompraProductoId').append(new Option('@SelectListFirstOptionNameConstant.SELECT', ''));
+            var data = $("#productoGrid").appGrid('getData');
+            $.each(data, function (index, item) {
+               if (item.Estado === '@EstadoConstante.ACTIVO') {
+                  var option = new Option(item.ProductoNombre + ' - Cantidad: ' + item.Cantidad, item.OrdenCompraProductoId);
+                  $('#OrdenCompraProductoId').append(option);
+               }
+            });
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+      $("#entregaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarOrdenCompraEntrega", "OrdenComAuto")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenCompraEntregaDTO.OrdenCompraProductoId", value: $('#OrdenCompraProductoId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Cantidad', 'Fecha Entrega','',''],
+         colModel: [
+            { name: 'OrdenCompraEntregaId', hidden: true },
+            { name: 'OrdenCompraProductoId', hidden: true },
+            {
+               name: "Cantidad", width: 80, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(true, false);
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "Fecha", width: 120, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#entregaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+         },
+         gridComplete: function () {
+            $("#entregaGrid").appGrid('resizeGrid', 'entregaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('entregaContainer')
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#productoTab':
+               $('#productoGrid').appGrid('resizeGrid', 'productoContainer');
+               $('#productoGrid').jqGrid('setGridHeight', calculateGridHeight('productoContainer'));
+               break;
+
+            case '#entregaTab':
+               $('#entregaGrid').appGrid('resizeGrid', 'entregaContainer');
+               $('#entregaGrid').jqGrid('setGridHeight', calculateGridHeight('entregaContainer'));
+               break;
+
+         }
+      })
+   });
+   function entregaRadioOnChange() {
+      if ($("#fechaRadio").prop('checked')) {
+         $("#FechaEntrega").prop('readonly', false);
+         $("#PlazoEntrega").prop('readonly', true);
+         $("#PlazoEntrega").val('');
+      }
+      else {
+         $("#PlazoEntrega").prop('readonly', false);
+         $("#FechaEntrega").prop('readonly', true);
+         $("#FechaEntrega").val('');
+      }
+   }
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'aprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case 'desaprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "OrdenComAuto")'
+            });
+            break;
+      }
+   };
+   function aprobarDesaprobar(key) {
+
+      var urlAction = key === 'aprobar' ? '@Url.Action("Aprobar", "OrdenComAuto")' : '@Url.Action("Desaprobar", "OrdenComAuto")';
+
+      $(this).saveView({
+         viewModel: [
+            { name: "OrdenCompraDTO.OrdenCompraId", value: $('#OrdenCompraId').val(), type: 'int' }
+         ],
+         buttonId: key,
+         urlAction: urlAction,
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $(this).getView({
+                  urlAction: '@Url.Action("Index", "OrdenComAuto")'
+               });
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function ordenCompraProductoIdOnChange() {
+      $("#entregaGrid").appGrid('reloadJSON');
+   };
+</script>

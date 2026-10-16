@@ -1,0 +1,127 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.IV.Models.MovAlmacenViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div class="row">
+         <div class="col-11">
+            <div class="form-group row">
+               <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-4" label="Almacen" col-label-position="col-lg-2" in-modal="true"
+                                 enable="@(!Model.GetSelectedItemDisabled("AlmacenId"))"></esd-dropdownlist>
+            </div>
+            <div class="form-group row">
+               <esd-dropdownlist id="TransaccionAlmacenId" for="@Model.TransaccionAlmacenList" col-position="col-lg-4" label="Transaccion" col-label-position="col-lg-2"
+                                 in-modal="true"></esd-dropdownlist>
+               <esd-textbox id="Codigo" col-position="col-lg-4" label="#Operacion" col-label-position="col-lg-2" max-length="100" in-modal="true"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-masktextbox id="NumeroRuc" col-position="col-lg-2" label="R.U.C." col-label-position="col-lg-2" mask="99999999999"
+                                in-modal="true"></esd-masktextbox>
+               <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"
+                            in-modal="true"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="NumeroDocumento" col-position="col-lg-2" label="#Doc. Adicional" col-label-position="col-lg-2" max-length="30"
+                            in-modal="true"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-datetimepicker for="@Model.MovimientoAlmacenDTO.FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+               <esd-datetimepicker for="@Model.MovimientoAlmacenDTO.FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+            </div>
+         </div>
+         <div class="col-1">
+            <div class="form-group row">
+               <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()"></esd-button>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $("#bandejaPopupGrid").jqGrid({
+      @GridHelper.DefaultProperties()
+      url: "@Url.Action("ListarBandeja", "MovAlmacen")",
+      postData: {
+         jsonModel: function () {
+            return JSON.stringify(modelToObject(
+               [
+                  { name: "MovimientoAlmacenDTO.AlmacenId", value: $('#mp-AlmacenId').val() || 0, type: 'int' },
+                  { name: "MovimientoAlmacenDTO.Codigo", value: $('#mp-Codigo').val() },
+                  { name: "MovimientoAlmacenDTO.TransaccionAlmacenId", value: $('#mp-TransaccionAlmacenId').val() || 0, type: 'int' },
+                  { name: "MovimientoAlmacenDTO.TipoMovimientoAlmacenDTO.Codigo", value: '@Model?.MovimientoAlmacenDTO?.TipoMovimientoAlmacenDTO?.Codigo'},
+                  { name: "MovimientoAlmacenDTO.ProveedorDTO.NumeroRuc", value: $('#mp-NumeroRuc').val() },
+                  { name: "MovimientoAlmacenDTO.ProveedorDTO.RazonSocial", value: $('#mp-RazonSocial').val() },
+                  { name: "MovimientoAlmacenDTO.FechaDesde", value: $('#mp-FechaDesde').val(), type: 'date' },
+                  { name: "MovimientoAlmacenDTO.FechaHasta", value: $('#mp-FechaHasta').val(), type: 'date' },
+                  { name: "MovimientoAlmacenDTO.NumeroDocumento", value: $('#mp-NumeroDocumento').val() },
+                  { name: "MovimientoAlmacenDTO.TieneGuiaRemision", value: '@Model?.MovimientoAlmacenDTO?.TieneGuiaRemision' },
+                  { name: "MovimientoAlmacenDTO.GuiaRemisionEnModificacion", value: '@Model?.MovimientoAlmacenDTO?.GuiaRemisionEnModificacion' },
+                  { name: "MovimientoAlmacenDTO.NotTransaccionAlmacenList", value: JSON.parse('@Html.Raw(Model.ToJson(Model.MovimientoAlmacenDTO?.NotTransaccionAlmacenList))'), type: 'listString' },
+                  { name: "MovimientoAlmacenDTO.Estado", value: '@EstadoConstante.ACTIVO' },
+               ]
+            ));
+         }
+      },
+      colNames: ['', '#Oper.', 'Fecha', 'O/C', 'Transaccion', 'Tipo', 'Origen', '','Destino', '#G/R', '#Doc. Referencial','', 'Cliente/Proveedor', 'Estado', ''],
+      colModel: [
+         { name: 'MovimientoAlmacenId', hidden: true },
+         { name: "Codigo", width: 80 },
+         { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+         { name: "NumeroOrdenCompra", width: 80 },
+         { name: "TransaccionAlmacenNombre", width: 200 },
+         { name: "TipoMovimientoAlmacen", width: 40 },
+         { name: "AlmacenNombre", width: 200 },
+         { name: "AlmacenDestinoId", hidden: true },
+         { name: "AlmacenDestinoNombre", width: 200 },
+         { name: "NumeroGuiaRemision", width: 100 },
+         { name: "DocumentoSerieNumeroReferencial", width: 120 },
+         { name: "ProveedorId", hidden: true },
+         { name: "RazonSocial", width: 250 },
+         { name: "EstadoMovimientoAlmacenNombre", width: 200 },
+         { name: 'Estado', hidden: true },
+      ],
+      pager: "#bandejaPopupPager",
+      ondblClickRow: function (rowid) {
+
+         var popupParams = getPopupParam('mp-edit-panel')
+
+         var row = $(this).getRowData(rowid);
+         movimientoAlmacenSelectedPopup(popupParams.dialogId, row);
+      },
+      gridComplete: function () {
+         $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+      },
+      height: 250
+   });
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      if (!$('#mp-AlmacenId').prop('disabled')){
+         $('#mp-AlmacenId').val('');
+      }
+      $('#mp-TransaccionAlmacenId').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-AlmacenId,#mp-Codigo,#mp-TransaccionAlmacenId,#mp-NumeroRuc,#mp-RazonSocial,#mp-NumeroDocumento").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+      $("#mp-FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#mp-FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaPopupGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#mp-FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaPopupGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+</script>

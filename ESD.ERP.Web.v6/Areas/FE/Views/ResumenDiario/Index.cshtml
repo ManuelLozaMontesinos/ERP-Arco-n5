@@ -1,0 +1,353 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.FE.Models.DocEmitidoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-2" label="Tipo de Documento" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <label class="col-lg-2 col-form-label">Estado</label>
+                  <esd-radiobutton id="TodoRadio" group-name="estadoRadio" label="Todos" col-position="col-lg-1" checked="true"></esd-radiobutton>
+                  <esd-radiobutton id="PendienteRadio" group-name="estadoRadio" label="Pendientes/Rechazados" col-position="col-lg-2"></esd-radiobutton>
+                  <esd-radiobutton id="AprobadoRadio" group-name="estadoRadio" label="Aprobados" col-position="col-lg-2"></esd-radiobutton>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+   <esd-hidden for="@Model.TicketLote"></esd-hidden>
+</section>
+<esd-dialog id="enviarEditPopup" title="Enviar Resumen" onclick="enviarEditPopupOnClick">
+   <div id="enviarEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      verificarConfiguracion(false);
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties(new Dictionary<string, string> { { "rowNum", "500" } })
+         url: "@Url.Action("ListarBandeja", "ResumenDiario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteDTO.TipoDocumentoComercialId", value: $('#TipoDocumentoComercialId').val() ||0, type:'int' },
+                     { name: "ComprobanteDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "ComprobanteDTO.FechaHasta", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "EstadoDocumento", value: obtenerEstado() }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','', 'Fecha','Serie','Numero','','','Tipo de Documento', '#RUC', 'Razon Social','Mon','Total','','Estado'],
+         colModel: [
+            { name: 'ComprobanteId', hidden: true },
+            { name: 'ComprobanteElectronicoId', hidden: true },
+            { name: 'Fecha', width: 80, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'Serie', width: 60 },
+            { name: "Numero", width: 80 },
+            { name: 'TipoDocumentoComercialId', hidden: true },
+            { name: 'TipoDocumentoComercial', hidden: true },
+            { name: "TipoDocumentoComercialNombre", width: 130 },
+            { name: 'NumeroRuc', width: 90 },
+            { name: 'RazonSocial', width: 320 },
+            { name: 'Moneda', width: 50 },
+            { name: "MontoTotal", width: 100, align: 'right', formatter: 'number', sorttype: 'number' },
+            { name: 'EstadoSunat', hidden: true },
+            { name: "EstadoSunatNombre", width: 170 },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('disabled');
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            establecerMenuXTicketLote();
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'actualizar_cdr', disabled: true });
+
+            if ($.isNullOrEmpty(row.ComprobanteElectronicoId)) {
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'genera_xml', disabled: false });
+               return;
+            }
+
+            switch (row.EstadoSunat) {
+               case '@EstadoSunatConstante.PENDIENTE_ENVIO':
+                  $("#menuBar").appMenu('disabledButton', { buttonList: 'enviar,genera_xml', disabled: false });
+                  break;
+               case '@EstadoSunatConstante.RECHAZADO':
+               case '@EstadoSunatConstante.ARCHIVO_CON_ERROR':
+                  $("#menuBar").appMenu('disabledButton', { buttonList: 'genera_xml', disabled: false });
+                  break;
+            }
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+            establecerMenuXTicketLote();
+
+            var data = $("#bandejaGrid").appGrid('getData');
+            if (data.length === 0)
+               return;
+
+            var selectedData = _.where(data, { EstadoSunat: '@EstadoSunatConstante.APROBADO'});
+            if (selectedData.length > 0) {
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'actualizar_cdr', disabled: true });
+            }
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#enviarEditPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("EnviarEditPopup", "ResumenDiario")',
+               viewModel: [
+                  { name: "FechaDesde", value: $('#FechaDesde').val(), type: 'date' }
+               ],
+               container: 'enviarEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+   });
+   function clearButtonOnClick() {
+      $("#TipoDocumentoComercialId").val('');
+      $("#FechaDesde").val('@Model.FechaDesde.ToShortDateString()');
+      $("#TodoRadio").prop("checked", true);
+
+      verificarConfiguracion(true);
+   }
+   $(function () {
+      $("#TipoDocumentoComercialId,#TodoRadio,#PendienteRadio,#AprobadoRadio").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            verificarConfiguracion(true);
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['enviar','actualizar_cdr'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      $("#menuBar").appMenu('disabledButton', { buttonId: key, disabled: true });
+
+      var urlAction = '';
+      switch (key) {
+         case 'genera_xml':
+            if (row.EstadoSunat === '@EstadoSunatConstante.PENDIENTE_GENERAR')
+               urlAction = '@Url.Action("GenerarDocumento", "ResumenDiario")';
+            else
+               urlAction = '@Url.Action("GenerarArchivo", "ResumenDiario")';
+            break;
+      }
+
+      switch (key) {
+
+         case 'enviar':
+            $("#TodoRadio").prop("checked", true);
+            verificarConfiguracion(true);
+
+            $('#enviarEditPopup').showDialog();
+            break;
+
+         case 'genera_xml':
+            $(this).postAction({
+               urlAction: urlAction,
+               viewModel: [
+                  { name: "ComprobanteDTO.ComprobanteId", value: row.ComprobanteId, type: 'int' },
+                  { name: "ComprobanteDTO.TipoDocumentoComercialDTO.Codigo", value: row.TipoDocumentoComercial },
+                  { name: "ComprobanteDTO.ComprobanteElectronicoId", value: row.ComprobanteElectronicoId, type: 'int' },
+                  { name: "EstadoDocumento", value: obtenerEstado() }
+               ],
+               onSuccess: function (response) {
+                  if (response.success) {
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     $('#bandejaGrid').appGrid('reloadJSON');
+                     if (key === 'enviar') {
+                        verificarConfiguracion(false);
+                     }
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                     $("#menuBar").appMenu('disabledButton', { buttonId: key, disabled: false });
+                  }
+               }
+            });
+            break;
+
+         case 'actualizar_cdr':
+
+            var comprobanteList = [];
+            var list = $('#bandejaGrid').appGrid('getDataIDs');
+            for (i in list) {
+               var rowId = list[i];
+               var row = $('#bandejaGrid').appGrid('getRow', rowId);
+
+               if (row.EstadoSunat !== '@EstadoSunatConstante.VERIFICACION')
+                  continue;
+
+               var comprobante = [
+                  { name: "ComprobanteElectronicoId", value: row.ComprobanteElectronicoId, type: 'int' },
+                  { name: "TipoDocumentoComercialDTO.Codigo", value: row.TipoDocumentoComercial}
+               ];
+
+               comprobanteList.push(comprobante);
+            }
+
+            $(this).postAction({
+               urlAction: '@Url.Action("ActualizarCDR", "ResumenDiario")',
+               viewModel: [
+                  { name: "TicketLote", value: $('#TicketLote').val() },
+                  { name: "ComprobanteDTOList", value: comprobanteList, type: 'list' }
+               ],
+               onSuccess: function (response) {
+                  if (response.success) {
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     $('#bandejaGrid').appGrid('reloadJSON');
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                     $("#menuBar").appMenu('disabledButton', { buttonId: key, disabled: false });
+                  }
+               }
+            });
+            break;
+
+         case 'descargar_cdr':
+            var reportParam = "comprobanteId=" + row.ComprobanteId;
+
+            $(this).getReport({
+               urlAction: '@Url.Action("DecargarCDR", "ResumenDiario")',
+               parameters: reportParam,
+               onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+            });
+            break;
+
+         case 'descargar_xml':
+            var reportParam = "comprobanteId=" + row.ComprobanteId;
+
+            $(this).getReport({
+               urlAction: '@Url.Action("DecargarXML", "ResumenDiario")',
+               parameters: reportParam,
+               onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+            });
+            break;
+
+         case 'descargar_pdf':
+            var reportParam = "comprobanteId=" + row.ComprobanteId;
+
+            $(this).getReport({
+               urlAction: '@Url.Action("DecargarPDF", "ResumenDiario")',
+               parameters: reportParam,
+               onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+            });
+            break;
+
+      }
+      return true;
+   };
+   function verificarConfiguracion(refrescarGrid) {
+      $(this).postAction({
+         urlAction: '@Url.Action("VerificarConfiguracion", "ResumenDiario")',
+         viewModel: [
+            { name: "FechaDesde", value: $('#FechaDesde').val(), type: 'date' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#TicketLote').val(response.data);
+               establecerMenuXTicketLote();
+               if (refrescarGrid)
+                  $('#bandejaGrid').appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function establecerMenuXTicketLote() {
+      $("#menuBar").appMenu('disabledButton', { buttonList: 'enviar,actualizar_cdr', disabled: true });
+
+      var ticketLote = $('#TicketLote').val();
+
+      if ($.isNullOrEmpty(ticketLote)) {
+         $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar', disabled: false });
+         return;
+      }
+
+      if (parseIntEx(ticketLote) > 0)
+         $("#menuBar").appMenu('disabledButton', { buttonId: 'actualizar_cdr', disabled: false });
+
+   };
+   function enviarEditPopupOnClick() {
+      var documentosValidos = parseIntEx($('#mp-DocumentosValidos').val());
+      var documentosConError = parseIntEx($('#mp-DocumentosConError').val());
+
+      if (documentosConError > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("FE_resumen_documentos_invalidos")');
+         return;
+      }
+
+      if (documentosValidos === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("FE_resumen_sin_pendientes")');
+         return;
+      }
+
+      $('#enviarEditPopup').postAction({
+         urlAction: '@Url.Action("EnviarResumen", "ResumenDiario")',
+         viewModel: [
+            { name: "FechaDesde", value: $('#FechaDesde').val(), type: 'date' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#enviarEditPopup').hideDialog();
+               verificarConfiguracion(true);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+   };
+   function obtenerEstado() {
+      if ($('#TodoRadio').prop('checked'))
+         return "";
+      if ($('#PendienteRadio').prop('checked'))
+         return "@LetraConstante.P";
+      if ($('#AprobadoRadio').prop('checked'))
+         return "@LetraConstante.A";
+   };
+</script>

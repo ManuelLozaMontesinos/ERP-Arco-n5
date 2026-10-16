@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup Label="Globals">
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>ESD.ERP.ExportDataApi</RootNamespace>
+    <UserSecretsId>9e7cee9c-772d-4118-aeee-e779d5b6d5de</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="connectionStrings.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="connectionStrings.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="7.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ESD.Core.Data.v1\ESD.Core.Data.v1.csproj" />
+    <ProjectReference Include="..\ESD.Core.v1\ESD.Core.v1.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,70 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.PeriodoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.PeriodoDTO.Codigo" col-position="col-lg-2" label="Periodo" col-label-position="col-lg-2" numeric-type="Integer"
+                                      integer-places="4" enable="@Model.IsNew"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.PeriodoDTO.HabilitarProcesoBatch" col-position="offset-lg-2 col-lg-4" label="Habilitar Procesos por Lotes"></esd-checkbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PeriodoDTO.PeriodoId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Periodo")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Codigo').validateNumeric('@SR.GetString("AS_periodo_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PeriodoDTO.PeriodoId", value: $('#PeriodoId').val(), type : 'int' },
+            { name: "PeriodoDTO.Codigo", value: $('#Codigo').val(), type: 'int' },
+            { name: "PeriodoDTO.HabilitarProcesoBatch", value: $('#HabilitarProcesoBatch').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Periodo")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#PeriodoId").val(response.data.Id);
+               $("#Codigo").prop('readonly', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

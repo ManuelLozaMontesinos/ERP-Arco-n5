@@ -1,0 +1,81 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.MedioPagoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.MedioPagoDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.MedioPagoDTO.Nombre" col-position="col-lg-4" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+                  <esd-textbox for="@Model.MedioPagoDTO.Abreviatura" col-position="col-lg-2" label="Abreviatura" col-label-position="col-lg-2"
+                               max-length="5"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.MedioPagoDTO.PorcentajeTarjeta" col-position="col-lg-2" label="% Comisión"
+                                      col-label-position="col-lg-2"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.MedioPagoDTO.MedioPagoId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "MedioPago")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#Abreviatura').validateString('@SR.GetString("GEN_abreviatura_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "MedioPagoDTO.MedioPagoId", value: $('#MedioPagoId').val(), type: 'int' },
+            { name: "MedioPagoDTO.Codigo", value: $('#Codigo').val() },
+            { name: "MedioPagoDTO.Nombre", value: $('#Nombre').val() },
+            { name: "MedioPagoDTO.Abreviatura", value: $('#Abreviatura').val() },
+            { name: "MedioPagoDTO.PorcentajeTarjeta", value: $('#PorcentajeTarjeta').val(), type: 'decimal' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "MedioPago")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#MedioPagoId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

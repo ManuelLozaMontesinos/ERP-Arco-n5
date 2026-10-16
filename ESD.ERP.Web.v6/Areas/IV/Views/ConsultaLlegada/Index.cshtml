@@ -1,0 +1,103 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.IV.Models.ConsultaLlegadaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div id="proveedorDiv" class="form-group row">
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Proveedor" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Descripcion" col-position="col-lg-6" label="Producto" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.OrdenCompraEntregaDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-hidden for="@Model.SinProveedor"></esd-hidden>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      if ($('#SinProveedor').val() === '@SiNoConstante.S')
+         $('#proveedorDiv').hide();
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "ConsultaLlegada")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenCompraEntregaDTO.OrdenCompraProductoDTO.OrdenCompraDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "OrdenCompraEntregaDTO.OrdenCompraProductoDTO.ProductoDTO.Descripcion", value: $('#Descripcion').val() },
+                     { name: "OrdenCompraEntregaDTO.Estado", value: '@EstadoConstante.ACTIVO' },
+                     { name: "OrdenCompraEntregaDTO.Fecha", value: $('#Fecha').val(), type: 'date' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Proveedor', 'Codigo', 'Producto', 'UM', 'Fecha','Cantidad'],
+         colModel: [
+            { name: 'OrdenCompraEntregaId', hidden: true },
+            { name: "RazonSocial", width: 250 },
+            { name: "Codigo", width: 100 },
+            { name: "Producto", width: 300 },
+            { name: "UnidadMedida", width: 60 },
+            { name: "Fecha", width: 80, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "Cantidad", width: 100, align: 'right', formatter: 'number' }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if (row.Estado === '@EstadoConstante.ACTIVO') {
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'imprimir_fmt', disabled: false });
+            }
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+
+            if ($('#SinProveedor').val() === '@SiNoConstante.S')
+               $("#bandejaGrid").jqGrid('hideCol', 'RazonSocial');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#RazonSocial,#Descripcion").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#Fecha").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+</script>

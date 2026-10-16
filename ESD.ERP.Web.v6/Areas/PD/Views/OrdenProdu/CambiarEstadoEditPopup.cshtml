@@ -1,0 +1,21 @@
+﻿@model ESD.ERP.Web.Areas.PD.Models.OrdenProduViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="EstadoPlanoMelId" for="@Model.EstadoOrdenProduccionMelList" col-position="col-lg-3" label="Plano Mel"
+                                    col-label-position="col-lg-2" in-modal="true" selected-value="@Model.OrdenProduccionDTO.EstadoPlanoMelId" ></esd-dropdownlist>
+                  <esd-dropdownlist id="EstadoPlanoMdfId" for="@Model.EstadoOrdenProduccionMdfList" col-position="col-lg-3" label="Plano Mdf"
+                                    col-label-position="col-lg-2" in-modal="true" selected-value="@Model.OrdenProduccionDTO.EstadoPlanoMdfId" ></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                   <esd-textarea for="@Model.OrdenProduccionDTO.Comentarios" col-position="offset col-lg-12"
+                                      max-length="400" rows="1" ></esd-textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>

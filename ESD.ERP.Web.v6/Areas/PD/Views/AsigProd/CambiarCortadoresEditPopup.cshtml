@@ -1,0 +1,66 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.PD.Models.AsigProdViewModel
+<div id="mp-edit-panel">
+    <div class="card-body">
+        <div id="cortadorPopupContainer">
+            <table id="cortadorPopupGrid"></table>
+            <div id="cortadorPopupPager"></div>
+        </div>
+    </div>
+    <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+    <esd-hidden for="@Model.Fecha"></esd-hidden>
+</div>
+<script type="text/javascript">
+    $(document).ready(function () {
+        debugger;
+        $("#cortadorPopupGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarPersonalMaquina", "AsigProd")",
+            postData: {
+            jsonModel: function () {
+                debugger;
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "PersonalMaquinaDTO.Fecha", value: $('#Fecha').val() , type: 'datetime' },
+                    ]
+                ));
+            }
+        },
+        colNames: ['', '', 'Maquina', '', 'Personal', '', 'Asistente', 'Fecha', ''],
+            colModel: [
+            { name: 'PersonalMaquinaId', hidden: true },
+            { name: 'MaquinaId', hidden: true },
+            { name: 'MaquinaNombre', width: 100, editable: false },
+            { name: 'PersonalId', hidden: true },
+            { name: 'PersonalNombre', width: 100, editable: false },
+            { name: 'AsistenteId', hidden: true },
+            { name: 'AsistenteNombre', width: 100, editable: false },
+            { name: 'Fecha', width: 100, },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+        ],
+            pager: "#cortadorPopupPager",
+            loadComplete: function () {
+                var $this = $(this), rows = this.rows, l = rows.length, i, row;
+                for (i = 0; i < l; i++) {
+                    row = rows[i];
+                    $this.jqGrid('editRow', row.id, false);
+                }
+            },
+            gridComplete: function () {
+                $("#cortadorPopupGrid").appGrid('resizeGrid', 'cortadorPopupContainer');
+            },
+            height: 130
+    });
+
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                var targetId = e.target.hash;
+
+                $('#cortadorPopupGrid').appGrid('resizeGrid', 'cortadorPopupContainer');
+                $('#cortadorPopupGrid').jqGrid('setGridHeight', calculateGridHeight('cortadorPopupContainer'));
+            })
+});
+
+</script>

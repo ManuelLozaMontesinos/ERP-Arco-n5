@@ -1,0 +1,125 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.CortesGratisViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="CRUD" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div id="bandejaContainer">
+        <table id="bandejaGrid"></table>
+        <div id="bandejaPager"></div>
+    </div>
+</section>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+       $("#bandejaGrid").jqGrid({
+          @GridHelper.DefaultProperties()
+          url: "@Url.Action("ListarBandejaClase", "CortesGratis")",
+          postData: {
+             jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                   [
+                      { name: "ClaseProductoDTO.Nombre", value: $('#Nombre').val() }
+                   ]
+                ));
+             }
+          },
+          colNames: ['', 'Codigo','Nombre',''],
+          colModel: [
+             { name: 'ClaseProductoId', hidden: true },
+             { name: "Codigo", width: 100 },
+             { name: "Nombre", width: 250 },
+             { name: 'Estado', hidden: true },
+          ],
+          pager: "#bandejaPager",
+          onSelectRow: function (rowid) {
+             if (rowid == null || rowid == 0)
+                return;
+
+             $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+          },
+          gridComplete: function () {
+             $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+             $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+          },
+          @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+          height: calculateGridHeight('bandejaContainer')
+       });
+    });
+    function clearButtonOnClick() {
+       $('#app-search-input-group').find('input:text').val('');
+       $("#TipoProductoId").val('');
+       $('#bandejaGrid').appGrid('reloadJSON');
+    }
+    $(function () {
+       $("#Nombre").change(function () {
+          $('#bandejaGrid').appGrid('reloadJSON');
+       });
+    });
+    function menuBarOnClick(key) {
+
+       var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+       var excludeKeys = ['@MenuItemKey.NEW','@MenuItemKey.EXIT'];
+       if(excludeKeys.indexOf(key) == -1){
+          if ($.isEmpty(row)) {
+             msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+             return;
+          }
+       }
+
+       switch (key) {
+
+          case '@MenuItemKey.NEW':
+             $(this).getView({
+                editAction: '@ViewModelEditAction.New',
+                buttonId: key,
+                viewModel: [
+                   { name: "GrupoProductoDTO.GrupoProductoId", value: 0, type: 'int' }
+                ],
+                urlAction: '@Url.Action("Crear", "FamiliaProducto")'
+             });
+             break;
+
+          case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "ClaseProductoDTO.ClaseProductoId", value: row.ClaseProductoId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "CortesGratis")'
+            });
+            break;
+
+          case '@MenuItemKey.DELETE':
+             $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+             $(this).confirm({
+                title: '@SR.GetString("APPMP_anular_titulo")',
+                message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+                onConfirm: function () {
+
+                   $(this).saveView({
+                      urlAction: '@Url.Action("Eliminar", "FamiliaProducto")',
+                      viewModel: [
+                         { name: "GrupoProductoDTO.ClaseProductoId", value: row.ClaseProductoId, type: 'int' },
+                         { name: "GrupoProductoDTO.Codigo", value: row.Codigo }
+                      ],
+                      onSuccess: function (response) {
+                         if (response.success) {
+                            $('#bandejaGrid').appGrid('reloadJSON');
+                            msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                         } else {
+                            msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                         }
+                      }
+                   });
+                }
+             });
+             break;
+       }
+       return true;
+    };
+</script>

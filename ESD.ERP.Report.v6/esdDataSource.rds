@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RptDataSource xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="esdDataSource">
+  <ConnectionProperties>
+    <Extension>SQL</Extension>
+    <ConnectString>Data Source=.;Initial Catalog=esderp_v6</ConnectString>
+  </ConnectionProperties>
+  <DataSourceID>e2e320e0-3c6e-4e04-b331-edaed819d6c0</DataSourceID>
+</RptDataSource>

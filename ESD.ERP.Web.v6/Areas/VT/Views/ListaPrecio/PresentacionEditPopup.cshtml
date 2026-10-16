@@ -1,0 +1,237 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.ListaPrecioViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div class="row">
+         <div class="col-12">
+            <div class="form-group row">
+               <esd-textbox for="@Model.ListaPrecioProductoDTO.ProductoDTO.Codigo" col-position="col-lg-3" label="Código" col-label-position="col-lg-2"
+                            in-modal="true" enable="false"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-textbox for="@Model.ListaPrecioProductoDTO.ProductoDTO.Descripcion" col-position="col-lg-10" label="Descripcion" col-label-position="col-lg-2"
+                            in-modal="true" enable="false"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-numerictextbox for="@Model.ListaPrecioProductoDTO.PrecioUnitario" col-position="col-lg-3" label="Precio Unitario" col-label-position="col-lg-2"
+                                   in-modal="true" enable="false" numeric-type="Decimal"></esd-numerictextbox>
+            </div>
+         </div>
+      </div>
+      <esd-hidden id="mp-UnidadMedidaString" value="@Model.UnidadMedidaString"></esd-hidden>
+   </div>
+   <div>
+      <esd-menubar id="mp_presentacionMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="mp_presentacionMenuBarOnClick"></esd-menubar>
+   </div>
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarListaPrecioProductoPresentacion", "ListaPrecio")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ListaPrecioProductoPresentacionDTO.ListaPrecioProductoId", value: @Model.ListaPrecioProductoDTO.ListaPrecioProductoId, type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','Unidad Medida', '%Dscto', '#Dec. Redon.','P.U.', '',''],
+         colModel: [
+            { name: 'ListaPrecioProductoPresentacionId', hidden: true },
+            { name: 'ListaPrecioProductoId', hidden: true },
+            {
+               name: 'ProductoPresentacionVentaId', width: 200, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#mp-UnidadMedidaString').val(),
+               },
+               editrules: { required: true }
+            },
+            {
+               name: "PorcentajeDescuento", width: 80, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           mp_calcularPrecioProductoPresentacion();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "NumeroDecimalesRedondeo", width: 100, align: 'right', formatter: 'integer', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('integer', { integerDigits:1, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           mp_calcularPrecioProductoPresentacion();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "PrecioUnitario", width: 90, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPopupPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaPopupGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               $('#mp_presentacionMenuBar').appMenu('editMenu', { gridName: 'bandejaPopupGrid', isEditableGrid: true });
+            }
+            else
+               $("#mp_presentacionMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: 250
+      });
+   });
+   function mp_presentacionMenuBarOnClick(key) {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               ListaPrecioProductoPresentacionId: 0,
+               ListaPrecioProductoId: @Model.ListaPrecioProductoDTO.ListaPrecioProductoId,
+               PorcentajePrecioBase: 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#bandejaPopupGrid").appGrid('addRow', initdata);
+            $("#mp_presentacionMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            mp_editarPresentacionInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaPopupGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#bandejaPopupGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_PorcentajeDescuento').validateNumeric('@SR.GetString("GEN_porcentaje_descuento_requerido")'))
+               return false;
+
+            $("#bandejaPopupGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaPopupGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarListaPrecioProductoPresentacion", "ListaPrecio")',
+                  viewModel: [
+                     { name: "ListaPrecioProductoPresentacionDTO.ListaPrecioProductoPresentacionId", value: row.ListaPrecioProductoPresentacionId, type: 'int' },
+                     { name: "ListaPrecioProductoPresentacionDTO.ListaPrecioProductoId", value: row.ListaPrecioProductoId, type: 'int' },
+                     { name: "ListaPrecioProductoPresentacionDTO.ProductoPresentacionVentaId", value: row.ProductoPresentacionVentaId, type: 'int' },
+                     { name: "ListaPrecioProductoPresentacionDTO.PorcentajePrecioBase", value: row.PorcentajeDescuento, type: 'decimal' },
+                     { name: "ListaPrecioProductoPresentacionDTO.NumeroDecimalesRedondeo", value: row.NumeroDecimalesRedondeo, type: 'int' },
+                     { name: "ListaPrecioProductoPresentacionDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#bandejaPopupGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#mp_presentacionMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarListaPrecioProductoPresentacion", "ListaPrecio")',
+                     viewModel: [
+                        { name: "ListaPrecioProductoPresentacionDTO.ListaPrecioProductoPresentacionId", value: row.ListaPrecioProductoPresentacionId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaPopupGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function mp_editarPresentacionInGrid() {
+      var rowId = $("#bandejaPopupGrid").appGrid("getSelectedRowId");
+      $('#bandejaPopupGrid').jqGrid('editRow', rowId);
+      $("#mp_presentacionMenuBar").appMenu('saveMenu');
+   };
+   function mp_calcularPrecioProductoPresentacion() {
+
+      var rowId = $('#bandejaPopupGrid').appGrid('getSelectedRowId');
+
+      var precioUnitario = parseFloatEx($('#mp-PrecioUnitario').val());
+      var porcentajePrecioBase = parseFloatEx($("#" + rowId + "_PorcentajeDescuento").val());
+      var numeroDecimalesRedondeo = parseFloatEx($("#" + rowId + "_NumeroDecimalesRedondeo").val());
+
+      var nuevoPU = ((precioUnitario * porcentajePrecioBase) / 100).toFixed(numeroDecimalesRedondeo);
+
+      $("#" + rowId + "_PrecioUnitario").val(nuevoPU);
+   };
+</script>

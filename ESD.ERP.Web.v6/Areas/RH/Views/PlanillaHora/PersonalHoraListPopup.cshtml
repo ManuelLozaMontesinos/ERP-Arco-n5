@@ -1,0 +1,62 @@
+﻿@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.RH.Models.PlanillaHoraViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox id="RazonSocial" col-position="col-lg-8" label="Apellidos y Nombres" col-label-position="col-lg-2" max-length="150" in-modal="true"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarPersonalConHoras", "PlanillaHora")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PersonalMarcacionDTO.PersonalDTO.EmpresaSedeDTO.EmpresaId", value: @Model.PersonalMarcacionDTO.PersonalDTO.EmpresaSedeDTO.EmpresaId, type: 'int' },
+                     { name: "PersonalMarcacionDTO.PersonalDTO.ProveedorDTO.RazonSocial", value: $('#mp-RazonSocial').val() },
+                     { name: "PersonalMarcacionDTO.FechaDesde", value: '@Model.PersonalMarcacionDTO.FechaDesde', type:'date' },
+                     { name: "PersonalMarcacionDTO.FechaHasta", value: '@Model.PersonalMarcacionDTO.FechaHasta', type:'date' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Codigo','T/D', '#Documento','Apellidos y Nombres'],
+         colModel: [
+            { name: 'PersonalId', hidden: true },
+            { name: "Codigo", width: 80 },
+            { name: "TipoDocumentoIdentidad", width: 80 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: "RazonSocial", width: 350 }
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+            personalSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         multiselect: true,
+         height: 300
+      });
+   });
+   $(function () {
+      $("#mp-RazonSocial").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

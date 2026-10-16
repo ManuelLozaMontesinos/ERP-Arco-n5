@@ -1,0 +1,235 @@
+﻿@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.UsuarioViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="NewEdit" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="UsuarioLogon" col-position="col-lg-8" label="Codigo" col-label-position="col-lg-2" max-length="100" use-textcase="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="NombreCompleto" col-position="col-lg-8" label="Nombre" col-label-position="col-lg-2" max-length="100" use-textcase="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                   <div class="col-lg-2"></div> <!-- espacio del label -->
+                    <esd-checkbox id="VerAnulado" label="Mostrar Anulados" onchange="VerAnuladoOnChange()" checkbox-style="Default"></esd-checkbox> 
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<esd-dialog id="contrasenaEditPopup" title="Cambiar Contraseña" onclick="contrasenaEditPopupOnClick">
+   <div id="contrasenaEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "Usuario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "UsuarioDTO.UsuarioLogon", value: $('#UsuarioLogon').val(), textCase: 'none' },
+                     { name: "UsuarioDTO.NombreCompleto", value: $('#NombreCompleto').val(), textCase: 'none' },
+                     { name: "UsuarioDTO.Estado", value: $('#VerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Usuario', 'Nombre','Correo',''],
+         colModel: [
+            { name: 'UsuarioId', hidden: true },
+            { name: "UsuarioLogon", width: 100 },
+            { name: "NombreCompleto", width: 300 },
+            { name: "Email", width: 200 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if(row.Estado === '@EstadoConstante.ACTIVO')
+               $('#menuBar').appMenu('disabledButton', { buttonList: 'deshabilitar,cambiar', disabled: false });
+            else
+               $('#menuBar').appMenu('disabledButton', { buttonId: 'habilitar', disabled: false });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#contrasenaEditPopup').setDialog({
+         onShow: function () {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            $(this).getView({
+               urlAction: '@Url.Action("ContrasenaEditPopup", "Usuario")',
+               viewModel: [
+                  { name: "UsuarioDTO.UsuarioId", value: row.UsuarioId, type:'int' }
+               ],
+               container: 'contrasenaEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#UsuarioLogon, #NombreCompleto").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW','@MenuItemKey.EXIT'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.NEW':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.New',
+               buttonId: key,
+               viewModel: [
+                  { name: "UsuarioDTO.UsuarioId", value: 0, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Crear", "Usuario")'
+            });
+            break;
+
+         case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "UsuarioDTO.UsuarioId", value: row.UsuarioId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "Usuario")'
+            });
+            break;
+
+         case 'habilitar':
+            $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            $(this).confirm({
+               title: '@SR.GetString("APP_MP_titulo_habilitar_usuario")',
+               message: '@SR.GetString("GEN_usuario_seleccionado_habilitar_pregunta")',
+               onConfirm: function () {
+                  $(this).getAction({
+                     urlAction: '@Url.Action("Habilitar", "Usuario")',
+                     id: row.UsuarioId,
+                     showLoading: true,
+                     hideLoading: true,
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+         case 'deshabilitar':
+            $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            $(this).confirm({
+               title: '@SR.GetString("APP_MP_titulo_deshabilitar_usuario")',
+               message: '@SR.GetString("GEN_usuario_seleccionado_deshabilitar_pregunta")',
+               onConfirm: function () {
+                  $(this).getAction({
+                     urlAction: '@Url.Action("Deshabilitar", "Usuario")',
+                     id: row.UsuarioId,
+                     showLoading: true,
+                     hideLoading: true,
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+         case 'cambiar':
+            $('#contrasenaEditPopup').showDialog();
+            break;
+      }
+      return true;
+   };
+   function contrasenaEditPopupOnClick() {
+
+      if (!$('#mp-Contrasena').validateString('@SR.GetString("AS_contrasena_requerida")'))
+         return false;
+      if (!$('#mp-ContrasenaConfirmada').validateString('@SR.GetString("AS_contrasena_confirmada_requerida")'))
+         return false;
+
+      if ($('#mp-Contrasena').val() !== $('#mp-ContrasenaConfirmada').val()) {
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("AS_verificar_contrasena_invalida")');
+         return false;
+      }
+
+      $('#contrasenaEditPopup').saveView({
+         viewModel: [
+            { name: "UsuarioDTO.UsuarioId", value: $('#mp-UsuarioId').val(), type:'int' },
+            { name: "UsuarioDTO.Password", value: $('#mp-Contrasena').val(), textCase: 'none' },
+            { name: "UsuarioDTO.CambiarContrasenaProximo", value: $('#mp-CambiarContrasenaProximo').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("CambiarContrasena", "Usuario")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#contrasenaEditPopup').hideDialog();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+
+   function VerAnuladoOnChange() {
+        $("#bandejaGrid").appGrid('reloadJSON');
+   };
+</script>

@@ -1,0 +1,276 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.PD.Models.AsigProdViewModel 
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">  
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2" max-length="9"></esd-textbox>
+                  <esd-textbox for="@Model.Vendedor" col-position="col-lg-4" label="Vendedor" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Cotizacion" col-position="col-lg-2" label="#Pedido" col-label-position="col-lg-2" max-length="7"></esd-textbox>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()" ></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<esd-dialog id="cambiarEstadoEditPopup" title="Asignar Procesos ..." onclick="cambiarEstadoEditPopupOnClick">
+    <div id="cambiarEstadoEditPopupContent"></div>
+</esd-dialog>
+
+<esd-dialog id="cambiarCortadoresEditPopup" title="Cortadores ..." onclick="cambiarCortadoresEditPopupOnClick">
+    <div id="cambiarCortadoresEditPopupContent"></div>
+</esd-dialog>
+<esd-hidden for="@Model.Fecha"></esd-hidden>
+
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "AsigProd")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenProduccionDTO.Codigo", value: $('#Codigo').val() },
+                     { name: "OrdenProduccionDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "OrdenProduccionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
+                     { name: "OrdenProduccionDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "OrdenProduccionDTO.CotizacionDTO.Codigo", value: $('#Cotizacion').val() },
+                     { name: "OrdenProduccionDTO.CotizacionDTO.VendedorDTO.ProveedorDTO.RazonSocial", value: $('#Vendedor').val() },
+                  ] 
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Fecha', 'P/V', 'Cliente', 'Vendedor', 'Comentarios', 'FechaEntrega', 'Cantidad/Colores', ''],
+         colModel: [
+            { name: 'OrdenProduccionId', hidden: true },
+            { name: "Codigo", width: 60 },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "Cotizacion", width: 60 },
+            { name: "RazonSocial", width: 200 },
+            { name: "Vendedor", width: 80 },
+            { name: "Comentarios", width: 150},
+            { name: "FechaEntrega", width: 150, align: 'center', sorttype: 'datetime', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "Colores", width: 300 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'planos', disabled: false });
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'cortadores', disabled: false });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'cortadores', disabled: false });
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+   });
+
+    $('#cambiarEstadoEditPopup').setDialog({
+        onShow: function (p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            $('#' + p.dialogId).getView({
+                urlAction: '@Url.Action("CambiarEstadoEditPopup", "AsigProd")',
+                viewModel: [
+                    { name: 'OrdenProduccionSubProcesoDTO.OrdenProduccionId', value: row.OrdenProduccionId, type: 'int' }
+                ],
+                container: 'cambiarEstadoEditPopupContent',
+                showLoading: false,     
+                hideLoading: false
+            });
+        },
+        onShown: function () {    
+            $("#productoPopupGrid").appGrid('resizeGrid', 'productoPopupContainer');
+        }
+    });
+
+    $('#cambiarCortadoresEditPopup').setDialog({
+        onShow: function (p) {
+            $(this).getView({
+                urlAction: '@Url.Action("CambiarCortadoresEditPopup", "AsigProd")',
+                container: 'cambiarCortadoresEditPopupContent',
+                viewModel: [
+                    { name: 'PersonalMaquinaDTO.Fecha', value: $('#Fecha').val() }
+                ],
+                showLoading: false,
+                hideLoading: false
+            });
+        },
+        onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+        }
+    });
+
+});
+
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+
+   $(function () {
+        $("#Codigo, #Cotizacion, #RazonSocial, #Vendedor").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#Codigo").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#Codigo").val())) {
+               var valueFmt = padLeadingZeros($("#Codigo").val(), 1)
+               $("#Codigo").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#Cotizacion").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#Cotizacion").val())) {
+               var valueFmt = padLeadingZeros($("#Cotizacion").val(), 5)
+               $("#Cotizacion").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+
+    function menuBarOnClick(key) {
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        switch (key) {
+
+            case 'planos':
+                $('#cambiarEstadoEditPopup').showDialog();
+                break;
+
+            case 'cortadores':
+                $('#cambiarCortadoresEditPopup').showDialog();
+                break;
+        }
+        return true;
+    };
+
+    function cambiarEstadoEditPopupOnClick() {
+
+        var subProcesoList = [];
+
+        var list = $('#productoPopupGrid').appGrid('getDataIDs');
+        for (i in list) {
+
+            var rowId = list[i];
+            if (isEmptyRecord(rowId))
+                continue;
+
+            var row = $('#productoPopupGrid').appGrid('getRow', rowId);
+            var maquinaId = parseInt($('#' + rowId + '_MaquinaId').val()) || 0;
+
+            var subProcesos = [
+                { name: "OrdenProduccionSubProcesoId", value: row.OrdenProduccionSubProcesoId, type: 'int' },
+                { name: "MaquinaId", value: maquinaId, type: 'int' }
+            ];
+
+            subProcesoList.push(subProcesos);
+        }
+
+        $('#cambiarEstadoEditPopup').saveView({
+            viewModel: [
+                { name: "OrdenProduccionDTO.OrdenProduccionId", value: $('#OrdenProduccionId').val(), type: 'int' },
+                { name: "OrdenProduccionSubProcesoDTOList", value: subProcesoList, type: 'list' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("CambiarEstado", "AsigProd")',
+            onSuccess: function (response) {
+                if (response.success) {
+                    $(this).getView({ urlAction: '@Url.Action("Index", "AsigProd")' });
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+                $('#cambiarEstadoEditPopup').hideDialog();
+            }
+        });
+    };
+
+    function cambiarCortadoresEditPopupOnClick(){
+        var cortadoresMaquinaList = [];
+
+        var list = $('#').appGrid('getDataIDs');
+        for (i in list) {
+
+            var rowId = list[i];
+            if (isEmptyRecord(rowId))
+                continue;
+
+            var row = $('#').appGrid('getRow', rowId);
+            var maquinaId = parseInt($('#' + rowId + '_MaquinaId').val()) || 0;
+
+            var subProcesos = [
+                { name: "", value: row.OrdenProduccionSubProcesoId, type: 'int' },
+                { name: "", value: maquinaId, type: 'int' }
+            ];
+
+            cortadoresMaquinaList.push(subProcesos);
+        }
+
+        $('#').saveView({
+            viewModel: [
+                { name: "", value: cortadoresMaquinaList, type: 'list' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("CambiarCortador", "AsigProd")',
+            onSuccess: function (response) {
+                if (response.success) {
+                    $(this).getView({ urlAction: '@Url.Action("Index", "AsigProd")' });
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+                $('#cambiarEstadoEditPopup').hideDialog();
+            }
+        });
+    }
+
+</script>

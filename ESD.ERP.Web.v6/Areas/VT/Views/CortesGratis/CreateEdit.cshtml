@@ -1,0 +1,173 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.CortesGratisViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group row">
+                        <esd-dropdownlist id="ClaseProductoId" for="@Model.ClaseProductoList" selected-value="@Model.ClaseProductoDTO.ClaseProductoId" col-position="col-lg-4" label="Clase Producto"
+                                          col-label-position="col-lg-2" enable="@Model.IsNew"></esd-dropdownlist>
+
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="FamiliaProductoId" for="@Model.FamiliaProductoList" col-position="col-lg-4" label="Familia Producto" col-label-position="col-lg-2"
+                                          onchange="familiaProductoIdOnChange()" ></esd-dropdownlist>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <esd-hidden id="EmpresaSedeId" value="@Model.EmpresaSedeDTO.EmpresaSedeId"></esd-hidden>
+        <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+    </div>
+    <div>
+        <ul class="nav nav-tabs" role="tablist" id="detailTab">
+            <li class="nav-item">
+                <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="productoTab" role="tabpanel">
+                <div class="form-inline">
+                    <div class="col-6">
+                        <esd-menubar id="productoMenuBar" size="Small" for="@Model.MenuProductoList" onclick="productoMenuBarOnClick"></esd-menubar>
+                    </div>
+                </div>
+                <div id="bandejaContainer">
+                    <table id="bandejaGrid"></table>
+                    <div id="bandejaPager"></div>
+                </div>
+        </div>
+    </div>    
+</section>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+          $("#bandejaGrid").jqGrid({
+             @GridHelper.DefaultProperties()
+             url: "@Url.Action("ListarProducto", "CortesGratis")",
+             postData: {
+                jsonModel: function () {
+                   return JSON.stringify(modelToObject(
+                      [
+                         { name: "CortesGratisDTO.ProductoDTO.FamiliaProductoDTO.ClaseProductoId", value: parseInt($('#ClaseProductoId').val()) || 0, type: 'int' },
+                         { name: "CortesGratisDTO.ProductoDTO.FamiliaProductoId", value: parseInt($('#FamiliaProductoId').val()) || 0, type: 'int' },
+                         { name: "CortesGratisDTO.EmpresaSedeId", value: $('#EmpresaSedeId').val(), type: 'int'}
+                      ]
+                   ));
+                }
+             },
+             colNames: ['', '', 'Codigo', 'Nombre', 'Cortes Gratis', '',''],
+             colModel: [
+                { name: 'CortesGratisId', hidden: true},
+                { name: 'ProductoId', hidden: true },
+                { name: 'Codigo', width: 100, editable: false },
+                { name: 'Descripcion', width: 300, editable: false },
+                { name: 'CortesGratis', width: 150, editable: true},
+                { name: 'Estado', hidden: true },
+                { name: '@AppConstante.DTO_STATE', hidden: true }
+             ],
+             pager: "#bandejaPager",
+             onSelectRow: function (rowid) {
+                if (rowid == null || rowid == 0)
+                   return;
+
+                $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+             },
+             gridComplete: function () {
+                $("#productoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EDIT', disabled: false });
+                $("#productoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+                $("#productoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.CANCEL', disabled: true });
+                $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+             },
+             @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+             height: calculateGridHeight('bandejaContainer')
+          });
+    });
+    function menuBarOnClick(key) {
+
+       switch (key) {
+          case '@MenuItemKey.SAVE':
+             grabarDatos();
+             break;
+
+          case '@MenuItemKey.EXIT':
+             $(this).getView({
+                urlAction: '@Url.Action("Index", "CortesGratis")'
+             });
+             break;
+       }
+    };
+    function familiaProductoIdOnChange()
+    {
+       $("#bandejaGrid").appGrid('reloadJSON');
+    };
+
+    function productoMenuBarOnClick(key){
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+          var excludeKeys = ['@MenuItemKey.NEW','verificar'];
+          if(excludeKeys.indexOf(key) == -1){
+             if ($.isEmpty(row)) {
+                msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+                return;
+             }
+          }
+
+        switch(key){
+            case '@MenuItemKey.EDIT':
+                editarProductoInGrid()
+            break;
+
+            case '@MenuItemKey.SAVE':
+                var row = $('#bandejaGrid').appGrid('getSelectedRow');
+                var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+                var cantidadRaw = $('#' + rowId + '_CortesGratis').val();
+                var cantidadEditada = parseFloat(cantidadRaw);
+
+                if (isNaN(cantidadEditada)) {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, 'Ingrese un valor numérico válido en Cortes Gratis.');
+                    return;
+                }
+
+                $(this).postAction({
+                    viewModel: [
+                        { name: "CortesGratisDTO.CortesGratisId", value: row.CortesGratisId, type: 'int' },
+                        { name: "CortesGratisDTO.Cantidad", value: cantidadEditada, type: 'decimal' }
+                    ],
+                    urlAction: '@Url.Action("GuardarCortes", "CortesGratis")',
+                    onSuccess: function (response) {
+                        if (response.success) {
+                            $("#bandejaGrid").appGrid('reloadJSON');
+                            msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                            msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                    }
+                });
+            break;
+
+            case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+        }
+
+    };  
+    function editarProductoInGrid() {
+       var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+       var row = $("#bandejaGrid").appGrid("getSelectedRow");
+
+       $('#bandejaGrid').jqGrid('editRow', rowId);
+
+       $("#productoMenuBar").appMenu('saveMenu');
+    };
+
+
+</script>

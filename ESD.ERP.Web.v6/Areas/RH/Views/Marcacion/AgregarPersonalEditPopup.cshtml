@@ -1,0 +1,107 @@
+﻿@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.MarcacionViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-10">
+               <div class="form-group row">
+                  <esd-textbox id="RazonSocial" col-position="col-lg-10" label="Apellidos y Nombres" col-label-position="col-lg-2" max-length="150" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-4" label="#Documento" col-label-position="col-lg-2" max-length="35" in-modal="true"></esd-textbox>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()" in-modal="true"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PersonalMarcacionDTO.Fecha" col-position="col-lg-3" label="Fecha" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+                  <esd-checkbox for="@Model.PersonalMarcacionDTO.EsFalta" col-position="col-lg-2" label="Es Falta" onchange="mp_esFalta();" in-modal="true"></esd-checkbox>
+                  <esd-checkbox for="@Model.PersonalMarcacionDTO.EsRemunerado" col-position="col-lg-3" label="Es Remunerado" in-modal="true"></esd-checkbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "Personal")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PersonalDTO.ProveedorDTO.RazonSocial", value: $('#mp-RazonSocial').val() },
+                     { name: "PersonalDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#mp-NumeroDocumentoIdentidad').val() },
+                     { name: "PersonalDTO.Estado", value: '@EstadoConstante.ACTIVO' },
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Codigo', '#Documento','Apellidos y Nombres','Direccion',''],
+         colModel: [
+            { name: 'PersonalId', hidden: true },
+            { name: "Codigo", width: 80 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: "RazonSocial", width: 350 },
+            { name: "Direccion", width: 300 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPopupPager",
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         height: 200
+      });
+   });
+
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-RazonSocial, #mp-NumeroDocumentoIdentidad").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+   function mp_validarDatos() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("RH_personal_seleccion_requerida")');
+         return;
+      }
+
+      if (!$('#mp-Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+
+      return true;
+   };
+   function mp_esFalta() {
+
+      if ($('#mp-EsFalta').prop('checked')) {
+         $('#mp-EsRemunerado').prop('checked', false)
+      };
+
+      return true;
+   };
+</script>

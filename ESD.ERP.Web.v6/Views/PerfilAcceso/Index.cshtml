@@ -1,0 +1,180 @@
+﻿@{
+   Layout = null;
+}
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Model.PerfilAccesoViewModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+   <title>SIGANET | Seleccionar Perfil</title>
+
+   <link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/css/alertifyjs/alertify.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/css/alertifyjs/themes/bootstrap.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/dist/css/adminlte.min.css" asp-append-version="true">
+   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+   <link rel="stylesheet" href="~/css/alertifyjs/alertify.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/css/app.main.css" asp-append-version="true">
+   <style>
+      .container-login100 {
+         width: 100%;
+         min-height: 100vh;
+         display: -webkit-box;
+         display: -webkit-flex;
+         display: -moz-box;
+         display: -ms-flexbox;
+         display: flex;
+         flex-wrap: wrap;
+         justify-content: center;
+         align-items: center;
+         padding: 15px;
+         background-repeat: no-repeat;
+         background-size: cover;
+         background-position: center;
+         position: relative;
+         z-index: 1;
+         background-image: url('@Url.Content("~/img/bg-02.jpg")');
+      }
+   </style>
+</head>
+<body class="hold-transition login-page">
+   <div class="container-login100">
+      <div class="login-box">
+         <!-- /.login-logo -->
+         <div class="card">
+            <div class="card-body login-card-body">
+               <div class="login-logo">
+                  <div class="form-group" style="margin-bottom: 8px;">
+                     <img src="~/img/erp-lg-logo.png" alt="SIGANET" class="center-block">
+                  </div>
+               </div>
+               <p class="login-box-msg">Sistema Integrado de Gestión Administrativa</p>
+               <div class="form-group row">
+                  <esd-dropdownlist id="PeriodoId" for="@Model.PeriodoList" col-position="col-lg-10" label="Año"
+                                    col-label-position="col-lg-2" onchange="periodoIdOnChange()"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="EmpresaId" for="@Model.EmpresaList" col-position="col-lg-10" label="Empresa"
+                                    col-label-position="col-lg-2" onchange="empresaIdOnChange()"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="PeriodoEmpresaSedeId" for="@Model.PeriodoEmpresaSedeList" col-position="col-lg-10" label="Sede"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <br />
+               <div class="form-group row">
+                  <div class="offset-2 col-4">
+                     <button id="cancelButton" type="button" class="btn btn-default btn-block" onclick="location.href='@Url.Action("SignOut","Login")'">Cancelar</button>
+                  </div>
+                  <div class="col-4">
+                     <button id="okButton" type="button" class="btn btn-primary btn-block" onclick="okButtonOnClick();">Aceptar</button>
+                  </div>
+               </div>
+            </div>
+            <!-- /.login-card-body -->
+         </div>
+      </div>
+   </div>
+   <!-- /.login-box -->
+   <script src="~/plugins/jquery/jquery.min.js" asp-append-version="true"></script>
+   <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+   <script src="~/dist/js/adminlte.min.js" asp-append-version="true"></script>
+   <script src="~/lib/loading-overlay/dist/loadingoverlay.min.js" asp-append-version="true"></script>
+   <script src="~/js/alertify.min.js" asp-append-version="true"></script>
+   <script src="~/js/app.main.js" asp-append-version="true"></script>
+   <script type="text/javascript">
+      function periodoIdOnChange() {
+         var periodoId = $("#PeriodoId").val();
+
+         if ($.isNullOrEmpty(periodoId)) {
+            $("#EmpresaId").prop('disabled', true);
+            $("#PeriodoEmpresaSedeId").prop('disabled', true);
+            return;
+         }
+
+         $("#EmpresaId").val('');
+         $("#PeriodoEmpresaSedeId").val('');
+         $("#PeriodoEmpresaSedeId").prop('disabled', true);
+
+         $(this).getAction({
+            urlAction: '@Url.Action("ListarEmpresa", "PerfilAcceso")',
+            id: periodoId,
+            onSuccess: function (response) {
+               if (response.success) {
+                  $('#EmpresaId').find('option').remove().end();
+                  $("#EmpresaId").addItems(response.data);
+
+                  if (!$.isNullOrEmpty($("#PeriodoId").val())) {
+                     $("#EmpresaId").removeAttr("disabled");
+                  }
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               }
+            }
+         });
+      };
+      function empresaIdOnChange() {
+         var periodoId = $("#PeriodoId").val();
+         var empresaId = $("#EmpresaId").val();
+
+         $("#PeriodoEmpresaSedeId").val('');
+         $("#PeriodoEmpresaSedeId").prop('disabled', true);
+
+         if ($.isNullOrEmpty(empresaId)) {
+            return;
+         }
+
+         $(this).getAction({
+            urlAction: '@Url.Action("ListarPeriodoEmpresaSede", "PerfilAcceso")',
+            data: {
+               periodoId: periodoId,
+               empresaId: empresaId
+            },
+            onSuccess: function (response) {
+               if (response.success) {
+                  $('#PeriodoEmpresaSedeId').find('option').remove().end();
+                  $("#PeriodoEmpresaSedeId").addItems(response.data);
+
+                  if (!$.isNullOrEmpty(empresaId)) {
+                     $("#PeriodoEmpresaSedeId").removeAttr("disabled");
+                  }
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               }
+            }
+         });
+      };
+      function okButtonOnClick() {
+         if (!$('#PeriodoId').validateNumeric('@SR.GetString("AS_periodo_seleccion_requerida")'))
+            return false;
+         if (!$('#EmpresaId').validateNumeric('@SR.GetString("AS_empresa_seleccion_requerida")'))
+            return false;
+         if (!$('#PeriodoEmpresaSedeId').validateNumeric('@SR.GetString("AS_empresa_sede_seleccion_requerida")'))
+            return false;
+
+         $('#okButton').prop('disabled', true);
+         $(this).saveView({
+            viewModel: [
+               { name: "PeriodoId", value: $('#PeriodoId').val(), type: 'int' },
+               { name: "EmpresaId", value: $('#EmpresaId').val(), type: 'int' },
+               { name: "PeriodoEmpresaSedeId", value: $('#PeriodoEmpresaSedeId').val(), type: 'int' }
+            ],
+            urlAction: '@Url.Action("Grabar", "PerfilAcceso")',
+            onSuccess: function (response) {
+               if (response.success) {
+                  if (response.url != '') {
+                     window.location = response.url;
+                  }
+               } else {
+                 $("#okButton").prop('disabled', false);
+               }
+            }
+         });
+      }
+   </script>
+</body>
+</html>

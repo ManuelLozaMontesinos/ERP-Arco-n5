@@ -1,0 +1,241 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.GrupoClienteViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.GrupoProveedorDTO.Nombre" col-position="col-lg-8" label="Nombre"
+                               col-label-position="col-lg-2" max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.GrupoProveedorDTO.IgnorarIncrementoFraccion" col-position="offset-lg-2 col-lg-10"
+                                label="Ignorar Incremento si la cantidad es Fraccion"></esd-checkbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.GrupoProveedorDTO.GrupoProveedorId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#clienteTab" role="tab" data-toggle="tab">Clientes</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="clienteMenuBar" size="Small" menu-style="NewDelete" onclick="clienteMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="clienteContainer">
+               <table id="clienteGrid"></table>
+               <div id="clientePager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="proveedorListPopup" title="Cliente/Proveedor" onclick="proveedorListPopupOnClick" size="Large">
+   <div id="proveedorListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#clienteGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarGrupoProveedorItem", "GrupoCliente")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "GrupoProveedorItemDTO.GrupoProveedorId", value: $('#GrupoProveedorId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','Razon Social','',''],
+         colModel: [
+            { name: 'GrupoProveedorItemId', hidden: true },
+            { name: 'GrupoProveedorId', hidden: true },
+            { name: 'ProveedorId', hidden: true },
+            { name: 'RazonSocial', width: 400, editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#clientePager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#clienteGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('clienteMenuBar', 'clienteGrid');
+            }
+            else
+               $("#clienteMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('clienteMenuBar', 'clienteGrid');
+            $("#clienteGrid").appGrid('resizeGrid', 'clienteContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('clienteContainer')
+      });
+
+      $('#proveedorListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Proveedor", new { Area = "MG" })',
+               container: 'proveedorListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "GrupoCliente")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "GrupoProveedorDTO.GrupoProveedorId", value: $('#GrupoProveedorId').val(), type: 'int' },
+            { name: "GrupoProveedorDTO.Nombre", value: $('#Nombre').val() },
+            { name: "GrupoProveedorDTO.IgnorarIncrementoFraccion", value: $('#IgnorarIncrementoFraccion').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "GrupoCliente")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#GrupoProveedorId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function clienteMenuBarOnClick(key) {
+
+      var row = $('#clienteGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarCliente();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarGrupoProveedorItem", "GrupoCliente")',
+                     viewModel: [
+                        { name: "GrupoProveedorItemDTO.GrupoProveedorItemId", value: row.GrupoProveedorItemId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#clienteGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function mostrarCliente() {
+      $('#proveedorListPopup').showDialog();
+   };
+   function proveedorListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      proveedorSelectedPopup('',row);
+   };
+   function proveedorSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_proveedor_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#clienteGrid").appGrid('getData');
+      var selectedData = _.where(data, { ProveedorId: parseInt(row.ProveedorId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_proveedor_ya_seleccionado")');
+         return false;
+      }
+
+      $(this).saveView({
+         urlAction: '@Url.Action("GrabarGrupoProveedorItem", "GrupoCliente")',
+         viewModel: [
+            { name: "GrupoProveedorItemDTO.GrupoProveedorId", value: $('#GrupoProveedorId').val(), type: 'int' },
+            { name: "GrupoProveedorItemDTO.ProveedorId", value: row.ProveedorId, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#proveedorListPopup').hideDialog();
+               $("#clienteGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#clienteMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#GrupoProveedorId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true});
+   }
+</script>

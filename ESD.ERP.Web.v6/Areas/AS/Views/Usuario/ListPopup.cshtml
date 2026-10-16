@@ -1,0 +1,78 @@
+﻿@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+<div id="@ViewBag.ModalEditId">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-10">
+               <div class="form-group row">
+                  <esd-textbox id="UsuarioLogon" col-position="col-lg-4" label="Usuario" col-label-position="col-lg-2" max-length="20" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="NombreCompleto" col-position="col-lg-10" label="Nombre Completo" col-label-position="col-lg-2" max-length="100" in-modal="true"></esd-textbox>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()" in-modal="true"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "Usuario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "UsuarioDTO.UsuarioLogon", value: $('#mp-UsuarioLogon').val() },
+                     { name: "UsuarioDTO.NombreCompleto", value: $('#mp-NombreCompleto').val() },
+                     { name: "UsuarioDTO.Estado", value: '@EstadoConstante.ACTIVO' },
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Usuario', 'Nombre Completo',''],
+         colModel: [
+            { name: 'UsuarioId', hidden: true },
+            { name: "UsuarioLogon", width: 150 },
+            { name: "NombreCompleto", width: 300 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('@ViewBag.ModalEditId')
+
+            var row = $(this).getRowData(rowid);
+            usuarioSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: 250
+      });
+   });
+
+   function mp_clearButtonOnClick() {
+      $('#@ViewBag.ModalEditId').find('input:text').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-UsuarioLogon, #mp-NombreCompleto").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+
+</script>

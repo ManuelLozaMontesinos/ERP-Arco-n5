@@ -1,0 +1,227 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.CajaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.CajaDTO.Nombre" col-position="col-lg-4" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.CajaDTO.CajaId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#documentoTab" role="tab" data-toggle="tab">Usuarios</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="usuarioTab" role="tabpanel">
+            <div>
+               <esd-menubar id="usuarioMenuBar" size="Small" menu-style="NewDelete" onclick="usuarioMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="usuarioContainer">
+               <table id="usuarioGrid"></table>
+               <div id="usuarioPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="personalListPopup" title="Personal" onclick="personalListPopupOnClick" size="Large">
+   <div id="personalListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#usuarioGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarCajaPersonal", "Caja")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "CajaPersonalDTO.CajaId", value: $('#CajaId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','Apellidos y Nombres','',''],
+         colModel: [
+            { name: 'CajaPersonalId', hidden: true },
+            { name: 'CajaId', hidden: true },
+            { name: 'PersonalId', hidden: true },
+            { name: 'RazonSocial', width: 250, editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#usuarioPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            editCustomGridMenuBar('usuarioMenuBar', 'usuarioGrid');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('usuarioMenuBar', 'usuarioGrid',false);
+            $("#usuarioGrid").appGrid('resizeGrid', 'usuarioContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('usuarioContainer')
+      });
+
+      $('#personalListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal", new { Area="RH" })',
+               container: 'personalListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Caja")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#PersonalId').validateNumeric('@SR.GetString("RH_personal_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "CajaDTO.CajaId", value: $('#CajaId').val(), type: 'int' },
+            { name: "CajaDTO.Nombre", value: $('#Nombre').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Caja")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#CajaId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function usuarioMenuBarOnClick(key) {
+
+      var row = $('#usuarioGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarPersonal();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarCajaPersonal", "Caja")',
+                     viewModel: [
+                        { name: "CajaPersonalDTO.CajaPersonalId", value: row.CajaPersonalId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#usuarioGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function mostrarPersonal() {
+      $('#personalListPopup').showDialog();
+   };
+   function personalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('',row);
+   };
+   function personalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_personal_seleccion_requerida")');
+         return false;
+      }
+
+      $(this).saveView({
+         urlAction: '@Url.Action("GrabarCajaPersonal", "Caja")',
+         viewModel: [
+            { name: "CajaPersonalDTO.CajaId", value: $('#CajaId').val(), type: 'int' },
+            { name: "CajaPersonalDTO.PersonalId", value: row.PersonalId, type: 'int' },
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#personalListPopup').hideDialog();
+               $("#usuarioGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#usuarioMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#CajaId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

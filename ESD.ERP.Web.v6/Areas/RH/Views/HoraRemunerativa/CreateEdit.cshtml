@@ -1,0 +1,86 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.HoraRemunerativaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.HoraRemunerativaDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.HoraRemunerativaDTO.Nombre" col-position="col-lg-4" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="VariableCalculo" col-position="col-lg-2" label="Variable" col-label-position="col-lg-2" max-length="5"
+                               value="@Model.HoraRemunerativaDTO.VariableCalculoDTO.Codigo" enable="@Model.IsNew" use-textcase="false"></esd-textbox>
+                  <esd-numerictextbox for="@Model.HoraRemunerativaDTO.VariableCalculoDTO.ValorNumericoVerdad" col-position="col-lg-1" label="Valor"
+                                      col-label-position="col-lg-1"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.HoraRemunerativaDTO.HoraRemunerativaId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "HoraRemunerativa")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#VariableCalculo').validateString('@SR.GetString("RH_nombre_variable_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "HoraRemunerativaDTO.HoraRemunerativaId", value: $('#HoraRemunerativaId').val(), type: 'int' },
+            { name: "HoraRemunerativaDTO.Codigo", value: $('#Codigo').val() },
+            { name: "HoraRemunerativaDTO.Nombre", value: $('#Nombre').val() },
+            { name: "HoraRemunerativaDTO.Abreviatura", value: $('#VariableCalculo').val() },
+            { name: "HoraRemunerativaDTO.VariableCalculoDTO.Codigo", value: $('#VariableCalculo').val(), textCase: 'none' },
+            { name: "HoraRemunerativaDTO.VariableCalculoDTO.Nombre", value: $('#Nombre').val() },
+            { name: "HoraRemunerativaDTO.VariableCalculoDTO.ValorNumericoVerdad", value: $('#ValorNumericoVerdad').val(), type: 'decimal' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "HoraRemunerativa")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#HoraRemunerativaId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

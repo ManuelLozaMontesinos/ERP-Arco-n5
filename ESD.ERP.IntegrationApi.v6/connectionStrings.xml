@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<connectionStrings>
+	<connectionString name="default" value="data source=.;initial catalog=esderp_v6;persist security info=True;user id=sa;password=admin123*;"/>
+	<connectionString name="sunat" value="data source=.;initial catalog=sunat_pr;persist security info=True;user id=sa;password=admin123*;" />
+</connectionStrings>

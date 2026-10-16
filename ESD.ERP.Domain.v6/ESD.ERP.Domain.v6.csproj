@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Globals">
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>ESD.ERP.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ESD.Core.Data.v1\ESD.Core.Data.v1.csproj" />
+    <ProjectReference Include="..\ESD.ERP.Types.v6\ESD.ERP.Types.v6.csproj" />
+  </ItemGroup>
+
+</Project>

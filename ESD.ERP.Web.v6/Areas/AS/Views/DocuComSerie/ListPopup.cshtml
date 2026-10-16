@@ -1,0 +1,85 @@
+﻿@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.AS.Models.DocuComSerieViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div class="row">
+         <div id="app-search-input-group" class="col-11">
+            <div class="form-group row">
+               <esd-dropdownlist id="EmpresaSedeId" for="@Model.EmpresaSedeList" col-position="col-lg-4" label="Sede" col-label-position="col-lg-2" in-modal="true"
+                                 enable="@(!Model.GetSelectedItemDisabled("EmpresaSedeId"))"></esd-dropdownlist>
+            </div>
+            <div class="form-group row">
+               <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-4" label="Tipo de Documento"
+                                 col-label-position="col-lg-2" in-modal="true" enable="@(!Model.GetSelectedItemDisabled("TipoDocumentoComercial"))"></esd-dropdownlist>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="Serie" col-position="col-lg-2" label="Serie" col-label-position="col-lg-2" max-length="4" in-modal="true"></esd-textbox>
+            </div>
+         </div>
+         <div class="col-1">
+            <div class="form-group row">
+               <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()"></esd-button>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "DocuComSerie")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "DocumentoComercialSerieDTO.EmpresaSedeId", value: $('#mp-EmpresaSedeId').val() || 0, type: 'int' },
+                     { name: "DocumentoComercialSerieDTO.TipoDocumentoComercialId", value: $('#mp-TipoDocumentoComercialId').val() || 0, type: 'int' },
+                     { name: "DocumentoComercialSerieDTO.Serie", value: $('#mp-Serie').val() },
+                     { name: "DocumentoComercialSerieDTO.Estado", value: '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Sede', 'Tipo de Documento', 'Elec.', 'Serie', 'Correlativo'],
+         colModel: [
+            { name: 'DocumentoComercialSerieId', hidden: true },
+            { name: "EmpresaSedeNombre", width: 200 },
+            { name: "TipoDocumentoComercialNombre", width: 200 },
+            { name: "EsElectronico", width: 80 },
+            { name: "Serie", width: 100 },
+            { name: "Correlativo", width: 100, align: 'right' }
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('mp-edit-panel')
+
+            var row = $(this).getRowData(rowid);
+            documentoSerieSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         multiselect: true,
+         height: 250
+      });
+   });
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      $('#mp-EmpresaSedeId').val('');
+      $('#mp-TipoDocumentoComercialId').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-EmpresaSedeId,#mp-TipoDocumentoComercialId,#mp-Serie").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

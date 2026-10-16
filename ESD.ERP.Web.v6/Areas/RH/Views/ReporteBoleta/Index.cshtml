@@ -1,0 +1,42 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.ReporteBoletaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="Preview" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-dropdownlist id="PlanillaProcesoId" for="@Model.PlanillaProcesoList" col-position="col-lg-6" label="Planilla Proceso"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+
+         case '@MenuItemKey.PREVIEW':
+            var reportParam = "planillaProcesoId=" + $('#PlanillaProcesoId').val();
+
+            $(this).getReport({
+               buttonId: key,
+               urlAction: '@Url.Action("ReportTo", "ReporteBoleta")',
+               parameters: reportParam,
+               onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+            });
+            break;
+
+      }
+
+      return true;
+   };
+</script>

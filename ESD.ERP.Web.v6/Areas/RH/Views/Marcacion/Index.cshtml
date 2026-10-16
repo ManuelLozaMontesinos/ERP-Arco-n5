@@ -1,0 +1,449 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.MarcacionViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PersonalMarcacionDTO.FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker for="@Model.PersonalMarcacionDTO.FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden id="gridColModel" value="@Model.GridColModel"></esd-hidden>
+   <esd-hidden id="gridColName" value="@Model.GridColNames"></esd-hidden>
+   <esd-hidden id="horaList" value="@Model.HoraList"></esd-hidden>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#marcacionTab" role="tab" data-toggle="tab">Marcaciones</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="marcacionTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Apellidos y Nombres" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="marcacionMenuBar" size="Small" menu-style="NewEditAndSaveCancel" onclick="marcacionMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="sincronizarEditPopup" title="Sincronizar Marcaciones" onclick="sincronizarEditPopupOnClick">
+   <div id="sincronizarEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="exportarEditPopup" title="Exportar Marcaciones" onclick="exportarEditPopupOnClick">
+   <div id="exportarEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="personalEditPopup" title="Agregar Personal" onclick="personalEditPopupOnClick" size="Large">
+   <div id="personalEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="marcacionEditPopup" title="Marcaciones del Día" button-style="Close" onclick="marcacionEditPopupOnClick" size="Large">
+   <div id="marcacionEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      var columnModel = JSON.parse($('#gridColModel').val());
+      for (i = 0; i < columnModel.length; i++) {
+         cm = columnModel[i];
+
+         switch (cm.name) {
+            case '_selM':
+               cm.formatter = function (cellvalue, options, rowObject) {
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Ver Marcacion Reloj" name="marcacionButton" onclick="mostrarMarcacion(' + options.rowId + ');"><span class=\'fas fa-user-clock\'/></button>';
+               };
+               break;
+
+            default:
+               if (cm.editoptions === undefined)
+                  continue;
+
+               cm.editoptions.dataInit = function (elem) {
+                  $(elem).inputmask({
+                     alias: 'datetime', inputFormat: 'HH.MM'
+                  })
+               };
+               break;
+         };
+      }
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties(new Dictionary<string, string>() { { "rowNum", "1500" }, { "rowList", "[1500]" } })
+         url: "@Url.Action("ListarBandeja", "Marcacion")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PersonalMarcacionDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "PersonalMarcacionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
+                     { name: "PersonalMarcacionDTO.PersonalDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: $('#gridColName').val().split(','),
+         colModel: columnModel,
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('marcacionMenuBar', 'bandejaGrid');
+            }
+            else
+               $("#marcacionMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('marcacionMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'remuneraContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         loadComplete: function () {
+
+            var rowCount = $('#bandejaGrid').appGrid('rowCount');
+            if (rowCount === 0)
+               $('#menuBar').appMenu('disabledButton', { buttonId: 'save', disabled: true });
+            else
+               $('#menuBar').appMenu('disabledButton', { buttonId: 'save', disabled: false });
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#sincronizarEditPopup').setDialog({
+         onShow: function (p) {
+
+            $(this).getView({
+               urlAction: '@Url.Action("SincronizarEditPopup", "Marcacion")',
+               container: 'sincronizarEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+      $('#exportarEditPopup').setDialog({
+         onShow: function (p) {
+
+            $(this).getView({
+               urlAction: '@Url.Action("ExportarEditPopup", "Marcacion")',
+               container: 'exportarEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+      $('#personalEditPopup').setDialog({
+         onShow: function (p) {
+
+            $(this).getView({
+               urlAction: '@Url.Action("AgregarPersonalEditPopup", "Marcacion")',
+               viewModel: [
+                  { name: "PersonalMarcacionDTO.Fecha", value: $('#FechaDesde').val(), type: 'date' }
+               ],
+               container: 'personalEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#marcacionEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#bandejaGrid').appGrid('getRow', p.rowId);
+
+            $(this).getView({
+               urlAction: '@Url.Action("EditPopup", "Marcacion")',
+               viewModel: [
+                  { name: "PersonalMarcacionDTO.PersonalMarcacionId", value: row.PersonalMarcacionId, type: 'int' },
+                  { name: "PersonalMarcacionDTO.PersonalId", value: row.PersonalId, type: 'int' },
+                  { name: "PersonalMarcacionDTO.Fecha", value: row.Fecha, type:'date' }
+               ],
+               container: 'marcacionEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $("#FechaDesde").val('@DateTime.Today.ToShortDateString()');
+      $("#FechaHasta").val('@DateTime.Today.ToShortDateString()');
+      $("#RazonSocial").val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#RazonSocial").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'sincronizar':
+            $('#sincronizarEditPopup').showDialog({ editAction : '@ViewModelEditAction.Edit'});
+            break;
+
+         case 'dataxls':
+            $('#exportarEditPopup').showDialog({ editAction : '@ViewModelEditAction.Edit'});
+            break;
+      }
+      return true;
+   };
+   function sincronizarEditPopupOnClick() {
+      if (!mp_validarDatos())
+         return false;
+
+      $('#sincronizarEditPopup').saveView({
+         viewModel: [
+            { name: "PersonalMarcacionDTO.FechaDesde", value: $('#mp-FechaDesde').val(), type: 'date' },
+            { name: "PersonalMarcacionDTO.FechaHasta", value: $('#mp-FechaHasta').val(), type: 'date' }
+         ],
+         urlAction: '@Url.Action("SincronizarMarcacion", "Marcacion")',
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $("#bandejaGrid").appGrid('reloadJSON');
+               $('#sincronizarEditPopup').hideDialog();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+   };
+   function exportarEditPopupOnClick() {
+      if (!mp_validarDatos())
+         return false;
+
+      var reportParam = "fechaDesde=" + $("#FechaDesde").val()
+         + "&fechaHasta=" + $("#FechaHasta").val();
+
+      $(this).getReport({
+         buttonId: 'dataxls',
+         urlAction: '@Url.Action("ReportToExcel", "Marcacion")',
+         parameters: reportParam,
+         onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+      });
+
+   };
+   function grabarDatos() {
+
+      var dict = {};
+      var arrTmp = $('#horaList').val().split('@SeparadorConstante.COMA');
+      arrTmp.forEach(function (elm) {
+         var elmkv = elm.split('@SeparadorConstante.DOS_PUNTOS');
+         dict[elmkv[0]] = elmkv[1];
+      });
+
+      var personalMarcacionHoraList = [];
+
+      var list = $('#bandejaGrid').appGrid('getDataIDs');
+      for (i in list) {
+
+         var rowId = list[i];
+         if (isEmptyRecord(rowId))
+            continue;
+
+         var row = $('#bandejaGrid').appGrid('getRow', rowId);
+         $.each(dict, function (k, v) {
+
+            var personalMarcacionHora = [
+               { name: "PersonalMarcacionId", value: row.PersonalMarcacionId, type: 'int' },
+               { name: "HoraRemunerativaId", value: v, type: 'int' },
+               { name: "Cantidad", value: $('#' + rowId + '_' + k).val(), type: 'decimal' },
+               { name: "Estado", value: row.Estado }
+            ];
+
+            personalMarcacionHoraList.push(personalMarcacionHora);
+         });
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PersonalMarcacionHoraDTOList", value: personalMarcacionHoraList, type: 'list' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Marcacion")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $("#bandejaGrid").appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function marcacionMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.NEW':
+            $('#personalEditPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editaMarcacionInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var dict = {};
+            var arrTmp = $('#horaList').val().split('@SeparadorConstante.COMA');
+            arrTmp.forEach(function (elm) {
+               var elmkv = elm.split('@SeparadorConstante.DOS_PUNTOS');
+               dict[elmkv[0]] = elmkv[1];
+            });
+
+            var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+            $("#bandejaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaGrid").appGrid('getSelectedRow');
+               setModifiedDTO(row);
+
+               var personalMarcacionHoraList = [];
+               $.each(dict, function (k, v) {
+                  var personalMarcacionHora = [
+                     { name: "PersonalMarcacionId", value: row.PersonalMarcacionId, type: 'int' },
+                     { name: "HoraRemunerativaId", value: v, type: 'int' },
+                     { name: "Cantidad", value: row[k] || '00.00', type: 'decimal' },
+                     { name: "Estado", value: row.Estado }
+                  ];
+
+                  personalMarcacionHoraList.push(personalMarcacionHora);
+               });
+
+               $(this).saveView({
+                  viewModel: [
+                     { name: "PersonalMarcacionDTO.PersonalMarcacionId", value: row.PersonalMarcacionId, type: 'int' },
+                     { name: "PersonalMarcacionDTO.PersonalId", value: row.PersonalId, type: 'int' },
+                     { name: "PersonalMarcacionDTO.FechaDesde", value: row.Fecha, type: 'date' },
+                     { name: "PersonalMarcacionDTO.FechaHasta", value: row.Fecha, type: 'date' },
+                     { name: "PersonalMarcacionDTO.IgnorarTolerancia", value: row.IgnorarTolerancia === '@DigitoConstante.UNO' ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+                     { name: "PersonalMarcacionDTO.EsFalta", value: row.EsFalta === '@DigitoConstante.UNO' ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+                     { name: "PersonalMarcacionDTO.EsRemunerado", value: row.EsRemunerado === '@DigitoConstante.UNO' ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+                     { name: "PersonalMarcacionDTO.Verificado", value: row.Verificado === '@DigitoConstante.UNO'? '@SiNoConstante.S' : '@SiNoConstante.N' },
+                     { name: "PersonalMarcacionHoraDTOList", value: personalMarcacionHoraList, type: 'list' }
+                  ],
+                  buttonId: '@MenuItemKey.SAVE',
+                  urlAction: '@Url.Action("GrabarMarcacion", "Marcacion")',
+                  onSuccess: function (response) {
+
+                     if (response.success) {
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                     }
+                     $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+                  }
+               });
+            }});
+            break;
+      }
+      return true;
+   };
+   function personalEditPopupOnClick() {
+      if (!mp_validarDatos())
+         return false;
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      $('#personalEditPopup').saveView({
+         viewModel: [
+            { name: "PersonalMarcacionDTO.PersonalId", value: row.PersonalId, type: 'int' },
+            { name: "PersonalMarcacionDTO.Fecha", value: $('#mp-Fecha').val(), type: 'date' },
+            { name: "PersonalMarcacionDTO.EsFalta", value: $('#mp-EsFalta').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalMarcacionDTO.EsRemunerado", value: $('#mp-EsRemunerado').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalMarcacionDTO.Verificado", value: '@SiNoConstante.N' }
+         ],
+         urlAction: '@Url.Action("AgregarPersonal", "Marcacion")',
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $("#bandejaGrid").appGrid('reloadJSON');
+               $('#personalEditPopup').hideDialog();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+   };
+   function editaMarcacionInGrid() {
+      var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+      $('#bandejaGrid').jqGrid('editRow', rowId);
+
+      $("#marcacionMenuBar").appMenu('saveMenu');
+   };
+   function mostrarMarcacion(rowId) {
+      $('#marcacionEditPopup').showDialog({ rowId: rowId });
+   };
+   function marcacionEditPopupOnClick() {
+      $('#marcacionEditPopup').hideDialog();
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

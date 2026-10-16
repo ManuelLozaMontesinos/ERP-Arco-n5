@@ -1,0 +1,49 @@
+﻿@using ESD.Core.Web.JS;
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarCotizacionProductoPopup", "Pedido")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "CotizacionProductoDTO.CotizacionId", value: $('#CotizacionId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Código', 'Producto', 'U.M.', 'Cantidad', 'P.U.', 'Total', ''],
+         colModel: [
+            { name: 'CotizacionProductoId', hidden: true },
+            { name: 'CotizacionId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 90},
+            { name: 'ProductoNombre', width: 330, editable: false },
+            { name: 'UnidadMedidaNombre', width: 60, editable: false },
+            { name: 'Cantidad', width: 80, align: 'right', formatter: 'number' },
+            { name: 'PrecioUnitario', width: 80, align: 'right', formatter: 'number' },
+            { name: 'MontoTotal', width: 90, align: 'right', formatter: 'number' },
+            { name: 'Estado', hidden: true }
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('mp-edit-panel')
+
+            var row = $(this).getRowData(rowid);
+            cotizacionProductoSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         multiselect: true,
+         height: 250
+      });
+   });
+</script>

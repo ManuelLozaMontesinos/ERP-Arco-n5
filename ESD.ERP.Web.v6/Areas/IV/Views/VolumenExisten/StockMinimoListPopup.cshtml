@@ -1,0 +1,84 @@
+﻿@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.IV.Models.VolumenExistenViewModel
+<div id="@Model.ModalEditId">
+   <div class="card-body">
+      <div class="row">
+         <div id="app-search-input-group" class="col-11">
+            <div class="form-group row">
+               <esd-dropdownlist id="PeriodoEmpresaSedeId" for="@Model.PeriodoEmpresaSedeList" col-position="col-lg-4" label="Sede" col-label-position="col-lg-2"
+                                 in-modal="true"></esd-dropdownlist>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2" max-length="35" in-modal="true"></esd-textbox>
+               <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150" in-modal="true"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2" max-length="12" in-modal="true"></esd-textbox>
+            </div>
+         </div>
+         <div class="col-1">
+            <div class="form-group row">
+               <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()"></esd-button>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden id="mp-gridColModel" value="@Model.GridColModel"></esd-hidden>
+   <esd-hidden id="mp-gridColName" value="@Model.GridColNames"></esd-hidden>
+</div>
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      var columnModel = JSON.parse($('#mp-gridColModel').val());
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties(new Dictionary<string, string>() { { "rowNum", "1000" }, { "rowList", "[1000]" } })
+         url: "@Url.Action("ListarStockMinimoListPopup", "VolumenExisten")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AlmacenVolumenProductoDTO.PeriodoEmpresaSedeId", value: $('#mp-PeriodoEmpresaSedeId').val() || 0, type: 'int' },
+                     { name: "AlmacenVolumenProductoDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#mp-NumeroDocumentoIdentidad').val() },
+                     { name: "AlmacenVolumenProductoDTO.ProveedorDTO.RazonSocial", value: $('#mp-RazonSocial').val() },
+                     { name: "AlmacenVolumenProductoDTO.ProductoDTO.Codigo", value: $('#mp-Codigo').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: $('#mp-gridColName').val().split(','),
+         colModel: columnModel,
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('@Model.ModalEditId');
+
+            var row = $(this).getRowData(rowid);
+            stockMinimoSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         rowattr: function (rd) {
+            if ($.isEmptyObject(rd))
+               return;
+         },
+         multiselect:true,
+         height: 300
+      });
+   });
+   function mp_clearButtonOnClick() {
+      $('#@Model.ModalEditId').find('input:text').val('');
+      $('#mp-PeriodoEmpresaSedeId').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-PeriodoEmpresaSedeId, #mp-NumeroDocumentoIdentidad,#mp-RazonSocial,#mp-Codigo").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

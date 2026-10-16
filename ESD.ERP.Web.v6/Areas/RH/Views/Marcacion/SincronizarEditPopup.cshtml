@@ -1,0 +1,28 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.MarcacionViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PersonalMarcacionDTO.FechaDesde" col-position="col-lg-4" label="Desde" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+                  <esd-datetimepicker for="@Model.PersonalMarcacionDTO.FechaHasta" col-position="col-lg-4" label="Hasta" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<script type="text/javascript">
+
+   function mp_validarDatos() {
+
+      if (!$('#mp-FechaDesde').validateString('@SR.GetString("RH_sincronizar_marca_fecha_desde_requerida")'))
+         return false;
+      if (!$('#mp-FechaHasta').validateString('@SR.GetString("RH_sincronizar_marca_fecha_hasta_requerida")'))
+         return false;
+
+      return true;
+   };
+</script>

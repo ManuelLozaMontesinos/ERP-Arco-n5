@@ -1,0 +1,146 @@
+﻿@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.AnticipoClienteViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.AnticipoClienteDTO.NumeroOperacion" col-position="col-lg-2" label="Recibo" col-label-position="col-lg-2"
+                               enable="false" in-modal="true"></esd-textbox>
+                  <esd-datetimepicker for="@Model.AnticipoClienteDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      in-modal="true"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MedioPagoId" for="@Model.MedioPagoList" col-position="col-lg-4" label="Medio de Pago"
+                                    col-label-position="col-lg-2" onchange="mp_medioPagoIdOnChange();" in-modal="true"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="BancoId" for="@Model.BancoList" col-position="col-lg-2" label="Banco" col-label-position="col-lg-2"
+                                    enable="false" in-modal="true"></esd-dropdownlist>
+                  <esd-datetimepicker for="@Model.AnticipoClienteDTO.FechaReferencia" col-position="col-lg-2" label="Fecha Ref." col-label-position="col-lg-2"
+                                      enable="false" in-modal="true"></esd-datetimepicker>
+                  <esd-textbox for="@Model.AnticipoClienteDTO.NumeroReferencia" col-position="col-lg-2" label="Número Ope.Ref." col-label-position="col-lg-2"
+                               enable="false" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-2" label="Moneda"
+                                    col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.AnticipoClienteDTO.Monto" col-position="col-lg-2" label="Monto" col-label-position="col-lg-2"
+                                      in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-2" label="T/D a Emitir"
+                                    col-label-position="col-lg-2" onchange="mp_tipoDocumentoComercialIdOnChange();" in-modal="true"></esd-dropdownlist>
+                  <esd-dropdownlist id="Serie" for="@Model.SerieList" col-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.AnticipoClienteDTO.Observacion" col-position="col-lg-10" label="Descripcion" col-label-position="col-lg-2"
+                                rows="3" in-modal="true"></esd-textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.AnticipoClienteDTO.AnticipoClienteId" in-modal="true"></esd-hidden>
+   <esd-hidden id="MedioPago" value="@Model.AnticipoClienteDTO.MedioPagoDTO.Codigo" in-modal="true"></esd-hidden>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      mp_medioPagoIdOnChange();
+   });
+   function mp_medioPagoIdOnChange() {
+
+      var medioPagoId = $("#mp-MedioPagoId").val();
+      if ($.isNullOrEmpty(medioPagoId)) {
+         $('#mp-MedioPago').val('');
+         mp_habilitarMedioPago();
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerMedioPago", "AnticipoCliente")',
+         id: medioPagoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#mp-MedioPago").val(response.data.Codigo);
+               mp_habilitarMedioPago();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_habilitarMedioPago() {
+      switch ($('#mp-MedioPago').val()) {
+         case '@MedioPagoConstante.DEPOSITO_BANCARIO':
+            $('#mp-BancoId').prop('disabled', false);
+            $('#mp-FechaReferencia').prop('readonly', false);
+            $('#mp-NumeroReferencia').prop('readonly', false);
+            break;
+
+         default:
+            $('#mp-BancoId').val('');
+            $('#mp-BancoId').prop('disabled', true);
+            $('#mp-FechaReferencia').val('');
+            $('#mp-FechaReferencia').prop('readonly', true);
+            $('#mp-NumeroReferencia').val('');
+            $('#mp-NumeroReferencia').prop('readonly', true);
+            break;
+      }
+   };
+   function mp_tipoDocumentoComercialIdOnChange() {
+
+      var tipoDocumentoComercialId = $("#mp-TipoDocumentoComercialId").val();
+      if ($.isNullOrEmpty(tipoDocumentoComercialId)) {
+         $('#mp-Serie').find('option').remove().end();
+         return;
+      }
+
+      var popupParams = getPopupParam('mp-edit-panel')
+
+      $('#' + popupParams.dialogId).postAction({
+         urlAction: '@Url.Action("ListarSerie", "Comprobante")',
+         viewModel: [
+            { name: "ComprobanteDTO.TipoDocumentoComercialId", value: tipoDocumentoComercialId, type: 'int' },
+            { name: "ComprobanteDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-Serie').find('option').remove().end();
+               $("#mp-Serie").addItems(response.data.list);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_validarDatos() {
+
+      if (!$('#mp-Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#mp-MedioPagoId').validateNumeric('@SR.GetString("VT_medio_pago_seleccion_requerida")'))
+         return false;
+      if ($('#mp-MedioPago').val() === '@MedioPagoConstante.DEPOSITO_BANCARIO') {
+         if (!$('#mp-BancoId').validateString('@SR.GetString("TS_banco_seleccion_requerida")'))
+            return false;
+         if (!$('#mp-NumeroReferencia').validateString('@SR.GetString("VT_numero_operacion_referencia_requerido")'))
+            return false;
+      }
+      if (!$('#mp-MonedaId').validateNumeric('@SR.GetString("GEN_moneda_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-Monto').validateNumeric('@SR.GetString("GEN_codigo_monto")'))
+         return false;
+      if (!$.isNullOrEmpty($('#mp-TipoDocumentoComercialId').val())) {
+         if (!$('#mp-Serie').validateString('@SR.GetString("GEN_serie_requerida")'))
+            return false;
+         if (!$('#mp-Observacion').validateString('@SR.GetString("VT_descripcion_comprobante_anticipo_requerido")'))
+            return false;
+      }
+
+      return true;
+   };
+</script>

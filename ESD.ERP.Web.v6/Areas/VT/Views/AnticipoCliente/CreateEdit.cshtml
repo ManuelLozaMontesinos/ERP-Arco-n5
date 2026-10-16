@@ -1,0 +1,501 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.AnticipoClienteViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="Exit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-11">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.RazonSocial" col-position="col-lg-6" label="Cliente" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-textbox id="NumeroDocumentoIdentidad" value="@Model.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2"
+                               label="#Docu." col-label-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="searchButton" content="Buscar" button-style="Primary" size="Small" block="true" onclick="searchButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ProveedorDTO.ProveedorId"></esd-hidden>
+      <esd-hidden for="@Model.VendedorId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#operacionTab" role="tab" data-toggle="tab">Operaciones</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="operacionTab" role="tabpanel">
+            <div class="form-inline">
+               <div class="col-6">
+                  <esd-menubar id="operacionMenuBar" size="Small" for="@Model.MenuItemList" onclick="operacionMenuBarOnClick"></esd-menubar>
+               </div>
+               <div class="col-6">
+                  <esd-checkbox id="operacionVerAnulado" col-position="offset-lg-9 col-lg-3" label="Mostrar Anulados" onchange="operacionVerAnuladoOnChange()"
+                                checkbox-style="Default"></esd-checkbox>
+               </div>
+            </div>
+            <div id="operacionContainer">
+               <table id="operacionGrid"></table>
+               <div id="operacionPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="anticipoEditPopup" title="Anticipo" onclick="anticipoEditPopupOnClick" size="Large">
+   <div id="anticipoEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="dividirEditPopup" title="Distribuir Anticipo" onclick="dividirEditPopupOnClick">
+   <div id="dividirEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="impresionPopup" title="Imprimir" onclick="impresionPopupClickOk" size="Large">
+   <div id="impresionPopupContent">
+      <textarea class="form-control" id="printTextArea" readonly="readonly" cols="144" rows="25"></textarea>
+   </div>
+</esd-dialog>
+<style type="text/css">
+   .jqgrid-bg-anticipo {
+      background-color: #e6f2ff;
+      border-color: #e6f2ff;
+   }
+</style>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#operacionGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarAnticipoCliente", "AnticipoCliente")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AnticipoClienteDTO.ProveedorId", value: $('#ProveedorId').val() || '0', type: 'int' },
+                     { name: "AnticipoClienteDTO.Estado", value: $('#operacionVerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'C/A', '', 'T.Op.','Recibo', 'Fecha', 'M.Pg','Banco', 'Fecha Ref.', 'Número Ope.Ref.',
+            '','Mon.', 'Monto','Monto Apli.','Saldo', '','','#Pedido','','T/D','Serie','Descripcion', '','','Estado','','',''],
+         colModel: [
+            { name: 'AnticipoClienteId', hidden: true },
+            { name: 'TipoCargoAbono', width: 40, sortable: false },
+            { name: 'TipoOperacionAnticipo', hidden: true },
+            { name: 'TipoOperacionAnticipoNombre', width: 40 },
+            { name: 'NumeroOperacion', width: 70, sortable: false },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'MedioPago', width: 45, sortable: false },
+            { name: 'Banco', width: 170, sortable: false },
+            { name: "FechaReferencia", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'NumeroReferencia', width: 140, sortable: false },
+            { name: 'MonedaId', hidden: true },
+            { name: 'Moneda', width: 50, sortable: false },
+            { name: "Monto", width: 100, align: 'right', formatter: 'number' },
+            { name: "MontoAplicado", width: 100, align: 'right', formatter: 'number' },
+            { name: "MontoSaldo", width: 100, align: 'right', formatter: 'number' },
+            { name: 'PermiteDividirMonto', hidden: true },
+            { name: 'CotizacionId', hidden: true },
+            { name: 'Pedido', width: 70, sortable: false },
+            { name: 'TipoDocumentoComercialId', hidden: true },
+            { name: 'TipoDocumentoComercial', width: 50, sortable: false },
+            { name: 'Serie', width: 60, sortable: false },
+            { name: 'Observacion', width: 250, sortable: false },
+            { name: 'Extornado', hidden: true },
+            { name: 'EstadoComprobante', hidden: true },
+            { name: 'EstadoComprobanteNombre', width: 150 },
+            { name: 'RegistradoEnCotizacion', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#operacionPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var row = $('#operacionGrid').appGrid('getSelectedRow');
+
+            editCustomGridMenuBar('operacionMenuBar', 'operacionGrid');
+
+            switch (row.TipoOperacionAnticipo) {
+               case '@TipoOperacionAnticipoConstante.ANTICIPO':
+                  if (row.Extornado === '@SiNoConstante.S' || row.TipoOperacionAnticipo ===
+                     '@TipoOperacionAnticipoConstante.EXTORNO') {
+                     $("#operacionMenuBar").appMenu('disabled');
+                     $("#operacionMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.NEW', disabled: false });
+                     return;
+                  }
+
+                  if (row.EstadoComprobante === '@EstadoComprobanteConstante.CERRADO' || row.EstadoComprobante === '@EstadoComprobanteConstante.EMITIDO') {
+                     $("#operacionMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EDIT', disabled: true });
+                     if (parseFloatEx(row.MontoAplicado) === 0)
+                        $("#operacionMenuBar").appMenu('disabledButton', { buttonId: 'extornar', disabled: false });
+                     else
+                        $("#operacionMenuBar").appMenu('disabledButton', { buttonId: 'extornar', disabled: true });
+                  }
+
+                  if (row.EstadoComprobante === '@EstadoComprobanteConstante.EMITIDO' && row.PermiteDividirMonto === '@SiNoConstante.S') {
+                     $("#operacionMenuBar").appMenu('disabledButton', { buttonId: 'dividir', disabled: false });
+                  }
+
+                  if (row.EstadoComprobante === '@EstadoComprobanteConstante.PENDIENTE')
+                     $("#operacionMenuBar").appMenu('disabledButton', { buttonList: 'cerrar,extornar', disabled: false });
+                  break;
+
+               default:
+                  $("#operacionMenuBar").appMenu('disabled');
+                  $("#operacionMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.NEW', disabled: false });
+                  break;
+            }
+
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('operacionMenuBar', 'operacionGrid');
+            $("#operacionGrid").appGrid('resizeGrid', 'operacionContainer');
+         },
+         rowattr: function (rd) {
+            if (rd.TipoOperacionAnticipo === '@TipoOperacionAnticipoConstante.ANTICIPO') {
+               return { 'class': 'jqgrid-bg-anticipo font-weight-bold' };
+            }
+            if (rd.TipoOperacionAnticipo === '@TipoOperacionAnticipoConstante.EXTORNO' || rd.Estado === '@EstadoConstante.INACTIVO') {
+               return { 'class': 'jqgrid-deletedrow' };
+            }
+         },
+         height: calculateGridHeight('operacionContainer')
+      });
+      $('#anticipoEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#operacionGrid').appGrid('getSelectedRow');
+
+            var dtoState;
+            var anticipoClienteId = 0;
+            var monedaId = 0;
+
+            if (p.editAction === '@ViewModelEditAction.Edit') {
+               anticipoClienteId = row.AnticipoClienteId;
+               monedaId = row.MonedaId;
+               dtoState = row.DTOState;
+            }
+            else
+              dtoState = '@(((int) DTOState.Added).ToString())';
+
+            $('#anticipoEditPopup').getView({
+               urlAction: '@Url.Action("CreateEditPopup", "AnticipoCliente")',
+               viewModel: [
+                  { name: 'AnticipoClienteDTO.AnticipoClienteId', value: anticipoClienteId, type: 'int' },
+                  { name: 'AnticipoClienteDTO.MonedaId', value: monedaId, type: 'int' },
+                  { name: "AnticipoClienteDTO.DTOState", value: dtoState, type: 'int' }
+               ],
+               container: 'anticipoEditPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         }
+      });
+      $('#dividirEditPopup').setDialog({
+         onShow: function (p) {
+            var row = $('#operacionGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+               urlAction: '@Url.Action("DividirEditPopup", "AnticipoCliente")',
+               viewModel: [
+                  { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.AnticipoClienteId, type: 'int' }
+               ],
+               container: 'dividirEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "AnticipoCliente")'
+            });
+            break;
+      }
+   };
+   function operacionMenuBarOnClick(key) {
+
+      var row = $('#operacionGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            $('#anticipoEditPopup').showDialog({ editAction : '@ViewModelEditAction.New'});
+            break;
+
+         case '@MenuItemKey.EDIT':
+            $('#anticipoEditPopup').showDialog({ editAction: '@ViewModelEditAction.Edit' });
+            break;
+
+         case 'cerrar':
+
+            $(this).saveView({
+               urlAction: '@Url.Action("CerrarAnticipoCliente", "AnticipoCliente")',
+               viewModel: [
+                  { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.AnticipoClienteId, type: 'int' }
+               ],
+               onSuccess: function (response) {
+                  if (response.success) {
+                     $("#operacionGrid").appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+
+         case 'dividir':
+            $('#dividirEditPopup').showDialog();
+            break;
+
+         case 'extornar':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_extornar_titulo")',
+               message: '@SR.GetString("VT_anticipo_seleccionado_extornar_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("ExtornarAnticipoCliente", "AnticipoCliente")',
+                     viewModel: [
+                        { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.AnticipoClienteId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#operacionGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+         case '@MenuItemKey.PREVIEW':
+            generarFormato(key, '@DataFormatoImpresionConstante.COMPROBANTE_ADELANTO', row.AnticipoClienteId);
+            break;
+      }
+      return true;
+   };
+   function anticipoEditPopupOnClick() {
+      if (!mp_validarDatos())
+         return;
+
+      var dtoState;
+      if (parseFloatEx($('#mp-AnticipoClienteId').val()) === 0)
+         dtoState = '@(((int) DTOState.Added).ToString())';
+      else
+         dtoState = '@(((int) DTOState.Modified).ToString())';
+
+      $('#anticipoEditPopup').saveView({
+         urlAction: '@Url.Action("GrabarAnticipoCliente", "AnticipoCliente")',
+         viewModel: [
+            { name: "AnticipoClienteDTO.AnticipoClienteId", value: $('#mp-AnticipoClienteId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.Fecha", value: $('#mp-Fecha').val(), type: 'datetime' },
+            { name: "AnticipoClienteDTO.NumeroOperacion", value: $('#mp-NumeroOperacion').val() },
+            { name: "AnticipoClienteDTO.MonedaId", value: $('#mp-MonedaId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.MedioPagoId", value: $('#mp-MedioPagoId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.BancoId", value: $('#mp-BancoId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.FechaReferencia", value: $('#mp-FechaReferencia').val(), type: 'datetime' },
+            { name: "AnticipoClienteDTO.NumeroReferencia", value: $('#mp-NumeroReferencia').val() },
+            { name: "AnticipoClienteDTO.Monto", value: $('#mp-Monto').val(), type: 'decimal' },
+            { name: "AnticipoClienteDTO.TipoDocumentoComercialId", value: $('#mp-TipoDocumentoComercialId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.Serie", value: $('#mp-Serie').text() },
+            { name: "AnticipoClienteDTO.Observacion", value: $('#mp-Observacion').val() },
+            { name: "AnticipoClienteDTO.RegistradoEnCotizacion", value: '@SiNoConstante.N' },
+            { name: "AnticipoClienteDTO.DTOState", value: dtoState, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#operacionGrid").appGrid('reloadJSON');
+               $('#anticipoEditPopup').hideDialog();
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function dividirEditPopupOnClick() {
+
+      var montoSaldo = parseFloatEx($('#mp-MontoSaldo').val());
+      var monto1 = 0;
+      var monto2 = 0;
+
+      if ($('#mp-TipoMontos').prop('checked')) {
+
+         monto1 = parseFloatEx($('#mp-Monto1').val());
+         monto2 = parseFloatEx($('#mp-Monto2').val());
+
+         if (monto1 === 0 || monto2 === 0) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_anticipo_monto_no_distribuido")');
+            return;
+         }
+         if (monto1 + monto2 > montoSaldo) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_anticipo_monto_distribuido_suma_diferente_saldo")');
+            return;
+         }
+         if (monto1 + monto2 < montoSaldo) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_anticipo_monto_distribuido_suma_diferente_saldo")');
+            return;
+         }
+      } else
+         monto2 = montoSaldo;
+
+      var row = $('#operacionGrid').appGrid('getSelectedRow');
+
+      $('#dividirEditPopup').saveView({
+         viewModel: [
+            { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.AnticipoClienteId, type: 'int' },
+            { name: "AnticipoClienteDTO.Monto", value: monto1, type: 'decimal' },
+            { name: "AnticipoClienteDTO.MontoAplicado", value: monto2, type: 'decimal' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("DividirAnticipoCliente", "AnticipoCliente")',
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#dividirEditPopup').hideDialog();
+               $("#operacionGrid").appGrid('reloadJSON');
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#operacionMenuBar").appMenu('disabledButton', { buttonId: 'dividir', disabled: false });
+            }
+
+         }
+      });
+   };
+   function operacionVerAnuladoOnChange() {
+      $("#operacionGrid").appGrid('reloadJSON');
+   };
+   function searchButtonOnClick() {
+      $('#operacionGrid').appGrid('reloadJSON');
+   }
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#ProveedorId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+   function generarFormato(buttonId, key, id){
+
+      var basePrintUrl = '@Model.ServidorImpresion';
+      var dataUrl = '@Model.DataUrl';
+
+      if($.isNullOrEmpty(basePrintUrl)){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+         return;
+      }
+
+      $("#operacionMenuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: true });
+
+      $("#FileId").val('');
+      try{
+         $.ajax({
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            url: basePrintUrl + 'PrintDocument?key=' + key + '&id=' + id + '&dataUrl=' + dataUrl,
+            processData: false,
+            dataType: "jsonp",
+            jsonp: 'callback',
+            jsonpCallback: 'jsonpCallback',
+            beforeSend: function () {
+               $('#impresionPopup').showDialog();
+               $('#impresionPopupContent').showLoadingOverlay();
+            },
+            success: function (data) {
+               $('#impresionPopupContent').hideLoadingOverlay();
+
+               if(data === null)
+               {
+                  $('#impresionPopup').hideDialog();
+                  msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_reporte_sin_datos")');
+                  return;
+               }
+
+               $('#printTextArea').val(data[1]);
+               $("#FileId").val(data[0]);
+               $("#anticipoMenuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+               $('#impresionPopup').hideDialog();
+               $('#impresionPopupContent').hideLoadingOverlay();
+               $("#operacionMenuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+
+               switch(jqXHR.status){
+                  case 404:
+                     msgAlert(msgAlertTypeConstant.ERROR, '@SR.GetString("AJX_servicio_impresion_no_activo")');
+                     break;
+                  default:
+                     msgAlert(msgAlertTypeConstant.ERROR, textStatus);
+                     break;
+               }
+            }
+         });
+      } catch(exception){
+         $('#impresionPopup').hideDialog();
+         $('#impresionPopupContent').hideLoadingOverlay();
+         $("#operacionMenuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+      }
+   };
+   function impresionPopupClickOk(){
+
+      $('#impresionPopup').modal('hide');
+
+      var basePrintUrl = '@Model.ServidorImpresion';
+      if($.isNullOrEmpty(basePrintUrl)){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+         return;
+      }
+      var id = $("#FileId").val();
+
+      try{
+         $.ajax({
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            url: basePrintUrl + 'PrintFile?id=' + id,
+            processData: false,
+            dataType: "jsonp",
+            jsonp: 'callback',
+            jsonpCallback: 'jsonpCallback',
+            success: function (data) {
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+               msgAlert(msgAlertTypeConstant.ERROR, errorThrown);
+            }
+         });
+      } catch(exception){
+         throw exception;
+      }
+   };
+</script>

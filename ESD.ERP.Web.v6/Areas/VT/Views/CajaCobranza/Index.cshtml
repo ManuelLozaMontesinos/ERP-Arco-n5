@@ -1,0 +1,490 @@
+﻿@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.CajaCobranzaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div id="app-search-card" class="card">
+        <div class="card-body">
+            <div class="row">
+                <div id="app-search-input-group" class="col-11">
+                    <div class="form-group row">
+                        <esd-textbox id="Numero" col-position="col-lg-2" label="Numero" col-label-position="col-lg-2" max-length="8"></esd-textbox>
+                        <esd-textbox id="Cotizacion" col-position="col-lg-2" label="#Pedido" col-label-position="col-lg-2" max-length="7"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc. Iden" col-label-position="col-lg-2" max-length="35"></esd-textbox>
+                        <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox id="Vendedor" col-position="col-lg-6" label="Vendedor" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                        <esd-dropdownlist id="EstadoComprobanteId" for="@Model.EstadoComprobanteList" col-position="col-lg-2" label="Estado" col-label-position="col-lg-2"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-datetimepicker for="@Model.ComprobanteDTO.FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                        <esd-datetimepicker for="@Model.ComprobanteDTO.FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+                    </div>
+                </div>
+                <div class="col-1">
+                    <div class="form-group row">
+                        <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <esd-hidden for="@Model.ComprobanteDTO.CajaId"></esd-hidden>
+    <esd-hidden for="@Model.GridColModel"></esd-hidden>
+    <esd-hidden for="@Model.GridColNames"></esd-hidden>
+    <div id="bandejaContainer">
+        <table id="bandejaGrid"></table>
+        <div id="bandejaPager"></div>
+    </div>
+</section>
+<esd-dialog id="emitirEditPopup" title="Emitir Comprobante" onclick="emitirEditPopupOnClick">
+    <div id="emitirEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="emitirNCEditPopup" title="Emitir Nota de Credito" onclick="emitirNCEditPopupOnClick">
+    <div id="emitirNCEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="emitirNCInternoEditPopup" title="Emitir Nota de Credito Interno" onclick="emitirNCInternoEditPopupOnClick">
+    <div id="emitirNCInternoEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="emitirAnticipoEditPopup" title="Emitir Anticipo" onclick="emitirAnticipoEditPopupOnClick">
+    <div id="emitirAnticipoEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        if ($.isNullOrEmpty($('#CajaId').val())) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_caja_no_configurada")');
+        }
+
+        $("#bandejaGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarBandeja", "CajaCobranza")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "ComprobanteDTO.Numero", value: $('#Numero').val() },
+                        { name: "ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                        { name: "ComprobanteDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                        { name: "ComprobanteDTO.VendedorDTO.ProveedorDTO.RazonSocial", value: $('#Vendedor').val() },
+                        { name: "ComprobanteDTO.EstadoComprobanteId", value: $('#EstadoComprobanteId').val() || 0, type: 'int' },
+                        { name: "ComprobanteDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                        { name: "ComprobanteDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
+                    ]
+                ));
+            }
+        },
+            colNames: $('#GridColNames').val().split(','),
+            colModel: JSON.parse($('#GridColModel').val()),
+            pager: "#bandejaPager",
+            onSelectRow: function (rowid) {
+                if (rowid == null || rowid == 0)
+                    return;
+
+                $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+
+                $("#menuBar").appMenu('disabledButton', { buttonId: 'cierre_rpt', disabled: false });
+
+                var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+                if (row.EstadoComprobante === '@EstadoComprobanteConstante.CERRADO')
+                    $("#menuBar").appMenu('disabledButton', { buttonId: 'emitir', disabled: false });
+
+                if (!$.isNullOrEmpty(row.EstadoSunat)) {
+                    $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: true });
+
+                    switch (row.EstadoSunat) {
+                        case '@EstadoSunatConstante.PENDIENTE_ENVIO':
+                        case '@EstadoSunatConstante.RECHAZADO':
+                        case '@EstadoSunatConstante.ARCHIVO_CON_ERROR':
+                            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: false });
+                            break;
+                    }
+                }
+
+                switch (row.TipoDocumentoComercial) {
+                    case 'AC':
+                        $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EDIT', disabled: true });
+                        $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: true });
+                        $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.PREVIEW', disabled: true });
+                        break;
+
+                    case '@TipoDocumentoComercialConstante.NOTA_CREDITO':
+                        $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EDIT', disabled: true });
+                        break;
+                }
+            },
+            gridComplete: function () {
+                $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+                $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+
+                $("#menuBar").appMenu('disabledButton', { buttonId: 'cierre_rpt', disabled: false });
+            },
+    @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+            height: calculateGridHeight('bandejaContainer')
+          });
+
+    $('#emitirEditPopup').setDialog({
+        onShow: function (p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+                urlAction: '@Url.Action("EmitirEditPopup", "CajaCobranza")',
+                viewModel: [
+                    { name: "ComprobanteDTO.ComprobanteId", value: row.ComprobanteId, type: 'int' }
+                ],
+                container: 'emitirEditPopupContent',
+                showLoading: false,
+                hideLoading: false
+            });
+        }
+    });
+    $('#emitirNCEditPopup').setDialog({
+        onShow: function (p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+                urlAction: '@Url.Action("EmitirNCEditPopup", "CajaCobranza")',
+                viewModel: [
+                    { name: "NotaCreditoDTO.NotaCreditoId", value: row.ComprobanteId, type: 'int' }
+                ],
+                container: 'emitirNCEditPopupContent',
+                showLoading: false,
+                hideLoading: false
+            });
+        }
+    });
+    $('#emitirNCInternoEditPopup').setDialog({
+        onShow: function(p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+                urlAction: '@Url.Action("EmitirNCInternoEditPopup", "CajaCobranza")',
+                viewModel: [
+                    { name: "NotaCreditoDTO.NotaCreditoId", value: row.ComprobanteId, type: 'int' }
+                ],
+                container: 'emitirNCInternoEditPopupContent',
+                showLoading: false,
+                hideLoading: false
+            });
+        }
+    });
+    $('#emitirAnticipoEditPopup').setDialog({
+        onShow: function (p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+                urlAction: '@Url.Action("EmitirAnticipoEditPopup", "CajaCobranza")',
+                viewModel: [
+                    { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.ComprobanteId, type: 'int' }
+                ],
+                container: 'emitirAnticipoEditPopupContent',
+                showLoading: false,
+                hideLoading: false
+            });
+        }
+    });
+       });
+    function clearButtonOnClick() {
+        $('#app-search-input-group').find('input:text').val('');
+        $('#bandejaGrid').appGrid('reloadJSON');
+    }
+    $(function () {
+        $("#Numero,#Cotizacion, #NumeroDocumentoIdentidad, #RazonSocial,#Vendedor,#EstadoComprobanteId").change(function () {
+            $('#bandejaGrid').appGrid('reloadJSON');
+        });
+        $("#Numero").keydown(function (e) {
+            if (event.which == 13) {
+                if (!$.isNullOrEmpty($("#Numero").val())) {
+                    var valueFmt = padLeadingZeros($("#Numero").val(), 8)
+                    $("#Numero").val(valueFmt);
+                }
+                event.preventDefault();
+                $('#bandejaGrid').appGrid('reloadJSON');
+            }
+        });
+        $("#Cotizacion").keydown(function (e) {
+            if (event.which == 13) {
+                if (!$.isNullOrEmpty($("#Cotizacion").val())) {
+                    var valueFmt = padLeadingZeros($("#Cotizacion").val(), 7)
+                    $("#Cotizacion").val(valueFmt);
+                }
+                event.preventDefault();
+                $('#bandejaGrid').appGrid('reloadJSON');
+            }
+        });
+        $("#FechaDesde").keydown(function (e) {
+            if (event.which == 13) {
+                $("#FechaHasta").val($("#FechaDesde").val());
+                event.preventDefault();
+                $('#bandejaGrid').appGrid('reloadJSON');
+            }
+        });
+        $("#FechaHasta").keydown(function (e) {
+            if (event.which == 13) {
+                event.preventDefault();
+                $('#bandejaGrid').appGrid('reloadJSON');
+            }
+        });
+    });
+    function menuBarOnClick(key) {
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+        }
+
+        switch (key) {
+            case '@MenuItemKey.EDIT':
+                $(this).getView({
+                    editAction: '@ViewModelEditAction.Edit',
+                    buttonId: key,
+                    viewModel: [
+                        { name: "ComprobanteDTO.ComprobanteId", value: row.ComprobanteId, type: 'int' }
+                    ],
+                    urlAction: '@Url.Action("Editar", "CajaCobranza")'
+                });
+                break;
+
+            case 'emitir':
+                switch (row.TipoDocumentoComercial) {
+                    case 'AC':
+                        $('#emitirAnticipoEditPopup').showDialog();
+                        break;
+
+                    case '@TipoDocumentoComercialConstante.NOTA_CREDITO':
+                        $('#emitirNCEditPopup').showDialog();
+                        break;
+                    case '@TipoDocumentoComercialConstante.NOTA_CREDITO_INTERNO':
+                        $('#emitirNCInternoEditPopup').showDialog();
+                        break;
+
+                    default:
+                        $('#emitirEditPopup').showDialog();
+                }
+                break;
+
+            case '@MenuItemKey.DELETE':
+                $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+                $(this).confirm({
+                    title: '@SR.GetString("APPMP_anular_titulo")',
+                    message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+                    onConfirm: function () {
+
+                        var url = '';
+                        var model;
+
+                        switch (row.TipoDocumentoComercial) {
+                            case '@TipoDocumentoComercialConstante.NOTA_CREDITO':
+                                url = '@Url.Action("Eliminar", "NotaCredito")';
+                                model = [
+                                    { name: "NotaCreditoDTO.NotaCreditoId", value: row.ComprobanteId, type: 'int' },
+                                    { name: "NotaCreditoDTO.Codigo", value: row.Codigo }
+                                ];
+                                break;
+
+                            default:
+                                url = '@Url.Action("Eliminar", "Comprobante")';
+                                model = [
+                                    { name: "ComprobanteDTO.ComprobanteId", value: row.ComprobanteId, type: 'int' },
+                                    { name: "ComprobanteDTO.Codigo", value: row.Codigo }
+                                ];
+                        }
+
+                        $(this).saveView({
+                            urlAction: url,
+                            viewModel: model,
+                            onSuccess: function (response) {
+                                if (response.success) {
+                                    $('#bandejaGrid').appGrid('reloadJSON');
+                                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                                } else {
+                                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                                }
+                            }
+                        });
+                    }
+                });
+                break;
+
+            case '@MenuItemKey.PREVIEW':
+                var reportParam = "comprobanteId=" + row.ComprobanteId;
+
+                $(this).getReport({
+                    urlAction: '@Url.Action("ReportTo", "CajaCobranza")',
+                    parameters: reportParam,
+                    onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                });
+                break;
+
+        }
+        return true;
+    };
+    function emitirEditPopupOnClick() {
+
+        if ($.isNullOrEmpty($('#CajaId').val())) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_caja_no_configurada")');
+            return;
+        }
+
+        if (!$('#mp-MedioPagoId').validateNumeric('@SR.GetString("VT_medio_pago_seleccion_requerida")'))
+            return false;
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+        debugger;
+        $('#emitirEditPopup').saveView({
+            viewModel: [
+                { name: "ComprobanteDTO.ComprobanteId", value: row.ComprobanteId, type: 'int' },
+                { name: "ComprobanteDTO.CajaId", value: $('#CajaId').val(), type: 'int' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("Emitir", "CajaCobranza")',
+            onSuccess: function (response) {
+                if (response.success) {
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                    $('#emitirEditPopup').hideDialog();
+
+                    var reportParam = "comprobanteId=" + row.ComprobanteId
+                        + "&copia1=S"
+                        + "&copia2=" + ($('#mp-paraAdmCheckBox').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N')
+                        + "&copia3=" + ($('#mp-paraDespachoCheckBox').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N');
+
+                    $(this).getReport({
+                        urlAction: '@Url.Action("ReporteEmitido", "CajaCobranza")',
+                        parameters: reportParam,
+                        onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                    });
+
+                    $(this).getView({
+                        urlAction: '@Url.Action("Index", "CajaCobranza")'
+                    });
+                    $('#bandejaGrid').appGrid('reloadJSON');
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                    $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+                }
+
+            }
+        });
+    };
+    function emitirNCEditPopupOnClick() {
+
+        if ($.isNullOrEmpty($('#CajaId').val())) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_caja_no_configurada")');
+            return;
+        }
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        $('#emitirNCEditPopup').saveView({
+            viewModel: [
+                { name: "NotaCreditoDTO.NotaCreditoId", value: row.ComprobanteId, type: 'int' },
+                { name: "NotaCreditoDTO.CajaId", value: $('#CajaId').val(), type: 'int' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("EmitirNotaCredito", "CajaCobranza")',
+            onSuccess: function (response) {
+                if (response.success) {
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                    $('#emitirNCEditPopup').hideDialog();
+
+                    var reportParam = "notaCreditoId=" + row.ComprobanteId;
+
+                    $(this).getReport({
+                        buttonId: key,
+                        urlAction: '@Url.Action("ReportTo", "NotaCredito")',
+                        parameters: reportParam,
+                        onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                    });
+
+                    $('#bandejaGrid').appGrid('reloadJSON');
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                    $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+                }
+
+            }
+        });
+    };
+
+    function emitirNCInternoEditPopupOnClick(){
+        if ($.isNullOrEmpty($('#CajaId').val())) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_caja_no_configurada")');
+            return;
+        }
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        $('#emitirNCInternoEditPopup').saveView({
+            viewModel: [
+                { name: "NotaCreditoDTO.NotaCreditoId", value: row.ComprobanteId, type: 'int' },
+                { name: "NotaCreditoDTO.CajaId", value: $('#CajaId').val(), type: 'int' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("EmitirNotaCreditoInterno", "CajaCobranza")',
+            onSuccess: function (response) {
+                if (response.success) {
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                    $('#emitirNCInternoEditPopup').hideDialog();
+
+                    var reportParam = "notaCreditoId=" + row.ComprobanteId;
+
+                    $(this).getReport({
+                        buttonId: key,
+                        urlAction: '@Url.Action("ReportTo", "NotaCreditoInterno")',
+                        parameters: reportParam,
+                        onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                    });
+
+                    $('#bandejaGrid').appGrid('reloadJSON');
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                    $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+                }
+
+            }
+        });
+    };
+
+    function emitirAnticipoEditPopupOnClick() {
+
+        if ($.isNullOrEmpty($('#CajaId').val())) {  
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_caja_no_configurada")');
+            return;
+        }
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        $('#emitirAnticipoEditPopup').saveView({
+            viewModel: [
+                { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.ComprobanteId, type: 'int' },
+                { name: "AnticipoClienteDTO.TipoDocumentoComercialId", value: $('#mp-TipoDocumentoComercialId').val(), type: 'int' },
+                { name: "AnticipoClienteDTO.CajaId", value: $('#CajaId').val(), type: 'int' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("EmitirAnticipoCliente", "CajaCobranza")',
+            onSuccess: function (response) {
+                if (response.success) {
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                    $('#emitirAnticipoEditPopup').hideDialog();
+                    $('#bandejaGrid').appGrid('reloadJSON');
+
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                    $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+                }
+
+            }
+        });
+    };
+</script>

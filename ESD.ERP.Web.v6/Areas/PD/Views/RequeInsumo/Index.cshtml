@@ -1,0 +1,158 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.PD.Models.RequeInsumoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2" max-length="5"></esd-textbox>
+                  <esd-textbox id="Vendedor" col-position="col-lg-6" label="Vendedor" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Pedido" col-position="col-lg-2" label="#Pedido" col-label-position="col-lg-2" max-length="7"></esd-textbox>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="EstadoDespachoId" for="@Model.EstadoDespachoList" col-position="col-lg-2" label="Estado Atención" col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-checkbox id="productoVerAnulado" col-position="offset-lg-2 col-lg-2" label="Mostrar Anulados" onchange="productoVerAnuladoOnChange()"
+                                      checkbox-style="Default"></esd-checkbox>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "RequeInsumo")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenProduccionDTO.Codigo", value: $('#Codigo').val() },
+                     { name: "OrdenProduccionDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "OrdenProduccionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
+                     { name: "OrdenProduccionDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "OrdenProduccionDTO.CotizacionDTO.Codigo", value: $('#Pedido').val() },
+                     { name: "OrdenProduccionDTO.EstadoDespachoId", value: $('#EstadoDespachoId').val(), type:'int' },
+                     { name: "OrdenProduccionDTO.CotizacionDTO.VendedorDTO.ProveedorDTO.RazonSocial", value: $('#Vendedor').val() },
+                     { name: "OrdenProduccionDTO.Estado", value: $('#productoVerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Fecha', 'P/V', 'Cliente', '#Doc', '', 'Estado', 'Fecha Atención',
+            'Atendido Por', 'Observación', ''],
+         colModel: [
+            { name: 'OrdenProduccionId', hidden: true },
+            { name: "Codigo", width: 60 },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "Cotizacion", width: 60 },
+            { name: "RazonSocial", width: 300 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: 'EstadoDespacho', hidden: true },
+            { name: "EstadoDespachoNombre", width: 100 },
+            { name: "FechaDespacho", width: 100, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: "PersonalDespacho", width: 200 },
+            { name: "ObservacionDespacho", width: 200 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   function productoVerAnuladoOnChange() {
+       $("#bandejaGrid").appGrid('reloadJSON');
+   };
+   $(function () {
+        $("#Codigo, #Pedido, #RazonSocial,#EstadoDespachoId, #Vendedor").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#Codigo").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#Codigo").val())) {
+               var valueFmt = padLeadingZeros($("#Codigo").val(), 5)
+               $("#Codigo").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "OrdenProduccionDTO.OrdenProduccionId", value: row.OrdenProduccionId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "RequeInsumo")'
+            });
+            break;
+      }
+      return true;
+   };
+</script>

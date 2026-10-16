@@ -1,0 +1,132 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.CM.Models.PedidoComAutoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PedidoCompraDTO.Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-dropdownlist id="TipoProductoId" for="@Model.TipoProductoList" col-position="col-lg-2" label="Tipo Pedido"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-datetimepicker for="@Model.PedidoCompraDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.PedidoCompraDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Proveedor"
+                                     col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.PedidoCompraDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.PedidoCompraDTO.Observacion" col-position="col-lg-10" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="1" enable="false"></esd-textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PedidoCompraDTO.PedidoCompraId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarPedidoCompraProducto", "PedidoComAuto")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PedidoCompraProductoDTO.PedidoCompraId", value: $('#PedidoCompraId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Código', 'Producto', 'U.M.', 'Detalle','Cantidad', 'Peso Neto', 'Peso Bruto', 'Stock en Prov.', '', ''],
+         colModel: [
+            { name: 'PedidoCompraProductoId', hidden: true },
+            { name: 'PedidoCompraId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 80, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'UnidadMedidaNombre', width: 70, editable: false },
+            { name: 'Descripcion', width: 220, editable: false },
+            { name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: false },
+            { name: "PesoNeto", width: 100, align: 'right', formatter: 'number', editable: false },
+            { name: "PesoBruto", width: 100, align: 'right', formatter: 'number', editable: false },
+            { name: 'StockEnProveedor', width: 100, editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         gridComplete: function () {
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'aprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case 'desaprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "PedidoComAuto")'
+            });
+            break;
+      }
+   };
+   function aprobarDesaprobar(key) {
+
+      var urlAction = key === 'aprobar' ? '@Url.Action("Aprobar", "PedidoComAuto")' : '@Url.Action("Desaprobar", "PedidoComAuto")';
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PedidoCompraDTO.PedidoCompraId", value: $('#PedidoCompraId').val(), type: 'int' }
+         ],
+         buttonId: key,
+         urlAction: urlAction,
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $(this).getView({
+                  urlAction: '@Url.Action("Index", "PedidoComAuto")'
+               });
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+</script>

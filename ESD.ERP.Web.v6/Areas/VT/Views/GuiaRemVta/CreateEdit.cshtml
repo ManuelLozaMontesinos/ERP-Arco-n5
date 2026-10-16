@@ -1,0 +1,681 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.GuiaRemVtaViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  @{
+                     if (Model.IsNew)
+                     {
+                        <esd-dropdownlist id="Serie" for="@Model.SerieList" col-position="col-lg-2" label="Serie" col-label-position="col-lg-2"
+                                          enable="@Model.IsNew"></esd-dropdownlist>
+                     }
+                     else
+                     {
+                        <esd-textbox for="@Model.GuiaRemisionDTO.Serie" col-position="col-lg-1" label="Serie" col-label-position="col-lg-2"
+                                     enable="false"></esd-textbox>
+                     }
+                  }
+                  <esd-textbox for="@Model.GuiaRemisionDTO.Numero" col-position="col-lg-1" enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.GuiaRemisionDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-1" enable="@Model.IsNew"></esd-datetimepicker>
+                  <esd-datetimepicker for="@Model.GuiaRemisionDTO.FechaInicioTraslado" col-position="col-lg-2" label="Fecha Partida" col-label-position="col-lg-1"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.GuiaRemisionDTO.ProveedorDestinoDTO.RazonSocial" col-position="col-lg-5" label="Cliente" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TransportistaId" for="@Model.TransportistaList" col-position="col-lg-2" label="Transportista" col-label-position="col-lg-2"
+                                    onchange="transportistaIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="TransportistaConductorId" for="@Model.TransportistaConductorList" col-position="col-lg-2" label="Conductor" col-label-position="col-lg-1"
+                                    enable="false"></esd-dropdownlist>
+                  <esd-dropdownlist id="TransportistaUnidadId" for="@Model.TransportistaUnidadList" col-position="col-lg-3" label="Unidad" col-label-position="col-lg-1"
+                                    enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Partida - Departamento"
+                                    col-label-position="col-lg-2" onchange="departamentoIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-2" label="Provincia"
+                                    col-label-position="col-lg-1" onchange="provinciaIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.GuiaRemisionDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                    col-label-position="col-lg-1"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.GuiaRemisionDTO.PuntoPartida" col-position="col-lg-5" label="Dirección" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="Departamento2Id" for="@Model.DepartamentoList2" selected-value="@Model.Departamento2Id" col-position="col-lg-2" label="Llegada - Departamento"
+                                    col-label-position="col-lg-2" onchange="departamento2IdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="Provincia2Id" for="@Model.ProvinciaList2" selected-value="@Model.Provincia2Id" col-position="col-lg-2" label="Provincia"
+                                    col-label-position="col-lg-1" onchange="provincia2IdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="DistritoLlegadaId" for="@Model.DistritoList2" selected-value="@Model.GuiaRemisionDTO.DistritoLlegadaId" col-position="col-lg-3" label="Distrito"
+                                    col-label-position="col-lg-1"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.GuiaRemisionDTO.PuntoLlegada" col-position="col-lg-5" label="Dirección" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.GuiaRemisionDTO.CostoFlete" col-position="col-lg-2" label="Costo Flete" col-label-position="col-lg-2"></esd-numerictextbox>
+                  <esd-numerictextbox for="@Model.GuiaRemisionDTO.PesoBrutoTotal" col-position="col-lg-2" label="Peso Bruto Total" col-label-position="col-lg-1"></esd-numerictextbox>
+                  <esd-dropdownlist id="MotivoTrasladoId" for="@Model.MotivoTrasladoList" col-position="col-lg-3" label="Motivo Traslado" col-label-position="col-lg-1"
+                                    enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.GuiaRemisionDTO.Observacion" col-position="col-lg-5" label="Observacion" col-label-position="col-lg-2"
+                                max-length="500" rows="2"></esd-textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.GuiaRemisionDTO.GuiaRemisionId"></esd-hidden>
+      <esd-hidden for="@Model.GuiaRemisionDTO.MovimientoAlmacenId"></esd-hidden>
+      <esd-hidden id="EstadoGuiaRemision" value="@Model.GuiaRemisionDTO.EstadoGuiaRemisionDTO.Codigo"></esd-hidden>
+      <esd-hidden id="EstadoSunat" value="@Model.GuiaRemisionDTO?.EstadoSunatDTO?.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.GuiaRemisionDTO.EsInterno"></esd-hidden>
+      <esd-hidden for="@Model.GuiaRemisionDTO.CodigoSunatPartida"></esd-hidden>
+      <esd-hidden for="@Model.GuiaRemisionDTO.Impreso"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="productoMenuBar" size="Small" menu-style="EditAndSaveCancel" onclick="productoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      habilitarEmitido();
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarGuiaRemisionProducto", "GuiaRemVta")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "GuiaRemisionProductoDTO.GuiaRemisionId", value: $('#GuiaRemisionId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','', '','Código','Producto','Detalle','','', '','U.M.','Cantidad','P. Neto','P. Bruto','Estado','',''],
+         colModel: [
+            { name: 'GuiaRemisionProductoId', hidden: true },
+            { name: 'GuiaRemisionId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'Descripcion', width: 200, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'CantidadDocumento', hidden: true },
+            { name: 'PesoNetoDocumento', hidden: true },
+            { name: 'PesoBrutoDocumento', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 100, editable: false },
+            { name: "Cantidad", width: 100, align: 'right', formatter: 'number' },
+            {
+               name: "PesoNeto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "PesoBruto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'RegistroReferencialId', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            if ($('#EstadoGuiaRemision').val() === '@EstadoGuiaRemisionConstante.EMITIDO')
+               return;
+
+            var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            }
+            else
+               $("#productoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+
+            var data = $("#productoGrid").appGrid('getData');
+            var totalPB = 0;
+            $.each(data, function (index, item) {
+               totalPB += parseFloatEx(item.PesoBruto);
+            });
+            if (parseFloatEx($('#PesoBrutoTotal').val()) === 0)
+               $('#PesoBrutoTotal').val(totalPB);
+
+            if ($('#EstadoGuiaRemision').val() === '@EstadoGuiaRemisionConstante.EMITIDO') {
+               $('#productoMenuBar').appMenu('disabled');
+               return;
+            }
+
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+   });
+   function transportistaIdOnChange() {
+
+      var transportistaId = $("#TransportistaId").val();
+      if ($.isNullOrEmpty(transportistaId)) {
+         $("#TransportistaConductorId").val('');
+         $("#TransportistaConductorId").prop('disabled',true);
+         $("#TransportistaUnidadId").val('');
+         $("#TransportistaUnidadId").prop('disabled', true);
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarUnidadConductor", "GuiaRemVta")',
+         id: transportistaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#TransportistaConductorId').find('option').remove().end();
+               $("#TransportistaConductorId").addItems(response.data.conductorList);
+               $("#TransportistaConductorId").prop('disabled', false);
+
+               $('#TransportistaUnidadId').find('option').remove().end();
+               $("#TransportistaUnidadId").addItems(response.data.unidadList);
+               $("#TransportistaUnidadId").prop('disabled', false);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function departamentoIdOnChange() {
+
+      var departamentoId = $("#DepartamentoId").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#ProvinciaId").prop('disabled', true);
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#ProvinciaId").val('');
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "GuiaRemVta")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#ProvinciaId').find('option').remove().end();
+               $("#ProvinciaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#DepartamentoId").val())) {
+                  $("#ProvinciaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function provinciaIdOnChange() {
+
+      var provinciaId = $("#ProvinciaId").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "GuiaRemVta")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#DistritoId').find('option').remove().end();
+               $("#DistritoId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#DistritoId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function departamento2IdOnChange() {
+
+      var departamentoId = $("#Departamento2Id").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#Provincia2Id").prop('disabled', true);
+         $("#DistritoLlegadaId").prop('disabled', true);
+         return;
+      }
+
+      $("#Provincia2Id").val('');
+      $("#DistritoLlegadaId").val('');
+      $("#DistritoLlegadaId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "GuiaRemVta")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#Provincia2Id').find('option').remove().end();
+               $("#Provincia2Id").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#Departamento2Id").val())) {
+                  $("#Provincia2Id").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function provincia2IdOnChange() {
+
+      var provinciaId = $("#Provincia2Id").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#DistritoLlegadaId").prop('disabled', true);
+         return;
+      }
+
+      $("#DistritoLlegadaId").val('');
+      $("#DistritoLlegadaId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "GuiaRemVta")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#DistritoLlegadaId').find('option').remove().end();
+               $("#DistritoLlegadaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#DistritoLlegadaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'emitir':
+            emitirGuia();
+            break;
+
+         case 'actualizar':
+            actualizarCDR();
+            break;
+
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "GuiaRemVta")'
+            });
+            break;
+      }
+   };
+   function validarDatos(esEmision) {
+
+      if (!$('#Serie').validateString('@SR.GetString("GEN_serie_requerida")'))
+         return false;
+      if (!$('#Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#FechaInicioTraslado').validateString('@SR.GetString("IV_guia_remision_fecha_traslado_requerida")'))
+         return false;
+      if (!$('#TransportistaId').validateNumeric('@SR.GetString("MG_transportista_seleccion_requerida")'))
+         return false;
+      if (!$('#TransportistaConductorId').validateNumeric('@SR.GetString("MG_transportista_conductor_seleccion_requerida")'))
+         return false;
+      if (!$('#TransportistaUnidadId').validateNumeric('@SR.GetString("MG_transportista_unidad_seleccion_requerida")'))
+         return false;
+      if (!$('#DepartamentoId').validateNumeric('@SR.GetString("IV_departamento_partida_seleccion_requerida")'))
+         return false;
+      if (!$('#ProvinciaId').validateNumeric('@SR.GetString("IV_provincia_partida_seleccion_requerida")'))
+         return false;
+      if (!$('#DistritoId').validateNumeric('@SR.GetString("IV_distrito_partida_seleccion_requerida")'))
+         return false;
+      if (!$('#PuntoPartida').validateString('@SR.GetString("IV_punto_partida_requerida")'))
+         return false;
+      if (!$('#Departamento2Id').validateNumeric('@SR.GetString("IV_departamento_llegada_seleccion_requerida")'))
+         return false;
+      if (!$('#Provincia2Id').validateNumeric('@SR.GetString("IV_provincia_llegada_seleccion_requerida")'))
+         return false;
+      if (!$('#DistritoLlegadaId').validateNumeric('@SR.GetString("IV_distrito_llegada_seleccion_requerida")'))
+         return false;
+      if (!$('#PuntoLlegada').validateString('@SR.GetString("IV_punto_llegada_requerida")'))
+         return false;
+      if (!$('#MotivoTrasladoId').validateString('@SR.GetString("VT_motivo_traslado_seleccion_requerida")'))
+         return false;
+
+      if (esEmision) {
+         if (!$('#PesoBrutoTotal').validateNumeric('@SR.GetString("IV_guia_remision_peso_bruto_requerido")'))
+            return false;
+      }
+
+      return true;
+   };
+   function grabarDatosCrearModelo() {
+
+      var viewModel = [
+         { name: "GuiaRemisionDTO.GuiaRemisionId", value: $('#GuiaRemisionId').val(), type: 'int' },
+         { name: "GuiaRemisionDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val(), type: 'int' },
+         { name: "GuiaRemisionDTO.Serie", value: $('#Serie').is('input:text') ? $('#Serie').val() : $("#Serie option:selected").text() },
+         { name: "GuiaRemisionDTO.Numero", value: $('#Numero').val() },
+         { name: "GuiaRemisionDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+         { name: "GuiaRemisionDTO.FechaInicioTraslado", value: $('#FechaInicioTraslado').val(), type: 'date' },
+         { name: "GuiaRemisionDTO.CostoFlete", value: $('#CostoFlete').val(), type: 'decimal' },
+         { name: "GuiaRemisionDTO.DistritoId", value: $('#DistritoId').val(), type: 'int' },
+         { name: "GuiaRemisionDTO.PuntoPartida", value: $('#PuntoPartida').val() },
+         { name: "GuiaRemisionDTO.CodigoSunatPartida", value: $('#CodigoSunatPartida').val() },
+         { name: "GuiaRemisionDTO.DistritoLlegadaId", value: $('#DistritoLlegadaId').val(), type: 'int' },
+         { name: "GuiaRemisionDTO.PuntoLlegada", value: $('#PuntoLlegada').val() },
+         { name: "GuiaRemisionDTO.TransportistaConductorId", value: $('#TransportistaConductorId').val(), type: 'int' },
+         { name: "GuiaRemisionDTO.TransportistaUnidadId", value: $('#TransportistaUnidadId').val(), type: 'int' },
+         { name: "GuiaRemisionDTO.MotivoTrasladoId", value: $('#MotivoTrasladoId').val(), type: 'int' },
+         { name: "GuiaRemisionDTO.PesoBrutoTotal", value: $('#PesoBrutoTotal').val(), type: 'decimal' },
+         { name: "GuiaRemisionDTO.Observacion", value: $('#Observacion').val() }
+      ];
+
+      return viewModel;
+   };
+   function grabarDatos() {
+
+      if (!validarDatos(false))
+         return false;
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "GuiaRemVta")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#GuiaRemisionId").val(response.data.Id);
+               $('#productoGrid').appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function emitirGuia() {
+
+      if (!validarDatos(true))
+         return false;
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: 'emitir',
+         urlAction: '@Url.Action("Emitir", "GuiaRemVta")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+
+               $("#GuiaRemisionId").val(response.data.Id);
+               $("#Numero").val(response.data.Numero);
+               $("#EstadoGuiaRemision").val(response.data.EstadoGuiaRemision);
+               $("#EstadoSunat").val(response.data.EstadoSunat);
+               $('#productoGrid').appGrid('reloadJSON');
+               habilitarEmitido();
+
+               if ($('#EstadoSunat').val() !== '@EstadoSunatConstante.APROBADO')
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               else
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'emitir', disabled: false });
+            }
+         }
+      });
+   };
+   function actualizarCDR() {
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: 'actualizar',
+         urlAction: '@Url.Action("ActualizarCDR", "GuiaRemVta")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+
+               $("#EstadoGuiaRemision").val(response.data.EstadoGuiaRemision);
+               $("#EstadoSunat").val(response.data.EstadoSunat);
+               $('#productoGrid').appGrid('reloadJSON');
+               habilitarEmitido();
+
+               if ($('#EstadoSunat').val() !== '@EstadoSunatConstante.APROBADO')
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               else
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'actualizar', disabled: false });
+            }
+         }
+      });
+   };
+   function habilitarEmitido() {
+
+      habilitarPuntoPartida();
+
+      if ($('#EstadoGuiaRemision').val() === '@EstadoGuiaRemisionConstante.EN_EDICION') {
+         $("#menuBar").appMenu('disabledButton', { buttonId: 'emitir', disabled: false });
+         $("#menuBar").appMenu('disabledButton', { buttonId: 'actualizar', disabled: true });
+      }
+
+      if ($('#EstadoGuiaRemision').val() === '@EstadoGuiaRemisionConstante.EMITIDO') {
+
+         $("#menuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.SAVE,emitir', disabled: true });
+
+         if ($('#EstadoSunat').val() === '@EstadoSunatConstante.APROBADO') {
+            $("#menuBar").appMenu('disabledButton', { buttonList: 'emitir,actualizar', disabled: true });
+         }
+         if ($('#EstadoSunat').val() === '@EstadoSunatConstante.VERIFICACION') {
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'emitir', disabled: false });
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'actualizar', disabled: false });
+         }
+
+         $("#FechaInicioTraslado").prop('readonly', true);
+         $("#TransportistaId").prop('disabled', true);
+         $("#TransportistaConductorId").prop('disabled', true);
+         $("#TransportistaUnidadId").prop('disabled', true);
+
+         $("#DepartamentoId").prop('disabled', true);
+         $("#ProvinciaId").prop('disabled', true);
+         $("#DistritoId").prop('disabled', true);
+         $("#PuntoPartida").prop('readonly', true);
+
+         $("#Departamento2Id").prop('disabled', true);
+         $("#Provincia2Id").prop('disabled', true);
+         $("#DistritoLlegadaId").prop('disabled', true);
+         $("#PuntoLlegada").prop('readonly', true);
+
+         $("#CostoFlete").prop('readonly', true);
+         $("#PesoBrutoTotal").prop('readonly', true);
+         $("#Observacion").prop('readonly', true);
+      }
+   };
+   function habilitarPuntoPartida() {
+      var disabled = true;
+      if ($('#PuntoPartidaDistinto').val() === '@SiNoConstante.S') {
+         disabled = false;
+      }
+
+      $("#DepartamentoId").prop('disabled', disabled);
+      $("#ProvinciaId").prop('disabled', disabled);
+      $("#DistritoId").prop('disabled', disabled);
+      $("#PuntoPartida").prop('readonly', disabled);
+
+   };
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.EDIT':
+            editarProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#productoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+            $("#productoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#productoGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarGuiaRemisionProducto", "GuiaRemVta")',
+                  viewModel: [
+                     { name: "GuiaRemisionProductoDTO.GuiaRemisionProductoId", value: row.GuiaRemisionProductoId, type: 'int' },
+                     { name: "GuiaRemisionProductoDTO.GuiaRemisionId", value: row.GuiaRemisionId, type: 'int' },
+                     { name: "GuiaRemisionProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+                     { name: "GuiaRemisionProductoDTO.Descripcion", value: row.Descripcion },
+                     { name: "GuiaRemisionProductoDTO.CantidadDocumento", value: row.CantidadDocumento, type: 'decimal' },
+                     { name: "GuiaRemisionProductoDTO.PesoNetoDocumento", value: row.PesoNetoDocumento, type: 'decimal' },
+                     { name: "GuiaRemisionProductoDTO.PesoBrutoDocumento", value: row.PesoBrutoDocumento, type: 'decimal' },
+                     { name: "GuiaRemisionProductoDTO.Cantidad", value: row.Cantidad, type: 'decimal' },
+                     { name: "GuiaRemisionProductoDTO.PesoNeto", value: row.PesoNeto, type: 'decimal' },
+                     { name: "GuiaRemisionProductoDTO.PesoBruto", value: row.PesoBruto, type: 'decimal' },
+                     { name: "GuiaRemisionProductoDTO.RegistroReferencialId", value: row.RegistroReferencialId, type: 'int' },
+                     { name: "GuiaRemisionProductoDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#productoGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#productoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarGuiaRemisionProducto", "GuiaRemVta")',
+                     viewModel: [
+                        { name: "GuiaRemisionProductoDTO.GuiaRemisionProductoId", value: row.GuiaRemisionProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#productoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+   function editarProductoInGrid() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+      $('#productoGrid').jqGrid('editRow', rowId);
+      $("#productoMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#GuiaRemisionId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else {
+         @*if ($('#Impreso').val() === '@SiNoConstante.S') {
+            $('#' + key).appMenu('disabled');
+            return;
+         }*@
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+      }
+   }
+</script>

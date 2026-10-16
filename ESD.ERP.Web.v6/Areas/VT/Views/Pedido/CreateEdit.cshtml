@@ -1,0 +1,2174 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.PedidoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.CotizacionDTO.Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.CotizacionDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      enable="@Model.IsNew"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" selected-value="@Model.CotizacionDTO.MonedaId" col-position="col-lg-2" label="Moneda"
+                                    col-label-position="col-lg-2" onchange="monedaIdOnChange();" enable="@Model.IsNew"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.CotizacionDTO.MontoTipoCambio" col-position="col-lg-2" label="T/C" col-label-position="col-lg-2" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="VendedorNombre" value="@Model.CotizacionDTO.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-4" label="Vendedor"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-dropdownlist id="ListaPrecioId" for="@Model.ListaPrecioList" selected-value="@Model.CotizacionDTO.ListaPrecioId" col-position="col-lg-4" label="Lista Precio"
+                                    col-label-position="col-lg-2" onchange="listaPrecioIdOnChange();" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Proveedor" button-style="ListNew" value="@Model.CotizacionDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente"
+                                     col-label-position="col-lg-2" onclick="proveedorOnClick"></esd-buttontextbox>
+                  <esd-textbox for="@Model.CotizacionDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoCondicionPagoId" for="@Model.TipoCondicionPagoList" col-position="col-lg-4" label="Cond. Pago"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.CotizacionDTO.Observacion" col-position="col-lg-6" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3"></esd-textarea>
+               </div>
+               <div class="form-group row">
+                  <label class="col-lg-10 offset-2" style="text-align: left">
+                     <span class="badge badge-warning">Item ya tiene dcto desde la Lista de Precios.</span>
+                     <span class="badge badge-success">Item ya tiene el incremento del 5% en el P.U.</span>
+                     <span class="badge badge-secondary">Item con Precio Autorizado</span>
+                  </label>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoCotizacionNombre" value="@Model.CotizacionDTO.EstadoCotizacionDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoNeto" value="@Model.CotizacionDTO.MontoNeto" col-position="col-lg-6" label="Mto. Neto" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoIgv" value="@Model.CotizacionDTO.MontoIgv" col-position="col-lg-6" label="IGV" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoTotal" value="@Model.CotizacionDTO.MontoTotal" col-position="col-lg-6" label="Total" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoAnticipo" value="@Model.CotizacionDTO.MontoAnticipo" col-position="col-lg-6" label="Mto. Anticipo" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoSaldo" value="@Model.CotizacionDTO.MontoSaldo" col-position="col-lg-6" label="Saldo" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.CotizacionDTO.CotizacionId"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.CortesGratis"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.ProveedorId"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.VendedorId"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.AlmacenId"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.MesContableId"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.MonedaDTO.EsLocal"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.ImpuestoTasaDTO.Tasa"></esd-hidden>
+      <esd-hidden id="EstadoCotizacion" value="@Model.CotizacionDTO.EstadoCotizacionDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.PorcentajeFraccionPU"></esd-hidden>
+      <esd-hidden for="@Model.AutorizacionPendiente"></esd-hidden>
+      <esd-hidden for="@Model.ListaPrecioProveedorId"></esd-hidden>
+      <esd-hidden for="@Model.IgnorarIncrementoFraccion"></esd-hidden>
+      <esd-hidden for="@Model.CotizacionDTO.EnviadoProduccion"></esd-hidden>
+      <esd-hidden for="@Model.OrdenProduccionId"></esd-hidden>
+      <esd-hidden for="@Model.AutorizacionProduccion"></esd-hidden>
+      <esd-hidden for="@Model.FileId"></esd-hidden>
+      <esd-hidden id="TipoDescuentoList" value="@Model.TipoDescuentoString"></esd-hidden>
+      <datalist id="productoDetalleList"></datalist>    
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#anticipoTab" role="tab" data-toggle="tab">Anticipos</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#procesoTab" role="tab" data-toggle="tab">Produccion</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div class="form-inline">
+               <div class="col-6">
+                  <esd-menubar id="productoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="productoMenuBarOnClick"></esd-menubar>
+               </div>
+               <div class="col-6">
+                  <esd-checkbox id="productoVerAnulado" col-position="offset-lg-9 col-lg-3" label="Mostrar Anulados" onchange="productoVerAnuladoOnChange()"
+                                checkbox-style="Default"></esd-checkbox>
+               </div>
+            </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="anticipoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="anticipoMenuBar" size="Small" for="@Model.MenuAnticipoList" onclick="anticipoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="anticipoContainer">
+               <table id="anticipoGrid"></table>
+               <div id="anticipoPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="procesoTab" role="tabpanel">
+            <div id="procesoContainer">
+               <table id="procesoGrid"></table>
+               <div id="procesoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="proveedorListPopup" title="Cliente" onclick="proveedorListPopupOnClick" size="Large">
+   <div id="proveedorListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="proveedorCreatePopup" title="Nuevo Cliente" onclick="proveedorCreatePopupOnClick" size="Large">
+   <div id="proveedorCreatePopupContent"></div>
+</esd-dialog>
+<esd-dialog id="saldoListPopup" title="Lista de Precios" onclick="saldoListPopupOnClick" size="Large">
+   <div id="saldoListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="autorizacionEditPopup" title="Solicitar Autorizaciones" onclick="autorizacionEditPopupOnClick" size="Large">
+   <div id="autorizacionEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="estadoAutoEditPopup" title="Ver Autorizaciones" size="Large" button-style="Close">
+   <div id="estadoAutoEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="impresionPopup" title="Imprimir" onclick="impresionPopupClickOk" size="Large">
+   <div id="impresionPopupContent">
+      <textarea class="form-control" id="printTextArea" readonly="readonly" cols="144" rows="25"></textarea>
+   </div>
+</esd-dialog>
+<esd-dialog id="agregarAnticipoPopup" title="Anticipo" onclick="agregarAnticipoPopupOnClick">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-radiobutton id="AnticipoNuevo" group-name="mp-anticipoRadio" label="Nuevo" col-position="offset-lg-1 col-lg-4" checked="true"
+                                   in-modal="true"></esd-radiobutton>
+               </div>
+               <div class="form-group row">
+                  <esd-radiobutton id="AnticipoExistente" group-name="mp-anticipoRadio" label="Agregar Anticipo registrado" col-position="offset-lg-1 col-lg-10"
+                                   in-modal="true"></esd-radiobutton>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</esd-dialog>
+<esd-dialog id="anticipoEditPopup" title="Anticipo" onclick="anticipoEditPopupOnClick" size="Large">
+   <div id="anticipoEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="anticipoListPopup" title="Anticipos" onclick="anticipoListPopupOnClick" size="Large">
+   <div id="anticipoListPopupContent"></div>
+</esd-dialog>
+
+<esd-dialog id="enviarProduccionEditPopup" title="Enviar a Producción" onclick="enviarProduccionEditPopupOnClick" size="Large">
+   <div id="enviarProduccionEditPopupContent"></div>
+</esd-dialog>
+
+<esd-dialog id="enviarProduccionParcialEditPopup" title="Envio a Producción Parcial" onclick="enviarProduccionParcialEditPopupOnClick" size="Large">
+    <div id="enviarProduccionParcialEditPopupContent"></div>
+</esd-dialog>
+
+<esd-dialog id="agregarItemPopup" title="Enviar Productos y Servicios" onclick="agregarItemPopupOnClick">
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group row">
+                        <esd-radiobutton id="ordenProduccion" group-name="mp-agregarRadio" label="Orden de Producción" col-position="offset-lg-1 col-lg-4"
+                                         checked="true" in-modal="true"></esd-radiobutton>
+                    </div>
+                    <div class="form-group row">
+                        <esd-radiobutton id="ordenProduccionParcial" group-name="mp-agregarRadio" label="Orden de Producción Parcial" col-position="offset-lg-1 col-lg-8"
+                                         in-modal="true" ></esd-radiobutton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</esd-dialog>
+
+<style type="text/css">
+   .jqgrid-cell-warning {
+      background: #ffc107;
+      color: #212529;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #4EA049;
+      font-weight: bold;
+   }
+
+   .jqgrid-cell-success {
+      background: #28a745;
+      color: #fff;
+      text-align: center;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #FFFFFF;
+      font-weight: bold;
+   }
+
+   .jqgrid-cell-item-read-only {
+      background: #545b62;
+      color: #fff;
+      -moz-border-radius: 20px;
+      -webkit-border-radius: 20px;
+      border-radius: .25rem;
+      border: 1px solid #FFFFFF;
+      font-weight: bold;
+   }
+</style>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        if ($('#EstadoCotizacion').val() === '@EstadoCotizacionConstante.FACTURADO') {
+            $("#menuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.SAVE,soli_auto', disabled: true });
+            $("#TipoCondicionPagoId").prop('disabled', true);
+            $("#productoMenuBar").prop('disabled', true);
+            if($("#EnviadoProduccion").val() === '@SiNoConstante.N'){
+                $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: false });
+                $("#productoMenuBar").prop('disabled', true);
+            }
+            if($('#EnviadoProduccion').val() === '@SiNoConstante.S') {
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: true });
+               $("#productoMenuBar").prop('disabled', true);
+            }
+        }
+
+        if ($('EnviadoProduccion').val() === '@SiNoConstante.S'){
+            $('#productoMenuBar').appMenu('disabled', { buttonId: 'enviar_prod', disabled: true });
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: true });
+        }
+
+        if ($("#ListaPrecioProveedorId").validateNumeric())
+            $('#Proveedor').appButtonTextBox('disabled', { disabled: true });
+
+        $("#productoGrid").jqGrid({
+                 @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarCotizacionProducto", "Pedido")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "CotizacionProductoDTO.CotizacionId", value: $('#CotizacionId').val() || '0', type: 'int' },
+                        { name: "CotizacionProductoDTO.Estado", value: $('#productoVerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                    ]
+                ));
+            }
+        },
+
+         colNames: ['', '', '', 'Código', 'Producto', '','', '', '', '', 'U.M.', '', '','Detalle','','','','Cantidad', '', '', '', 'P.U.',
+            '', '', '', '', '', '', 'T/D', '', 'Valor T/D', '','','Mto.Dcto','','', 'Total', '','', '', ''],
+         colModel: [
+            { name: 'CotizacionProductoId', hidden: true },
+            { name: 'CotizacionId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 90, formatter: codigoFormatter },
+            { name: 'ProductoNombre', width: 350, formatter: descripcionFormatter, editable: false },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.CotizacionProductoId) && rowObject.CotizacionProductoId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Producto" name="productoButton"' + disabled +
+                     ' onclick="mostrarProducto(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            { name: 'UsarIncrementoFraccion', hidden: true },
+            { name: 'EsCombo', hidden: true },
+            { name: 'TipoProducto', hidden: true },
+            { name: 'UnidadMedidaId', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 60, editable: false },
+            { name: 'TipoIgv', hidden: true },
+            { name: 'DetalleRequerido', hidden: true },
+            {
+               name: 'Descripcion', width: 150, editable: true, edittype: 'text',
+               editoptions: {
+                  class: 'form-control-sm',
+                  maxlength: 150,
+                  autocomplete: "off",
+                  list: "productoDetalleList"
+               }
+            },
+            { name: 'Cantidad', hidden: true },
+            { name: 'CantidadPresentacion', hidden: true },
+            { name: 'CantidadEquivalente', hidden: true },
+            {
+               name: "CantidadVenta", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(false);
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'ValorUnitarioLista', hidden: true },
+            { name: 'PrecioUnitarioLista', hidden: true },
+            { name: 'ValorUnitario', hidden: true },
+            {
+               name: "PrecioUnitario", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(false);
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'CantidadBloqueada', hidden: true },
+            { name: 'IncluyeDescuentoListaPrecio', hidden: true },
+            { name: 'PermiteDescuento', hidden: true },
+            { name: 'SinSaldo', hidden: true },
+            { name: 'SolicitaAutorizacionDescuento', hidden: true },
+            { name: 'MontoBruto', hidden: true },
+            {
+               name: 'TipoDescuentoId', width: 50, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#TipoDescuentoList').val(),
+                  dataEvents: [
+                  {
+                     type: 'change',
+                     fn: function (e) {
+                        var $select = $(e.target);
+
+                        $(this).getAction({
+                           urlAction: '@Url.Action("ObtenerTipoDescuento", "Pedido")',
+                           id: $select.val(),
+                           onSuccess: function (response) {
+                              if (response.success) {
+                                 var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+                                 var row = $("#productoGrid").appGrid("getSelectedRow");
+
+                                 var tipoDescuento = response.data.Codigo;
+                                 $('#productoGrid').jqGrid('setCell', rowId, 'TipoDescuento', tipoDescuento);
+
+                                 habilitarDescuentoValor(rowId, tipoDescuento);
+                              } else {
+                                 msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                              }
+                           }
+                        });
+                     }
+                  }]
+               },
+               editrules: { required: true }
+            },
+            { name: 'TipoDescuento', hidden: true },
+            {
+               name: "DescuentoValor", width: 70, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(false);
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'PorcentajeDescuento', hidden: true },
+            { name: 'MontoDescuento1', hidden: true },
+            { name: 'MontoTotalDescuento', width: 90, align: 'right', formatter: 'number' },
+            { name: 'MontoNeto', hidden: true },
+            { name: 'MontoIgv', hidden: true },
+            {
+               name: "MontoTotal", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'PesoNeto', hidden: true },
+            { name: 'TipoAfectacionIgvId', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+         if ($('#EstadoCotizacion').val() === '@EstadoCotizacionConstante.FACTURADO') {
+            $("#menuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.SAVE,soli_auto', disabled: true });
+            $("#TipoCondicionPagoId").prop('disabled', true);
+            if($('#EnviadoProduccion').val() === '@SiNoConstante.S') {
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: true });
+               $("#productoMenuBar").prop('disabled', true);
+            }
+         }
+
+            if ($('#EnviadoProduccion').val() === '@SiNoConstante.S') {
+               if ($('#EstadoCotizacion').val() === '@EstadoCotizacionConstante.FACTURADO') {
+                  $("#productoMenuBar").prop('disabled', true);
+               }
+               if ($('#AutorizacionProduccion').val() !== '@SiNoConstante.S') {
+                   $('#productoMenuBar').appMenu('disabled', { buttonId: 'enviar_prod', disabled: true });
+                   $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: true });
+                  return;
+               }
+            }
+
+            var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            }
+            else
+               $("#productoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+            calcularTotalesGenerales();
+
+            if ($('#EstadoCotizacion').val() === '@EstadoCotizacionConstante.FACTURADO') {
+                    $('#productoMenuBar').appMenu('disabled');
+            return;
+            }
+            if ($('#EnviadoProduccion').val() === '@SiNoConstante.S') { 
+               if ($('#AutorizacionProduccion').val() !== '@SiNoConstante.S') {
+                   $('#productoMenuBar').appMenu('disabled', { buttonId: 'enviar_prod', disabled: true });
+                   $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: true });
+                  return;
+               }
+            }
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+    });
+        $("#anticipoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarAnticipoCliente", "Pedido")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AnticipoClienteDTO.CotizacionId", value: $('#CotizacionId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Recibo', 'Fecha', 'M.Pago','Banco', 'Fecha Ref.', 'Número Ope.Ref.',
+            'Mon.', 'Monto', '','T/D','Serie','Descripcion', '','T. Ope.','','','Estado','','',''],
+         colModel: [
+            { name: 'AnticipoClienteId', hidden: true },
+            { name: 'NumeroOperacion', width: 75, sortable: false },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'MedioPago', width: 50, sortable: false },
+            { name: 'Banco', width: 170, sortable: false },
+            { name: "FechaReferencia", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'NumeroReferencia', width: 140, sortable: false },
+            { name: 'Moneda', width: 50, sortable: false },
+            { name: "Monto", width: 100, align: 'right', formatter: 'number' },
+            { name: 'TipoDocumentoComercialId', hidden: true },
+            { name: 'TipoDocumentoComercial', width: 50, sortable: false },
+            { name: 'Serie', width: 60, sortable: false },
+            { name: 'Observacion', width: 250, sortable: false },
+            { name: 'TipoOperacionAnticipo', hidden: true },
+            { name: 'TipoOperacionAnticipoNombre', width: 60 },
+            { name: 'Extornado', hidden: true },
+            { name: 'EstadoComprobante', hidden: true },
+            { name: 'EstadoComprobanteNombre', width: 150 },
+            { name: 'RegistradoEnCotizacion', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#anticipoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            if ($('#EstadoCotizacion').val() === '@EstadoCotizacionConstante.FACTURADO') {
+               $('#anticipoMenuBar').appMenu('disabled');
+               return;
+            }
+
+            var row = $('#anticipoGrid').appGrid('getSelectedRow');
+
+            editCustomGridMenuBar('anticipoMenuBar  ', 'anticipoGrid');
+
+            if (row.Extornado === '@SiNoConstante.S' || row.TipoOperacionAnticipo ===
+               '@TipoOperacionAnticipoConstante.EXTORNO' || row.Estado === '@EstadoConstante.INACTIVO') {
+               $("#anticipoMenuBar").appMenu('disabled');
+               $("#anticipoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.NEW', disabled: false });
+               return;
+            }
+
+            if (row.EstadoComprobante === '@EstadoComprobanteConstante.CERRADO' || row.EstadoComprobante === '@EstadoComprobanteConstante.EMITIDO') {
+               $("#anticipoMenuBar").appMenu('disabled');
+               $("#anticipoMenuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.NEW,@MenuItemKey.PREVIEW', disabled: false });
+               if (row.RegistradoEnCotizacion === '@SiNoConstante.N')
+                  $("#anticipoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: false });
+               else
+                  $("#anticipoMenuBar").appMenu('disabledButton', { buttonId: 'extornar', disabled: false });
+               return;
+            }
+
+            if (row.EstadoComprobante === '@EstadoComprobanteConstante.PENDIENTE')
+               $("#anticipoMenuBar").appMenu('disabledButton', { buttonList: 'cerrar', disabled: false });
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('anticipoMenuBar', 'anticipoGrid');
+            $("#anticipoGrid").appGrid('resizeGrid', 'anticipoContainer');
+
+            if ($('#EstadoCotizacion').val() === '@EstadoCotizacionConstante.FACTURADO') {
+               $('#anticipoMenuBar').appMenu('disabled');
+               return;
+            }
+         },
+         rowattr: function (rd) {
+            if (rd.TipoOperacionAnticipo === '@TipoOperacionAnticipoConstante.EXTORNO' ||
+               rd.Estado === '@EstadoConstante.INACTIVO')
+               return { 'class': 'jqgrid-deletedrow' };
+         },
+         height: calculateGridHeight('anticipoContainer')
+      });
+
+      $("#procesoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarOrdenProduccionSubProceso", "Pedido")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenProduccionSubProcesoDTO.OrdenProduccionId", value: $('#OrdenProduccionId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Proceso', 'F. Inicio', 'F. Fin', 'Estado','',''],
+         colModel: [
+            { name: 'OrdenProduccionSubProcesoId', hidden: true },
+            { name: 'OrdenProduccionId', hidden: true },
+            { name: 'SubProcesoProduccionNombre', width: 350, editable: false },
+            { name: "FechaInicio", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: "FechaFin", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: 'EstadoOrdenProduccionSubProcesoNombre', width: 150, editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#procesoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('procesoMenuBar', 'procesoGrid');
+            $("#procesoGrid").appGrid('resizeGrid', 'procesoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('procesoContainer')
+      });
+
+      $('#proveedorListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Proveedor", new { Area = "MG" })',
+               container: 'proveedorListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#proveedorCreatePopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("CreatePopup", "Proveedor", new { Area = "MG" })',
+               viewModel: [
+                  { name: "ProveedorDTO.ProveedorId", value: 0, type: 'int' }
+               ],
+               container: 'proveedorCreatePopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+      $('#saldoListPopup').setDialog({
+         onShow: function (p) {
+            if (!$("#ListaPrecioProveedorId").validateNumeric()) {
+               $(this).getView({
+                  urlAction: '@Url.Action("SaldoListPopup", "ListaPrecio")',
+                  container: 'saldoListPopupContent',
+                  selModel: [
+                     { name: "MonedaId", value: $('#MonedaId').val(), disabled: true },
+                     { name: "ListaPrecioId", value: $('#ListaPrecioId').val(), disabled: true },
+                  ],
+                  showLoading: false,
+                  hideLoading: false
+               });
+            } else {
+               $(this).getView({
+                  urlAction: '@Url.Action("SaldoProveedorListPopup", "ListaPrecio")',
+                  container: 'saldoListPopupContent',
+                  viewModel: [
+                     { name: 'ListaPrecioProveedorProductoDTO.ListaPrecioProveedorId', value: $('#ListaPrecioProveedorId').val(), type: 'int' }
+                  ],
+                  selModel: [
+                     { name: "MonedaId", value: $('#MonedaId').val(), disabled: true },
+                     { name: "ListaPrecioId", value: $('#ListaPrecioId').val(), disabled: true },
+                  ],
+                  showLoading: false,
+                  hideLoading: false
+               });
+            }
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#autorizacionEditPopup').setDialog({
+         onShow: function (p) {
+            $('#' + p.dialogId).getView({
+               urlAction: '@Url.Action("AutorizacionEditPopup", "Pedido")',
+               viewModel: [
+                  { name: 'CotizacionDTO.CotizacionId', value: $('#CotizacionId').val(), type: 'int' }
+               ],
+               container: 'autorizacionEditPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+            $("#productoPopupGrid").appGrid('resizeGrid', 'productoPopupContainer');
+         }
+      });
+      $('#estadoAutoEditPopup').setDialog({
+         onShow: function (p) {
+            $('#' + p.dialogId).getView({
+               urlAction: '@Url.Action("EstadoAutoEditPopup", "Pedido")',
+               container: 'estadoAutoEditPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#anticipoEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#anticipoGrid').appGrid('getSelectedRow');
+
+            var dtoState;
+            var anticipoClienteId = 0;
+
+            if (p.editAction === '@ViewModelEditAction.Edit') {
+               anticipoClienteId = row.AnticipoClienteId;
+               dtoState = row.DTOState;
+            }
+            else
+              dtoState = '@(((int) DTOState.Added).ToString())';
+
+            $('#anticipoEditPopup').getView({
+               urlAction: '@Url.Action("CreateEditPopup", "AnticipoCliente")',
+               viewModel: [
+                  { name: 'AnticipoClienteDTO.AnticipoClienteId', value: anticipoClienteId, type: 'int' },
+                  { name: 'AnticipoClienteDTO.MonedaId', value: $('#MonedaId').val(), type: 'int' },
+                  { name: "AnticipoClienteDTO.DTOState", value: dtoState, type: 'int' }
+               ],
+               container: 'anticipoEditPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         }
+      });
+      $('#anticipoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "AnticipoCliente")',
+               container: 'anticipoListPopupContent',
+               viewModel: [
+                  { name: "AnticipoClienteDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+                  { name: "AnticipoClienteDTO.MonedaId", value: $('#MonedaId').val(), type: 'int' },
+                  { name: 'AnticipoClienteDTO.TipoOperacionAnticipoDTO.Codigo', value: '@TipoOperacionAnticipoConstante.ANTICIPO' },
+                  { name: 'AnticipoClienteDTO.Extornado', value: '@SiNoConstante.N' },
+                  { name: 'AnticipoClienteDTO.EstadoComprobanteDTO.Codigo', value: '@EstadoComprobanteConstante.EMITIDO' },
+                  { name: 'AnticipoClienteDTO.NullCotizacionId', value: '@SiNoConstante.S' },
+                  { name: 'AnticipoClienteDTO.ConSaldo', value: '@SiNoConstante.S' },
+               ],
+
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+      $('#enviarProduccionEditPopup').setDialog({
+         onShow: function (p) {
+            $('#' + p.dialogId).getView({
+               urlAction: '@Url.Action("EnviarProduccionEditPopup", "Pedido")',
+               viewModel: [
+                  { name: 'CotizacionDTO.CotizacionId', value: $('#CotizacionId').val(), type: 'int' }
+               ],
+               container: 'enviarProduccionEditPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+            $("#productoPopupGrid").appGrid('resizeGrid', 'productoPopupContainer');
+         }
+      });
+
+      $('#enviarProduccionParcialEditPopup').setDialog({
+         onShow: function (p) {
+            $('#' + p.dialogId).getView({
+               urlAction: '@Url.Action("EnviarProduccionParcialEditPopup", "Pedido")',
+               viewModel: [
+                  { name: 'CotizacionDTO.CotizacionId', value: $('#CotizacionId').val(), type: 'int' }
+               ],
+                container: 'enviarProduccionParcialEditPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+            $("#productoPopupGrid").appGrid('resizeGrid', 'productoPopupContainer');
+         }
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#productoTab':
+               $('#productoGrid').appGrid('resizeGrid', 'productoContainer');
+               $('#productoGrid').jqGrid('setGridHeight', calculateGridHeight('productoContainer'));
+               break;
+
+            case '#anticipoTab':
+               $('#anticipoGrid').appGrid('resizeGrid', 'anticipoContainer');
+               $('#anticipoGrid').jqGrid('setGridHeight', calculateGridHeight('anticipoContainer'));
+               break;
+
+            case '#procesoTab':
+               $('#procesoGrid').appGrid('resizeGrid', 'procesoContainer');
+               $('#procesoGrid').jqGrid('setGridHeight', calculateGridHeight('procesoContainer'));
+               break;
+         }
+      });
+   });
+   function monedaIdOnChange() {
+
+      var monedaId = $("#MonedaId").val();
+      if ($.isNullOrEmpty(monedaId)) {
+         $("#ListaPrecioId").val('');
+         $("#MontoTipoCambio").prop('disabled', true);
+         $("#EsLocal").val('');
+         return;
+      }
+
+      $(this).postAction({
+         urlAction: '@Url.Action("ListarListaPrecio", "Pedido")',
+         viewModel: [
+            { name: "CotizacionDTO.MonedaId", value: monedaId, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#EsLocal').val(response.data.esLocal);
+               $('#ListaPrecioId').find('option').remove().end();
+               $("#ListaPrecioId").addItems(response.data.list);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function proveedorOnClick(key) {
+      if (key === 'list')
+         $('#proveedorListPopup').showDialog();
+      else
+         $('#proveedorCreatePopup').showDialog();
+   };
+   function proveedorListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      proveedorSelectedPopup('proveedorListPopup',row);
+   };
+   function proveedorSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_proveedor_seleccion_requerida")');
+         return false;
+      }
+
+      if (sourceId === 'proveedorListPopup') {
+         $('#ProveedorId').val(row.ProveedorId);
+         $('#Proveedor').val(row.RazonSocial);
+         $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+         $('#ListaPrecioProveedorId').val(0);
+         $('#IgnorarIncrementoFraccion').val('@SiNoConstante.N');
+
+         $(this).postAction({
+            urlAction: '@Url.Action("ObtenerListaPrecioProveedorId", "Pedido")',
+            viewModel: [
+               { name: "ListaPrecioProveedorDTO.ListaPrecioId", value: $('#ListaPrecioId').val(), type: 'int' },
+               { name: "ListaPrecioProveedorDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' }
+            ],
+            onSuccess: function (response) {
+               if (response.success) {
+                  $('#ListaPrecioProveedorId').val(response.data.listaPrecioProveedorId);
+                  $('#IgnorarIncrementoFraccion').val(response.data.ignorarIncrementoFraccion);
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               }
+            }
+         });
+      } else {
+         $('#mp-ProveedorId').val(row.ProveedorId);
+         $('#mp-Proveedor2').val(row.RazonSocial);
+         $('#mp-NumeroDocumentoIdentidad2').val(row.NumeroDocumentoIdentidad);
+      }
+
+      $('#' + sourceId).hideDialog();
+   };
+   function proveedorCreatePopupOnClick() {
+
+      if (!mp_validarDatos())
+         return false;
+
+      mp_grabarDatos();
+   };
+   function proveedorCreatedPopup(row) {
+
+      $('#ProveedorId').val(row.ProveedorId);
+      $('#Proveedor').val(row.RazonSocial);
+      $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+
+      $('#proveedorCreatePopup').hideDialog();
+   };
+   function listaPrecioIdOnChange() {
+
+      var listaPrecioId = $("#ListaPrecioId").val();
+      if ($.isNullOrEmpty(listaPrecioId)) {
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerListaPrecio", "Pedido")',
+         id: listaPrecioId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#Tasa").val(response.data.Tasa);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+
+            if ($('#AutorizacionPendiente').val() === '@SiNoConstante.S') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_cotizacion_autorizacion_pendiente_aprobacion")');
+               return;
+            }
+
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Pedido")'
+            });
+            break;
+
+         case 'soli_auto':
+            if (existeProductosEnEdicion())
+               return;
+
+            $('#autorizacionEditPopup').showDialog();
+            break;
+
+         case 'estado_auto':
+            $('#estadoAutoEditPopup').showDialog();
+            break;
+
+         case 'reporte_canto':
+            generarFormato(key, '@DataFormatoImpresionConstante.PEDIDO_TAPACANTO',$('#CotizacionId').val());
+            break;
+
+         case 'enviar_prod':
+              mostrarProductosOP();
+            break;
+      }
+   };
+   function existeProductosEnEdicion(){
+      var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+      if (editableRows !== 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("VT_cotizacion_productos_en_edicion")');
+         return true;
+      }
+
+      return false;
+   };
+   function validarDatos() {
+      if (!$('#Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#MonedaId').validateNumeric('@SR.GetString("GEN_moneda_seleccion_requerida")'))
+         return false;
+      if ($('#EsLocal').val() === '@SiNoConstante.N')
+         if (!$('#MontoTipoCambio').validateNumeric('@SR.GetString("GEN_tipo_cambio_monto_requerido")'))
+            return false;
+      if (!$('#VendedorId').validateNumeric('@SR.GetString("VT_vendedor_seleccion_requerida")'))
+         return false;
+      if (!$('#ListaPrecioId').validateNumeric('@SR.GetString("VT_lista_precio_seleccion_requerida")'))
+         return false;
+      if (!$('#ProveedorId').validateNumeric('@SR.GetString("MG_proveedor_seleccion_requerida")'))
+         return false;
+
+      return true;
+   }
+   function grabarDatos() {
+
+      if (!validarDatos())
+         return;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "CotizacionDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' },
+            { name: "CotizacionDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+            { name: "CotizacionDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "CotizacionDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+            { name: "CotizacionDTO.MonedaId", value: $('#MonedaId').val(), type: 'int' },
+            { name: "CotizacionDTO.MontoTipoCambio", value: $('#MontoTipoCambio').val(), type: 'decimal' },
+            { name: "CotizacionDTO.ListaPrecioId", value: $('#ListaPrecioId').val(), type: 'int' },
+            { name: "CotizacionDTO.TipoCondicionPagoId", value: $('#TipoCondicionPagoId').val(), type: 'int' },
+            { name: "CotizacionDTO.Observacion", value: $('#Observacion').val() },
+            { name: "CotizacionDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+            { name: "CotizacionDTO.MesContableId", value: $('#MesContableId').val(), type: 'int' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Pedido")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#CotizacionId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $("#Fecha").prop('disabled', true);
+               $("#MonedaId").prop('disabled', true);
+               $("#ListaPrecioId").prop('disabled', true);
+               $("#productoGrid").appGrid('reloadJSON');
+               $("#anticipoGrid").appGrid('reloadJSON');
+               if ($("#ListaPrecioProveedorId").validateNumeric())
+                  $('#Proveedor').appButtonTextBox('disabled', { disabled: true });
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      if ($('#AutorizacionPendiente').val() === '@SiNoConstante.S') {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_cotizacion_autorizacion_pendiente_aprobacion")');
+         return;
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarProducto();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#productoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+
+            if (row.DetalleRequerido === '@SiNoConstante.S') {
+               if (!$('#' + rowId + '_Descripcion').validateString('@SR.GetString("VT_producto_detalle_requerido")'))
+                  return false;
+            }
+
+            if (!$('#' + rowId + '_CantidadVenta').validateNumeric('@SR.GetString("GEN_cantidad_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_PrecioUnitario').validateNumeric('@SR.GetString("VT_precio_unitario_requerido")'))
+               return false;
+
+            calcularTotal(true);
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarCotizacionProducto", "Pedido")',
+                     viewModel: [
+                        { name: "CotizacionProductoDTO.CotizacionProductoId", value: row.CotizacionProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#productoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+
+    function mostrarProductosOP() {
+        const estado = $('#EnviadoProduccion').val();
+
+        if (estado === '@SiNoConstante.N') {
+            $('#agregarItemPopup').showDialog();
+        }
+
+        if (estado === '@SiNoConstante.S') {
+            $('#enviarProduccionEditPopup').showDialog();
+        }
+
+        if (estado === 'P') {
+            $('#enviarProduccionParcialEditPopup').showDialog();
+        }
+    }
+
+   function mostrarProducto() {
+      $('#saldoListPopup').showDialog();
+   };
+   function saldoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      listaPrecioProductoSelectedPopup('',row);
+   };
+   function listaPrecioProductoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var cantidad = parseFloatEx(row.CantidadSaldo);
+      if (cantidad === 0 && row.TipoProducto === '@TipoProductoConstante.PRODUCTO') {
+         if (row.EsCombo === '@SiNoConstante.N') {
+            msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("VT_producto_sin_saldo")');
+            return false;
+         }
+      }
+
+      var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            CotizacionProductoId: 0,
+            CotizacionId: $('#CotizacionId').val(),
+            ProductoId: row.ProductoId,
+            Codigo: row.Codigo,
+            ProductoNombre: row.Descripcion,
+            UsarIncrementoFraccion: row.UsarIncrementoFraccion,
+            EsCombo: row.EsCombo,
+            TipoProducto: row.TipoProducto,
+            UnidadMedidaNombre: row.UnidadMedidaNombre,
+            TipoIgv: row.TipoIgv,
+            DetalleRequerido: row.DetalleRequerido,
+            ValorUnitarioLista: row.ValorUnitario,
+            PrecioUnitarioLista: row.PrecioUnitario,
+            ValorUnitario: row.ValorUnitario,
+            PrecioUnitario: row.PrecioUnitario,
+            IncluyeDescuentoListaPrecio: row.IncluyeDescuentoListaPrecio,
+            PermiteDescuento: row.PermiteDescuento,
+            SinSaldo: (row.TipoProducto === '@TipoProductoConstante.SERVICIO' ? '@SiNoConstante.N' :
+               parseFloatEx(row.CantidadSaldo) > 0 ? '@SiNoConstante.N' : '@SiNoConstante.S'),
+            Cantidad: 0,
+            CantidadPresentacion: 0,
+            CantidadEquivalente: 0,
+            CantidadVenta: 0,
+            MontoBruto: 0,
+            PorcentajeDescuento: 0,
+            MontoDescuento1: 0,
+            MontoTotalDescuento: 0,
+            MontoNeto: 0,
+            MontoIgv: 0,
+            MontoTotal: 0,
+            PesoNeto: row.PesoNeto,
+            TipoAfectacionIgvId: 0,
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#productoGrid").appGrid('addRow', initdata);
+
+         var rowId = $("#productoGrid").appGrid('getSelectedRowId');
+         habilitarSiEsProducto(rowId, row.TipoProducto);
+         habilitarTipoDescuento(rowId, row.PermiteDescuento, '@TipoDescuentoConstante.SIN_DESCUENTO');
+
+         $("#productoMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoId', row.ProductoId);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Codigo', row.Codigo);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoNombre', row.Descripcion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UsarIncrementoFraccion', row.UsarIncrementoFraccion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'TipoProducto', row.TipoProducto);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaId', '');
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaNombre', row.UnidadMedidaNombre);
+         $('#productoGrid').jqGrid('setCell', rowId, 'TipoIgv', row.TipoIgv);
+         $('#productoGrid').jqGrid('setCell', rowId, 'DetalleRequerido', row.DetalleRequerido);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ValorUnitarioLista', row.ValorUnitario);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PrecioUnitarioLista', row.PrecioUnitario);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ValorUnitario', row.ValorUnitario);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Cantidad', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'CantidadPresentacion', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'CantidadEquivalente', 0);
+         $('#' + rowId + '_CantidadVenta').val(0);
+         $('#' + rowId + '_PrecioUnitario').val(parseFloatEx(row.PrecioUnitario));
+         $('#productoGrid').jqGrid('setCell', rowId, 'IncluyeDescuentoListaPrecio', row.IncluyeDescuentoListaPrecio);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PermiteDescuento', row.PermiteDescuento);
+         $('#productoGrid').jqGrid('setCell', rowId, 'SinSaldo', (row.TipoProducto === '@TipoProductoConstante.SERVICIO' ? '@SiNoConstante.N' :
+               parseFloatEx(row.CantidadSaldo) > 0 ? '@SiNoConstante.N' : '@SiNoConstante.S'));
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoBruto', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PorcentajeDescuento', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoDescuento1', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoTotalDescuento', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoNeto', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoIgv', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PesoNeto', row.PesoNeto);
+         $('#productoGrid').jqGrid('setCell', rowId, 'TipoAfectacionIgvId', 0);
+         $('#' + rowId + '_MontoTotal').val(0);
+
+         habilitarSiEsProducto(rowId, row.TipoProducto);
+         habilitarTipoDescuento(rowId, row.PermiteDescuento, '@TipoDescuentoConstante.SIN_DESCUENTO');
+      }
+
+      obtenerProductoDetalleList(row.ProductoId);
+
+      $('#saldoListPopup').hideDialog();
+   };
+   function listaPrecioPresentacionSelectedPopup(sourceId, row, parentRow) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var cantidad = parseFloatEx(parentRow.CantidadSaldo);
+      if (cantidad === 0 && parentRow.TipoProducto === '@TipoProductoConstante.PRODUCTO') {
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("VT_producto_sin_saldo")');
+         return false;
+      }
+
+      var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            CotizacionProductoId: 0,
+            CotizacionId: $('#CotizacionId').val(),
+            ProductoId: parentRow.ProductoId,
+            Codigo: parentRow.Codigo,
+            ProductoNombre: parentRow.Descripcion,
+            UsarIncrementoFraccion: parentRow.UsarIncrementoFraccion,
+            EsCombo: parentRow.EsCombo,
+            TipoProducto: parentRow.TipoProducto,
+            UnidadMedidaId: row.UnidadMedidaId,
+            UnidadMedidaNombre: row.UnidadMedidaNombre,
+            TipoIgv: parentRow.TipoIgv,
+            DetalleRequerido: parentRow.DetalleRequerido,
+            ValorUnitarioLista: row.ValorUnitario,
+            PrecioUnitarioLista: row.PrecioUnitario,
+            ValorUnitario: row.ValorUnitario,
+            PrecioUnitario: row.PrecioUnitario,
+            IncluyeDescuentoListaPrecio: parentRow.IncluyeDescuentoListaPrecio,
+            PermiteDescuento: parentRow.PermiteDescuento,
+            SinSaldo: (parentRow.TipoProducto === '@TipoProductoConstante.SERVICIO' ? '@SiNoConstante.N' :
+               parseFloatEx(parentRow.CantidadSaldo) > 0 ? '@SiNoConstante.N' : '@SiNoConstante.S'),
+            Cantidad: 0,
+            CantidadPresentacion: 0,
+            CantidadEquivalente: row.CantidadEquivalente,
+            CantidadVenta: 0,
+            MontoBruto: 0,
+            PorcentajeDescuento: 0,
+            MontoDescuento1: 0,
+            MontoTotalDescuento: 0,
+            MontoNeto: 0,
+            MontoIgv: 0,
+            MontoTotal: 0,
+            PesoNeto: parentRow.PesoNeto,
+            TipoAfectacionIgvId: 0,
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#productoGrid").appGrid('addRow', initdata);
+
+         var rowId = $("#productoGrid").appGrid('getSelectedRowId');
+         habilitarSiEsProducto(rowId, parentRow.TipoProducto);
+         habilitarTipoDescuento(rowId, parentRow.PermiteDescuento, '@TipoDescuentoConstante.SIN_DESCUENTO');
+
+         $("#productoMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoId', parentRow.ProductoId);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Codigo', parentRow.Codigo);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoNombre', parentRow.Descripcion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UsarIncrementoFraccion', parentRow.UsarIncrementoFraccion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'TipoProducto', parentRow.TipoProducto);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaId', row.UnidadMedidaId);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaNombre', row.UnidadMedidaNombre);
+         $('#productoGrid').jqGrid('setCell', rowId, 'TipoIgv', parentRow.TipoIgv);
+         $('#productoGrid').jqGrid('setCell', rowId, 'DetalleRequerido', parentRow.DetalleRequerido);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ValorUnitarioLista', row.ValorUnitario);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PrecioUnitarioLista', row.PrecioUnitario);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ValorUnitario', row.ValorUnitario);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Cantidad', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'CantidadPresentacion', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'CantidadEquivalente', row.CantidadEquivalente);
+         $('#' + rowId + '_CantidadVenta').val(0);
+         $('#' + rowId + '_PrecioUnitario').val(parseFloatEx(row.PrecioUnitario));
+         $('#productoGrid').jqGrid('setCell', rowId, 'IncluyeDescuentoListaPrecio', parentRow.IncluyeDescuentoListaPrecio);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PermiteDescuento', parentRow.PermiteDescuento);
+         $('#productoGrid').jqGrid('setCell', rowId, 'SinSaldo', (parentRow.TipoProducto === '@TipoProductoConstante.SERVICIO' ? '@SiNoConstante.N' :
+               parseFloatEx(parentRow.CantidadSaldo) > 0 ? '@SiNoConstante.N' : '@SiNoConstante.S'));
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoBruto', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PorcentajeDescuento', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoDescuento1', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoTotalDescuento', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoNeto', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'MontoIgv', 0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PesoNeto', parentRow.PesoNeto);
+         $('#productoGrid').jqGrid('setCell', rowId, 'TipoAfectacionIgvId', 0);
+         $('#' + rowId + '_MontoTotal').val(0);
+
+         habilitarSiEsProducto(rowId, parentRow.TipoProducto);
+         habilitarTipoDescuento(rowId, parentRow.PermiteDescuento, '@TipoDescuentoConstante.SIN_DESCUENTO');
+      }
+
+      obtenerProductoDetalleList(parentRow.ProductoId);
+
+      $('#saldoListPopup').hideDialog();
+   };
+   function permiteCantidadFraccion(cantidad, row, rowId) {
+
+      var integerPart = parseInt(cantidad);
+      var fracPart = (cantidad % 1);
+
+      if (row.UsarIncrementoFraccion === '@SiNoConstante.S') {
+
+         if(integerPart > 0 && fracPart !=0){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_cantidad_ingreso_no_decimal")');
+            $('#' + rowId + '_PrecioUnitario').val(row.PrecioUnitarioLista);
+            return false;
+         }
+      }
+
+      return true;
+   };
+   function validarDescuento(cantidad, row, rowId) {
+
+      var descuentoValor = parseFloatEx($('#' + rowId + '_DescuentoValor').val()) || 0;
+
+      if (row.TipoDescuento === '@TipoDescuentoConstante.CANTIDAD') {
+
+         if (descuentoValor >= cantidad){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_descuento_valor_mayor_cantidad_venta")');
+            return false;
+         }
+      }
+
+      return true;
+   };
+   function calcularPrecioUnitario(cantidad,row,rowId){
+
+      if (row.UsarIncrementoFraccion == '@SiNoConstante.S'){
+
+         if ($('#IgnorarIncrementoFraccion').val() === '@SiNoConstante.S')
+            return;
+
+         var fracPart = (cantidad % 1);
+         if(fracPart != 0){
+
+            var puLista = parseFloatEx(row.PrecioUnitarioLista);
+
+            var porcentajeFraccionPU = parseFloatEx($('#PorcentajeFraccionPU').val());
+            var puFinal = puLista + roundEx(puLista * roundEx(porcentajeFraccionPU / 100, 4), 1);
+
+            $('#' + rowId + '_PrecioUnitario').val(puFinal);
+         }
+      }
+   };
+   function calcularTotal(grabar) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+      var cantidad = parseFloatEx($('#' + rowId + '_CantidadVenta').val()) || 0;
+      var cantidadEquivalente = parseFloatEx(row.CantidadEquivalente);
+      if (cantidadEquivalente > 0)
+         cantidad = cantidad * cantidadEquivalente;
+
+      if (!permiteCantidadFraccion(cantidad, row, rowId))
+         return;
+
+      if (!validarDescuento(cantidad, row, rowId))
+         return;
+
+      calcularPrecioUnitario(cantidad, row, rowId);
+
+      $(this).postAction({
+         viewModel: [
+            { name: "CotizacionProductoDTO.CotizacionProductoId", value: row.CotizacionProductoId, type: 'int' },
+            { name: "CotizacionProductoDTO.CotizacionId", value: row.CotizacionId, type: 'int' },
+            { name: "CotizacionProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+            { name: "CotizacionProductoDTO.ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.EsCombo", value: row.EsCombo },
+            { name: "CotizacionProductoDTO.ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.TipoProductoDTO.Codigo", value: row.TipoProducto },
+            { name: "CotizacionProductoDTO.Cantidad", value: cantidad, type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.PrecioUnitario", value: $('#' + rowId + '_PrecioUnitario').val(), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.Cantidad", value: cantidad, type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.TipoIgv", value: row.TipoIgv },
+            { name: "CalculadorVentaItemDTO.ImpuestoTasa", value: $('#Tasa').val(), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.TipoDescuento", value: row.TipoDescuento },
+            { name: "CalculadorVentaItemDTO.DescuentoValor", value: $('#' + rowId + '_DescuentoValor').val(), type: 'decimal' }
+         ],
+         urlAction: '@Url.Action("VerificarSaldoCalcularMontos", "Pedido")',
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#productoGrid').jqGrid('setCell', rowId, 'Cantidad', cantidad);
+               if (cantidadEquivalente > 0)
+                  $('#productoGrid').jqGrid('setCell', rowId, 'CantidadPresentacion', parseFloatEx($('#' + rowId + '_CantidadVenta').val()));
+
+               var tasaImpuesto = 1 + roundEx(parseFloatEx($('#Tasa').val()) / 100, 2);
+
+               $('#productoGrid').jqGrid('setCell', rowId, 'ValorUnitario', response.data.ValorUnitario);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoBruto', response.data.MontoBruto);
+               $('#productoGrid').jqGrid('setCell', rowId, 'PorcentajeDescuento', response.data.PorcentajeDescuento);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoDescuento1', response.data.MontoDescuento1);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoTotalDescuento', roundEx(response.data.MontoDescuento1 * tasaImpuesto, 2));
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoNeto', response.data.MontoNeto);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoIgv', response.data.MontoImpuesto);
+               $('#' + rowId + '_MontoTotal').val(response.data.MontoTotal);
+
+               if (grabar)
+                  grabarProducto(rowId);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function editarProductoInGrid() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+      var row = $("#productoGrid").appGrid("getSelectedRow");
+
+      obtenerProductoDetalleList(row.ProductoId);
+
+      $('#productoGrid').jqGrid('editRow', rowId);
+
+      if (row.CantidadBloqueada === '@SiNoConstante.S')
+         $('#' + rowId + '_CantidadVenta').prop('readonly',true);
+      else {
+         habilitarSiEsProducto(rowId, row.TipoProducto);
+      }
+
+      habilitarTipoDescuento(rowId, row.PermiteDescuento, row.TipoDescuento);
+
+      $("#productoMenuBar").appMenu('saveMenu');
+   };
+   function obtenerProductoDetalleList(id) {
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProductoDetalle", "Pedido")',
+         id: id || 0,
+         onSuccess: function (response) {
+            $("#productoDetalleList").empty();
+            if (response.success) {
+
+               var list = response.data;
+               if (list.length > 0)
+                  $.each(list, function (i, item) {
+                     $("#productoDetalleList").append($("<option>").attr('value', item));
+                  });
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function habilitarSiEsProducto(rowId, tipoProducto) {
+      if (tipoProducto === '@TipoProductoConstante.PRODUCTO')
+         $('#' + rowId + '_PrecioUnitario').prop('readonly', true);
+      else
+         $('#' + rowId + '_PrecioUnitario').prop('readonly', false);
+   };
+   function habilitarTipoDescuento(rowId, permiteDescuento, tipoDescuento) {
+
+      switch (permiteDescuento) {
+         case '@SiNoConstante.S':
+            $('#' + rowId + '_TipoDescuentoId').prop('disabled', false);
+            habilitarDescuentoValor(rowId, tipoDescuento);
+            break;
+
+         default:
+            $('#' + rowId + '_TipoDescuentoId').val($('#' + rowId + '_TipoDescuentoId option:first').val());
+            $('#' + rowId + '_TipoDescuentoId').prop('disabled', true);
+            habilitarDescuentoValor(rowId, '@TipoDescuentoConstante.SIN_DESCUENTO');
+      }
+   };
+   function habilitarDescuentoValor(rowId, tipoDescuento) {
+      if (tipoDescuento === '@TipoDescuentoConstante.SIN_DESCUENTO') {
+         $('#' + rowId + '_DescuentoValor').prop('readonly', true);
+         $('#' + rowId + '_DescuentoValor').val(0);
+         $('#productoGrid').jqGrid('setCell', rowId, 'PorcentajeDescuento', 0);
+      } else {
+         $('#' + rowId + '_DescuentoValor').prop('readonly', false);
+      }
+   };
+   function grabarProducto(rowId) {
+      $("#productoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+         var row = $("#productoGrid").appGrid('getSelectedRow');
+
+         setModifiedDTO(row);
+         $(this).saveView({
+            urlAction: '@Url.Action("GrabarCotizacionProducto", "Pedido")',
+            viewModel: [
+               { name: "CotizacionProductoDTO.CotizacionProductoId", value: row.CotizacionProductoId, type: 'int' },
+               { name: "CotizacionProductoDTO.CotizacionId", value: row.CotizacionId, type: 'int' },
+               { name: "CotizacionProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+               { name: "CotizacionProductoDTO.ProductoDTO.TipoIgvDTO.Codigo", value: row.TipoIgv },
+               { name: "CotizacionProductoDTO.ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.EsCombo", value: row.EsCombo },
+               { name: "CotizacionProductoDTO.Descripcion", value: row.Descripcion },
+               { name: "CotizacionProductoDTO.ValorUnitarioLista", value: row.ValorUnitarioLista, type: 'decimal' },
+               { name: "CotizacionProductoDTO.PrecioUnitarioLista", value: row.PrecioUnitarioLista, type: 'decimal' },
+               { name: "CotizacionProductoDTO.ValorUnitario", value: row.ValorUnitario, type: 'decimal' },
+               { name: "CotizacionProductoDTO.PrecioUnitario", value: row.PrecioUnitario, type: 'decimal' },
+               { name: "CotizacionProductoDTO.Cantidad", value: row.Cantidad, type: 'decimal' },
+               { name: "CotizacionProductoDTO.UnidadMedidaId", value: row.UnidadMedidaId, type: 'int' },
+               { name: "CotizacionProductoDTO.CantidadPresentacion", value: row.CantidadPresentacion, type: 'decimal' },
+               { name: "CotizacionProductoDTO.CantidadEquivalente", value: row.CantidadEquivalente, type: 'decimal' },
+               { name: "CotizacionProductoDTO.IncluyeDescuentoListaPrecio", value: row.IncluyeDescuentoListaPrecio },
+               { name: "CotizacionProductoDTO.PermiteDescuento", value: row.PermiteDescuento },
+               { name: "CotizacionProductoDTO.SinSaldo", value: row.SinSaldo },
+               { name: "CotizacionProductoDTO.SolicitaAutorizacionDescuento", value: row.SolicitaAutorizacionDescuento },
+               { name: "CotizacionProductoDTO.MontoBruto", value: row.MontoBruto, type: 'decimal' },
+               { name: "CotizacionProductoDTO.TipoDescuentoId", value: row.TipoDescuentoId, type: 'int' },
+               { name: "CotizacionProductoDTO.DescuentoValor", value: row.DescuentoValor, type: 'decimal' },
+               { name: "CotizacionProductoDTO.PorcentajeDescuento", value: row.PorcentajeDescuento, type: 'decimal' },
+               { name: "CotizacionProductoDTO.MontoDescuento1", value: row.MontoDescuento1, type: 'decimal' },
+               { name: "CotizacionProductoDTO.MontoNeto", value: row.MontoNeto, type: 'decimal' },
+               { name: "CotizacionProductoDTO.MontoIgv", value: row.MontoIgv, type: 'decimal' },
+               { name: "CotizacionProductoDTO.MontoTotal", value: row.MontoTotal, type: 'decimal' },
+               { name: "CotizacionProductoDTO.PesoNeto", value: row.PesoNeto, type: 'decimal' },
+               { name: "CotizacionProductoDTO.TipoAfectacionIgvId", value: row.TipoAfectacionIgvId, type: 'int' },
+               { name: "CotizacionProductoDTO.DTOState", value: row.DTOState, type: 'int' }
+            ],
+            onSuccess: function (response) {
+               if (response.success) {
+                  $("#productoGrid").appGrid('reloadJSON');
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  $("#productoMenuBar").appMenu('saveMenu');
+               }
+            }
+         });
+      }});
+   };
+   function calcularTotalesGenerales()
+   {
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTotales", "Pedido")',
+         id: $('#CotizacionId').val() || 0,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#MontoBruto').val(numeral(response.data.MontoBruto).format('0,0.00'));
+               $('#MontoNeto').val(numeral(response.data.MontoNeto).format('0,0.00'));
+               $('#MontoIgv').val(numeral(response.data.MontoIgv).format('0,0.00'));
+               $('#MontoTotal').val(numeral(response.data.MontoTotal).format('0,0.00'));
+               $('#MontoAnticipo').val(numeral(response.data.MontoAnticipo).format('0,0.00'));
+               $('#MontoSaldo').val(numeral(response.data.MontoSaldo).format('0,0.00'));
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function anticipoMenuBarOnClick(key) {
+
+      var row = $('#anticipoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            $('#agregarAnticipoPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            $('#anticipoEditPopup').showDialog({ editAction: '@ViewModelEditAction.Edit' });
+            break;
+
+         case 'cerrar':
+
+            $(this).saveView({
+               urlAction: '@Url.Action("CerrarAnticipoCliente", "Pedido")',
+               viewModel: [
+                  { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.AnticipoClienteId, type: 'int' }
+               ],
+               onSuccess: function (response) {
+                  if (response.success) {
+                     $("#anticipoGrid").appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+
+         case '@MenuItemKey.PREVIEW':
+            generarFormato(key, '@DataFormatoImpresionConstante.PEDIDO_ADELANTO', $('#CotizacionId').val());
+            break;
+
+         case 'extornar':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_extornar_titulo")',
+               message: '@SR.GetString("VT_anticipo_seleccionado_extornar_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("ExtornarAnticipoCliente", "Pedido")',
+                     viewModel: [
+                        { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.AnticipoClienteId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#anticipoGrid').appGrid('reloadJSON');
+                           calcularTotalesGenerales();
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function agregarAnticipoPopupOnClick() {
+      $('#agregarAnticipoPopup').hideDialog();
+
+      if ($('#mp-AnticipoExistente').prop('checked')) {
+         $('#anticipoListPopup').showDialog({ multiselect: false });
+      } else {
+         $('#anticipoEditPopup').showDialog({ editAction : '@ViewModelEditAction.New'});
+      };
+   };
+   function anticipoListPopupOnClick() {
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      anticipoSelectedPopup('', row);
+   };
+   function anticipoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("VT_anticipo_seleccion_requerida")');
+         return false;
+      }
+
+      if (!$.isNullOrEmpty(row.SerieNumero)){
+         var data = $("#anticipoGrid").appGrid('getData');
+         var selectedData = _.filter(data, function (r) {
+            return r.Estado === '@EstadoConstante.ACTIVO' && !$.isNullOrEmpty(r.SerieNumero);
+         });
+         if (selectedData.length > 0) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_anticipo_solo_un_documento_permitido")');
+            return false;
+         }
+      }
+
+      $(this).saveView({
+         urlAction: '@Url.Action("AgregarAnticipoCliente", "Pedido")',
+         viewModel: [
+            { name: "AnticipoClienteDTO.AnticipoClienteId", value: row.AnticipoClienteId, type: 'int' },
+            { name: "AnticipoClienteDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' },
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#anticipoGrid").appGrid('reloadJSON');
+               calcularTotalesGenerales();
+               $('#anticipoListPopup').hideDialog();
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+   };
+   function anticipoEditPopupOnClick() {
+      if (!mp_validarDatos())
+         return;
+
+      if (!$.isNullOrEmpty($('#mp-TipoDocumentoComercialId').val())){
+         var data = $("#anticipoGrid").appGrid('getData');
+         var selectedData = _.filter(data, function (r) {
+            return !$.isNullOrEmpty(r.TipoDocumentoComercialId) && r.Extornado === '@SiNoConstante.N' && r.AnticipoClienteId !== parseFloatEx($('#mp-AnticipoClienteId').val());
+         });
+         if (selectedData.length > 0) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_anticipo_solo_un_documento_permitido")');
+            return false;
+         }
+      }
+
+      var dtoState;
+      if (parseFloatEx($('#mp-AnticipoClienteId').val()) === 0)
+         dtoState = '@(((int) DTOState.Added).ToString())';
+      else
+         dtoState = '@(((int) DTOState.Modified).ToString())';
+
+      $('#anticipoEditPopup').saveView({
+         urlAction: '@Url.Action("GrabarAnticipoCliente", "AnticipoCliente")',
+         viewModel: [
+            { name: "AnticipoClienteDTO.AnticipoClienteId", value: $('#mp-AnticipoClienteId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.Fecha", value: $('#mp-Fecha').val(), type: 'datetime' },
+            { name: "AnticipoClienteDTO.NumeroOperacion", value: $('#mp-NumeroOperacion').val() },
+            { name: "AnticipoClienteDTO.MonedaId", value: $('#mp-MonedaId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.MedioPagoId", value: $('#mp-MedioPagoId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.BancoId", value: $('#mp-BancoId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.FechaReferencia", value: $('#mp-FechaReferencia').val(), type: 'datetime' },
+            { name: "AnticipoClienteDTO.NumeroReferencia", value: $('#mp-NumeroReferencia').val() },
+            { name: "AnticipoClienteDTO.Monto", value: $('#mp-Monto').val(), type: 'decimal' },
+            { name: "AnticipoClienteDTO.TipoDocumentoComercialId", value: $('#mp-TipoDocumentoComercialId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.Serie", value: $('#mp-Serie').text() },
+            { name: "AnticipoClienteDTO.Observacion", value: $('#mp-Observacion').val() },
+            { name: "AnticipoClienteDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' },
+            { name: "AnticipoClienteDTO.RegistradoEnCotizacion", value: '@SiNoConstante.S' },
+            { name: "AnticipoClienteDTO.DTOState", value: dtoState, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#anticipoGrid").appGrid('reloadJSON');
+               calcularTotalesGenerales();
+               $('#anticipoEditPopup').hideDialog();
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function autorizacionEditPopupOnClick() {
+      var data = $('#bandejaPopupGrid').appGrid('getData');
+
+      var selectList = _.where(data, { '@AppConstante.DTO_STATE': '@(((int) DTOState.Modified).ToString())' });
+      if (selectList.length === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_cotizacion_autorizacion_seleccion_requerida")');
+         return;
+      }
+
+      var isValid = true;
+      $.each(selectList, function (i, row) {
+         if (row.TipoAutorizacion === '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO') {
+            data = $('#productoPopupGrid').appGrid('getData');
+            var selectProd = _.where(data, { '@AppConstante.DTO_STATE': '@(((int) DTOState.Modified).ToString())' });
+            if (selectProd.length === 0) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_producto_autorizacion_descuento_seleccion_requerida")');
+               isValid = false;
+               return;
+            }
+         };
+      });
+
+      if (!isValid)
+         return;
+
+      $.each(selectList, function (i, row) {
+         if (row.TipoAutorizacion === '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO') {
+            data = $('#productoPopupGrid').appGrid('getData');
+            var selectProd = _.where(data, { '@AppConstante.DTO_STATE': '@(((int) DTOState.Modified).ToString())' });
+            if (selectProd.length === 0) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_producto_autorizacion_descuento_seleccion_requerida")');
+               isValid = false;
+               return;
+            }
+         };
+      });
+
+      var cotizacionAutorizacionList = [];
+      selectList.forEach(function (item) {
+         var cotizacionAutorizacion = [
+            { name: "CotizacionAutorizacionId", value: item.CotizacionAutorizacionId, type: 'int' },
+            { name: "TipoAutorizacionId", value: item.TipoAutorizacionId, type: 'int' },
+            { name: "CotizacionId", value: $('#CotizacionId').val(), type: 'int' }
+         ];
+
+         cotizacionAutorizacionList.push(cotizacionAutorizacion);
+      });
+
+      var cotizacionProductoList = [];
+      $.each(selectList, function (i, row) {
+         if (row.TipoAutorizacion === '@TipoAutorizacionConstante.DSCTO_EN_PRECIO_UNITARIO') {
+            data = $('#productoPopupGrid').appGrid('getData');
+            var selectProd = _.where(data, { '@AppConstante.DTO_STATE': '@(((int) DTOState.Modified).ToString())' });
+            selectProd.forEach(function (item) {
+               var cotizacionProducto = [
+                  { name: "CotizacionProductoId", value: item.CotizacionProductoId, type: 'int' },
+                  { name: "SolicitaAutorizacionDescuento", value: item.SolicitaAutorizacionDescuento }
+               ];
+
+               cotizacionProductoList.push(cotizacionProducto);
+            });
+         };
+      });
+
+      $('#autorizacionEditPopup').saveView({
+         viewModel: [
+            { name: "CotizacionAutorizacionDTOList", value: cotizacionAutorizacionList, type: 'list' },
+            { name: "CotizacionProductoDTOList", value: cotizacionProductoList, type: 'list' }
+         ],
+         urlAction: '@Url.Action("GrabarCotizacionAutorizacion", "Pedido")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               $('#AutorizacionPendiente').val('@SiNoConstante.S');
+               $("#menuBar").appMenu('hideButton', { buttonId: 'soli_auto' });
+               $("#menuBar").appMenu('showButton', { buttonId: 'estado_auto' });
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $('#autorizacionEditPopup').hideDialog();
+         }
+      });
+
+   };
+   function mp_aplicarOnClick() {
+
+      if (!mp_tieneAprobacionesPendientes()) {
+         $('#AutorizacionPendiente').val('@SiNoConstante.N');
+         $("#menuBar").appMenu('hideButton', { buttonId: 'estado_auto' });
+         $("#menuBar").appMenu('showButton', { buttonId: 'soli_auto' });
+      }
+
+      $("#productoGrid").appGrid('reloadJSON');
+      $("#estadoAutoEditPopup").hideDialog();
+   };
+   function mp_cancelarPendientesOnClick() {
+      var data = $('#bandejaPopupGrid').appGrid('getData');
+
+      var cotizacionAutorizacionList = [];
+      data.forEach(function (item) {
+         if (item.EstadoAprobacion === '@EstadoAprobacionConstante.PENDIENTE_APROBACION') {
+
+            var cotizacionAutorizacion = [
+               { name: "CotizacionAutorizacionId", value: item.CotizacionAutorizacionId, type: 'int' },
+               { name: "TipoAutorizacionId", value: item.TipoAutorizacionId, type: 'int' },
+               { name: "TipoAutorizacionDTO.Codigo", value: item.TipoAutorizacion },
+               { name: "CotizacionId", value: $('#CotizacionId').val(), type: 'int' }
+            ];
+
+            cotizacionAutorizacionList.push(cotizacionAutorizacion);
+         };
+      });
+
+      $('#estadoAutoEditPopup').saveView({
+         viewModel: [
+            { name: "CotizacionAutorizacionDTOList", value: cotizacionAutorizacionList, type: 'list' }
+         ],
+         urlAction: '@Url.Action("CancelarAutorizacion", "Pedido")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               $('#AutorizacionPendiente').val('@SiNoConstante.N');
+               $("#menuBar").appMenu('hideButton', { buttonId: 'estado_auto' });
+               $("#menuBar").appMenu('showButton', { buttonId: 'soli_auto' });
+               $("#productoGrid").appGrid('reloadJSON');
+
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $('#estadoAutoEditPopup').hideDialog();
+         }
+      });
+
+   };
+   function productoVerAnuladoOnChange() {
+      $("#productoGrid").appGrid('reloadJSON');
+   };
+   function codigoFormatter(cellvalue, options, rowObject) {
+
+      if (rowObject.IncluyeDescuentoListaPrecio === '@SiNoConstante.S') {
+         return '<div class="jqgrid-cell-warning">' + cellvalue + '</div>'
+      }
+      if (rowObject.UsarIncrementoFraccion === '@SiNoConstante.S') {
+         var fracPart = (rowObject.Cantidad % 1);
+
+         if(fracPart != 0)
+            return '<div class="jqgrid-cell-success">' + cellvalue + '</div>'
+      }
+
+      if(cellvalue == null)
+         return '';
+
+      return cellvalue;
+   };
+   function descripcionFormatter(cellvalue, options, rowObject) {
+
+      if (rowObject.CantidadBloqueada === '@SiNoConstante.S') {
+         return '<div class="jqgrid-cell-item-read-only">' + cellvalue + '</div>'
+      }
+      if(cellvalue == null)
+         return '';
+
+      return cellvalue;
+   };
+   function habilitarMedioPagoGrid(medioPago, rowId) {
+      switch (medioPago) {
+         case '@MedioPagoConstante.EFECTIVO':
+            $('#' + rowId + '_BancoId').val('');
+            $('#' + rowId + '_BancoId').prop('disabled', true);
+            $('#' + rowId + '_FechaReferencia').val('');
+            $('#' + rowId + '_FechaReferencia').prop('readonly', true);
+            $('#' + rowId + '_NumeroReferencia').val('');
+            $('#' + rowId + '_NumeroReferencia').prop('readonly', true);
+            break;
+
+         default:
+            $('#' + rowId + '_BancoId').prop('disabled', false);
+            $('#' + rowId + '_FechaReferencia').prop('readonly', false);
+            $('#' + rowId + '_NumeroReferencia').prop('readonly', false);
+            break;
+      }
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#CotizacionId").validateNumeric()) {
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+   function generarFormato(buttonId, key, id){
+
+      var basePrintUrl = '@Model.ServidorImpresion';
+      var dataUrl = '@Model.DataUrl';
+
+      if($.isNullOrEmpty(basePrintUrl)){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+         return;
+      }
+
+      $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: true });
+
+      $("#FileId").val('');
+      try{
+         $.ajax({
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            url: basePrintUrl + 'PrintDocument?key=' + key + '&id=' + id + '&dataUrl=' + dataUrl,
+            processData: false,
+            dataType: "jsonp",
+            jsonp: 'callback',
+            jsonpCallback: 'jsonpCallback',
+            beforeSend: function () {
+               $('#impresionPopup').showDialog();
+               $('#impresionPopupContent').showLoadingOverlay();
+            },
+            success: function (data) {
+               $('#impresionPopupContent').hideLoadingOverlay();
+
+               if(data === null)
+               {
+                  $('#impresionPopup').hideDialog();
+                  msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_reporte_sin_datos")');
+                  return;
+               }
+
+               $('#printTextArea').val(data[1]);
+               $("#FileId").val(data[0]);
+               $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+               $('#impresionPopup').hideDialog();
+               $('#impresionPopupContent').hideLoadingOverlay();
+               $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+
+               switch(jqXHR.status){
+                  case 404:
+                     msgAlert(msgAlertTypeConstant.ERROR, '@SR.GetString("AJX_servicio_impresion_no_activo")');
+                     break;
+                  default:
+                     msgAlert(msgAlertTypeConstant.ERROR, textStatus);
+                     break;
+               }
+            }
+         });
+      } catch(exception){
+         $('#impresionPopup').hideDialog();
+         $('#impresionPopupContent').hideLoadingOverlay();
+         $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+      }
+   };
+   function impresionPopupClickOk(){
+
+      $('#impresionPopup').modal('hide');
+
+      var basePrintUrl = '@Model.ServidorImpresion';
+      if($.isNullOrEmpty(basePrintUrl)){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+         return;
+      }
+      var id = $("#FileId").val();
+
+      try{
+         $.ajax({
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            url: basePrintUrl + 'PrintFile?id=' + id,
+            processData: false,
+            dataType: "jsonp",
+            jsonp: 'callback',
+            jsonpCallback: 'jsonpCallback',
+            success: function (data) {
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+               msgAlert(msgAlertTypeConstant.ERROR, errorThrown);
+            }
+         });
+      } catch(exception){
+         throw exception;
+      }
+   };
+
+   function agregarItemPopupOnClick() {
+      $('#agregarItemPopup').hideDialog();
+
+      if ($('#mp-ordenProduccionParcial').prop('checked')) {
+         $('#enviarProduccionParcialEditPopup').showDialog();
+      } else {
+         $('#enviarProduccionEditPopup').showDialog();
+      };
+   };
+
+
+    function enviarProduccionEditPopupOnClick() {
+
+        if (!mp_validarDatos())
+            return false;
+        var cotizacionProductoList = [];
+
+        var list = $('#productoPopupGrid').appGrid('getDataIDs');
+        for (i in list) {
+
+            var rowId = list[i];
+            if (isEmptyRecord(rowId))
+                continue;
+
+            var row = $('#productoPopupGrid').appGrid('getRow', rowId);
+            var cantidadVenta = parseFloat($('#' + rowId + '_CantidadVenta').val()) || 0;
+            var cantidadGratis = parseFloat($('#' + rowId + '_CortesGratis').val()) || 0;
+
+            var cotizacionProducto = [
+                { name: "CotizacionProductoId", value: row.CotizacionProductoId, type: 'int' },
+                { name: "Cantidad", value: cantidadVenta + cantidadGratis, type: 'decimal' },
+                { name: "ProductoId", value: row.ProductoId, type: 'int'},
+                { name: "Descripcion", value: row.Descripcion},
+            ];
+
+            cotizacionProductoList.push(cotizacionProducto);
+        }
+
+        $('#enviarProduccionEditPopup').saveView({
+            viewModel: [
+                { name: "CotizacionDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' },
+                { name: "CotizacionDTO.Fecha", value: $('#mp-DiaEntrega').val() + $('#mp-HoraEntrega').val(), type: 'datetime' },
+                { name: "CotizacionProductoDTOList", value: cotizacionProductoList, type: 'list' }
+            ],
+            buttonId: '@MenuItemKey.SAVE',
+            urlAction: '@Url.Action("GenerarOrdenProduccion", "Pedido")',                 
+            onSuccess: function (response) {
+                if (response.success) {
+                    $("#OrdenProduccionId").val(response.data.Id);
+                    $("#EnviadoProduccion").val(response.data.EnviadoProduccion);
+                    $('#productoMenuBar').appMenu('disabled', { buttonId: 'enviar_prod', disabled: true });
+                    $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: true });   
+
+                    $('#productoMenuBar').appGrid('reloadJSON');
+                    $('#menuBar').appGrid('reloadJSON');
+                    $('#procesoGrid').appGrid('reloadJSON');
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+                $('#enviarProduccionEditPopup').hideDialog();
+                $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+            }
+        });
+    };
+
+    function enviarProduccionParcialEditPopupOnClick() {
+
+         if (!mp_validarDatos())
+             return false;
+         var cotizacionProductoList = [];
+
+         var list = $('#productoPopupGrid').appGrid('getDataIDs');
+         for (i in list) {
+
+             var rowId = list[i];
+             if (isEmptyRecord(rowId))
+                 continue;
+                 
+            var row = $('#productoPopupGrid').appGrid('getRow', rowId);
+            var cantidad = parseFloat($('#' + rowId + '_CantidadVenta').val()) || 0;
+            var cantidadParcial = parseFloat($('#' + rowId + '_CantidadEnvio').val()) || 0;
+            var cantidadGratis = parseFloat($('#' + rowId + '_CortesGratis').val()) || 0;
+
+             var cotizacionProducto = [
+                 { name: "CotizacionProductoId", value: row.CotizacionProductoId, type: 'int' },
+                 { name: "Cantidad", value: cantidad, type: 'decimal'},
+                 { name: "CantidadParcial", value: cantidadParcial, type: 'decimal' },
+                 { name: "CortesGratis", value: cantidadGratis, type: 'decimal'},
+                 { name: "ProductoId", value: row.ProductoId, type: 'int'}
+             ];
+
+             cotizacionProductoList.push(cotizacionProducto);
+         }
+            
+         $('#enviarProduccionParcialEditPopup').saveView({
+             viewModel: [
+                 { name: "CotizacionDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' },
+                 { name: "CotizacionDTO.Fecha", value: $('#mp-DiaEntrega').val() + $('#mp-HoraEntrega').val(), type: 'datetime' },
+                 { name: "CotizacionProductoDTOList", value: cotizacionProductoList, type: 'list' }
+             ],
+             buttonId: '@MenuItemKey.SAVE',
+             urlAction: '@Url.Action("GenerarOrdenProduccionParcial", "Pedido")',
+             onSuccess: function (response) {
+                 if (response.success) {
+                     $("#OrdenProduccionId").val(response.data.Id);
+                     $("#EnviadoProduccion").val(response.data.EnviadoProduccion);
+                     $('#productoMenuBar').appMenu('disabled', { buttonId: 'enviar_prod', disabled: true });
+                     $("#menuBar").appMenu('disabledButton', { buttonId: 'enviar_prod', disabled: true });
+
+                     $('#productoMenuBar').appGrid('reloadJSON');
+                     $('#menuBar').appGrid('reloadJSON');
+                     $('#procesoGrid').appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                 } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                 }
+                  $('#enviarProduccionParcialEditPopup').hideDialog();
+                 $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+
+             }
+         });
+     };
+
+</script>

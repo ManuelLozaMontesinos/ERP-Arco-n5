@@ -1,0 +1,340 @@
+﻿@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.RolViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.RolDTO.Nombre" col-position="col-lg-10" label="Nombre" col-label-position="col-lg-2" max-length="100"
+                               use-textcase="false"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.RolDTO.RolId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#usuarioTab" role="tab" data-toggle="tab">Usuarios</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#menuTab" role="tab" data-toggle="tab">Menu</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="usuarioTab" role="tabpanel">
+            <div>
+               <esd-menubar id="usuarioMenuBar" size="Small" menu-style="NewEditDelete" onclick="usuarioMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="menuTab" role="tabpanel">
+            <div id="menuContainer">
+               <table id="menuGrid"></table>
+               <div id="menuPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="usuarioListPopup" title="Usuarios" onclick="usuarioListPopupOnClick">
+   <div id="usuarioListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarUsuario", "Rol")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "RolUsuarioDTO.RolId", value: $('#RolId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','Usuario','Nombre Completo'],
+         colModel: [
+            { name: 'RolUsuarioId', hidden: true },
+            { name: 'UsuarioId', hidden: true },
+            { name: "UsuarioLogon", width: 100 },
+            { name: "NombreCompleto", width: 500 }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+            editCustomGridMenuBar('usuarioMenuBar', 'bandejaGrid');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('usuarioMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+      $("#menuGrid").jqGrid({
+         mtype : "POST",
+         datatype : "json",
+         url: "@Url.Action("ListarMenu", "Rol")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "RolUsuarioDTO.RolId", value: $('#RolId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','','Opción', 'Lectura', 'Escritura'],
+         colModel: [
+            { name: 'RolMenuId', hidden: true },
+            { name: 'RolId', hidden: true },
+            { name: 'MenuId', hidden: true },
+            { name: 'Nombre', width : 200 },
+            { name: 'Lectura', align: 'center', width : 80, align: 'center',editable: true,formatter:checkRolMenuFormatter, unformat:checkRolMenuUnFormatter},
+            { name: 'Escritura', align: 'center', width : 80, align: 'center',editable: true,formatter:checkRolMenuFormatter, unformat:checkRolMenuUnFormatter}
+         ],
+         pager: $('#pagerMenu'),
+         sortname: "RolMenuId",
+         height: calculateGridHeight('bandejaContainer'),
+         autowidth: true,
+         treeGrid: true,
+         treeGridModel: 'adjacency',
+         treedatatype: "json",
+         ExpandColumn: 'Nombre',
+         treeIcons: { plus: 'fas fa-caret-right', minus: 'fas fa-caret-down', leaf: 'fas fa-genderless' },
+         styleUI: 'Bootstrap4',
+         responsive: true
+      });
+
+      $('#usuarioListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Usuario")',
+               container: 'usuarioListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#menuTab':
+               $('#menuGrid').appGrid('resizeGrid', 'menuContainer');
+               $('#menuGrid').jqGrid('setGridHeight', calculateGridHeight('menuContainer'));
+               break;
+         }
+      })
+   });
+   function checkRolMenuFormatter(cellvalue, options, row) {
+      if (row.isLeaf === false)
+         return '';
+      else
+         return '<input id="' + options.rowId + '_' + options.colModel.name + '"' + 'type="checkbox" '
+            + (cellvalue == "0" ? '' : 'checked') + ' onclick="checkRolMenuOnClick(' + options.rowId + ',this);"/>';
+   };
+   function checkRolMenuUnFormatter(cellvalue, options, cell) {
+      if (cell.childNodes.length > 0)
+         return cell.childNodes[0].checked ? 1 : 0;
+      else
+         return 0;
+   };
+   function checkRolMenuOnClick(rowId, item) {
+
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Rol")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateNumeric('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      var data = $("#menuGrid").appGrid('getRowData');
+      var dataList = [];
+      var parent;
+
+      data.forEach(function (item) {
+
+         if (validPermissions(item)) {
+            dataList.push({ RolMenuId: item.RolMenuId, RolId: item.RolId, MenuId: item.MenuId, Lectura: item.Lectura, Escritura: item.Escritura });
+            if (parent != item.parent) {
+               dataList = dataList.concat(getParentHierarchy(data, item.parent));
+            }
+         }
+      });
+      dataList = _.uniq(dataList, function (menu) { return menu.MenuId; })
+
+      var rolMenuList = [];
+      dataList.forEach(function (item) {
+         var rolMenu = [
+            { name: "RolMenuId", value: item.RolMenuId, type: 'int' },
+            { name: "RolId", value: item.RolId, type: 'int' },
+            { name: "MenuId", value: item.MenuId, type: 'int' },
+            { name: "Lectura", value: item.Lectura === 1 ? '@SiNoConstante.S' : '@SiNoConstante.N'},
+            { name: "Escritura", value: item.Escritura === 1 ? '@SiNoConstante.S' : '@SiNoConstante.N'},
+         ];
+
+         rolMenuList.push(rolMenu);
+      });
+
+      $(this).saveView({
+         viewModel: [
+            { name: "RolDTO.RolId", value: $('#RolId').val(), type : 'int' },
+            { name: "RolDTO.Nombre", value: $('#Nombre').val(), textCase: 'none' },
+            { name: "RolMenuDTOList", value: rolMenuList, type: 'list' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Rol")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#RolId").val(response.data.Id);
+               $("#bandejaGrid").appGrid('reloadJSON');
+               $("#menuGrid").appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function validPermissions(item) {
+      return item.Lectura == 1 || item.Escritura == 1;
+   };
+   function getParentHierarchy(list, menuId) {
+      var listmenu = _.where(list, { MenuId: menuId });
+      if (listmenu.length > 0) {
+         var parent = listmenu[0].parent;
+         listmenu = [{ RolMenuId: listmenu[0].RolMenuId, RolId: listmenu[0].RolId, MenuId: listmenu[0].MenuId, Lectura: 1, Escritura: 0 }];
+         if (parent !== '')
+            return listmenu.concat(getParentHierarchy(list, parent));
+         else
+            return listmenu;
+      }
+      else
+         return [];
+   }
+   function usuarioMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+
+            $('#usuarioListPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_eliminar_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_eliminar_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarUsuario", "Rol")',
+                     viewModel: [
+                        { name: "RolUsuarioDTO.RolUsuarioId", value: row.RolUsuarioId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function usuarioListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      usuarioSelectedPopup('', row);
+   };
+   function usuarioSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("AS_usuario_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#bandejaGrid").appGrid('getData');
+      var selectedData = _.where(data, { UsuarioId: parseInt(row.UsuarioId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AS_usuario_ya_seleccionado")');
+         return false;
+      }
+
+      $('#usuarioListPopup').hideDialog();
+
+      $(this).saveView({
+         urlAction: '@Url.Action("GrabarUsuario", "Rol")',
+         viewModel: [
+            { name: "RolUsuarioDTO.RolId", value:$('#RolId').val(), type: 'int' },
+            { name: "RolUsuarioDTO.UsuarioId", value: row.UsuarioId, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#bandejaGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#usuarioMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#RolId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

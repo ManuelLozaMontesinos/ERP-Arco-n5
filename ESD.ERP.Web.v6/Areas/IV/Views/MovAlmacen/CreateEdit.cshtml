@@ -1,0 +1,976 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.MovAlmacenViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.MovimientoAlmacenDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-2" label="Almacen" col-label-position="col-lg-2"
+                                    enable="@Model.IsNew" onchange="almacenIdOnChange();"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoMovimientoAlmacenId" for="@Model.TipoMovimientoAlmacenList" col-position="col-lg-2" label="Tipo de Movimiento" col-label-position="col-lg-2"
+                                    enable="false" onchange="tipoMovimientoAlmacenIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="AlmacenTransaccionId" for="@Model.AlmacenTransaccionList" col-position="col-lg-6" label="Transaccion" col-label-position="col-lg-2"
+                                    enable="false" onchange="almacenTransaccionIdOnChange();"></esd-dropdownlist>
+               </div>
+               <div id="NumeroOrdenCompraDiv" class="form-group row">
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.NumeroOrdenCompra" col-position="col-lg-2" label="#O/C" col-label-position="col-lg-2" max-length="10"></esd-textbox>
+               </div>
+               <div id="OrdenCompraIdDiv" class="form-group row">
+                  <esd-buttontextbox id="OrdenCompra" button-style="List" value="@Model.MovimientoAlmacenDTO.NumeroOrdenCompra" col-position="col-lg-2" label="O/C"
+                                     col-label-position="col-lg-2" onclick="ordenCompraOnClick" enable="@Model.IsNew"></esd-buttontextbox>
+               </div>
+               <div id="NumeroGuiaRemisionDiv" class="form-group row">
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.NumeroGuiaRemision" col-position="col-lg-2" label="#G/R" col-label-position="col-lg-2" max-length="20"></esd-textbox>
+               </div>
+               <div id="ProveedorIdDiv" class="form-group row">
+                  <esd-buttontextbox id="Proveedor" button-style="List" value="@Model.MovimientoAlmacenDTO?.ProveedorDTO?.RazonSocial" col-position="col-lg-6" label="Cliente/Proveedor"
+                                     col-label-position="col-lg-2" onclick="proveedorOnClick" enable="@Model.IsNew"></esd-buttontextbox>
+                  <esd-textbox id="NumeroDocumentoIdentidad" value="@Model.MovimientoAlmacenDTO?.ProveedorDTO?.NumeroDocumentoIdentidad" col-position="col-lg-2"
+                               label="#Docu." col-label-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+               <div id="NumeroDocumentoAdicionalDiv" class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-2" label="Tipo Doc.Ref." col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.SerieDocumento" col-position="col-lg-1" label="Serie - Numero" col-label-position="col-lg-1"
+                               max-length="4"></esd-textbox>
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.NumeroDocumento" col-position="col-lg-2" max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.MovimientoAlmacenDTO.Observacion" col-position="col-lg-6" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3"></esd-textarea>
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.UsuarioDTO.UsuarioLogon" col-position="col-lg-2" label="Usuario" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.MovimientoAlmacenId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.TransaccionAlmacenId"></esd-hidden>
+      <esd-hidden id="TransaccionAlmacen" value="@Model.MovimientoAlmacenDTO.TransaccionAlmacenDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.TransaccionAlmacenDTO.TieneMantenimiento"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.OrdenCompraId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.ProveedorId"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.MesContableId"></esd-hidden>
+      <esd-hidden id="TipoMovimientoAlmacen" value="@Model.MovimientoAlmacenDTO.TipoMovimientoAlmacenDTO.Codigo"></esd-hidden>
+      <esd-hidden for="@Model.MovimientoConfiguracion"></esd-hidden>
+      <esd-hidden for="@Model.RegRestringido"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos</a>
+         </li>
+      </ul>
+        <div class="tab-content">
+            <div class="tab-pane active" id="productoTab" role="tabpanel">
+                <div class="form-inline">
+                    <div class="col-6">
+                        <esd-menubar id="productoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="productoMenuBarOnClick"></esd-menubar>
+                    </div>
+                    <div class="col-6">
+                        <esd-checkbox id="productoVerAnulado" col-position="offset-lg-9 col-lg-3" label="Mostrar Anulados" onchange="productoVerAnuladoOnChange()"
+                                      checkbox-style="Default"></esd-checkbox>
+                    </div>
+                </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="proveedorListPopup" title="Cliente/Proveedor" onclick="proveedorListPopupOnClick" size="Large">
+   <div id="proveedorListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="productoListPopup" title="Productos" onclick="productoListPopupOnClick" size="Large">
+   <div id="productoListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="saldoListPopup" title="Saldos" onclick="saldoListPopupOnClick" size="Large">
+   <div id="saldoListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="ordenCompraListPopup" title="Orden de Compra" onclick="ordenCompraListPopupOnClick" size="Large">
+   <div id="ordenCompraListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="ordenCompraProductoListPopup" title="Productos en la O/C" onclick="ordenCompraProductoListPopupOnClick" size="Large">
+   <div id="ordenCompraProductoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   var gridHeight = 0;
+   $(document).ready(function () {
+
+      configurarElementos();
+
+      verificarSoloLectura();
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties(new Dictionary<string, string>() { { "rowNum", "1000" }, { "rowList", "[250,500,1000]" } })
+         url: "@Url.Action("ListarMovimientoAlmacenProducto", "MovAlmacen")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val() || '0', type: 'int' },
+                     { name: "MovimientoAlmacenProductoDTO.Estado", value: $('#productoVerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','', '','Código','Producto','','Detalle','','', '','U.M.','Cantidad','V.U.','Total','','Estado',''],
+         colModel: [
+            { name: 'MovimientoAlmacenProductoId', hidden: true },
+            { name: 'MovimientoAlmacenId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.MovimientoAlmacenProductoId) && rowObject.MovimientoAlmacenProductoId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Producto" name="productoButton"' + disabled + ' onclick="mostrarProducto(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },  
+            { name: 'Descripcion', width: 200, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'CantidadDocumento', hidden: true },
+            { name: 'PesoNetoDocumento', hidden: true },
+            { name: 'PesoBrutoDocumento', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 100, editable: false },
+            {
+               name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "ValorUnitario", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: "Total", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 4 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 4, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'RegistroReferencialId', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            if ($('#TieneMantenimiento').val() === '@SiNoConstante.N') {
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+
+               if ($('#TransaccionAlmacen').val() !== '@TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES') {
+                  $('#productoMenuBar').appMenu('disabled');
+                  return;
+               }
+            }
+
+            if ($('#RegRestringido').val() === '@SiNoConstante.S'){
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+               $('#productoMenuBar').appMenu('disabled');
+               return;
+            }
+
+            var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            }
+            else
+               $("#productoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+
+            if (gridHeight === 0)
+               gridHeight = calculateGridHeight('productoContainer');
+
+            if ($('#TieneMantenimiento').val() === '@SiNoConstante.N') {
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+               if($('#TransaccionAlmacen').val() !== '@TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES')
+                  $('#productoMenuBar').appMenu('disabled');
+               return;
+            }
+
+            if ($('#RegRestringido').val() === '@SiNoConstante.S'){
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+               $('#productoMenuBar').appMenu('disabled');
+               return;
+            }
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+
+      $('#proveedorListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Proveedor", new { Area = "MG" })',
+               container: 'proveedorListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#productoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Producto", new { Area = "MG" })',
+               viewModel: [
+                  { name: "ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.TipoProductoDTO.Codigo", value: '@TipoProductoConstante.PRODUCTO' },
+               ],
+               container: 'productoListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#saldoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "MovAlmacenSaldo")',
+               viewModel: [
+                  { name: "MovimientoAlmacenSaldoDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+                  { name: "MovimientoAlmacenSaldoDTO.MesContableId", value: $('#MesContableId').val(), type: 'int' }
+               ],
+               container: 'saldoListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#ordenCompraListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "OrdenCompra", new { Area="CM" })',
+               viewModel: [
+                  { name: "OrdenCompraDTO.TipoProductoDTO.Codigo", value: '@TipoProductoConstante.PRODUCTO' },
+                  { name: "OrdenCompraDTO.EstadoAprobacionDTO.Codigo", value: '@EstadoAprobacionConstante.APROBADO' },
+                  { name: "OrdenCompraDTO.EstadoOrdenCompraList", value: ['@EstadoOrdenCompraConstante.ORDEN_COMPRA', '@EstadoOrdenCompraConstante.INGRESO_PARCIAL'], type: 'listString' },
+                  { name: "OrdenCompraDTO.Estado", value: '@EstadoConstante.ACTIVO' }
+               ],
+               container: 'ordenCompraListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#ordenCompraProductoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("OrdenCompraProductoListPopup", "OrdenCompra", new { Area="CM" })',
+               container: 'ordenCompraProductoListPopupContent',
+               viewModel: [
+                  { name: 'OrdenCompraProductoDTO.OrdenCompraId', value: $('#OrdenCompraId').val(), type: 'int' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function almacenIdOnChange() {
+
+      var almacenId = $("#AlmacenId").val();
+      if ($.isNullOrEmpty(almacenId)) {
+         $("#TipoMovimientoAlmacenId").prop('disabled', true);
+         $("#AlmacenTransaccionId").prop('disabled', true);
+
+         $("#TipoMovimientoAlmacenId").val('');
+         $("#AlmacenTransaccionId").val('');
+         $("#TransaccionAlmacen").val('');
+         $('#MovimientoConfiguracion').val('');
+
+         configurarElementos();
+         resizeGridHeight();
+         return;
+      }
+
+      $("#TipoMovimientoAlmacenId").prop('disabled', false);
+   };
+   function tipoMovimientoAlmacenIdOnChange() {
+
+      var tipoMovimientoAlmacenId = $("#TipoMovimientoAlmacenId").val();
+      if ($.isNullOrEmpty(tipoMovimientoAlmacenId)) {
+         $("#AlmacenTransaccionId").val('');
+         $("#AlmacenTransaccionId").prop('disabled', true);
+         $("#TransaccionAlmacen").val('');
+         $("#TipoMovimientoAlmacen").val('');
+         $('#MovimientoConfiguracion').val('');
+
+         configurarElementos();
+         resizeGridHeight();
+         return;
+      }
+
+      $("#AlmacenTransaccionId").val('');
+      $("#AlmacenTransaccionId").prop('disabled', true);
+      $("#TransaccionAlmacen").val('');
+
+      $(this).postAction({
+         urlAction: '@Url.Action("ListarAlmacenTransaccion", "MovAlmacen")',
+         viewModel: [
+            { name: "AlmacenTransaccionDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+            { name: "AlmacenTransaccionDTO.TransaccionAlmacenDTO.TipoMovimientoAlmacenId", value: $('#TipoMovimientoAlmacenId').val(), type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#TipoMovimientoAlmacen').val(response.data.tipoMovimientoAlmacen);
+               $('#AlmacenTransaccionId').find('option').remove().end();
+               $("#AlmacenTransaccionId").addItems(response.data.list);
+               $("#TransaccionAlmacen").val('');
+
+               if (!$.isNullOrEmpty(tipoMovimientoAlmacenId)) {
+                  $("#AlmacenTransaccionId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function almacenTransaccionIdOnChange() {
+      var almacenTransaccionId = $("#AlmacenTransaccionId").val();
+      if ($.isNullOrEmpty(almacenTransaccionId)) {
+         $('#MovimientoConfiguracion').val('');
+         configurarElementos();
+         resizeGridHeight();
+         return;
+      }
+      limpiarElementos();
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerAlmacenTransaccion", "MovAlmacen")',
+         id: almacenTransaccionId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#TransaccionAlmacenId').val(response.data.TransaccionAlmacenId);
+               $('#TieneMantenimiento').val(response.data.TieneMantenimiento);
+               $("#MovimientoConfiguracion").val(JSON.stringify(response.data.List));
+               $("#TransaccionAlmacen").val(response.data.TransaccionAlmacen);
+
+               configurarElementos();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function limpiarElementos() {
+
+      $('#NumeroOrdenCompra').val('');
+      $('#OrdenCompraId').val('');
+      $('#OrdenCompra').val('');
+      $('#NumeroGuiaRemision').val('');
+      $('#ProveedorId').val('');
+      $('#Proveedor').val('');
+      $('#NumeroDocumentoAdicional').val('');
+   };
+   function configurarElementos() {
+
+      $('#NumeroOrdenCompraDiv').hide();
+      $('#OrdenCompraIdDiv').hide();
+      $('#NumeroGuiaRemisionDiv').hide();
+      $('#ProveedorIdDiv').hide();
+      $('#NumeroDocumentoAdicionalDiv').hide();
+
+      var stringConfig = $('#MovimientoConfiguracion').val();
+
+      if ($.isNullOrEmpty(stringConfig))
+         return;
+
+      var list = JSON.parse(stringConfig);
+      $.each(list, function (i, val) {
+         if (val.Visible === '@SiNoConstante.S')
+            $('#' + val.Atributo + 'Div').show();
+
+         if ($('#TieneMantenimiento').val() === '@SiNoConstante.N')
+            $('#' + val.Atributo).prop('disabled', true);
+      });
+
+      resizeGridHeight();
+
+   };
+   function resizeGridHeight() {
+      var height = $('#workspace').height();
+      var wsHeight = parseInt($('#workspace').css('min-height'), 10);
+
+      if (height <= wsHeight) {
+         height = calculateGridHeight('productoContainer');
+         gridHeight = height;
+      }
+      else {
+         height = height - (height - wsHeight);
+         height = height - gridHeight - 65;
+      }
+
+      $("#productoGrid").jqGrid('setGridHeight', height);
+   };
+   function ordenCompraOnClick() {
+      $('#ordenCompraListPopup').showDialog();
+   };
+   function ordenCompraListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      ordenCompraSelectedPopup('',row);
+   };
+   function ordenCompraSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("CM_orden_compra_seleccion_requerida")');
+         return false;
+      }
+
+      $('#OrdenCompraId').val(row.OrdenCompraId);
+      $('#OrdenCompra').val(row.Codigo);
+      $('#NumeroOrdenCompra').val(row.Codigo);
+      $('#ProveedorId').val(row.ProveedorId);
+      $('#Proveedor').val(row.RazonSocial);
+      $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+
+      $('#ordenCompraListPopup').hideDialog();
+   };
+   function proveedorOnClick() {
+      $('#proveedorListPopup').showDialog();
+   };
+   function proveedorListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      proveedorSelectedPopup('',row);
+   };
+   function proveedorSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_proveedor_seleccion_requerida")');
+         return false;
+      }
+
+      $('#ProveedorId').val(row.ProveedorId);
+      $('#Proveedor').val(row.RazonSocial);
+      $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+
+      $('#proveedorListPopup').hideDialog();
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "MovAlmacen")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#AlmacenId').validateNumeric('@SR.GetString("IV_almacen_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoMovimientoAlmacenId').validateNumeric('@SR.GetString("IV_tipo_movimiento_seleccion_requerida")'))
+         return false;
+      if (!$('#AlmacenTransaccionId').validateNumeric('@SR.GetString("IV_transaccion_seleccion_requerida")'))
+         return false;
+
+      var stringConfig = $('#MovimientoConfiguracion').val();
+
+      var list = JSON.parse(stringConfig);
+      var eachValidate = true;
+      $.each(list, function (i, val) {
+         if (val.Requerido === '@SiNoConstante.S') {
+            if (val.TieneBoton === '@SiNoConstante.S') {
+               if (!$('#' + val.Atributo).validateNumeric(val.Mensaje)) {
+                  eachValidate = false;
+                  return false;
+               }
+            } else {
+               if (val.EsGrupo === '@SiNoConstante.S') {
+                  var attList = val.AtributoLista.split(',');
+                  $.each(attList, function (i, itm) {
+                     if (!$('#' + itm).validateString(val.Mensaje)) {
+                        eachValidate = false;
+                        return false;
+                     }
+                  });
+               }else
+                  if (!$('#' + val.Atributo).validateString(val.Mensaje)) {
+                     eachValidate = false;
+                     return false;
+                  }
+            }
+         }
+      });
+
+      if (!eachValidate)
+         return false;
+
+      var viewModel = [
+         { name: "MovimientoAlmacenDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val(), type: 'int' },
+         { name: "MovimientoAlmacenDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+         { name: "MovimientoAlmacenDTO.TransaccionAlmacenId", value: $('#TransaccionAlmacenId').val(), type: 'int' },
+         { name: "MovimientoAlmacenDTO.TransaccionAlmacenDTO.Codigo", value: $('#TransaccionAlmacen').val() },
+         { name: "MovimientoAlmacenDTO.TipoMovimientoAlmacenId", value: $('#TipoMovimientoAlmacenId').val(), type: 'int' },
+         { name: "MovimientoAlmacenDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+         { name: "MovimientoAlmacenDTO.Observacion", value: $('#Observacion').val()}
+      ];
+
+      $.each(list, function (i, val) {
+         if (val.Visible === '@SiNoConstante.S') {
+
+            if (val.TieneBoton === '@SiNoConstante.S') {
+               viewModel.push(
+                  { name: "MovimientoAlmacenDTO." + val.Atributo, value: $('#' + val.Atributo).val(), type: 'int' },
+               );
+               if (val.EsGrupo === '@SiNoConstante.S') {
+                  var grupoLista = val.AtributoLista.split(',');
+                  $.each(grupoLista, function (index, value) {
+                     viewModel.push(
+                        { name: "MovimientoAlmacenDTO." + value, value: $('#' + value).val(), type: ($('#' + value).is('input:text') ? '' : 'int')},
+                     );
+                  });
+               }
+            } else {
+               if (val.EsGrupo === '@SiNoConstante.S') {
+                  var grupoLista = val.AtributoLista.split(',');
+                  $.each(grupoLista, function (index, value) {
+                     viewModel.push(
+                        { name: "MovimientoAlmacenDTO." + value, value: $('#' + value).val(), type: ($('#' + value).is('input:text') ? '' : 'int')},
+                     );
+                  });
+               }else
+                  viewModel.push(
+                     { name: "MovimientoAlmacenDTO." + val.Atributo, value: $('#' + val.Atributo).val()},
+                  );
+            }
+         }
+      });
+
+      $(this).saveView({
+         viewModel: viewModel,
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "MovAlmacen")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#MovimientoAlmacenId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $("#MesContableId").val(response.data.MesContableId);
+               $('#AlmacenId').prop('disabled', true);
+               $('#TipoMovimientoAlmacenId').prop('disabled', true);
+               $('#AlmacenTransaccionId').prop('disabled', true);
+               $('#productoGrid').appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function calcularTotal() {
+
+      var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+      var cantidad = parseFloatEx($("#" + rowId + "_Cantidad").val());
+      var valorUnitario = parseFloatEx($("#" + rowId + "_ValorUnitario").val());
+      var total = cantidad * valorUnitario;
+
+      $("#" + rowId + "_Total").val(total);
+
+   };
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.SALIDA_CONSUMO_INTERNO') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.INGRESO_MERMA') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.SALIDA_MERMA') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            mostrarProducto();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.SALIDA_CONSUMO_INTERNO') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.INGRESO_MERMA') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.SALIDA_MERMA') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            editarProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#productoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_Cantidad').validateNumeric('@SR.GetString("GEN_cantidad_requerida")'))
+               return false;
+
+            if ($('#TipoMovimientoAlmacen').val() === '@TipoMovimientoAlmacenConstante.INGRESO') {
+
+               if ($('#TransaccionAlmacen').val() !== '@TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES') {
+                  if (!$('#' + rowId + '_ValorUnitario').validateNumeric('@SR.GetString("VT_valor_unitario_requerido")'))
+                     return false;
+               }
+            }
+
+            $("#productoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#productoGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarMovimientoAlmacenProducto", "MovAlmacen")',
+                  viewModel: [
+                     { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenProductoId", value: row.MovimientoAlmacenProductoId, type: 'int' },
+                     { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenId", value: row.MovimientoAlmacenId, type: 'int' },
+                     { name: "MovimientoAlmacenProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+                     { name: "MovimientoAlmacenProductoDTO.Descripcion", value: row.Descripcion },
+                     { name: "MovimientoAlmacenProductoDTO.CantidadDocumento", value: row.CantidadDocumento, type: 'decimal' },
+                     { name: "MovimientoAlmacenProductoDTO.PesoNetoDocumento", value: row.PesoNetoDocumento, type: 'decimal' },
+                     { name: "MovimientoAlmacenProductoDTO.PesoBrutoDocumento", value: row.PesoBrutoDocumento, type: 'decimal' },
+                     { name: "MovimientoAlmacenProductoDTO.Cantidad", value: row.Cantidad, type: 'decimal' },
+                     { name: "MovimientoAlmacenProductoDTO.ValorUnitario", value: row.ValorUnitario, type: 'decimal' },
+                     { name: "MovimientoAlmacenProductoDTO.RegistroReferencialId", value: row.RegistroReferencialId, type: 'int' },
+                     { name: "MovimientoAlmacenProductoDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#productoGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#productoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.SALIDA_CONSUMO_INTERNO') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.INGRESO_MERMA') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+            if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.SALIDA_MERMA') {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_almacen_trasaccion_no_permite_agregar")');
+               return;
+            }
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarMovimientoAlmacenProducto", "MovAlmacen")',
+                     viewModel: [
+                        { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenProductoId", value: row.MovimientoAlmacenProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#productoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+   function mostrarProducto() {
+      if ($('#TipoMovimientoAlmacen').val() === '@TipoMovimientoAlmacenConstante.INGRESO') {
+         if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.INGRESO_ORDEN_COMPRA')
+            $('#ordenCompraProductoListPopup').showDialog();
+         else
+            $('#productoListPopup').showDialog();
+      } else {
+         $('#saldoListPopup').showDialog();
+      }
+   };
+   function productoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      productoSelectedPopup('',row);
+   };
+   function productoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            MovimientoAlmacenProductoId: 0,
+            MovimientoAlmacenId: $('#MovimientoAlmacenId').val(),
+            ProductoId: row.ProductoId,
+            Codigo: row.Codigo,
+            ProductoNombre: row.Descripcion,
+            UnidadMedidaNombre: row.UnidadMedidaNombre,
+            CantidadDocumento : 0,
+            PesoNetoDocumento : 0,
+            PesoBrutoDocumento : 0,
+            Cantidad: 0,
+            ValorUnitario: 0,
+            Total: 0,
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#productoGrid").appGrid('addRow', initdata);
+         $("#productoMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoId', row.ProductoId);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Codigo', row.Codigo);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoNombre', row.Descripcion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaNombre', row.UnidadMedidaNombre);
+      }
+
+      $('#productoListPopup').hideDialog();
+   }
+   function saldoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      saldoSelectedPopup('',row);
+   };
+   function saldoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("MG_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            MovimientoAlmacenProductoId: 0,
+            MovimientoAlmacenId: $('#MovimientoAlmacenId').val(),
+            ProductoId: row.ProductoId,
+            Codigo: row.Codigo,
+            ProductoNombre: row.Descripcion,
+            UnidadMedidaNombre: row.UnidadMedidaNombre,
+            CantidadDocumento : 0,
+            PesoNetoDocumento : 0,
+            PesoBrutoDocumento : 0,
+            Cantidad: 0,
+            ValorUnitario: 0,
+            Total: 0,
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#productoGrid").appGrid('addRow', initdata);
+         $("#productoMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoId', row.ProductoId);
+         $('#productoGrid').jqGrid('setCell', rowId, 'Codigo', row.Codigo);
+         $('#productoGrid').jqGrid('setCell', rowId, 'ProductoNombre', row.Descripcion);
+         $('#productoGrid').jqGrid('setCell', rowId, 'UnidadMedidaNombre', row.UnidadMedidaNombre);
+      }
+
+      $('#saldoListPopup').hideDialog();
+   }
+   function editarProductoInGrid() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+      $('#productoGrid').jqGrid('editRow', rowId);
+
+      if ($('#TransaccionAlmacen').val() === '@TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES') {
+         $('#' + rowId + '_Cantidad').prop('readonly', true);
+         $('#' + rowId + '_ValorUnitario').prop('readonly', true);
+      }
+
+      $("#productoMenuBar").appMenu('saveMenu');
+   };
+   function verificarSoloLectura() {
+      if ($('#TieneMantenimiento').val() === '@SiNoConstante.N') {
+         $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+         $('#productoMenuBar').appMenu('disabled');
+      }
+
+      if ($('#RegRestringido').val() === '@SiNoConstante.S'){
+         $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: true });
+         $('#productoMenuBar').appMenu('disabled');
+      }
+   };
+   function ordenCompraProductoListPopupOnClick() {
+      var list = $('#bandejaPopupGrid').appGrid('getSelectedRowIdList');
+
+      if (list.length === 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("IV_orden_compra_producto_multiple_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      for (i in list) {
+         var row = $('#bandejaPopupGrid').appGrid('getRow', list[i]);
+         selectedList.push(row.OrdenCompraProductoId);
+      }
+
+      grabarOrdenCompraProducto(selectedList);
+   };
+   function productoVerAnuladoOnChange() {
+       $("#productoGrid").appGrid('reloadJSON');
+   };
+   function ordenCompraProductoSelectedPopup(sourceId, row) {
+
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_orden_compra_producto_multiple_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      selectedList.push(row.OrdenCompraProductoId);
+
+      grabarOrdenCompraProducto(selectedList);
+   };
+   function grabarOrdenCompraProducto(list) {
+
+      $(this).saveView({
+         urlAction: '@Url.Action("AgregarOrdenCompraProducto", "MovAlmacen")',
+         viewModel: [
+            { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val(), type: 'int' },
+            { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+            { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenDTO.OrdenCompraId", value: $('#OrdenCompraId').val(), type: 'int' },
+            { name: "MovimientoAlmacenProductoDTO.OrdenCompraProductoIdList", value: list, type: 'listInt' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#ordenCompraProductoListPopup').hideDialog();
+               $("#productoGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#productoMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#MovimientoAlmacenId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

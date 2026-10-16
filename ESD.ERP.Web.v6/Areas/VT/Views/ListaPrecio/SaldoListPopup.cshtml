@@ -1,0 +1,194 @@
+﻿@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.VT.Models.ListaPrecioViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div class="row">
+         <div id="app-search-input-group" class="col-11">
+            <div class="form-group row">
+               <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-2" label="Moneda" col-label-position="col-lg-2" onchange="mp_monedaIdOnChange();"
+                                 in-modal="true" enable="@(!Model.GetSelectedItemDisabled("MonedaId"))"></esd-dropdownlist>
+               <esd-dropdownlist id="ListaPrecioId" for="@Model.ListaPrecioList" col-position="col-lg-4" label="Lista de Precios" col-label-position="col-lg-2"
+                                 in-modal="true" enable="@(!Model.GetSelectedItemDisabled("ListaPrecioId"))"></esd-dropdownlist>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2" max-length="12" in-modal="true"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="Descripcion" col-position="col-lg-10" label="Descripcion" col-label-position="col-lg-2" max-length="100" in-modal="true"></esd-textbox>
+            </div>
+         </div>
+         <div class="col-1">
+            <div class="form-group row">
+               <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()"></esd-button>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden id="mp-gridColModel" value="@Model.GridColModel"></esd-hidden>
+   <esd-hidden id="mp-gridColName" value="@Model.GridColNames"></esd-hidden>
+</div>
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<div>
+   <div class="col-7">
+      <div id="presentacionPopupContainer">
+         <table id="presentacionPopupGrid"></table>
+         <div id="presentacionPopupPager"></div>
+      </div>
+   </div>
+   <div class="col-5">
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      var columnModel = JSON.parse($('#mp-gridColModel').val());
+      for (i = 0; i < columnModel.length; i++) {
+         cm = columnModel[i];
+         if (cm.name === 'CantidadSaldo') {
+            cm.cellattr = function (rowid, val) {
+               if (parseFloatEx(val) > 0)
+                  return ' style="background: #FFFF80;font-weight:bold;color:blue"';
+            };
+         }
+      }
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarListaPrecioProductoPopup", "ListaPrecio")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ListaPrecioProductoDTO.ListaPrecioId", value: $('#mp-ListaPrecioId').val() ||0, type: 'int' },
+                     { name: "ListaPrecioProductoDTO.MesContableId", value: @Model.ListaPrecioProductoDTO.MesContableId, type: 'int' },
+                     { name: "ListaPrecioProductoDTO.ProductoDTO.Codigo", value: $('#mp-Codigo').val() },
+                     { name: "ListaPrecioProductoDTO.ProductoDTO.Descripcion", value: $('#mp-Descripcion').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: $('#mp-gridColName').val().split(','),
+         colModel: columnModel,
+         pager: "#bandejaPopupPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+            $('#presentacionPopupGrid').appGrid('reloadJSON');
+
+         },
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('mp-edit-panel')
+
+            var row = $(this).getRowData(rowid);
+            listaPrecioProductoSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         rowattr: function (rd) {
+            if ($.isEmptyObject(rd))
+               return;
+
+            if (rd.EsCombo === '@SiNoConstante.S')
+               return;
+
+            if (parseFloatEx(rd.CantidadSaldo) === 0 && rd.TipoProducto === '@TipoProductoConstante.PRODUCTO') {
+               return { 'class': 'jqgrid-deletedrow' };
+            };
+         },
+         height: 200
+      });
+      $("#presentacionPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarListaPrecioProductoPresentacion", "ListaPrecio")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ListaPrecioProductoPresentacionDTO.ListaPrecioProductoId", value: obtenerListaPrecioProductoId(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','','','Unidad Medida', 'Cant. Equiv.', '','P.U.','Total'],
+         colModel: [
+            { name: 'ListaPrecioProductoPresentacionId', hidden: true },
+            { name: 'ListaPrecioProductoId', hidden: true },
+            { name: 'ProductoPresentacionVentaId', hidden: true },
+            { name: 'UnidadMedidaId', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 200 },
+            { name: "CantidadEquivalente", width: 80, align: 'right', formatter: 'number', sorttype: 'number' },
+            { name: 'ValorUnitario', hidden: true },
+            { name: "PrecioUnitario", width: 70, align: 'right', formatter: 'number', sorttype: 'number' },
+            { name: "MontoTotal", width: 80, align: 'right', formatter: 'number', sorttype: 'number' }
+         ],
+         pager: "#presentacionPopupPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+         },
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('mp-edit-panel')
+
+            var row = $(this).getRowData(rowid);
+            var parentRow = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+            listaPrecioPresentacionSelectedPopup(popupParams.dialogId, row, parentRow);
+         },
+         gridComplete: function () {
+            $("#presentacionPopupGrid").appGrid('resizeGrid', 'presentacionPopupContainer');
+         },
+         height: 120
+      });
+   });
+   function obtenerListaPrecioProductoId() {
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      if ($.isEmptyObject(row))
+         return 0;
+
+      return row.ListaPrecioProductoId;
+   };
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+      $('#presentacionPopupGrid').appGrid('reloadJSON');
+   }
+   function mp_monedaIdOnChange() {
+
+      var monedaId = $("#mp-MonedaId").val();
+      if ($.isNullOrEmpty(monedaId)) {
+         $("#mp-ListaPrecioId").val('');
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+         return;
+      }
+
+      $(this).postAction({
+         urlAction: '@Url.Action("ListarListaPrecio", "ListaPrecio")',
+         viewModel: [
+            { name: "ListaPrecioDTO.MonedaId", value: monedaId, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-ListaPrecioId').find('option').remove().end();
+               $("#mp-ListaPrecioId").addItems(response.data.list);
+               $('#bandejaPopupGrid').appGrid('reloadJSON');
+               $('#presentacionPopupGrid').appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   $(function () {
+      $("#mp-Codigo,#mp-Descripcion,#mp-ListaPrecioId").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+         $('#presentacionPopupGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

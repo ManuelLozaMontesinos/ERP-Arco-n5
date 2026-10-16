@@ -1,0 +1,367 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.ConceptoRemuViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ConceptoRemunerativoDTO.Codigo" col-position="col-lg-1" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-checkbox for="@Model.ConceptoRemunerativoDTO.EsRegularizacion" col-position="offset-lg-2 col-lg-2" label="Es Regularización"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ConceptoRemunerativoDTO.Nombre" col-position="col-lg-6" label="Nombre" col-label-position="col-lg-2"
+                               max-length="150"></esd-textbox>
+                  <esd-dropdownlist id="TipoConceptoRemunerativoId" for="@Model.TipoConceptoRemunerativoList" col-position="col-lg-2" label="Tipo de Concepto"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ConceptoRemunerativoDTO.NombreBoleta" col-position="col-lg-6" label="Nombre en Boleta" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.ConceptoRemunerativoDTO.FormulaHora" col-position="col-lg-9" label="Formula Horas" col-label-position="col-lg-2"
+                                max-length="450" rows="2" use-textcase="false"></esd-textarea>
+                  <div class="col-1">
+                     <esd-button id="horaFxButton" content="Variables" button-style="Primary" size="Small" block="true" onclick="horaFxButtonOnClick()"></esd-button>
+                     <esd-button id="checkHoraFxButton" content="Verificar" button-style="Primary" size="Small" block="true" font-image="fa fa-check-double"
+                                 onclick="checkHoraFxButtonOnClick()"></esd-button>
+                  </div>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.ConceptoRemunerativoDTO.Formula" col-position="col-lg-9" label="Formula" col-label-position="col-lg-2"
+                                max-length="600" rows="4" use-textcase="false"></esd-textarea>
+                  <div class="col-1">
+                     <esd-button id="fxButton" content="Variables" button-style="Primary" size="Small" block="true" onclick="fxButtonOnClick()"></esd-button>
+                     <esd-button id="checkFxButton" content="Verificar" button-style="Primary" size="Small" block="true" font-image="fa fa-check-double"
+                                 onclick="checkFxButtonOnClick()"></esd-button>
+                  </div>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.ConceptoRemunerativoDTO.Condicion" col-position="col-lg-9" label="Condicion" col-label-position="col-lg-2"
+                                max-length="250" rows="2" use-textcase="false"></esd-textarea>
+                  <div class="col-1">
+                     <esd-button id="condicionFxButton" content="Variables" button-style="Primary" size="Small" block="true" onclick="condicionFxButtonOnClick()"></esd-button>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.ConceptoRemunerativoDTO.ConceptoRemunerativoId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#baseImponibleTab" role="tab" data-toggle="tab">Forma parte de:</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="baseImponibleTab" role="tabpanel">
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="variableHoraListPopup" title="Variables" onclick="variableHoraListPopupOnClick">
+   <div id="variableHoraListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="variableListPopup" title="Variables" onclick="variableListPopupOnClick">
+   <div id="variableListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="condicionListPopup" title="Variables" onclick="condicionListPopupOnClick">
+   <div id="condicionListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $('#variableListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "VariableCalc")',
+               viewModel: [
+                  { name: "VariableCalculoDTO.AlcanceFormulaHora", value: '@SiNoConstante.N' },
+                  { name: "VariableCalculoDTO.AlcanceFormula", value: '@SiNoConstante.S' },
+                  { name: "VariableCalculoDTO.AlcanceCondicion", value: '@SiNoConstante.N' }
+               ],
+               container: 'variableListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#variableHoraListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "VariableCalc")',
+               viewModel: [
+                  { name: "VariableCalculoDTO.AlcanceFormulaHora", value: '@SiNoConstante.S' }
+               ],
+               container: 'variableHoraListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#condicionListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "VariableCalc")',
+               viewModel: [
+                  { name: "VariableCalculoDTO.AlcanceCondicion", value: '@SiNoConstante.S' }
+               ],
+               container: 'condicionListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarConceptoBaseImponible", "ConceptoRemu")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ConceptoBaseImponibleDTO.ConceptoRemunerativoId", value: $('#ConceptoRemunerativoId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','','Base Imponible','',''],
+         colModel: [
+            { name: 'ConceptoBaseImponibleId', hidden: true },
+            { name: 'ConceptoRemunerativoId', hidden: true },
+            { name: 'TipoBaseImponibleId', hidden: true },
+            { name: 'Nombre', width: 300 },
+            {
+               name: "Estado", width: 80, fixed: 'true', editable: true,
+               edittype: 'checkbox', formatoptions: { disabled: true }, editoptions: { value: "1:0" },
+               formatter: "checkbox", align: 'center'
+            },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+         },
+         gridComplete: function () {
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         loadComplete: function () {
+
+            if (!$("#ConceptoRemunerativoId").validateNumeric())
+               return;
+
+            var $this = $(this), rows = this.rows, l = rows.length, i, row;
+            for (i = 0; i < l; i++) {
+               row = rows[i];
+               if ($.inArray('jqgrow', row.className.split(' ')) >= 0) {
+                  $this.jqGrid('editRow', row.id, false);
+               }
+            }
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+   });
+   function horaFxButtonOnClick() {
+      $('#variableHoraListPopup').showDialog();
+   };
+   function variableHoraListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      variableCalculoSelectedPopup('variableHoraListPopup', row);
+   };
+   function checkHoraFxButtonOnClick() {
+
+      if (!$('#FormulaHora').validateString('@SR.GetString("RH_formula_remunerativa_requerida")'))
+         return false;
+
+      $(this).postAction({
+         urlAction: '@Url.Action("VerificarFormulaHora", "ConceptoRemu")',
+         viewModel: [
+            { name: "ConceptoRemunerativoDTO.FormulaHora", value: $('#FormulaHora').val(), textCase: 'none' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function fxButtonOnClick() {
+      $('#variableListPopup').showDialog();
+   };
+   function variableListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      variableCalculoSelectedPopup('variableListPopup', row);
+   };
+   function variableCalculoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_variable_calculo_seleccion_requerida")');
+         return false;
+      }
+
+      var formulaElem = '';
+      switch (sourceId) {
+         case 'variableHoraListPopup':
+            formulaElem = 'FormulaHora';
+            break;
+         case 'variableListPopup':
+            formulaElem = 'Formula';
+            break;
+         case 'condicionListPopup':
+            formulaElem = 'Condicion';
+            break;
+      }
+
+      var cursorPos = $('#' + formulaElem).prop('selectionStart');
+      var v = $('#' + formulaElem).val();
+      var textBefore = v.substring(0, cursorPos);
+      var textAfter = v.substring(cursorPos, v.length);
+
+      $('#' + formulaElem).val(textBefore + row.Codigo + textAfter);
+
+      $('#' + sourceId).hideDialog();
+   }
+   function checkFxButtonOnClick() {
+
+      if (!$('#Formula').validateString('@SR.GetString("RH_formula_remunerativa_requerida")'))
+         return false;
+
+      $(this).postAction({
+         urlAction: '@Url.Action("VerificarFormula", "ConceptoRemu")',
+         viewModel: [
+            { name: "ConceptoRemunerativoDTO.Formula", value: $('#Formula').val(), textCase: 'none' },
+            { name: "ConceptoRemunerativoDTO.Condicion", value: $('#Condicion').val(), textCase: 'none' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function condicionFxButtonOnClick() {
+      $('#condicionListPopup').showDialog();
+   };
+   function condicionListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      variableCalculoSelectedPopup('condicionListPopup', row);
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "ConceptoRemu")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#TipoConceptoRemunerativoId').validateNumeric('@SR.GetString("RH_tipo_concepto_remunerativo_seleccion_requerida")'))
+         return false;
+      if (!$('#Formula').validateString('@SR.GetString("RH_formula_remunerativa_requerida")'))
+         return false;
+
+      var conceptoBaseImponibleList = [];
+
+      var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+      if (editableRows !== 0) {
+         var list = $('#bandejaGrid').appGrid('getDataIDs');
+
+         for (i in list) {
+            var rowId = list[i];
+            if (isEmptyRecord(rowId))
+               continue;
+
+            var row = $('#bandejaGrid').appGrid('getRow', rowId);
+
+            if (parseInt(row.ConceptoBaseImponibleId) === 0 && $('#' + rowId + '_Estado').prop('checked') === false)
+               continue;
+
+            var conceptoBaseImponible = [
+               { name: "ConceptoBaseImponibleId", value: row.ConceptoBaseImponibleId, type: 'int' },
+               { name: "ConceptoRemunerativoId", value: row.ConceptoRemunerativoId, type: 'int' },
+               { name: "TipoBaseImponibleId", value: row.TipoBaseImponibleId, type: 'int' },
+               { name: "Estado", value: $('#' + rowId + 1) + '_Estado').prop('checked') ? '@EstadoConstante.ACTIVO' : '@EstadoConstante.INACTIVO' }
+            ];
+
+            conceptoBaseImponibleList.push(conceptoBaseImponible);
+         }
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "ConceptoRemunerativoDTO.ConceptoRemunerativoId", value: $('#ConceptoRemunerativoId').val(), type: 'int' },
+            { name: "ConceptoRemunerativoDTO.Codigo", value: $('#Codigo').val() },
+            { name: "ConceptoRemunerativoDTO.Nombre", value: $('#Nombre').val() },
+            { name: "ConceptoRemunerativoDTO.NombreBoleta", value: $('#NombreBoleta').val() },
+            { name: "ConceptoRemunerativoDTO.EsRegularizacion", value: $('#EsRegularizacion').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "ConceptoRemunerativoDTO.TipoConceptoRemunerativoId", value: $('#TipoConceptoRemunerativoId').val(), type: 'int' },
+            { name: "ConceptoRemunerativoDTO.FormulaHora", value: $('#FormulaHora').val(), textCase: 'none' },
+            { name: "ConceptoRemunerativoDTO.Formula", value: $('#Formula').val(), textCase: 'none' },
+            { name: "ConceptoRemunerativoDTO.Condicion", value: $('#Condicion').val(), textCase: 'none' },
+            { name: "ConceptoBaseImponibleDTOList", value: conceptoBaseImponibleList, type: 'list' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "ConceptoRemu")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#ConceptoRemunerativoId").val(response.data.Id);
+               $('#Codigo').prop('readonly', true);
+               $('#bandejaGrid').appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

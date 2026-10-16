@@ -1,0 +1,93 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.TS.Models.CuentaBancoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="BancoId" for="@Model.BancoList" col-position="col-lg-4" label="Banco" col-label-position="col-lg-2"
+                                    enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.EmpresaCuentaBancariaDTO.Nombre" col-position="col-lg-4" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-4" label="Moneda" col-label-position="col-lg-2"
+                                    enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.EmpresaCuentaBancariaDTO.Cuenta" col-position="col-lg-4" label="#Cuenta" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.EmpresaCuentaBancariaDTO.CuentaInterbancaria" col-position="col-lg-4" label="# Interbancaria" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.EmpresaCuentaBancariaDTO.EmpresaCuentaBancariaId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "CuentaBanco")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#BancoId').validateNumeric('@SR.GetString("TS_banco_seleccion_requerida")'))
+         return false;
+      if (!$('#Nombre').validateString('@SR.GetString("TS_nombre_cuenta_requerido")'))
+         return false;
+      if (!$('#MonedaId').validateNumeric('@SR.GetString("GEN_moneda_seleccion_requerida")'))
+         return false;
+      if (!$('#Cuenta').validateString('@SR.GetString("TS_numero_cuenta_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "EmpresaCuentaBancariaDTO.EmpresaCuentaBancariaId", value: $('#EmpresaCuentaBancariaId').val(), type: 'int' },
+            { name: "EmpresaCuentaBancariaDTO.BancoId", value: $('#BancoId').val(), type: 'int' },
+            { name: "EmpresaCuentaBancariaDTO.Nombre", value: $('#Nombre').val() },
+            { name: "EmpresaCuentaBancariaDTO.MonedaId", value: $('#MonedaId').val(), type: 'int' },
+            { name: "EmpresaCuentaBancariaDTO.Cuenta", value: $('#Cuenta').val() },
+            { name: "EmpresaCuentaBancariaDTO.CuentaInterbancaria", value: $('#CuentaInterbancaria').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "CuentaBanco")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#EmpresaCuentaBancariaId").val(response.data.Id);
+               $("#BancoId").prop('disabled', true);
+               $("#MonedaId").prop('disabled', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

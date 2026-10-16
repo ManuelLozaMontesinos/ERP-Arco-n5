@@ -1,0 +1,74 @@
+﻿@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.IV.Models.AlmacenViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div class="row">
+         <div class="col-11">
+            <div class="form-group row">
+               <esd-dropdownlist id="EmpresaSedeId" for="@Model.EmpresaSedeList" col-position="col-lg-2" label="Sede" col-label-position="col-lg-2"
+                                 in-modal="true"></esd-dropdownlist>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="Nombre" col-position="col-lg-8" label="Nombre" col-label-position="col-lg-2" max-length="100"
+                            in-modal="true"></esd-textbox>
+            </div>
+         </div>
+         <div class="col-1">
+            <div class="form-group row">
+               <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()"></esd-button>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $("#bandejaPopupGrid").jqGrid({
+      @GridHelper.DefaultProperties()
+      url: "@Url.Action("ListarBandeja", "Almacen")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AlmacenDTO.EmpresaSedeId", value: $('#mp-EmpresaSedeId').val() || 0, type: 'int' },
+                     { name: "AlmacenDTO.Nombre", value: $('#mp-Nombre').val() },
+                  ]
+               ));
+            }
+         },
+         colNames: ['','Sede', 'Nombre', 'Direccion', 'Es Venta',''],
+         colModel: [
+            { name: 'AlmacenId', hidden: true },
+            { name: "EmpresaSedeNombre", width: 180 },
+            { name: "Nombre", width: 300 },
+            { name: "Direccion", width: 300 },
+            { name: "EsVenta", width: 100 },
+            { name: 'Estado', hidden: true },
+         ],
+      pager: "#bandejaPopupPager",
+      ondblClickRow: function (rowid) {
+
+         var popupParams = getPopupParam('mp-edit-panel')
+
+         var row = $(this).getRowData(rowid);
+         almacenSelectedPopup(popupParams.dialogId, row);
+      },
+      gridComplete: function () {
+         $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+      },
+      height: 250
+   });
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      $('#mp-EmpresaSedeId').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-Nombre, #mp-EmpresaSedeId").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

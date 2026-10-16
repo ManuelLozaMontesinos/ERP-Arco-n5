@@ -1,0 +1,50 @@
+﻿@using ESD.Core.Web.JS;
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarOrdenProduccionListPopup", "Pedido")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "CotizacionProductoDTO.CotizacionId", value: $('#CotizacionId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Producto', 'Detalle', '', '', '', '', 'Cantidad', 'Cant. Restante', 'Cant. Enviar'],
+         colModel: [
+         { name: 'CotizacionProductoId', hidden: true },
+         { name: 'Codigo', width: 90, formatter: codigoFormatter },
+         { name: 'ProductoNombre', width: 250, editable: false },
+         { name: 'Descripcion', width: 150, editable: false },
+         { name: 'Cantidad', hidden: true },
+         { name: 'CantidadPresentacion', hidden: true },
+         { name: 'CantidadEquivalente', hidden: true },
+         { name: 'CantidadParcial', hidden: true},
+         { name: 'CantidadParcial', hidden: true},
+         { name: "CantidadVenta", width: 100, align: 'right', formatter: 'number'},
+         { name: "CantidadRestante", width: 100, align: 'right', formatter: 'number'}
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('mp-edit-panel')
+
+            var row = $(this).getRowData(rowid);
+            cotizacionProductoSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         multiselect: true,
+         height: 250
+      });
+   });
+</script>

@@ -1,0 +1,363 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.GuiaRemiViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div id="app-search-card" class="card">
+        <div class="card-body">
+            <div class="row">
+                <div id="app-search-input-group" class="col-11">
+                    <div class="form-group row">
+                        <esd-textbox id="Serie" col-position="col-lg-2" label="Serie" col-label-position="col-lg-2" max-length="4"></esd-textbox>
+                        <esd-textbox id="Numero" col-position="col-lg-2" label="Número" col-label-position="col-lg-2" max-length="8"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc. Iden" col-label-position="col-lg-2" max-length="35"></esd-textbox>
+                        <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                        <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+                    </div>
+                    <div class="form-group row">
+                        <esd-dropdownlist id="EstadoGuiaRemisionId" for="@Model.EstadoGuiaRemisionList" col-position="col-lg-2" label="Estado" col-label-position="col-lg-2"></esd-dropdownlist>
+                        <esd-checkbox id="productoVerAnulado" col-position="offset-lg-2 col-lg-2" label="Mostrar Anulados" onchange="productoVerAnuladoOnChange()"
+                                      checkbox-style="Default"></esd-checkbox>
+                    </div>
+                </div>
+                <div class="col-1">
+                    <div class="form-group row">
+                        <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <esd-hidden for="@Model.FileId"></esd-hidden>
+        <esd-hidden id="ServidorImpresion" value=""></esd-hidden>
+        <esd-hidden id="DataUrl" value=""></esd-hidden>
+    </div>
+    <div id="bandejaContainer">
+        <table id="bandejaGrid"></table>
+        <div id="bandejaPager"></div>
+    </div>
+</section>
+<esd-dialog id="impresionPopup" title="Imprimir" onclick="impresionPopupClickOk" size="Large">
+    <div id="impresionPopupContent">
+        <textarea class="form-control" id="printTextArea" readonly="readonly" cols="144" rows="25"></textarea>
+    </div>
+</esd-dialog>
+<esd-dialog id="anularEditPopup" title="@SR.GetString("APPMP_anular_titulo")" onclick="anularEditPopupOnClick">
+    <div id="anularEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        $("#bandejaGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarBandeja", "GuiaRemi")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "GuiaRemisionDTO.Serie", value: $('#Serie').val() },
+                        { name: "GuiaRemisionDTO.Numero", value: $('#Numero').val() },
+                        { name: "GuiaRemisionDTO.MovimientoAlmacenDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                        { name: "GuiaRemisionDTO.MovimientoAlmacenDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                        { name: "GuiaRemisionDTO.NumeroDocumentoAdicional", value: $('#NumeroDocumentoAdicional').val() },
+                        { name: "GuiaRemisionDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                        { name: "GuiaRemisionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
+                        { name: "GuiaRemisionDTO.Estado", value: $('#productoVerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' },
+                        { name: "GuiaRemisionDTO.EstadoGuiaRemisionId", value: $('#EstadoGuiaRemisionId').val() || 0, type: 'int' }
+                    ]
+                ));
+            }
+        },
+            colNames: ['', 'Serie-Numero', 'Fecha', 'Movimiento', 'Cliente', '#Doc', 'F.Traslado', 'Punto de Partida', 'Punto de Llegada',
+            '', 'Estado', '', 'Estado SUNAT', 'Usuario', '', ''],
+            colModel: [
+            { name: 'GuiaRemisionId', hidden: true },
+            { name: "SerieNumero", width: 90 },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "MovimientoAlmacen", width: 80 },
+            { name: "RazonSocial", width: 250 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: "FechaInicioTraslado", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "PuntoPartida", width: 230 },
+            { name: "PuntoLlegada", width: 230 },
+            { name: "EstadoGuiaRemision", hidden: true },
+            { name: "EstadoGuiaRemisionNombre", width: 100 },
+            { name: 'EstadoSunat', hidden: true },
+            { name: "EstadoSunatNombre", width: 120 },
+            { name: "Usuario", width: 120 },
+            { name: 'Impreso', hidden: true },
+            { name: 'Estado', hidden: true }
+        ],
+            pager: "#bandejaPager",
+            onSelectRow: function (rowid) {
+                if (rowid == null || rowid == 0)
+                    return;
+
+                $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+
+                var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            },
+            gridComplete: function () {
+                $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+                $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+            },
+    @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+            height: calculateGridHeight('bandejaContainer')
+          });
+
+    $('#anularEditPopup').setDialog({
+        onShow: function (p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+                urlAction: '@Url.Action("AnularEditPopup", "GuiaRemi")',
+                container: 'anularEditPopupContent',
+                showLoading: false,
+                hideLoading: false
+            });
+        },
+    });
+       });
+    function clearButtonOnClick() {
+        $('#app-search-input-group').find('input:text').val('');
+        $('#bandejaGrid').appGrid('reloadJSON');
+    }
+    $(function () {
+        $("#Serie,#Numero,#NumeroDocumentoIdentidad,#RazonSocial,#EstadoGuiaRemisionId").change(function () {
+            $('#bandejaGrid').appGrid('reloadJSON');
+        });
+        $("#FechaDesde").keydown(function (e) {
+            if (event.which == 13) {
+                $("#FechaHasta").val($("#FechaDesde").val());
+                event.preventDefault();
+                $('#bandejaGrid').appGrid('reloadJSON');
+            }
+        });
+        $("#FechaHasta").keydown(function (e) {
+            if (event.which == 13) {
+                event.preventDefault();
+                $('#bandejaGrid').appGrid('reloadJSON');
+            }
+        });
+    });
+    function menuBarOnClick(key) {
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        var excludeKeys = ['@MenuItemKey.NEW', '@MenuItemKey.EXIT'];
+        if (excludeKeys.indexOf(key) == -1) {
+            if ($.isEmpty(row)) {
+                msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+                return;
+            }
+        }
+
+        switch (key) {
+
+            case '@MenuItemKey.NEW':
+                $(this).getView({
+                    editAction: '@ViewModelEditAction.New',
+                    buttonId: key,
+                    viewModel: [
+                        { name: "GuiaRemisionDTO.GuiaRemisionId", value: 0, type: 'int' }
+                    ],
+                    urlAction: '@Url.Action("Crear", "GuiaRemi")'
+                });
+                break;
+
+            case '@MenuItemKey.EDIT':
+                $(this).getView({
+                    editAction: '@ViewModelEditAction.Edit',
+                    buttonId: key,
+                    viewModel: [
+                        { name: "GuiaRemisionDTO.GuiaRemisionId", value: row.GuiaRemisionId, type: 'int' }
+                    ],
+                    urlAction: '@Url.Action("Editar", "GuiaRemi")'
+                });
+                break;
+
+            case '@MenuItemKey.DELETE':
+                $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+
+                if (row.EstadoSunat === '@EstadoSunatConstante.APROBADO') {
+                    $('#anularEditPopup').showDialog();
+                } else {
+                    $(this).confirm({
+                        title: '@SR.GetString("APPMP_anular_titulo")',
+                        message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+                        onConfirm: function () {
+
+                            $(this).saveView({
+                                urlAction: '@Url.Action("Eliminar", "GuiaRemi")',
+                                viewModel: [
+                                    { name: "GuiaRemisionDTO.GuiaRemisionId", value: row.GuiaRemisionId, type: 'int' }
+                                ],
+                                onSuccess: function (response) {
+                                    if (response.success) {
+                                        $('#bandejaGrid').appGrid('reloadJSON');
+                                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                                    } else {
+                                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                break;
+
+            case 'imprimir_fmt':
+                $(this).getAction({
+                    urlAction: '@Url.Action("ObtenerServicioImpresion", "GuiaRemi")',
+                    id: row.GuiaRemisionId,
+                    onSuccess: function (response) {
+                        if (response.success) {
+                            $('#ServidorImpresion').val(response.data.ServidorImpresion);
+                            $('#DataUrl').val(response.data.DataUrl);
+
+                            generarFormato(key, '@DataFormatoImpresionConstante.ALMACEN_GUIA_REMISION', row.GuiaRemisionId);
+                        } else {
+                            msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                    }
+                });
+                break;
+
+            case '@MenuItemKey.PREVIEW':
+                var reportParam = "guiaRemisionId=" + row.GuiaRemisionId;
+
+                $(this).getReport({
+                    buttonId: key,
+                    urlAction: '@Url.Action("ReportTo", "GuiaRemi")',
+                    parameters: reportParam,
+                    onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+                });
+                break;
+        }
+        return true;
+    };
+    function generarFormato(buttonId, key, id) {
+
+        var basePrintUrl = $('#ServidorImpresion').val();
+        var dataUrl = $('#DataUrl').val();
+
+        if ($.isNullOrEmpty(basePrintUrl)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+            return;
+        }
+
+        $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: true });
+
+        $("#FileId").val('');
+        try {
+            $.ajax({
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                url: basePrintUrl + 'PrintDocument?key=' + key + '&id=' + id + '&dataUrl=' + dataUrl,
+                processData: false,
+                dataType: "jsonp",
+                jsonp: 'callback',
+                jsonpCallback: 'jsonpCallback',
+                beforeSend: function () {
+                    $('#impresionPopup').showDialog();
+                    $('#impresionPopupContent').showLoadingOverlay();
+                },
+                success: function (data) {
+                    $('#impresionPopupContent').hideLoadingOverlay();
+
+                    if (data === null) {
+                        $('#impresionPopup').hideDialog();
+                        msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_reporte_sin_datos")');
+                        return;
+                    }
+
+                    $('#printTextArea').val(data[1]);
+                    $("#FileId").val(data[0]);
+                    $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#impresionPopup').hideDialog();
+                    $('#impresionPopupContent').hideLoadingOverlay();
+                    $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+
+                    switch (jqXHR.status) {
+                        case 404:
+                            msgAlert(msgAlertTypeConstant.ERROR, '@SR.GetString("AJX_servicio_impresion_no_activo")');
+                            break;
+                        default:
+                            msgAlert(msgAlertTypeConstant.ERROR, textStatus);
+                            break;
+                    }
+                }
+            });
+        } catch (exception) {
+            $('#impresionPopup').hideDialog();
+            $('#impresionPopupContent').hideLoadingOverlay();
+            $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+        }
+    };
+    function impresionPopupClickOk() {
+
+        $('#impresionPopup').modal('hide');
+
+        var basePrintUrl = $('#ServidorImpresion').val();
+        if ($.isNullOrEmpty(basePrintUrl)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+            return;
+        }
+        var id = $("#FileId").val();
+
+        try {
+            $.ajax({
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                url: basePrintUrl + 'PrintFile?id=' + id,
+                processData: false,
+                dataType: "jsonp",
+                jsonp: 'callback',
+                jsonpCallback: 'jsonpCallback',
+                success: function (data) {
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    msgAlert(msgAlertTypeConstant.ERROR, errorThrown);
+                }
+            });
+        } catch (exception) {
+            throw exception;
+        }
+    };
+    function productoVerAnuladoOnChange() {
+        $("#bandejaGrid").appGrid('reloadJSON');
+    };
+    function anularEditPopupOnClick() {
+
+        if (!mp_validarDatos())
+            return true;
+
+        var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+        $('#anularEditPopup').saveView({
+            urlAction: '@Url.Action("Eliminar", "GuiaRemi")',
+            viewModel: [
+                { name: "GuiaRemisionDTO.GuiaRemisionId", value: row.GuiaRemisionId, type: 'int' },
+                { name: "GuiaRemisionDTO.ObservacionAnulacion", value: $('#mp-ObservacionAnulacion').val() }
+            ],
+            onSuccess: function (response) {
+                if (response.success) {
+                    $('#anularEditPopup').hideDialog();
+                    $('#bandejaGrid').appGrid('reloadJSON');
+                    msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                } else {
+                    msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                }
+            }
+        });
+    }
+</script>

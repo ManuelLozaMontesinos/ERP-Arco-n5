@@ -1,0 +1,74 @@
+{
+   "version": "1.0",
+   "defaultProvider": "cdnjs",
+   "libraries": [
+      {
+         "library": "plupload@3.1.5",
+         "destination": "wwwroot/lib/plupload/",
+         "files": [
+            "i18n/es.js",
+            "plupload.full.min.js"
+         ]
+      },
+      {
+         "library": "moment.js@2.29.4",
+         "destination": "wwwroot/lib/moment.js/",
+         "files": [
+            "moment.min.js",
+            "moment.min.js.map"
+         ]
+      },
+      {
+         "library": "underscore.js@1.13.6",
+         "destination": "wwwroot/lib/underscore.js/",
+         "files": [
+            "underscore-min.js"
+         ]
+      },
+      {
+         "library": "bootbox.js@5.5.3",
+         "destination": "wwwroot/lib/bootbox.js/"
+      },
+      {
+         "provider": "jsdelivr",
+         "library": "gasparesganga-jquery-loading-overlay@2.1.7",
+         "destination": "wwwroot/lib/loading-overlay/",
+         "files": [
+            "dist/loadingoverlay.min.js"
+         ]
+      },
+      {
+         "library": "jqgrid@5.8.5",
+         "destination": "wwwroot/lib/jqgrid/",
+         "files": [
+            "js/jquery.jqGrid.min.js",
+            "js/jquery.jqGrid.min.js.map",
+            "css/ui.jqgrid-bootstrap-ui.min.css",
+            "css/ui.jqgrid-bootstrap-ui.css",
+            "css/ui.jqgrid-bootstrap.css",
+            "css/ui.jqgrid-bootstrap.min.css",
+            "css/ui.jqgrid-bootstrap4.css",
+            "css/ui.jqgrid-bootstrap4.min.css",
+            "css/ui.jqgrid.css",
+            "css/ui.jqgrid.min.css",
+            "js/i18n/grid.locale-es.js"
+         ]
+      },
+      {
+         "library": "numeral.js@2.0.6",
+         "destination": "wwwroot/lib/numeral.js/",
+         "files": [
+            "numeral.min.js"
+         ]
+      },
+      {
+         "provider": "unpkg",
+         "library": "@microsoft/signalr@latest",
+         "destination": "wwwroot/lib/signalr/",
+         "files": [
+            "dist/browser/signalr.min.js",
+            "dist/browser/signalr.min.js.map"
+         ]
+      }
+   ]
+}

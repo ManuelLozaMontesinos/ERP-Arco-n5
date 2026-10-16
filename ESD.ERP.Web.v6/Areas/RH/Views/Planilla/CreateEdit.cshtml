@@ -1,0 +1,305 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.PlanillaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PlanillaDTO.Nombre" col-position="col-lg-4" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.PlanillaDTO.ProcesoAnual" col-position="col-lg-2" label="# de Procesos"
+                                      col-label-position="col-lg-2" numeric-type="Integer"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoTrabajadorId" for="@Model.TipoTrabajadorList" col-position="col-lg-2" label="Tipo de Trabajador"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PlanillaDTO.PlanillaId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#conceptoTab" role="tab" data-toggle="tab">Conceptos Remunerativos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="conceptoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="conceptoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="conceptoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="conceptoListPopup" title="Conceptos Remunerativos" onclick="conceptoListPopupOnClick">
+   <div id="conceptoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarConceptoRemunerativo", "Planilla")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PlanillaConceptoRemunerativoDTO.PlanillaId", value: $('#PlanillaId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '','Concepto','Tipo','Secuencia','',''],
+         colModel: [
+            { name: 'PlanillaConceptoRemunerativoId', hidden: true },
+            { name: 'PlanillaId', hidden: true },
+            { name: 'ConceptoRemunerativoId', hidden: true },
+            { name: "ConceptoRemunerativoNombre", width: 250 },
+            { name: "TipoConceptoRemunerativoNombre", width: 150 },
+            {
+               name: "Orden", width: 100, align: 'right', formatter: 'integer', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 3,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('integer');
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows == 0)
+               editCustomGridMenuBar('conceptoMenuBar', 'bandejaGrid');
+            else
+               $("#conceptoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('conceptoMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+      $('#conceptoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "ConceptoRemu")',
+               container: 'conceptoListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Planilla")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#ProcesoAnual').validateNumeric('@SR.GetString("RH_planilla_proceso_anual_requerido")'))
+         return false;
+      if (!$('#TipoTrabajadorId').validateNumeric('@SR.GetString("RH_tipo_trabajador_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PlanillaDTO.PlanillaId", value: $('#PlanillaId').val(), type: 'int' },
+            { name: "PlanillaDTO.Nombre", value: $('#Nombre').val() },
+            { name: "PlanillaDTO.ProcesoAnual", value: $('#ProcesoAnual').val(), type: 'int' },
+            { name: "PersonalDTO.TipoTrabajadorId", value: $('#TipoTrabajadorId').val(), type: 'int' },
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Planilla")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#PlanillaId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+               $("#bandejaGrid").appGrid('reloadJSON');
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function conceptoMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               PlanillaConceptoRemunerativoId: 0,
+               PlanillaId: $('#PlanillaId').val(),
+               Orden: 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#bandejaGrid").appGrid('addRow', initdata);
+            $("#conceptoMenuBar").appMenu('saveMenu');
+            $('#conceptoListPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarConceptoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            if ($.isNullOrEmpty(row.ConceptoRemunerativoNombre)){
+               msgAlert(msgAlertTypeConstant.INFORMATION,  '@SR.GetString("RH_concepto_remunerativo_seleccion_requerida")');
+               return false;
+            }
+
+            var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+            $("#bandejaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarPlanillaConceptoRemunerativo", "Planilla")',
+                  viewModel: [
+                     { name: "PlanillaConceptoRemunerativoDTO.PlanillaConceptoRemunerativoId", value: row.PlanillaConceptoRemunerativoId, type: 'int' },
+                     { name: "PlanillaConceptoRemunerativoDTO.PlanillaId", value: row.PlanillaId, type: 'int' },
+                     { name: "PlanillaConceptoRemunerativoDTO.ConceptoRemunerativoId", value: row.ConceptoRemunerativoId, type: 'int' },
+                     { name: "PlanillaConceptoRemunerativoDTO.Orden", value: row.Orden, type: 'int' },
+                     { name: "PlanillaConceptoRemunerativoDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#conceptoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarPlanillaConceptoRemunerativo", "Planilla")',
+                     viewModel: [
+                        { name: "PlanillaConceptoRemunerativoDTO.PlanillaConceptoRemunerativoId", value: row.PlanillaConceptoRemunerativoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editarConceptoInGrid() {
+      var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+      $('#bandejaGrid').jqGrid('editRow', rowId);
+
+      $("#conceptoMenuBar").appMenu('saveMenu');
+   };
+   function conceptoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      conceptoRemunerativoSelectedPopup('', row);
+   };
+   function conceptoRemunerativoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_variable_calculo_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#bandejaGrid").appGrid('getData');
+      var selectedData = _.where(data, { ConceptoRemunerativoId: parseInt(row.ConceptoRemunerativoId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("RH_concepto_remunerativo_ya_seleccionado")');
+         return false;
+      }
+
+      var rowId = $('#bandejaGrid').appGrid('getSelectedRowId');
+
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'ConceptoRemunerativoId', row.ConceptoRemunerativoId);
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'ConceptoRemunerativoNombre', row.Nombre);
+
+      $('#conceptoListPopup').hideDialog();
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#PlanillaId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

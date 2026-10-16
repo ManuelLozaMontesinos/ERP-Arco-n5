@@ -1,0 +1,38 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.DetraccionViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ComprobanteDTO.NumeroOperacionPago" col-position="col-lg-6" label="# Operación" col-label-position="col-lg-2" in-modal="true"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.ComprobanteDTO.FechaPago" col-position="col-lg-4" label="Fecha" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.ComprobanteDTO.MontoPago" col-position="col-lg-4" label="Monto" col-label-position="col-lg-2" in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.ComprobanteDTO.MontoCargo" col-position="col-lg-4" label="Cargo" col-label-position="col-lg-2" in-modal="true"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<script type="text/javascript">
+   function mp_validarDatos() {
+
+      if (!$('#mp-NumeroOperacionPago').validateString('@SR.GetString("VT_numero_operacion_detraccion_requerido")'))
+         return false;
+      if (!$('#mp-FechaPago').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#mp-MontoPago').validateNumeric('@SR.GetString("VT_monto_pago_detraccion_requerido")'))
+         return false;
+
+      return true;
+   };
+</script>

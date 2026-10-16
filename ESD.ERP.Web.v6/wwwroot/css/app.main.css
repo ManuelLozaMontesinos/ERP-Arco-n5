@@ -1,0 +1,184 @@
+﻿html,
+body {
+   /*height: 100%;
+   margin: 0;
+   padding: 0;
+   border: none;*/
+   font-size: 14px;
+   /*background-color: #f6f9fa;*/
+}
+
+.content-header-title {
+   font-size: 1rem !important;
+   font-weight: 500;
+   line-height: 1.5rem;
+   margin-bottom: 0 !important;
+   padding-top: 3px;
+}
+
+.app-input-group-button {
+   font-size: 0.785rem !important;
+   line-height: 0;
+}
+
+.app-menu-btn-xs {
+   padding: .100rem .5rem;
+   font-size: .85rem;
+   line-height: 1.5;
+   border-radius: .15rem;
+}
+
+.app-text-transform {
+   text-transform: uppercase;
+}
+
+/*
+ * --------------------------------------------
+ * Bootstrap : Customize
+ * --------------------------------------------
+ */
+.col-form-label {
+   font-size: 0.8571428571428571rem !important;
+   text-align: right;
+   padding-top: 3px;
+   padding-right: 0px;
+   padding-left: 0px;
+}
+
+.form-control {
+   box-shadow: none;
+   font-size: 0.8571428571428571rem !important;
+}
+.form-control-sm {
+   height: calc(1.6428571428571428rem);
+   padding: .2rem .4rem;
+}
+.form-check-label {
+   font-size: 0.8571428571428571rem !important;
+}
+.form-group {
+   margin-bottom: 1px;
+}
+
+.card {
+   margin-bottom: 5px;
+   border-radius: .2rem;
+}
+.card-body {
+   padding: 0.7142857142857143rem;
+}
+
+.btn-block {
+   width:95%;
+}
+
+.modal-header {
+   padding-top: 0.45rem;
+   padding-right: 1rem;
+   padding-left: 1rem;
+   padding-bottom: 0.45rem;
+}
+.modal-header h6{
+   font-weight:700;
+}
+.modal-footer {
+   padding-top: 0.45rem;
+   padding-bottom: 0.45rem;
+}
+.modal-body {
+   padding: 0.5rem;
+}
+
+.content-header {
+   padding-top: 5px;
+   padding-bottom: 5px;
+   border-bottom: 1px solid #ced4da;
+}
+
+.nav-tabs {
+   font-size: 0.8571428571428571rem;
+}
+
+/*
+ * --------------------------------------------
+ * Jqgrid : Customize
+ * --------------------------------------------
+ */
+.ui-jqgrid {
+   font-size: 0.7857142857142857rem !important;
+}
+
+.ui-jqgrid-bdiv {
+   background: #FFF;
+}
+
+.table td {
+   padding: .35rem;
+}
+
+.table th {
+   font-size: 0.8571428571428571rem !important;
+   padding: .35rem;
+   text-align: center;
+   color: #083B67 !important;
+}
+
+.jqgrid-deletedrow {
+   color: #FF0000;
+}
+
+/*
+ * --------------------------------------------
+ * iCheck : Customize
+ * --------------------------------------------
+ */
+/*.icheck-primary[class*="icheck-"] > label {
+   padding-left: 22px !important;
+   line-height: 18px;
+}
+
+.icheck-primary[class*="icheck-"] > input:first-child + input[type="hidden"] + label::before, .icheck-primary[class*="icheck-"] > input:first-child + label::before {
+   width: 18px;
+   height: 18px;
+}
+
+.icheck-primary[class*="icheck-"] > input:first-child:checked + input[type="hidden"] + label::after,
+.icheck-primary[class*="icheck-"] > input:first-child:checked + label::after {
+   top: 0px;
+   width: 4px;
+   height: 8px;
+   left: 0px;
+}*/
+[class*=icheck-] {
+   margin-top: 2px !important;
+   margin-bottom: 2px !important;
+ }
+[class*="icheck-"] > label {
+   min-height: 18px;
+   line-height: 18px;
+}
+
+[class*=icheck-] > input:first-child + input[type=hidden] + label::before, [class*=icheck-] > input:first-child + label::before {
+   width: 18px;
+   height: 18px;
+}
+[class*=icheck-] > input:first-child:checked + input[type=hidden] + label::after,
+[class*=icheck-] > input:first-child:checked + label::after {
+   top: 0px;
+   width: 4px;
+   height: 8px;
+   left: 0px;
+}
+
+/**/
+/*
+ * --------------------------------------------
+ * AdminLTE : Customize
+ * --------------------------------------------
+ */
+.layout-footer-fixed .wrapper .content-wrapper {
+   padding-bottom: 5px !important;
+}
+.sidebar-mini .nav-sidebar, .sidebar-mini .nav-sidebar .nav-link, .sidebar-mini .nav-sidebar > .nav-header {
+   white-space: normal;
+}

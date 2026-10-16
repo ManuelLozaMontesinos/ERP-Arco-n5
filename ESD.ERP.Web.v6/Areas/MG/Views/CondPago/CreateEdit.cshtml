@@ -1,0 +1,85 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.CondPagoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.CondicionPagoDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.CondicionPagoDTO.Nombre" col-position="col-lg-5" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoCondicionPagoId" for="@Model.TipoCondicionPagoList" col-position="col-lg-2" label="Tipo de Condición"
+                                    col-label-position="col-lg-2" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.CondicionPagoDTO.Dia" col-position="col-lg-1" label="# Días" col-label-position="col-lg-2"
+                                      numeric-type="Integer"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.CondicionPagoDTO.CondicionPagoId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "CondPago")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#TipoCondicionPagoId').validateString('@SR.GetString("MG_tipo_condicion_pago_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "CondicionPagoDTO.CondicionPagoId", value: $('#CondicionPagoId').val(), type: 'int' },
+            { name: "CondicionPagoDTO.Codigo", value: $('#Codigo').val() },
+            { name: "CondicionPagoDTO.Nombre", value: $('#Nombre').val() },
+            { name: "CondicionPagoDTO.TipoCondicionPagoId", value: $('#TipoCondicionPagoId').val(), type: 'int' },
+            { name: "CondicionPagoDTO.Dia", value: $('#Dia').val(), type: 'int' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "CondPago")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#CondicionPagoId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $("#TipoCondicionPagoId").prop('disabled',true);
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

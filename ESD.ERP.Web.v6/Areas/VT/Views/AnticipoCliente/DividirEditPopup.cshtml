@@ -1,0 +1,53 @@
+﻿@model ESD.ERP.Web.Areas.VT.Models.AnticipoClienteViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoSaldo" value="@Model.AnticipoClienteDTO.MontoSaldo" col-position="col-lg-6" label="Monto Disponible" col-label-position="col-lg-3"
+                                      enable="false" in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-radiobutton id="TipoMontos" group-name="tipoDistribucionRadio" label="En Montos" col-position="offset-lg-1 col-lg-12" checked="true"
+                                   in-modal="true" onchange="mp_seleccionRadioOnChange()"></esd-radiobutton>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="Monto1" col-position="col-lg-3" label="Monto 1" col-label-position="col-lg-3" in-modal="true"></esd-numerictextbox>
+                  <esd-numerictextbox id="Monto2" col-position="col-lg-3" label="Monto 2" col-label-position="col-lg-2" in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-radiobutton id="TipoNuevo" group-name="tipoDistribucionRadio" label="En Nuevo Anticipo" col-position="offset-lg-1 col-lg-12" in-modal="true"
+                                   onchange="mp_seleccionRadioOnChange()" enable="false"></esd-radiobutton>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.AnticipoClienteDTO.MontoAplicado" in-modal="true"></esd-hidden>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+      var montoAplicado = parseFloatEx($('#mp-MontoAplicado').val())
+      if (montoAplicado > 0)
+         $('#mp-TipoNuevo').prop('disabled', false);
+   });
+   function mp_seleccionRadioOnChange() {
+      if ($('#mp-TipoMontos').prop('checked')) {
+         $('#mp-Monto1').prop('readonly', false);
+         $('#mp-Monto2').prop('readonly', false);
+         $('#mp-Monto1').val(0);
+         $('#mp-Monto2').val(0);
+      };
+
+      if ($('#mp-TipoNuevo').prop('checked')) {
+         $('#mp-Monto1').prop('readonly', true);
+         $('#mp-Monto2').prop('readonly', true);
+         $('#mp-Monto1').val(0);
+         $('#mp-Monto2').val(0);
+      };
+   };
+</script>

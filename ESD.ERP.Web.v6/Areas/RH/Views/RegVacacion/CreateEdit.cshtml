@@ -1,0 +1,1123 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.PersonalViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-buttontextbox id="Pais" button-style="List" value="@Model.PersonalDTO.PaisDTO.Nombre" col-position="col-lg-2" label="Nacionalidad"
+                                     col-label-position="col-lg-2" onclick="paisOnClick"></esd-buttontextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.ApellidoPaterno" col-position="col-lg-2" label="Apellido Paterno" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.ApellidoMaterno" col-position="col-lg-2" label="Apellido Materno" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Nombres" col-position="col-lg-2" label="Nombres" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoIdentidadId" for="@Model.TipoDocumentoIdentidadList" col-position="col-lg-2" label="Tipo Doc. Identidad"
+                                    col-label-position="col-lg-2" onchange="tipoDocumentoIdentidadIdOnChange()"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2"
+                               max-length="20"></esd-textbox>
+                  <esd-buttontextbox id="PaisEmisor" button-style="List" value="@Model.PersonalDTO.PaisEmisorDTO?.Nombre" col-position="col-lg-2" label="Pais Emisor"
+                                     col-label-position="col-lg-2" enable="false" onclick="paisEmisorOnClick"></esd-buttontextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PersonalDTO.FechaNacimiento" col-position="col-lg-2" label="Fecha Nacimiento" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-dropdownlist id="SexoId" for="@Model.SexoList" col-position="col-lg-2" label="Sexo" col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Telefono" col-position="col-lg-2" label="Telefono" col-label-position="col-lg-2"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoViaId" for="@Model.TipoViaList" col-position="col-lg-2" label="Tipo de Via"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.NombreVia" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.NumeroVia" col-position="col-lg-1" label="Numero" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Interior" col-position="col-lg-1" label="Interior" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Departamento" col-position="col-lg-1" label="#Dpto" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Lote" col-position="col-lg-2" label="Lote" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Manzana" col-position="col-lg-1" label="Manzana" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Kilometro" col-position="col-lg-1" label="KM" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Block" col-position="col-lg-1" label="Block" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.Etapa" col-position="col-lg-2" label="Etapa" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoZonaId" for="@Model.TipoZonaList" col-position="col-lg-2" label="Tipo de Zona"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.PersonalDTO.ProveedorDTO.NombreZona" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Departamento"
+                                    col-label-position="col-lg-2" onchange="departamentoIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-3" label="Provincia"
+                                    col-label-position="col-lg-1" onchange="provinciaIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.PersonalDTO.ProveedorDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                    col-label-position="col-lg-1"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PersonalDTO.PersonalId"></esd-hidden>
+      <esd-hidden for="@Model.PersonalDTO.ProveedorId"></esd-hidden>
+      <esd-hidden for="@Model.PersonalDTO.PaisId"></esd-hidden>
+      <esd-hidden for="@Model.PersonalDTO.PaisEmisorId"></esd-hidden>
+      <esd-hidden for="@Model.TipoDocumentoIdentidad"></esd-hidden>
+      <esd-hidden for="@Model.PersonalDTO.CargoPersonalId"></esd-hidden>
+      <esd-hidden id="MonedaList" value="@Model.MonedaString"></esd-hidden>
+      <esd-hidden id="TipoRemuneracionList" value="@Model.TipoRemuneracionString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#principalTab" role="tab" data-toggle="tab">Datos Principales</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#complementaTab" role="tab" data-toggle="tab">Datos Complementarios</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#periodoTab" role="tab" data-toggle="tab">Periodo Laboral</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#remuneraTab" role="tab" data-toggle="tab">Remuneraciones</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#dependienteTab" role="tab" data-toggle="tab">Derecho Habientes</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="principalTab" role="tabpanel">
+            <div class="card">
+               <div class="card-body">
+                  <div class="row">
+                     <div class="col-12">
+                        <div class="form-group row">
+                           <esd-datetimepicker for="@Model.PersonalDTO.FechaIngreso" col-position="col-lg-2" label="Fecha Ingreso"
+                                               col-label-position="col-lg-2"></esd-datetimepicker>
+                           <esd-dropdownlist id="CentroCostoId" for="@Model.CentroCostoList" col-position="col-lg-2" label="C. Costo"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="TipoTrabajadorId" for="@Model.TipoTrabajadorList" col-position="col-lg-2" label="Tipo de Trabajador"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-dropdownlist id="CategoriaOcupacionalId" for="@Model.CategoriaOcupacionalList" col-position="col-lg-2" label="Cat. Ocupacional"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-dropdownlist id="RegimenLaboralId" for="@Model.RegimenLaboralList" col-position="col-lg-2" label="Regimen Laboral"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="SituacionEducativaId" for="@Model.SituacionEducativaList" col-position="col-lg-2" label="Situacion Educativa"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-buttontextbox id="CargoPersonal" button-style="List" value="@Model.PersonalDTO.CargoPersonalDTO?.Nombre" col-position="col-lg-2" label="Cargo"
+                                              col-label-position="col-lg-2" enable="false" onclick="cargoPersonalOnClick"></esd-buttontextbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="RegimenPensionarioId" for="@Model.RegimenPensionarioList" col-position="col-lg-2" label="Regimen Pensionario"
+                                             onchange="regimenPensionarioIdOnChange();" col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-datetimepicker for="@Model.PersonalDTO.FechaInscripcionRegimenPensionario" col-position="col-lg-2" label="Fecha Inscripcion" col-label-position="col-lg-2"></esd-datetimepicker>
+                           <esd-textbox for="@Model.PersonalDTO.NumeroCuspp" col-position="col-lg-2" label="CUSPP" col-label-position="col-lg-2"
+                                        max-length="15"></esd-textbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="RegimenPensionarioEsquemaId" for="@Model.RegimenPensionarioEsquemaList" col-position="col-lg-2" label="Tipo de Comisión"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="SctrSaludId" for="@Model.SctrSaludList" col-position="col-lg-2" label="SCTR Salud"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-dropdownlist id="TipoModalidadFormativaId" for="@Model.TipoModalidadFormativaList" col-position="col-lg-2" label="Modalidad Formativa"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="EstadoCivilId" for="@Model.EstadoCivilList" col-position="col-lg-2" label="Estado Civil"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-checkbox for="@Model.PersonalDTO.EsDiscapacitado" col-position="offset-lg-2 col-lg-2"
+                                         label="Es Discapacitado"></esd-checkbox>
+                        </div>
+                        <div class="form-group row">
+                           <br />
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="tab-pane" id="complementaTab" role="tabpanel">
+            <div class="card">
+               <div class="card-body">
+                  <div class="row">
+                     <div class="col-12">
+                        <div class="form-group row">
+                           <esd-dropdownlist id="TipoContratoId" for="@Model.TipoContratoList" col-position="col-lg-2" label="Tipo de Contrato"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-dropdownlist id="SituacionEspecialTrabajadorId" for="@Model.SituacionEspecialTrabajadorList" col-position="col-lg-2" label="Situacion Especial"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="TipoPagoRemuneracionId" for="@Model.TipoPagoRemuneracionList" col-position="col-lg-2" label="Tipo de Pago"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-dropdownlist id="PeriodicidadRemunerativaId" for="@Model.PeriodicidadRemunerativaList" col-position="col-lg-2" label="Periodicidad Remunerativa"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="BancoId" for="@Model.BancoList" col-position="col-lg-2" label="Banco Abono"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-textbox for="@Model.PersonalDTO.NumeroCuentaAbono" col-position="col-lg-2" label="#Cuenta Abono" col-label-position="col-lg-2"
+                                        max-length="15"></esd-textbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="BancoCTSId" for="@Model.BancoCTSList" col-position="col-lg-2" label="Banco CTS"
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                           <esd-textbox for="@Model.PersonalDTO.NumeroCuentaCTS" col-position="col-lg-2" label="#Cuenta CTS" col-label-position="col-lg-2"
+                                        max-length="15"></esd-textbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-dropdownlist id="ConvenioDobleTributacionId" for="@Model.ConvenioDobleTributacionList" col-position="col-lg-2" label="Convenio Doble Trib."
+                                             col-label-position="col-lg-2"></esd-dropdownlist>
+                        </div>
+                        <div class="form-group row">
+                           <esd-checkbox for="@Model.PersonalDTO.EsRegimenAtipico" col-position="offset-lg-2 col-lg-2"
+                                         label="Regimen Atípico"></esd-checkbox>
+                           <esd-checkbox for="@Model.PersonalDTO.EsJornadaTrabajoMaxima" col-position="offset-lg-2 col-lg-2"
+                                         label="Jornada Máxima"></esd-checkbox>
+                           <esd-checkbox for="@Model.PersonalDTO.EsJornadaTrabajoNocturna" col-position="offset-lg-2 col-lg-2"
+                                         label="Jornada Nocturna"></esd-checkbox>
+                        </div>
+                        <div class="form-group row">
+                           <esd-checkbox for="@Model.PersonalDTO.EsMiembroSindicalizado" col-position="offset-lg-2 col-lg-2"
+                                         label="Sindicalizado"></esd-checkbox>
+                           <esd-checkbox for="@Model.PersonalDTO.EsExonerado5ta" col-position="offset-lg-2 col-lg-2"
+                                         label="Exonerado 5ta Cat."></esd-checkbox>
+                           <esd-checkbox for="@Model.PersonalDTO.AsignacionFamiliar" col-position="offset-lg-2 col-lg-2"
+                                         label="Asignacion Familiar"></esd-checkbox>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="tab-pane container" id="periodoTab">
+            <div id="periodoContainer">
+               <table id="periodoGrid"></table>
+               <div id="periodoPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane container" id="remuneraTab">
+            <div>
+               <esd-menubar id="remuneraMenuBar" size="Small" menu-style="NewEditAndSaveCancel" onclick="remuneraMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="remuneraContainer">
+               <table id="remuneraGrid"></table>
+               <div id="remuneraPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane container" id="dependienteTab">
+            <div>
+               <esd-menubar id="dependienteMenuBar" size="Small" for="@Model.MenuItemList" onclick="dependienteMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="dependienteContainer">
+               <table id="dependienteGrid"></table>
+               <div id="dependientePager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="paisListPopup" title="Pais" onclick="paisListPopupOnClick">
+   <div id="paisListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="paisEmisorListPopup" title="Pais Emisor" onclick="paisEmisorListPopupOnClick">
+   <div id="paisEmisorListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="cargoPersonalListPopup" title="Pais" onclick="cargoPersonalListPopupOnClick">
+   <div id="cargoPersonalListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="dependienteEditPopup" title="Derecho Habiente" onclick="dependienteEditPopupOnClick" size="Large" enable-dismissclick="true">
+   <div id="dependienteEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="emisorDepListPopup" title="Pais Emisor" onclick="emisorDepListPopupOnClick">
+   <div id="emisorDepListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="bajaEditPopup" title="Derecho Habiente - Baja" onclick="bajaEditPopupOnClick">
+   <div id="bajaEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $('#NumeroDocumentoIdentidad').inputmask('@Model.FormatoValidacion');
+
+      $("#periodoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarPeriodoLaboral", "Personal")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PersonalPeriodoLaboralDTO.PersonalId", value: $('#PersonalId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Fecha Ingreso', 'Fecha Cese','Motivo Cese','',''],
+         colModel: [
+            { name: 'PersonalRemuneracionId', hidden: true },
+            { name: 'PersonalId', hidden: true },
+            { name: "FechaIngreso", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "FechaCese", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'MotivoFinPeriodo', width: 300 },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#periodoPager",
+         gridComplete: function () {
+            $("#periodoGrid").appGrid('resizeGrid', 'periodoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('periodoContainer')
+      });
+      $("#remuneraGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarPersonalRemuneracion", "Personal")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PersonalRemuneracionDTO.PersonalId", value: $('#PersonalId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','Tipo', 'Moneda', 'Monto', 'Fecha Inicio', 'Fecha Fin','',''],
+         colModel: [
+            { name: 'PersonalRemuneracionId', hidden: true },
+            { name: 'PersonalId', hidden: true },
+            {
+               name: 'TipoRemuneracionId', width: 120, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#TipoRemuneracionList').val()
+               },
+               editrules: { required: true }
+            },
+            {
+               name: 'MonedaId', width: 120, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#MonedaList').val()
+               },
+               editrules: { required: true }
+            },
+            {
+               name: "Monto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                  }
+               }
+            },
+            {
+               name: "FechaAlta", width: 110, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            {
+               name: "FechaBaja", width: 110, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#remuneraPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#remuneraGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('remuneraMenuBar', 'remuneraGrid');
+
+               var row = $('#remuneraGrid').appGrid('getSelectedRow');
+               if (!$.isNullOrEmpty(row.FechaBaja))
+                  $("#remuneraMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EDIT', disabled: true });
+            }
+            else
+               $("#remuneraMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('remuneraMenuBar', 'remuneraGrid');
+            $("#remuneraGrid").appGrid('resizeGrid', 'remuneraContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('remuneraContainer')
+      });
+      $("#dependienteGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarPersonalDependiente", "Personal")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PersonalDependienteDTO.PersonalId", value: $('#PersonalId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'T/D', '#Doc.','Nombres','A. Paterno','A. Materno','Fecha Alta', 'Fecha Baja','Motivo Baja','',''],
+         colModel: [
+            { name: 'PersonalDependienteId', hidden: true },
+            { name: 'PersonalId', hidden: true },
+            { name: 'TipoDocumentoIdentidad', width: 80 },
+            { name: 'NumeroDocumentoIdentidad', width: 80 },
+            { name: 'Nombres', width: 150 },
+            { name: 'ApellidoPaterno', width: 150 },
+            { name: 'ApellidoMaterno', width: 150 },
+            { name: "FechaAlta", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "FechaBaja", width: 110, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'MotivoBajaDependiente', width: 200 },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#dependientePager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#dependienteGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('dependienteMenuBar', 'dependienteGrid');
+
+               var row = $('#dependienteGrid').appGrid('getSelectedRow');
+               $("#dependienteMenuBar").appMenu('disabledButton', { buttonId: 'baja', disabled: false });
+               if (!$.isNullOrEmpty(row.FechaBaja)) {
+                  $("#dependienteMenuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.EDIT,baja', disabled: true });
+               }
+            }
+            else
+               $("#dependienteMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('dependienteMenuBar', 'remuneraGrid');
+            $("#dependienteGrid").appGrid('resizeGrid', 'dependienteContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('dependienteContainer')
+      });
+
+      $('#paisListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("PaisListPopup", "TablaGen")',
+               container: 'paisListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#paisEmisorListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("PaisEmisorListPopup", "TablaGen")',
+               container: 'paisEmisorListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#cargoPersonalListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "CargoPersonal")',
+               container: 'cargoPersonalListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#dependienteEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#dependienteGrid').appGrid('getSelectedRow');
+
+            var urlAction = '';
+            if (p.editAction === '@ViewModelEditAction.New')
+               urlAction = '@Url.Action("CrearPersonalDependiente", "Personal")';
+            else
+               urlAction = '@Url.Action("EditarPersonalDependiente", "Personal")';
+
+            $(this).getView({
+               urlAction: urlAction,
+               viewModel: [
+                  { name: "PersonalDependienteDTO.PersonalDependienteId", value: row.PersonalDependienteId, type:'int' }
+               ],
+               container: 'dependienteEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+      $('#emisorDepListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("PaisEmisorListPopup", "TablaGen")',
+               container: 'emisorDepListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#bajaEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#dependienteGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+               urlAction: '@Url.Action("BajaEditPopup", "Personal")',
+               viewModel: [
+                  { name: "PersonalDependienteDTO.PersonalDependienteId", value: row.PersonalDependienteId, type:'int' }
+               ],
+               container: 'bajaEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#periodoTab':
+               $('#periodoGrid').appGrid('resizeGrid', 'periodoContainer');
+               $('#periodoGrid').jqGrid('setGridHeight', calculateGridHeight('periodoContainer'));
+               break;
+
+            case '#remuneraTab':
+               $('#remuneraGrid').appGrid('resizeGrid', 'remuneraContainer');
+               $('#remuneraGrid').jqGrid('setGridHeight', calculateGridHeight('remuneraContainer'));
+               break;
+
+            case '#dependienteTab':
+               $('#dependienteGrid').appGrid('resizeGrid', 'dependienteContainer');
+               $('#dependienteGrid').jqGrid('setGridHeight', calculateGridHeight('dependienteContainer'));
+               break;
+         }
+      })
+   });
+   function paisOnClick() {
+      $('#paisListPopup').showDialog();
+   };
+   function paisListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      paisSelectedPopup('',row);
+   };
+   function paisSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_nacionalidad_seleccion_requerida")');
+         return false;
+      }
+
+      $("#Pais").val(row.Nombre);
+      $("#PaisId").val(row.PaisId);
+      $('#paisListPopup').hideDialog();
+   }
+   function tipoDocumentoIdentidadIdOnChange()
+   {
+      var tipoDocumentoIdentidadId = $('#TipoDocumentoIdentidadId').val();
+
+      if ($.isNullOrEmpty(tipoDocumentoIdentidadId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoDocumentoIdentidad", "Proveedor", new { area = "MG" })',
+         id: tipoDocumentoIdentidadId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#NumeroDocumentoIdentidad').inputmask('remove');
+               $('#PaisEmisor').appButtonTextBox({ disabled:true });
+               $('#PaisEmisor').val('');
+               $('#PaisEmisorId').val('');
+
+               $('#TipoDocumentoIdentidad').val(response.data.Codigo);
+
+               if (!$.isNullOrEmpty(response.data.FormatoValidacion))
+                  $('#NumeroDocumentoIdentidad').inputmask(response.data.FormatoValidacion);
+               else
+                  $('#NumeroDocumentoIdentidad').inputmask('remove');
+
+               if ('@Model.RestriccionPaisEmisorXTipoDocumento'.indexOf(response.data.Codigo) != -1) {
+                  $('#PaisEmisor').appButtonTextBox('disabled', { disabled: false });
+               } else {
+                  $('#PaisEmisor').appButtonTextBox('disabled', { disabled: true });
+               }
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function validarTipoDocumentoIdentidadId(){
+
+      if (!$('#NumeroDocumentoIdentidad').inputmask("isComplete")){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_numero_doc_identidad_incorrecto")');
+         return false;
+      }
+
+      if ('@Model.RestriccionPaisEmisorXTipoDocumento'.indexOf($('#TipoDocumentoIdentidad').val()) != -1){
+         if (!$('#PaisEmisor').validateString('@SR.GetString("RH_pais_emisor_seleccion_requerida")'))
+            return false;
+      }
+
+      return true;
+   };
+   function paisEmisorOnClick() {
+      $('#paisEmisorListPopup').showDialog();
+   };
+   function paisEmisorListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      paisEmisorSelectedPopup('',row);
+   };
+   function paisEmisorSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_pais_emisor_seleccion_requerida")');
+         return false;
+      }
+
+      if (sourceId === 'paisEmisorListPopup') {
+         $("#PaisEmisor").val(row.Nombre);
+         $("#PaisEmisorId").val(row.PaisEmisorId);
+      } else {
+         $("#mp-PaisEmisor").val(row.Nombre);
+         $("#mp-PaisEmisorId").val(row.PaisEmisorId);
+      }
+
+      $('#' + sourceId).hideDialog();
+   }
+   function departamentoIdOnChange() {
+
+      var departamentoId = $("#DepartamentoId").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#ProvinciaId").prop('disabled', true);
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#ProvinciaId").val('');
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "Personal")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#ProvinciaId').find('option').remove().end();
+               $("#ProvinciaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#DepartamentoId").val())) {
+                  $("#ProvinciaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function provinciaIdOnChange() {
+
+      var provinciaId = $("#ProvinciaId").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "Personal")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#DistritoId').find('option').remove().end();
+               $("#DistritoId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#DistritoId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function cargoPersonalOnClick() {
+      $('#cargoPersonalListPopup').showDialog();
+   };
+   function cargoPersonalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      cargoPersonalSelectedPopup('',row);
+   };
+   function cargoPersonalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_nacionalidad_seleccion_requerida")');
+         return false;
+      }
+
+      $("#CargoPersonal").val(row.Nombre);
+      $("#CargoPersonalId").val(row.CargoPersonalId);
+      $('#cargoPersonalListPopup').hideDialog();
+   }
+   function regimenPensionarioIdOnChange() {
+
+      var regimenPensionarioId = $("#RegimenPensionarioId").val();
+      if ($.isNullOrEmpty(regimenPensionarioId)) {
+         return;
+      }
+
+      $("#RegimenPensionarioEsquemaId").val('');
+      $('#RegimenPensionarioEsquemaId').find('option').remove().end();
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarRegimenPensionarioEsquema", "Personal")',
+         id: regimenPensionarioId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#RegimenPensionarioEsquemaId").addItems(response.data);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Personal")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#ApellidoPaterno').validateString('@SR.GetString("RH_apellido_paterno_requerido")'))
+         return false;
+      if (!$('#Nombres').validateString('@SR.GetString("GEN_nombres_requerido")'))
+         return false;
+      if (!$('#Pais').validateString('@SR.GetString("RH_nacionalidad_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoDocumentoIdentidadId').validateNumeric('@SR.GetString("GEN_tipo_doc_identidad_seleccion_requerida")'))
+         return false;
+      if (!$('#NumeroDocumentoIdentidad').validateString('@SR.GetString("GEN_numero_doc_identidad_requerido")'))
+         return false;
+      if(!validarTipoDocumentoIdentidadId())
+         return false;
+
+      if (!$('#FechaNacimiento').validateString('@SR.GetString("RH_fecha_nacimiento_requerida")'))
+         return false;
+      if (!$('#SexoId').validateNumeric('@SR.GetString("RH_sexo_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoViaId').validateNumeric('@SR.GetString("MG_tipo_via_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoZonaId').validateNumeric('@SR.GetString("MG_tipo_zona_seleccion_requerida")'))
+         return false;
+      if (!$('#DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+         return false;
+      if (!$('#ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+         return false;
+      if (!$('#DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+         return false;
+
+      if (!$('#TipoTrabajadorId').validateNumeric('@SR.GetString("RH_tipo_trabajador_seleccion_requerida")'))
+         return false;
+      if ('@Model.RestriccionCategoriaOcupacionalXTipoTrabajador'.indexOf($('#TipoDocumentoIdentidad').val()) != -1){
+         if (!$('#CategoriaOcupacionalId').validateNumeric('@SR.GetString("RH_categoria_educacional_seleccion_requerida")'))
+            return false;
+      }
+      if (!$('#RegimenLaboralId').validateNumeric('@SR.GetString("RH_regimen_laboral_seleccion_requerida")'))
+         return false;
+      if ('@Model.RestriccionSituacionEducativaXTipoTrabajador'.indexOf($('#TipoDocumentoIdentidad').val()) != -1){
+         if (!$('#SituacionEducativaId').validateNumeric('@SR.GetString("RH_situacion_educativa_seleccion_requerida")'))
+            return false;
+      }
+      if (!$('#CargoPersonalId').validateNumeric('@SR.GetString("RH_cargo_seleccion_requerida")'))
+         return false;
+      if (!$('#RegimenPensionarioId').validateNumeric('@SR.GetString("RH_regimen_pensionario_seleccion_requerida")'))
+         return false;
+      if (!$('#FechaInscripcionRegimenPensionario').validateString('@SR.GetString("RH_fecha_inscripcion_regimen_pensionario_requerida")'))
+         return false;
+      if (!$('#NumeroCuspp').validateString('@SR.GetString("RH_numero_cussp_requerida")'))
+         return false;
+      if (!$('#SctrSaludId').validateNumeric('@SR.GetString("RH_sctr_salud_requerida")'))
+         return false;
+      if (!$('#EstadoCivilId').validateNumeric('@SR.GetString("RH_estado_civil_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoContratoId').validateNumeric('@SR.GetString("RH_tipo_contrato_seleccion_requerida")'))
+         return false;
+      if (!$('#SituacionEspecialTrabajadorId').validateNumeric('@SR.GetString("RH_situacion_especial_trabajador_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoPagoRemuneracionId').validateNumeric('@SR.GetString("RH_tipo_pago_seleccion_requerida")'))
+         return false;
+      if (!$('#PeriodicidadRemunerativaId').validateNumeric('@SR.GetString("RH_periodicidad_renunerativa_seleccion_requerida")'))
+         return false;
+      if (!$('#ConvenioDobleTributacionId').validateNumeric('@SR.GetString("RH_convenio_doble_tributacion_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PersonalDTO.PersonalId", value: $('#PersonalId').val(), type:'int' },
+            { name: "PersonalDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "PersonalDTO.ProveedorDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "PersonalDTO.ProveedorDTO.ApellidoPaterno", value: $('#ApellidoPaterno').val() },
+            { name: "PersonalDTO.ProveedorDTO.ApellidoMaterno", value: $('#ApellidoMaterno').val() },
+            { name: "PersonalDTO.ProveedorDTO.Nombres", value: $('#Nombres').val() },
+            { name: "PersonalDTO.PaisId", value: $('#PaisId').val(), type: 'int' },
+            { name: "PersonalDTO.ProveedorDTO.TipoDocumentoIdentidadId", value: $('#TipoDocumentoIdentidadId').val(), type: 'int' },
+            { name: "PersonalDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+            { name: "PersonalDTO.PaisEmisorId", value: $('#PaisEmisorId').val(), type: 'int' },
+            { name: "PersonalDTO.FechaNacimiento", value: $('#FechaNacimiento').val(), type: 'date' },
+            { name: "PersonalDTO.SexoId", value: $('#SexoId').val(), type: 'int' },
+            { name: "PersonalDTO.ProveedorDTO.Telefono", value: $('#Telefono').val() },
+            { name: "PersonalDTO.ProveedorDTO.Email", value: $('#Email').val() },
+            { name: "PersonalDTO.ProveedorDTO.TipoViaId", value: $('#TipoViaId').val(), type: 'int' },
+            { name: "PersonalDTO.ProveedorDTO.NombreVia", value: $('#NombreVia').val() },
+            { name: "PersonalDTO.ProveedorDTO.NumeroVia", value: $('#NumeroVia').val() },
+            { name: "PersonalDTO.ProveedorDTO.Interior", value: $('#Interior').val() },
+            { name: "PersonalDTO.ProveedorDTO.Departamento", value: $('#Departamento').val() },
+            { name: "PersonalDTO.ProveedorDTO.Lote", value: $('#Lote').val() },
+            { name: "PersonalDTO.ProveedorDTO.Manzana", value: $('#Manzana').val() },
+            { name: "PersonalDTO.ProveedorDTO.Kilometro", value: $('#Kilometro').val() },
+            { name: "PersonalDTO.ProveedorDTO.Etapa", value: $('#Etapa').val() },
+            { name: "PersonalDTO.ProveedorDTO.TipoZonaId", value: $('#TipoZonaId').val(), type: 'int' },
+            { name: "PersonalDTO.ProveedorDTO.NombreZona", value: $('#NombreZona').val() },
+            { name: "PersonalDTO.ProveedorDTO.Referencia", value: $('#Referencia').val() },
+            { name: "PersonalDTO.ProveedorDTO.DistritoId", value: $('#DistritoId').val(), type: 'int' },
+            { name: "PersonalDTO.TipoTrabajadorId", value: $('#TipoTrabajadorId').val(), type: 'int' },
+            { name: "PersonalDTO.CategoriaOcupacionalId", value: $('#CategoriaOcupacionalId').val(), type: 'int' },
+            { name: "PersonalDTO.RegimenLaboralId", value: $('#RegimenLaboralId').val(), type: 'int' },
+            { name: "PersonalDTO.SituacionEducativaId", value: $('#SituacionEducativaId').val(), type: 'int' },
+            { name: "PersonalDTO.CargoPersonalId", value: $('#CargoPersonalId').val(), type: 'int' },
+            { name: "PersonalDTO.RegimenPensionarioId", value: $('#RegimenPensionarioId').val(), type: 'int' },
+            { name: "PersonalDTO.RegimenPensionarioEsquemaId", value: $('#RegimenPensionarioEsquemaId').val(), type: 'int' },
+            { name: "PersonalDTO.FechaInscripcionRegimenPensionario", value: $('#FechaInscripcionRegimenPensionario').val(), type: 'date' },
+            { name: "PersonalDTO.NumeroCuspp", value: $('#NumeroCuspp').val() },
+            { name: "PersonalDTO.SctrSaludId", value: $('#SctrSaludId').val(), type: 'int' },
+            { name: "PersonalDTO.TipoModalidadFormativaId", value: $('#TipoModalidadFormativaId').val(), type: 'int' },
+            { name: "PersonalDTO.EstadoCivilId", value: $('#EstadoCivilId').val(), type: 'int' },
+            { name: "PersonalDTO.EsDiscapacitado", value: $('#EsDiscapacitado').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalDTO.EsMadreResponsableFamilia", value: $('#EsMadreResponsableFamilia').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalDTO.TipoContratoId", value: $('#TipoContratoId').val(), type: 'int' },
+            { name: "PersonalDTO.SituacionEspecialTrabajadorId", value: $('#SituacionEspecialTrabajadorId').val(), type: 'int' },
+            { name: "PersonalDTO.TipoPagoRemuneracionId", value: $('#TipoPagoRemuneracionId').val(), type: 'int' },
+            { name: "PersonalDTO.PeriodicidadRemunerativaId", value: $('#PeriodicidadRemunerativaId').val(), type: 'int' },
+            { name: "PersonalDTO.BancoId", value: $('#BancoId').val(), type: 'int' },
+            { name: "PersonalDTO.NumeroCuentaAbono", value: $('#NumeroCuentaAbono').val() },
+            { name: "PersonalDTO.BancoCTSId", value: $('#BancoCTSId').val(), type: 'int' },
+            { name: "PersonalDTO.NumeroCuentaCTS", value: $('#NumeroCuentaCTS').val() },
+            { name: "PersonalDTO.CentroCostoId", value: $('#CentroCostoId').val(), type: 'int' },
+            { name: "PersonalDTO.FechaIngreso", value: $('#FechaIngreso').val(), type: 'date' },
+            { name: "PersonalDTO.ConvenioDobleTributacionId", value: $('#ConvenioDobleTributacionId').val(), type: 'int' },
+            { name: "PersonalDTO.EsRegimenAtipico", value: $('#EsRegimenAtipico').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalDTO.EsJornadaTrabajoMaxima", value: $('#EsJornadaTrabajoMaxima').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalDTO.EsJornadaTrabajoNocturna", value: $('#EsJornadaTrabajoNocturna').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalDTO.EsMiembroSindicalizado", value: $('#EsMiembroSindicalizado').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalDTO.EsExonerado5ta", value: $('#EsExonerado5ta').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "PersonalDTO.AsignacionFamiliar", value: $('#AsignacionFamiliar').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Personal")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#PersonalId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $("#ProveedorId").val(response.data.ProveedorId);
+               $('#TipoDocumentoIdentidadId').prop('disabled', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function remuneraMenuBarOnClick(key) {
+
+      var row = $('#remuneraGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               PersonalRemuneracionId: 0,
+               PersonalId: $('#PersonalId').val(),
+               Monto: 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#remuneraGrid").appGrid('addRow', initdata);
+            $("#remuneraMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarRemuneracionInGrid();
+            var rowId = $("#remuneraGrid").appGrid("getSelectedRowId");
+            $('#' + rowId + '_MonedaId').prop('disabled', true);
+            $('#' + rowId + '_TipoRemuneracionId').prop('disabled', true);
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#remuneraGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#remuneraGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_FechaAlta').validateString('@SR.GetString("GEN_fecha_inicio_requerida")'))
+               return false;
+
+            $("#remuneraGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#remuneraGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarPersonalRemuneracion", "Personal")',
+                  viewModel: [
+                     { name: "PersonalRemuneracionDTO.PersonalRemuneracionId", value: row.PersonalRemuneracionId, type: 'int' },
+                     { name: "PersonalRemuneracionDTO.PersonalId", value: $('#PersonalId').val(), type: 'int' },
+                     { name: "PersonalRemuneracionDTO.TipoRemuneracionId", value: row.TipoRemuneracionId, type: 'int' },
+                     { name: "PersonalRemuneracionDTO.MonedaId", value: row.MonedaId, type: 'int' },
+                     { name: "PersonalRemuneracionDTO.Monto", value: row.Monto, type: 'decimal' },
+                     { name: "PersonalRemuneracionDTO.FechaAlta", value: row.FechaAlta, type: 'date' },
+                     { name: "PersonalRemuneracionDTO.FechaBaja", value: row.FechaBaja, type: 'date' },
+                     { name: "PersonalRemuneracionDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#remuneraGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#remuneraMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+      }
+      return true;
+   };
+   function editarRemuneracionInGrid() {
+      var rowId = $("#remuneraGrid").appGrid("getSelectedRowId");
+      $('#remuneraGrid').jqGrid('editRow', rowId);
+
+      $("#remuneraMenuBar").appMenu('saveMenu');
+   };
+   function dependienteMenuBarOnClick(key) {
+
+      var row = $('#dependienteGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               PersonalDependienteId: 0,
+               PersonalId: $('#PersonalId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#dependienteGrid").appGrid('addRow', initdata);
+            $("#dependienteMenuBar").appMenu('saveMenu');
+            $('#dependienteEditPopup').showDialog({ editAction : '@ViewModelEditAction.New'});
+            break;
+
+         case '@MenuItemKey.EDIT':
+            $('#dependienteEditPopup').showDialog({ editAction : '@ViewModelEditAction.Edit'});
+            break;
+
+         case 'baja':
+            $('#bajaEditPopup').showDialog({ editAction : '@ViewModelEditAction.Edit'});
+            break;
+      }
+      return true;
+   };
+   function dependienteEditPopupOnClick(key) {
+
+      switch (key) {
+         case 'ok':
+            if (!mp_validarDatos())
+               return false;
+
+            var row = $("#dependienteGrid").appGrid("getSelectedRow");
+            setModifiedDTO(row);
+
+            $('#dependienteEditPopup').saveView({
+               viewModel: [
+                  { name: "PersonalDependienteDTO.PersonalDependienteId", value: $('#mp-PersonalDependienteId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.PersonalId", value: $('#PersonalId').val(), type:'int' },
+                  { name: "PersonalDependienteDTO.TipoDocumentoIdentidadId", value: $('#mp-TipoDocumentoIdentidadId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.NumeroDocumentoIdentidad", value: $('#mp-NumeroDocumentoIdentidad').val() },
+                  { name: "PersonalDependienteDTO.PaisEmisorId", value: $('#mp-PaisEmisorId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.ApellidoPaterno", value: $('#mp-ApellidoPaterno').val() },
+                  { name: "PersonalDependienteDTO.ApellidoMaterno", value: $('#mp-ApellidoMaterno').val() },
+                  { name: "PersonalDependienteDTO.Nombres", value: $('#mp-Nombres').val() },
+                  { name: "PersonalDependienteDTO.FechaNacimiento", value: $('#mp-FechaNacimiento').val(), type: 'date' },
+                  { name: "PersonalDependienteDTO.SexoId", value: $('#mp-SexoId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.VinculoFamiliarId", value: $('#mp-VinculoFamiliarId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.TipoDocumentoVinculoFamiliarId", value: $('#mp-TipoDocumentoVinculoFamiliarId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.NumeroDocumentoVinculoFamiliar", value: $('#mp-NumeroDocumentoVinculoFamiliar').val() },
+                  { name: "PersonalDependienteDTO.FechaConcepcion", value: $('#mp-FechaConcepcion').val(), type: 'date' },
+                  { name: "PersonalDependienteDTO.TipoViaId", value: $('#mp-TipoViaId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.NombreVia", value: $('#mp-NombreVia').val() },
+                  { name: "PersonalDependienteDTO.NumeroVia", value: $('#mp-NumeroVia').val() },
+                  { name: "PersonalDependienteDTO.Interior", value: $('#mp-Interior').val() },
+                  { name: "PersonalDependienteDTO.Departamento", value: $('#mp-Departamento').val() },
+                  { name: "PersonalDependienteDTO.Lote", value: $('#mp-Lote').val() },
+                  { name: "PersonalDependienteDTO.Manzana", value: $('#mp-Manzana').val() },
+                  { name: "PersonalDependienteDTO.Kilometro", value: $('#mp-Kilometro').val() },
+                  { name: "PersonalDependienteDTO.Etapa", value: $('#mp-Etapa').val() },
+                  { name: "PersonalDependienteDTO.TipoZonaId", value: $('#mp-TipoZonaId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.NombreZona", value: $('#mp-NombreZona').val() },
+                  { name: "PersonalDependienteDTO.Referencia", value: $('#mp-Referencia').val() },
+                  { name: "PersonalDependienteDTO.DistritoId", value: $('#mp-DistritoId').val(), type: 'int' },
+                  { name: "PersonalDependienteDTO.Telefono", value: $('#mp-Telefono').val() },
+                  { name: "PersonalDependienteDTO.Email", value: $('#mp-Email').val() },
+                  { name: "PersonalDependienteDTO.FechaAlta", value: $('#mp-FechaAlta').val(), type: 'date' },
+                  { name: "PersonalDependienteDTO.DTOState", value: row.DTOState, type: 'int' }
+               ],
+               urlAction: '@Url.Action("GrabarPersonalDependiente", "Personal")',
+               onSuccess: function (response) {
+                  if (response.success) {
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     $('#dependienteEditPopup').hideDialog();
+                     $('#dependienteGrid').appGrid('reloadJSON');
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+
+         default:
+            $('#dependienteGrid').appGrid('reloadJSON');
+            break;
+      }
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#PersonalId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+   function bajaEditPopupOnClick() {
+      if (!mp_validarDatos())
+         return false;
+
+      $('#bajaEditPopup').saveView({
+         viewModel: [
+            { name: "PersonalDependienteDTO.PersonalDependienteId", value: $('#mp-PersonalDependienteId').val(), type: 'int' },
+            { name: "PersonalDependienteDTO.MotivoBajaDependienteId", value: $('#mp-MotivoBajaDependienteId').val(), type:'int' },
+            { name: "PersonalDependienteDTO.FechaBaja", value: $('#mp-FechaBaja').val(), type: 'date' }
+         ],
+         urlAction: '@Url.Action("BajaPersonalDependiente", "Personal")',
+         onSuccess: function (response) {
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#bajaEditPopup').hideDialog();
+               $('#dependienteGrid').appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+
+   };
+</script>

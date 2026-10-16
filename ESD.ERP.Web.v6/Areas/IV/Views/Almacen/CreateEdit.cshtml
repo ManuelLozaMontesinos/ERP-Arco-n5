@@ -1,0 +1,714 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.AlmacenViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="EmpresaSedeId" for="@Model.EmpresaSedeList" col-position="col-lg-2" label="Sede" col-label-position="col-lg-2"
+                                    enable="Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.AlmacenDTO.Nombre" col-position="col-lg-6" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.Abreviatura" col-position="col-lg-2" label="Nombre. Corto" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoViaId" for="@Model.TipoViaList" selected-value="@Model.AlmacenDTO.TipoViaId" col-position="col-lg-2" label="Tipo de Via"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.AlmacenDTO.NombreVia" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.NumeroVia" col-position="col-lg-1" label="Numero" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.Interior" col-position="col-lg-1" label="Interior" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.AlmacenDTO.Departamento" col-position="col-lg-1" label="#Dpto" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.Lote" col-position="col-lg-2" label="Lote" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.Manzana" col-position="col-lg-1" label="Manzana" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.Kilometro" col-position="col-lg-1" label="KM" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.AlmacenDTO.Block" col-position="col-lg-1" label="Block" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.Etapa" col-position="col-lg-2" label="Etapa" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoZonaId" for="@Model.TipoZonaList" selected-value="@Model.AlmacenDTO.TipoZonaId" col-position="col-lg-2" label="Tipo de Zona"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.AlmacenDTO.NombreZona" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Departamento"
+                                    col-label-position="col-lg-2" onchange="departamentoIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-3" label="Provincia"
+                                    col-label-position="col-lg-1" onchange="provinciaIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.AlmacenDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                    col-label-position="col-lg-1"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.AlmacenDTO.EsVenta" col-position="offset-lg-2 col-lg-2" label="Es de Ventas"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.AlmacenDTO.CodigoSunat" col-position="col-lg-2" label="Codigo SUNAT" col-label-position="col-lg-2"
+                               max-length="4" use-textcase="false"></esd-textbox>
+                  <esd-textbox for="@Model.AlmacenDTO.ServidorImpresion" col-position="col-lg-4" label="Servidor Imp. Formatos" col-label-position="col-lg-2"
+                               max-length="50" use-textcase="false"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.AlmacenDTO.AlmacenId"></esd-hidden>
+      <esd-hidden for="@Model.TransaccionAlmacenString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#transaccionTab" role="tab" data-toggle="tab">Transacciones</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#configTab" role="tab" data-toggle="tab">Configuración de Transacciones</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#documentoTab" role="tab" data-toggle="tab">Series</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="transaccionTab" role="tabpanel">
+            <div>
+               <esd-menubar id="transaccionMenuBar" size="Small" menu-style="NewDeleteAndSaveCancel" onclick="transaccionMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="transaccionContainer">
+               <table id="transaccionGrid"></table>
+               <div id="transaccionPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="configTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-dropdownlist id="TransaccionAlmacenId" for="@Model.TransaccionAlmacenList" col-position="col-lg-4" label="Transacción" col-label-position="col-lg-2"
+                                       onchange="transaccionAlmacenIdOnChange()"></esd-dropdownlist>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="configMenuBar" size="Small" menu-style="EditAndSaveCancel" onclick="configMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="configContainer">
+               <table id="configGrid"></table>
+               <div id="configPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="documentoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="documentoMenuBar" size="Small" menu-style="NewDelete" onclick="documentoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="documentoContainer">
+               <table id="documentoGrid"></table>
+               <div id="documentoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="documentoSerieListPopup" title="Documento Serie" onclick="documentoSerieListPopupOnClick" size="Large">
+   <div id="documentoSerieListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#transaccionGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarAlmacenTransaccion", "Almacen")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AlmacenTransaccionDTO.AlmacenId", value: $('#AlmacenId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','Transaccion','','',''],
+         colModel: [
+            { name: 'AlmacenTransaccionId', hidden: true },
+            { name: 'AlmacenId', hidden: true },
+            {
+               name: 'TransaccionAlmacenId', width: 300, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#TransaccionAlmacenString').val(),
+               },
+               editrules: { required: true }
+            },
+            { name: 'Nombre', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#transaccionPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#transaccionGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('transaccionMenuBar', 'transaccionGrid');
+            }
+            else
+               $("#transaccionMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('transaccionMenuBar', 'transaccionGrid');
+            $("#transaccionGrid").appGrid('resizeGrid', 'transaccionContainer');
+
+            $('#TransaccionAlmacenId').find('option').remove().end();
+            $('#TransaccionAlmacenId').append(new Option('@SelectListFirstOptionNameConstant.SELECT', ''));
+            var data = $("#transaccionGrid").appGrid('getData');
+            $.each(data, function (index, item) {
+               if (item.Estado === '@EstadoConstante.ACTIVO') {
+                  var option = new Option(item.Nombre, item.AlmacenTransaccionId);
+                  $('#TransaccionAlmacenId').append(option);
+               }
+            });
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('transaccionContainer')
+      });
+      $("#configGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarAlmacenTransaccionConfiguracion", "Almacen")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AlmacenTransaccionConfiguracionDTO.AlmacenTransaccionId", value: $('#TransaccionAlmacenId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Campo', 'Visible', 'Requerido','',''],
+         colModel: [
+            { name: 'AlmacenTransaccionConfiguracionId', hidden: true },
+            { name: 'AlmacenTransaccionId', hidden: true },
+            { name: 'AtributoConfiguracionId', hidden: true },
+            { name: 'Nombre', width: 250, editable: false },
+            {
+               name: "Visible", width: 100, fixed: 'true', editable: true,
+               edittype: 'checkbox', formatoptions: { disabled: true }, editoptions: { value: "1:0" },
+               formatter: "checkbox", align: 'center'
+            },
+            {
+               name: "Requerido", width: 100, fixed: 'true', editable: true,
+               edittype: 'checkbox', formatoptions: { disabled: true }, editoptions: { value: "1:0" },
+               formatter: "checkbox", align: 'center'
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#configPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#configGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('configMenuBar', 'configGrid');
+            }
+            else
+               $("#configMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('configMenuBar', 'configGrid');
+            $("#configGrid").appGrid('resizeGrid', 'configContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('configContainer')
+      });
+      $("#documentoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarAlmacenSerie", "Almacen")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "AlmacenSerieDTO.AlmacenId", value: $('#AlmacenId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','Tipo de Documento','Serie','Correlativo','',''],
+         colModel: [
+            { name: 'VendedorSerieId', hidden: true },
+            { name: 'VendedorId', hidden: true },
+            { name: 'DocumentoComercialSerieId', hidden: true },
+            { name: 'TipoDocumentoComercialNombre', width: 250, editable: false },
+            { name: 'Serie', width: 100, editable: false },
+            { name: 'Correlativo', width: 100, align:'right', editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#documentoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            editCustomGridMenuBar('documentoMenuBar', 'documentoGrid');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('documentoMenuBar', 'documentoGrid',false);
+            $("#documentoGrid").appGrid('resizeGrid', 'documentoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('documentoContainer')
+      });
+
+      $('#documentoSerieListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "DocuComSerie", new { Area = "AS" })',
+               container: 'documentoSerieListPopupContent',
+               selModel: [
+                  { name: "EmpresaSedeId", value: $('#EmpresaSedeId').val(), disabled: true },
+                  { name: "TipoDocumentoComercial", value: '@TipoDocumentoComercialConstante.GUIA_REMISION_REMITENTE', disabled: true },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#transaccionTab':
+               $('#claseGrid').appGrid('resizeGrid', 'claseContainer');
+               $('#claseGrid').jqGrid('setGridHeight', calculateGridHeight('claseContainer'));
+               break;
+
+            case '#configTab':
+               $('#configGrid').appGrid('resizeGrid', 'configContainer');
+               $('#configGrid').jqGrid('setGridHeight', calculateGridHeight('configContainer'));
+               break;
+
+            case '#documentoTab':
+               $('#documentoGrid').appGrid('resizeGrid', 'documentoContainer');
+               $('#documentoGrid').jqGrid('setGridHeight', calculateGridHeight('documentoContainer'));
+               break;
+
+         }
+      })
+   });
+   function departamentoIdOnChange() {
+
+      var departamentoId = $("#DepartamentoId").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#ProvinciaId").prop('disabled', true);
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#ProvinciaId").val('');
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "Almacen")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#ProvinciaId').find('option').remove().end();
+               $("#ProvinciaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#DepartamentoId").val())) {
+                  $("#ProvinciaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function provinciaIdOnChange() {
+
+      var provinciaId = $("#ProvinciaId").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "Almacen")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#DistritoId').find('option').remove().end();
+               $("#DistritoId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#DistritoId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Almacen")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#EmpresaSedeId').validateNumeric('@SR.GetString("AS_empresa_sede_seleccion_requerida")'))
+         return false;
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+      if (!$('#Abreviatura').validateString('@SR.GetString("GEN_nombre_corto_requerido")'))
+         return false;
+      if (!$('#TipoViaId').validateNumeric('@SR.GetString("MG_tipo_via_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoZonaId').validateNumeric('@SR.GetString("MG_tipo_zona_seleccion_requerida")'))
+         return false;
+      if (!$('#DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+         return false;
+      if (!$('#ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+         return false;
+      if (!$('#DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "AlmacenDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+            { name: "AlmacenDTO.EmpresaSedeId", value: $('#EmpresaSedeId').val(), type: 'int' },
+            { name: "AlmacenDTO.Nombre", value: $('#Nombre').val() },
+            { name: "AlmacenDTO.Abreviatura", value: $('#Abreviatura').val() },
+            { name: "AlmacenDTO.TipoViaId", value: $('#TipoViaId').val(), type: 'int' },
+            { name: "AlmacenDTO.NombreVia", value: $('#NombreVia').val() },
+            { name: "AlmacenDTO.NumeroVia", value: $('#NumeroVia').val() },
+            { name: "AlmacenDTO.Interior", value: $('#Interior').val() },
+            { name: "AlmacenDTO.Departamento", value: $('#Departamento').val() },
+            { name: "AlmacenDTO.Lote", value: $('#Lote').val() },
+            { name: "AlmacenDTO.Manzana", value: $('#Manzana').val() },
+            { name: "AlmacenDTO.Kilometro", value: $('#Kilometro').val() },
+            { name: "AlmacenDTO.Block", value: $('#Block').val() },
+            { name: "AlmacenDTO.Etapa", value: $('#Etapa').val() },
+            { name: "AlmacenDTO.TipoZonaId", value: $('#TipoZonaId').val(), type: 'int' },
+            { name: "AlmacenDTO.NombreZona", value: $('#NombreZona').val() },
+            { name: "AlmacenDTO.DistritoId", value: $('#DistritoId').val(), type: 'int' },
+            { name: "AlmacenDTO.EsVenta", value: $('#EsVenta').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "AlmacenDTO.CodigoSunat", value: $('#CodigoSunat').val() },
+            { name: "AlmacenDTO.ServidorImpresion", value: $('#ServidorImpresion').val(), textCase:'none' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Almacen")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#AlmacenId").val(response.data.Id);
+               $('#EmpresaSedeId').prop('disabled', true);
+               $("#transaccionGrid").appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function transaccionMenuBarOnClick(key) {
+
+      var row = $('#transaccionGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               AlmacenTransaccionId: 0,
+               AlmacenId: $('#AlmacenId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#transaccionGrid").appGrid('addRow', initdata);
+            $("#transaccionMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#transaccionGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#transaccionGrid").appGrid("getSelectedRowId");
+
+            $("#transaccionGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#transaccionGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarAlmacenTransaccion", "Almacen")',
+                  viewModel: [
+                     { name: "AlmacenTransaccionDTO.AlmacenTransaccionId", value: row.AlmacenTransaccionId, type: 'int' },
+                     { name: "AlmacenTransaccionDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+                     { name: "AlmacenTransaccionDTO.TransaccionAlmacenId", value: row.TransaccionAlmacenId, type: 'int' },
+                     { name: "AlmacenTransaccionDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#transaccionGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#transaccionGrid").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarAlmacenTransaccion", "Almacen")',
+                     viewModel: [
+                        { name: "AlmacenTransaccionDTO.AlmacenTransaccionId", value: row.AlmacenTransaccionId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#transaccionGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function transaccionAlmacenIdOnChange() {
+      $("#configGrid").appGrid('reloadJSON');
+   };
+   function configMenuBarOnClick(key) {
+
+      if (!$('#TransaccionAlmacenId').validateNumeric('@SR.GetString("IV_almacen_transaccion_seleccion_requerida")'))
+         return false;
+
+      var row = $('#configGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.EDIT':
+            editarConfiguracionInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#configGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#configGrid").appGrid("getSelectedRowId");
+
+            $("#configGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#configGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarAlmacenTransaccionConfiguracion", "Almacen")',
+                  viewModel: [
+                     { name: "AlmacenTransaccionConfiguracionDTO.AlmacenTransaccionConfiguracionId", value: row.AlmacenTransaccionConfiguracionId, type: 'int' },
+                     { name: "AlmacenTransaccionConfiguracionDTO.AlmacenTransaccionId", value: $('#TransaccionAlmacenId').val(), type: 'int' },
+                     { name: "AlmacenTransaccionConfiguracionDTO.AtributoConfiguracionId", value: row.AtributoConfiguracionId, type: 'int' },
+                     { name: "AlmacenTransaccionConfiguracionDTO.Visible", value: row.Visible === '@DigitoConstante.UNO' ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+                     { name: "AlmacenTransaccionConfiguracionDTO.Requerido", value: row.Requerido === '@DigitoConstante.UNO' ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+                     { name: "AlmacenTransaccionConfiguracionDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#configGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#configMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+      }
+      return true;
+   };
+   function editarConfiguracionInGrid() {
+      var rowId = $("#configGrid").appGrid("getSelectedRowId");
+      $('#configGrid').jqGrid('editRow', rowId);
+
+      $("#configMenuBar").appMenu('saveMenu');
+   };
+   function documentoMenuBarOnClick(key) {
+
+      var row = $('#documentoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarDocumentoSerie();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarAlmacenSerie", "Almacen")',
+                     viewModel: [
+                        { name: "AlmacenSerieDTO.AlmacenSerieId", value: row.AlmacenSerieId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#documentoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function mostrarDocumentoSerie() {
+      $('#documentoSerieListPopup').showDialog();
+   };
+   function documentoSerieListPopupOnClick() {
+
+      var list = $('#bandejaPopupGrid').appGrid('getSelectedRowIdList');
+
+      if (list.length === 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("VT_documento_comercial_serie_multiple_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      for (i in list) {
+         var row = $('#bandejaPopupGrid').appGrid('getRow', list[i]);
+         selectedList.push(row.DocumentoComercialSerieId);
+      }
+
+      grabarDocumentoSerie(selectedList);
+   };
+   function documentoSerieSelectedPopup(sourceId, row) {
+
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_serie_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      selectedList.push(row.DocumentoComercialSerieId);
+
+      grabarDocumentoSerie(selectedList);
+   };
+   function grabarDocumentoSerie(list) {
+
+      var data = $("#documentoGrid").appGrid('getData');
+
+      for (i in list) {
+         var selectedData = _.where(data, { DocumentoComercialSerieId: parseInt(list[i])});
+         if (selectedData.length > 0) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_serie_ya_seleccionado")');
+            return false;
+         }
+      }
+
+      $(this).saveView({
+         urlAction: '@Url.Action("GrabarAlmacenSerie", "Almacen")',
+         viewModel: [
+            { name: "AlmacenSerieDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+            { name: "AlmacenSerieDTO.DocumentoComercialSerieIdList", value: list, type: 'listInt' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#documentoSerieListPopup').hideDialog();
+               $("#documentoGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#documentoMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#AlmacenId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

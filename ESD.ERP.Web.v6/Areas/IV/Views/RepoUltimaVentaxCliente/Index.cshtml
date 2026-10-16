@@ -1,0 +1,40 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.ReporteGenViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="PreviewExport" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+    <div id="app-search-card" class="card">
+        <div class="card-body">
+            <div class="row">
+            </div>
+        </div>
+    </div>
+</section>
+<script type="text/javascript">
+
+    function menuBarOnClick(key) {
+
+        var format = '';
+        switch (key) {
+
+            case '@MenuItemKey.PREVIEW':
+                format = '@ReportFormatConstant.PDF'
+                break;
+            case '@MenuItemKey.EXPORT_XLS':
+                format = '@ReportFormatConstant.EXCEL'
+                break;
+            case '@MenuItemKey.EXPORT_DATA_XLS':
+                format = '@ReportFormatConstant.EXCELDATA'
+                break;
+        }
+
+        $(this).getReport({
+            urlAction: '@Url.Action("ReportTo", "RepoUltimaVentaCliente")',
+            format: format,
+            onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+        });
+
+        return true;
+    };
+</script>

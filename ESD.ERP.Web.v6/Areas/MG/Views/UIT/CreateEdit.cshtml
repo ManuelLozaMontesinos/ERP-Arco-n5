@@ -1,0 +1,74 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.UITViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.UITDTO.Monto" col-position="col-lg-2" label="Monto"
+                                      col-label-position="col-lg-2"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.UITDTO.FechaAlta" col-position="col-lg-2" label="Fecha Inicio"
+                                      col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.UITDTO.FechaBaja" col-position="col-lg-2" label="Fecha Fin"
+                                      col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.UITDTO.UITId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "UIT")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#FechaAlta').validateString('@SR.GetString("GEN_fecha_inicio_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "UITDTO.UITId", value: $('#UITId').val(), type: 'int' },
+            { name: "UITDTO.Monto", value: $('#Monto').val(), type: 'decimal' },
+            { name: "UITDTO.FechaAlta", value: $('#FechaAlta').val(), type: 'date' },
+            { name: "UITDTO.FechaBaja", value: $('#FechaBaja').val(), type: 'date' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "UIT")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#UITId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

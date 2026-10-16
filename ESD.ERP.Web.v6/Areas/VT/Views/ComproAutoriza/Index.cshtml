@@ -1,0 +1,145 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.ComproAutorizaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2" max-length="35"></esd-textbox>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Vendedor" col-position="col-lg-6" label="Vendedor" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                  <esd-dropdownlist id="EstadoAprobacionId" for="@Model.EstadoAprobacionList" col-position="col-lg-2" label="Estado" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "ComproAutoriza")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteAutorizacionDTO.ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                     { name: "ComprobanteAutorizacionDTO.ComprobanteDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "ComprobanteAutorizacionDTO.ComprobanteDTO.VendedorDTO.ProveedorDTO.RazonSocial", value: $('#Vendedor').val() },
+                     { name: "ComprobanteAutorizacionDTO.EstadoAprobacionId", value: $('#EstadoAprobacionId').val() ||0, type:'int' },
+                     { name: "ComprobanteAutorizacionDTO.ComprobanteDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "ComprobanteAutorizacionDTO.ComprobanteDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Sede', '', 'Autorización Solicitada', 'T/D', 'Serie','Fecha', 'Cliente','#Doc','Vendedor','Mon.','Total','','Estado',''],
+         colModel: [
+            { name: 'ComprobanteAutorizacionId', hidden: true },
+            { name: 'ComprobanteId', hidden: true },
+            { name: "EmpresaSedeNombre", width: 120 },
+            { name: "TipoAutorizacion", hidden: true },
+            { name: "TipoAutorizacionNombre", width: 150 },
+            { name: "TipoDocumentoComercialNombre", width: 50 },
+            { name: "Serie", width: 50 },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "RazonSocial", width: 300 },
+            { name: "NumeroDocumentoIdentidad", width: 90 },
+            { name: "VendedorNombre", width: 250 },
+            { name: "Moneda", width: 50 },
+            { name: "MontoTotal", width: 100, align: 'right', formatter: 'number' },
+            { name: 'EstadoAprobacion', hidden: true },
+            { name: "EstadoAprobacionNombre", width: 200 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if (row.EstadoAprobacion !== '@EstadoAprobacionConstante.PENDIENTE_APROBACION')
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EDIT', disabled: true });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'consulta', disabled: false });
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#Codigo, #NumeroDocumentoIdentidad, #RazonSocial,#Vendedor,#EstadoAprobacionId").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+         return;
+      }
+
+      switch (key) {
+         case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "ComprobanteAutorizacionDTO.ComprobanteAutorizacionId", value: row.ComprobanteAutorizacionId, type: 'int' },
+                  { name: "ComprobanteAutorizacionDTO.TipoAutorizacionDTO.Codigo", value: row.TipoAutorizacion },
+                  { name: "ComprobanteDTO.ComprobanteId", value: row.ComprobanteId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "ComproAutoriza")'
+            });
+            break;
+
+      }
+      return true;
+   };
+</script>

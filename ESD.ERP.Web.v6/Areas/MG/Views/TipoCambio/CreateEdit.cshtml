@@ -1,0 +1,267 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.TipoCambioViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.TipoCambioDTO.Codigo" col-position="col-lg-1" label="Codigo" col-label-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.TipoCambioDTO.Nombre" col-position="col-lg-8" label="Nombre"
+                               col-label-position="col-lg-2" max-length="100"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.TipoCambioDTO.TipoCambioId"></esd-hidden>
+      <esd-hidden for="@Model.MonedaString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#diaTab" role="tab" data-toggle="tab">Dia</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="diaTab" role="tabpanel">
+            <div>
+               <esd-menubar id="diaMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="diaMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarTipoCambioDia", "TipoCambio")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "TipoCambioDiaDTO.TipoCambioId", value: $('#TipoCambioId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Fecha', 'Moneda','Compra', 'Venta', '', ''],
+         colModel: [
+            { name: 'TipoCambioDiaId', hidden: true },
+            { name: 'TipoCambioId', hidden: true },
+            {
+               name: "Fecha", width: 90, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            {
+               name: 'MonedaId', width: 140, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#MonedaString').val()
+               },
+               editrules: { required: true }
+            },
+            {
+               name: "MontoCompra", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 3 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 3, allowMinus: false });
+                  }
+               }
+            },
+            {
+               name: "MontoVenta", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               formatoptions: { decimalPlaces: 3 },
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 3, allowMinus: false });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('diaMenuBar', 'bandejaGrid');
+            }
+            else
+               $("#diaMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('diaMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "TipoCambio")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "TipoCambioDTO.TipoCambioId", value: $('#TipoCambioId').val(), type: 'int' },
+            { name: "TipoCambioDTO.Nombre", value: $('#Nombre').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "TipoCambio")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#TipoCambioId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function diaMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               TipoCambioDiaId: 0,
+               TipoCambioId: $('#TipoCambioId').val(),
+               Fecha: moment('@DateTime.Today.ToShortDateString()', '@JavaScriptConstant.DATE_FORMAT').format('@JavaScriptConstant.DATE_FORMAT'),
+               MontoCompra: 0,
+               MontoVenta: 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#bandejaGrid").appGrid('addRow', initdata);
+            $("#diaMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarDiaInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_MonedaId').validateNumeric('@SR.GetString("GEN_moneda_seleccion_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_MontoCompra').validateNumeric('@SR.GetString("MG_tipo_cambio_compra_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_MontoVenta').validateNumeric('@SR.GetString("MG_tipo_cambio_venta_requerido")'))
+               return false;
+
+            $("#bandejaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarTipoCambioDia", "TipoCambio")',
+                  viewModel: [
+                     { name: "TipoCambioDiaDTO.TipoCambioDiaId", value: row.TipoCambioDiaId, type: 'int' },
+                     { name: "TipoCambioDiaDTO.TipoCambioId", value: $('#TipoCambioId').val(), type: 'int' },
+                     { name: "TipoCambioDiaDTO.Fecha", value: row.Fecha, type: 'datetime' },
+                     { name: "TipoCambioDiaDTO.MonedaId", value: row.MonedaId, type: 'int' },
+                     { name: "TipoCambioDiaDTO.MontoCompra", value: row.MontoCompra, type: 'decimal' },
+                     { name: "TipoCambioDiaDTO.MontoVenta", value: row.MontoVenta, type: 'decimal' },
+                     { name: "TipoCambioDiaDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#diaMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+      }
+      return true;
+   };
+   function editarDiaInGrid() {
+      var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+      $('#bandejaGrid').jqGrid('editRow', rowId);
+
+      $('#' + rowId + '_Fecha').prop('readonly', true);
+      $('#' + rowId + '_MonedaId').prop('disabled', true);
+      $("#diaMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#TipoCambioId").validateNumeric()) {
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

@@ -1,0 +1,256 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.CM.Models.OrdenCompraViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2" max-length="5"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2" max-length="35"></esd-textbox>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoProductoId" for="@Model.TipoProductoList" col-position="col-lg-2" label="Tipo Orden" col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-dropdownlist id="EstadoOrdenCompraId" for="@Model.EstadoOrdenCompraList" col-position="col-lg-2" label="Estado" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<esd-dialog id="cambiarEstadoEditPopup" title="Cambiar Estado ..." onclick="cambiarEstadoEditPopupOnClick">
+   <div id="cambiarEstadoEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "OrdenCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenCompraDTO.Codigo", value: $('#Codigo').val() },
+                     { name: "OrdenCompraDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "OrdenCompraDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
+                     { name: "OrdenCompraDTO.TipoProductoId", value: $('#TipoProductoId').val() || 0, type: 'int' },
+                     { name: "OrdenCompraDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "OrdenCompraDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                     { name: "OrdenCompraDTO.EstadoOrdenCompraId", value: $('#EstadoOrdenCompraId').val() || 0, type: 'int' },
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Código', 'Tipo', 'Fecha', 'Cliente', '#Doc', 'Mon.', 'Total', 'Tiene Modif.','', 'Estado Aprob.','','Estado',''],
+         colModel: [
+            { name: 'OrdenCompraId', hidden: true },
+            { name: "Codigo", width: 60 },
+            { name: "TipoProducto", width: 100 },
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "RazonSocial", width: 300 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: "Moneda", width: 50 },
+            { name: "MontoTotal", width: 100, align: 'right', formatter: 'number', sorttype: 'number' },
+            { name: "EsModificacion", width: 100, align:'center' },
+            { name: "EstadoAprobacion", hidden: true },
+            { name: "EstadoAprobacionNombre", width: 150 },
+            { name: "EstadoOrdenCompra", hidden: true },
+            { name: "EstadoOrdenCompraNombre", width: 200 },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if (row.EstadoOrdenCompra === '@EstadoOrdenCompraConstante.INGRESO_PARCIAL') {
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'cambiar_estado', disabled: false });
+            }
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#cambiarEstadoEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+               urlAction: '@Url.Action("CambiarEstadoEditPopup", "OrdenCompra")',
+               container: 'cambiarEstadoEditPopupContent',
+               viewModel: [
+                  { name: 'OrdenCompraDTO.OrdenCompraId', value: row.OrdenCompraId, type: 'int' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#TipoProductoId').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#Codigo, #NumeroDocumentoIdentidad, #RazonSocial,#TipoProductoId,#EstadoOrdenCompraId").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#Codigo").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#Codigo").val())) {
+               var valueFmt = padLeadingZeros($("#Codigo").val(), 5)
+               $("#Codigo").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+           case '@MenuItemKey.NEW':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.New',
+               buttonId: key,
+               viewModel: [
+                  { name: "OrdenCompraDTO.OrdenCompraId", value: 0, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Crear", "OrdenCompra")'
+            });
+            break;
+
+         case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "OrdenCompraDTO.OrdenCompraId", value: row.OrdenCompraId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "OrdenCompra")'
+            });
+            break;
+
+         case '@MenuItemKey.DELETE':
+            $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("Eliminar", "OrdenCompra")',
+                     viewModel: [
+                        { name: "OrdenCompraDTO.OrdenCompraId", value: row.OrdenCompraId, type: 'int' },
+                        { name: "OrdenCompraDTO.Codigo", value: row.Codigo }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+         case 'cambiar_estado':
+            $('#cambiarEstadoEditPopup').showDialog();
+            break;
+
+         case '@MenuItemKey.PREVIEW':
+            var reportParam = "ordenCompraId=" + row.OrdenCompraId;
+
+            $(this).getReport({
+               buttonId: key,
+               urlAction: '@Url.Action("ReportTo", "OrdenCompra")',
+               parameters: reportParam,
+               onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+            });
+            break;
+      }
+      return true;
+   };
+   function cambiarEstadoEditPopupOnClick() {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      $(this).saveView({
+         viewModel: [
+            { name: "OrdenCompraDTO.OrdenCompraId", value: row.OrdenCompraId, type: 'int' },
+            { name: "OrdenCompraDTO.EstadoOrdenCompraId", value: $('#mp-EstadoOrdenCompraId').val(), type: 'int' }
+         ],
+         buttonId: 'cambiar_estado',
+         urlAction: '@Url.Action("CambiarEstado", "OrdenCompra")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#bandejaGrid').appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+
+         }
+      });
+
+      $('#cambiarEstadoEditPopup').hideDialog();
+   }
+</script>

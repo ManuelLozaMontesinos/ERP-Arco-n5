@@ -1,0 +1,79 @@
+﻿@using ESD.ERP.DTO;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.IntegraCapitalViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <label class="col-lg-10 offset-1 col-form-label" style="text-align:left">Seleccione el(los) proceso(s) a ejecutar</label>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div id="checkbox-region" class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-12">
+               @foreach (ProcesoIntegracionDTO procesoIntegracionDTO in Model.ProcesoIntegracionDTOList)
+               {
+                  <div id="@("div_"+procesoIntegracionDTO.Id.ToString())" class="form-group row">
+                     <esd-checkbox id="@("chk_"+procesoIntegracionDTO.Id.ToString())" col-position="offset-lg-1 col-lg-10" label="@procesoIntegracionDTO.Descripcion"></esd-checkbox>
+                  </div>
+               }
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+   });
+   function menuBarOnClick(key) {
+
+      var selected = [];
+      switch (key) {
+
+         case 'todos':
+            $('#checkbox-region input:checkbox').each(function () {
+               selected.push($(this).attr('name'));
+            });
+            break;
+
+         case 'ejecutar':
+            $('#checkbox-region input:checked').each(function () {
+               selected.push($(this).attr('name'));
+            });
+            break;
+      }
+
+      if (selected.length === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AS_proceso_integracion_seleccion_requerida")');
+         return false;
+      }
+
+      selected.forEach(function (item, index) {
+         var procesoIntegracionId = item.substring(4);
+         var div = "div_" + procesoIntegracionId;
+
+         $("#"+div).saveView({
+            viewModel: [
+               { name: "ProcesoIntegracionDTO.ProcesoIntegracionId", value: procesoIntegracionId, type : 'int' }
+            ],
+            urlAction: '@Url.Action("EjecutarProceso", "IntegraCapital")',
+            onSuccess: function (response) {
+
+               if (response.success) {
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message.replace("\r\n", "<br>"));
+
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               }
+            }
+         });
+      });
+
+      return true;
+   };
+</script>

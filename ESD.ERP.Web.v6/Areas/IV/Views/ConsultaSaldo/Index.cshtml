@@ -1,0 +1,85 @@
+﻿@using ESD.Core.Web.JS;
+@model ESD.ERP.Web.Areas.IV.Models.ConsultaSaldoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title"></esd-menubar>
+<section id="app-content" class="content">
+    <div id="app-search-card" class="card">
+        <div class="card-body">
+            <div class="row">
+                <div id="app-search-input-group" class="col-11">
+                    <div class="form-group row">
+                        <esd-dropdownlist id="MesContableId" for="@Model.MesContableList" col-position="col-lg-2" label="Mes" col-label-position="col-lg-2"></esd-dropdownlist>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox id="Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2" max-length="12"></esd-textbox>
+                        <esd-textbox id="Referencia" col-position="col-lg-2" label="Cod.Referencial" col-label-position="col-lg-1" max-length="12"></esd-textbox>
+                    </div>
+                    <div class="form-group row">
+                        <esd-textbox id="Descripcion" col-position="col-lg-5" label="Producto" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                    </div>
+                </div>
+                <div class="col-1">
+                    <div class="form-group row">
+                        <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <esd-hidden for="@Model.GridColModel"></esd-hidden>
+        <esd-hidden for="@Model.GridColNames"></esd-hidden>
+    </div>
+    <div id="bandejaContainer">
+        <table id="bandejaGrid"></table>
+        <div id="bandejaPager"></div>
+    </div>
+</section>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        var columnModel = JSON.parse($('#GridColModel').val());
+        for (i = 0; i < columnModel.length; i++) {
+            cm = columnModel[i];
+            if (cm.name === 'CantidadSaldo') {
+                cm.cellattr = function (rowid, val) {
+                    if (parseFloatEx(val) > 0)
+                        return ' style="background: #FFFF80;font-weight:bold;color:blue"';
+                };
+            }
+        }
+
+        $("#bandejaGrid").jqGrid({
+    @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarBandeja", "ConsultaSaldo")",
+            postData: {
+            jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                    [
+                        { name: "MovimientoAlmacenSaldoDTO.MesContableId", value: $('#MesContableId').val() || 0, type: 'int' },
+                        { name: "MovimientoAlmacenSaldoDTO.ProductoDTO.Codigo", value: $('#Codigo').val() },
+                        { name: "MovimientoAlmacenSaldoDTO.ProductoDTO.Descripcion", value: $('#Descripcion').val() },
+                        { name: "MovimientoAlmacenSaldoDTO.ProductoDTO.CodigoReferencial", value: $('#Referencia').val() }
+                    ]
+                ));
+            }
+        },
+            colNames: $('#GridColNames').val().split(','),
+            colModel: columnModel,
+            pager: "#bandejaPager",
+            gridComplete: function () {
+                $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+            },
+            height: calculateGridHeight('bandejaContainer')
+          });
+       });
+    function clearButtonOnClick() {
+        $('#app-search-input-group').find('input:text').val('');
+        $('#AlmacenId').val('');
+        $('#Referencia').val(''); 
+        $('#MesContableId').val('@Model.MesContableId');
+        $('#bandejaGrid').appGrid('reloadJSON');
+    }
+    $(function () {
+        $("#AlmacenId,#Codigo,#Descripcion,#MesContableId,#Referencia").change(function () {
+            $('#bandejaGrid').appGrid('reloadJSON');
+        });
+    });
+</script>

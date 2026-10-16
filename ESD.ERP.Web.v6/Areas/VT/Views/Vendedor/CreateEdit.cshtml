@@ -1,0 +1,595 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.VendedorViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.VendedorDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Vendedor" button-style="List" value="@Model.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-6" label="Apellidos Y Nombres"
+                                     col-label-position="col-lg-2" onclick="vendedorOnClick" enable="@Model.IsNew"></esd-buttontextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.VendedorDTO.Abreviatura" col-position="col-lg-2" label="Nombre Corto" col-label-position="col-lg-2"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.VendedorDTO.ServidorImpresion" col-position="col-lg-6" label="Servidor Imp. Formatos" col-label-position="col-lg-2"
+                               max-length="50" use-textcase="false"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.VendedorDTO.VendedorId"></esd-hidden>
+      <esd-hidden for="@Model.ListaPrecioVendedorDTO.ListaPrecioDTO.EmpresaSedeDTO.EmpresaId"></esd-hidden>  
+      <esd-hidden for="@Model.VendedorDTO.ProveedorId"></esd-hidden>
+   </div>
+    <div>
+        <ul class="nav nav-tabs" role="tablist" id="detailTab">
+            <!-- Pestaña Documentos Series -->
+            <li class="nav-item">
+                <a class="nav-link active" href="#documentoTab" role="tab" data-toggle="tab">Documentos Series</a>
+            </li>
+            <!-- Pestaña Lista de Precios Vendedor -->
+            <li class="nav-item">
+                <a class="nav-link" href="#listaPrecioTab" role="tab" data-toggle="tab">Listas de Precio</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <!-- Contenido de la pestaña Documentos Series-->
+            <div class="tab-pane active" id="documentoTab" role="tabpanel">
+                <div>
+                    <esd-menubar id="documentoMenuBar" size="Small" for="@Model.MenuVendedorSerieList" onclick="documentoMenuBarOnClick"></esd-menubar>
+                </div>
+                <div id="documentoContainer">
+                    <table id="documentoGrid"></table>
+                    <div id="documentoPager"></div>
+                </div>
+            </div>
+            <!-- Contenido de la pestaña Lista Precio Vendedor -->
+            <div class="tab-pane" id="listaPrecioTab" role="tabpanel">
+                <div>
+                    <esd-menubar id="listaVendedorMenuBar" size="Small" for="@Model.MenuListaPrecioVendedorList" onclick="listaVendedorMenuBarOnClick"></esd-menubar>
+                </div>
+                <div id="listaPrecioContainer">
+                    <table id="listaPrecioGrid"></table>
+                    <div id="listaPrecioPager"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>  
+<esd-dialog id="personalListPopup" title="Personal" onclick="personalListPopupOnClick" size="Large">
+   <div id="personalListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="documentoSerieListPopup" title="Documento Serie" onclick="documentoSerieListPopupOnClick" size="Large">
+   <div id="documentoSerieListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="listaVendedorListPopup" title="Lista de Precios" onclick="listaVendedorListPopupOnClick" size="Large">
+   <div id="listaVendedorListPopupContent"></div>
+</esd-dialog>
+
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#documentoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarVendedorSerie", "Vendedor")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "VendedorSerieDTO.VendedorId", value: $('#VendedorId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','Sede', '','Almacen','Tipo de Documento','Serie','Correlativo','',''],
+         colModel: [
+            { name: 'VendedorSerieId', hidden: true },
+            { name: 'VendedorId', hidden: true },
+            { name: 'DocumentoComercialSerieId', hidden: true },
+            { name: 'EmpresaSedeNombre', width: 200, editable: false },
+            { name: 'AlmacenId', hidden: true},
+            { name: 'AlmacenNombre', width: 150, editable: false},
+            { name: 'TipoDocumentoComercialNombre', width: 250, editable: false },
+            { name: 'Serie', width: 100, editable: false },
+            { name: 'Correlativo', width: 100, align:'right', editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#documentoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var row = $('#documentoGrid').appGrid('getSelectedRow');
+            if (row.Estado === '@EstadoConstante.INACTIVO') {
+                $("#documentoMenuBar").appMenu('disabledButton', { buttonId: 'activarVS', disabled: false });
+                $("#documentoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: true });
+            } else {
+                $("#documentoMenuBar").appMenu('disabledButton', { buttonId: 'activarVS', disabled: true });
+            }
+
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('documentoMenuBar', 'documentoGrid');
+            $("#documentoGrid").appGrid('resizeGrid', 'documentoContainer');
+
+            $("#documentoMenuBar").appMenu('disabledButton', { buttonId: 'activarVS', disabled: false });
+            $("#documentoMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: false });
+
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('documentoContainer')
+      });
+
+       $("#listaPrecioGrid").jqGrid({
+          @GridHelper.DefaultProperties()
+          url: "@Url.Action("ListarListaPrecioVendedor", "Vendedor")",
+          postData: {
+             jsonModel: function () {
+                return JSON.stringify(modelToObject(
+                   [
+                      { name: "ListaPrecioVendedorDTO.VendedorId", value: $('#VendedorId').val() || '0', type: 'int' },
+                      { name: "ListaPrecioVendedorDTO.ListaPrecioDTO.EmpresaSedeDTO.EmpresaId", value: $('#EmpresaId').val() || '0', type: 'int' },
+                   ]
+                ));
+             }
+          },
+           colNames: ['','', '', 'Sede', '','Lista de Precio', '', 'Moneda', '', ''],
+          colModel: [
+             { name: 'ListaPrecioVendedorId', hidden: true },
+             { name: 'VendedorId', hidden: true},
+             { name: 'EmpresaSedeId', hidden: true},
+             { name: 'EmpresaSede', width: 250, editable: false},
+             { name: 'ListaPrecioId', hidden: true},
+             { name: 'Nombre', width: 250, editable: false},
+             { name: 'MonedaId', hidden: true},
+             { name: 'MonedaNombre', width: 250, editable: false},
+             { name: 'Estado', hidden: true },
+             { name: '@AppConstante.DTO_STATE', hidden: true }
+          ],
+          pager: "#listaPrecioPager",
+          onSelectRow: function (rowid) {
+             if (rowid == null || rowid == 0)
+                return;
+
+             var row = $('#listaPrecioGrid').appGrid('getSelectedRow');
+
+             $("#listaVendedorMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: false });
+
+             if (row.Estado === '@EstadoConstante.INACTIVO') {
+                 $("#listaVendedorMenuBar").appMenu('disabledButton', { buttonId: 'activarLP', disabled: false });
+                 $("#listaVendedorMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.DELETE', disabled: true });
+             } else {
+                 $("#listaVendedorMenuBar").appMenu('disabledButton', { buttonId: 'activarLP', disabled: true });
+             }
+
+
+           },
+          gridComplete: function () {
+             editCustomGridMenuBar('listaVendedorMenuBar', 'listaPrecioGrid');
+              $("#listaPrecioGrid").appGrid('resizeGrid', 'listaPrecioContainer');
+          },
+          @GridHelper.RowDeletedStyle("Estado", EstadoConstante.INACTIVO)
+          height: calculateGridHeight('listaPrecioContainer')
+       });
+
+
+       $('#personalListPopup').setDialog({
+          onShow: function (p) {
+             $(this).getView({
+                urlAction: '@Url.Action("ListPopup", "Personal", new { Area = "RH" })',
+                container: 'personalListPopupContent',
+                showLoading: false,
+                hideLoading: false
+             });
+          },
+          onShown: function () {
+             $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+          }
+       });
+       $('#documentoSerieListPopup').setDialog({
+          onShow: function (p) {
+             $(this).getView({
+                urlAction: '@Url.Action("ListPopup", "DocuComSerie", new { Area = "AS" })',
+                container: 'documentoSerieListPopupContent',
+                showLoading: false,
+                hideLoading: false
+             });
+          },
+          onShown: function () {
+             $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+          }
+       });
+
+      $('#listaVendedorListPopup').setDialog({
+         onShow: function (p) {
+
+            $('#listaVendedorListPopup').getView({
+               urlAction: '@Url.Action("ListaPrecioListPopup", "Vendedor")',
+               container: 'listaVendedorListPopupContent',
+               showLoading: true,
+               hideLoading: true
+            });
+         }
+      });
+
+
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+           var targetId = e.target.hash;
+           switch (targetId) {
+              case '#documentoTab':
+                 $('#documentoGrid').appGrid('resizeGrid', 'documentoContainer');
+                 $('#documentoGrid').jqGrid('setGridHeight', calculateGridHeight('documentoContainer'));
+                 break;
+
+              case '#listaPrecioTab':
+                  $('#listaPrecioGrid').appGrid('resizeGrid', 'listaPrecioContainer');
+                  $('#listaPrecioGrid').jqGrid('setGridHeight', calculateGridHeight('listaPrecioContainer'));
+                 break;
+           }
+        })
+
+
+   });
+   function vendedorOnClick() {
+      $('#personalListPopup').showDialog();
+   };
+   function personalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('',row);
+   };
+   function personalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_personal_seleccion_requerida")');
+         return false;
+      }
+
+      $('#Vendedor').val(row.RazonSocial);
+      $('#ProveedorId').val(row.ProveedorId);
+
+      $('#personalListPopup').hideDialog();
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Vendedor")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#ProveedorId').validateNumeric('@SR.GetString("RH_personal_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "VendedorDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+            { name: "VendedorDTO.ProveedorId", value: $('#ProveedorId').val(), type: 'int' },
+            { name: "VendedorDTO.ProveedorDTO.RazonSocial", value: $('#Vendedor').val()},
+            { name: "VendedorDTO.Abreviatura", value: $('#Abreviatura').val() },
+            { name: "VendedorDTO.ServidorImpresion", value: $('#ServidorImpresion').val(), textCase: 'none'}
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Vendedor")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#VendedorId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $('#Vendedor').appButtonTextBox('disabled', { disabled: true });
+               $('#documentoGrid').appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function documentoMenuBarOnClick(key) {
+
+      var row = $('#documentoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarDocumentoSerie();
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarVendedorSerie", "Vendedor")',
+                     viewModel: [
+                        { name: "VendedorSerieDTO.VendedorSerieId", value: row.VendedorSerieId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#documentoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+         break;
+         case 'activarVS':
+             
+             $(this).confirm({
+                title: 'Activar Registro',  
+                message: '¿Está seguro que desea activar el registro seleccionado?',
+                onConfirm: function () {
+
+                   $(this).saveView({
+                      urlAction: '@Url.Action("ActivarVendedorSerie", "Vendedor")',
+                      viewModel: [
+                         { name: "VendedorSerieDTO.VendedorSerieId", value: row.VendedorSerieId, type: 'int' },
+                         { name: "VendedorSerieDTO.Estado", value: '@EstadoConstante.ACTIVO'}
+                      ],
+                      onSuccess: function (response) {
+                         if (response.success) {
+                            $('#documentoGrid').appGrid('reloadJSON');
+                            msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                         } else {
+                            msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                         }
+                      }
+                   });
+                }
+             });
+         break;
+
+       }
+      return true;
+   };
+
+   function mostrarDocumentoSerie() {
+      $('#documentoSerieListPopup').showDialog();
+   };
+  
+   function documentoSerieListPopupOnClick() {
+
+      var list = $('#bandejaPopupGrid').appGrid('getSelectedRowIdList');
+
+      if (list.length === 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("VT_documento_comercial_serie_multiple_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      for (i in list) {
+         var row = $('#bandejaPopupGrid').appGrid('getRow', list[i]);
+         selectedList.push(row.DocumentoComercialSerieId);
+      }
+
+      grabarDocumentoSerie(selectedList);
+   };
+   function documentoSerieSelectedPopup(sourceId, row) {
+
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_serie_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      selectedList.push(row.DocumentoComercialSerieId);
+
+      grabarDocumentoSerie(selectedList);
+   };
+   function grabarDocumentoSerie(list) {
+
+      var data = $("#documentoGrid").appGrid('getData');
+
+      for (i in list) {
+         var selectedData = _.where(data, { DocumentoComercialSerieId: parseInt(list[i])});
+         if (selectedData.length > 0) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_serie_ya_seleccionado")');
+            return false;
+         }
+      }
+
+      $(this).saveView({
+         urlAction: '@Url.Action("GrabarVendedorSerie", "Vendedor")',
+         viewModel: [
+            { name: "VendedorSerieDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+            { name: "VendedorSerieDTO.DocumentoComercialSerieIdList", value: list, type: 'listInt' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#documentoSerieListPopup').hideDialog();
+               $("#documentoGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#documentoMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+
+
+    function listaVendedorMenuBarOnClick(key) {
+
+       var row = $('#listaPrecioGrid').appGrid('getSelectedRow');
+       var excludeKeys = ['@MenuItemKey.NEW'];
+       if(excludeKeys.indexOf(key) == -1){
+          if ($.isEmpty(row)) {
+             msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+             return;
+          }
+       }
+
+       switch (key) {
+          case '@MenuItemKey.NEW':
+             mostrarListaPrecio();
+             break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+                  debugger; 
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarListaPrecioVendedor", "Vendedor")',
+                     viewModel: [
+                         { name: "ListaPrecioVendedorDTO.ListaPrecioVendedorId", value: row.ListaPrecioVendedorId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#listaPrecioGrid').appGrid('reloadJSON');
+                           $("#documentoMenuBar").appMenu('disabledButton', { buttonId: 'activarVS', disabled: true });
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+         break;
+         case 'activarLP':
+             
+             $(this).confirm({
+                title: 'Activar Registro',  
+                message: '¿Está seguro que desea activar el registro seleccionado?',
+                onConfirm: function () {
+
+                   $(this).saveView({
+                      urlAction: '@Url.Action("ActivarListaPrecioVendedor", "Vendedor")',
+                      viewModel: [
+                         { name: "ListaPrecioVendedorDTO.Estado", value: '@EstadoConstante.ACTIVO' },
+                         { name: "ListaPrecioVendedorDTO.ListaPrecioVendedorId", value: row.ListaPrecioVendedorId, type: 'int' }
+                      ],    
+                      onSuccess: function (response) {
+                         if (response.success) {
+                            $('#listaPrecioGrid').appGrid('reloadJSON');
+                            $("#listaPrecioGrid").appMenu('disabledButton', { buttonId: 'activarLP', disabled: true });
+                            msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                         } else {
+                            msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                         }
+                      }
+                   });
+                }
+             });
+         break;
+
+           
+       }
+       return true;
+    };
+
+   function mostrarListaPrecio() {
+      $('#listaVendedorListPopup').showDialog();
+   };  
+
+   function listaVendedorListPopupOnClick() {
+
+      var list = $('#bandejaPopupGrid').appGrid('getSelectedRowIdList');
+
+      if (list.length === 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("VT_documento_comercial_serie_multiple_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      for (i in list) {
+         var row = $('#bandejaPopupGrid').appGrid('getRow', list[i]);
+         selectedList.push(row.ListaPrecioId);
+      }
+
+      grabarlistaVendedor(selectedList);
+   };
+
+    function grabarlistaVendedor(list) {
+
+       var data = $("#listaPrecioGrid").appGrid('getData');
+
+       for (i in list) {
+          var selectedData = _.where(data, { ListaPrecioId: parseInt(list[i])});
+          if (selectedData.length > 0) {
+             msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_serie_ya_seleccionado")');
+             return false;
+          }
+       }
+
+       $(this).saveView({
+          urlAction: '@Url.Action("GrabarListaVendedor", "Vendedor")',
+          viewModel: [
+             { name: "ListaPrecioVendedorDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+             { name: "ListaPrecioVendedorDTO.ListaVendedorId", value: $('#ListaVendedorId').val(), type: 'int' },
+             { name: "ListaPrecioVendedorDTO.ListaPrecioIdList", value: list, type: 'listInt' }
+          ],
+          onSuccess: function (response) {
+             if (response.success) {
+                $('#listaVendedorListPopup').hideDialog();
+                $("#listaPrecioGrid").appGrid('reloadJSON');
+                msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+             } else {
+                msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                $("#listaVendedorMenuBar").appMenu('saveMenu');
+             }
+          }
+       });
+    };
+
+   function listaVendedorSelectedPopup(sourceId, row) {
+
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_documento_comercial_serie_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      selectedList.push(row.ListaPrecioId);
+
+      grabarlistaVendedor(selectedList);
+   };
+   
+   function editCustomGridMenuBar   (key, gridName, excludeDeletedRow) {
+      if (!$("#VendedorId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

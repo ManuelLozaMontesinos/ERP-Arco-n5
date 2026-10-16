@@ -1,0 +1,390 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.PrestamoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PrestamoPersonalDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Personal" button-style="List" value="@Model.PrestamoPersonalDTO.PersonalDTO.ProveedorDTO.RazonSocial" col-position="col-lg-4" label="Personal"
+                                     col-label-position="col-lg-2" onclick="personalOnClick"></esd-buttontextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.PrestamoPersonalDTO.Fecha" col-position="col-lg-2" label="Fecha"
+                                      col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoPrestamoId" for="@Model.TipoPrestamoList" col-position="col-lg-2" label="Tipo Prestamo" col-label-position="col-lg-2"
+                                    onchange="tipoPrestamoIdOnChange();"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-2" label="Moneda" col-label-position="col-lg-2"
+                                    onchange="monedaIdOnChange"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.PrestamoPersonalDTO.MontoTipoCambio" col-position="col-lg-1" label="T/C"
+                                      col-label-position="col-lg-1" enable="false"></esd-numerictextbox>
+                  <esd-numerictextbox for="@Model.PrestamoPersonalDTO.Monto" col-position="col-lg-1" label="Monto"
+                                      col-label-position="col-lg-1"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox for="@Model.PrestamoPersonalDTO.CantidadCuotas" col-position="col-lg-1" label="# Cuotas"
+                                      col-label-position="col-lg-2" numeric-type="Integer"></esd-numerictextbox>
+                  <esd-datetimepicker for="@Model.PrestamoPersonalDTO.FechaInicio" col-position="col-lg-2" label="Fecha 1ra Cuota"
+                                      col-label-position="col-lg-1"></esd-datetimepicker>
+                  <esd-numerictextbox for="@Model.PrestamoPersonalDTO.DiasCuota" col-position="col-lg-1" label="Dias Intervalo"
+                                      col-label-position="col-lg-1" numeric-type="Integer"></esd-numerictextbox>
+                  <esd-button id="generarCrono" content="Generar Cronograma" button-style="Primary" size="Small" onclick="generarCronoOnClick();"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PrestamoPersonalDTO.PrestamoPersonalId"></esd-hidden>
+      <esd-hidden for="@Model.PrestamoPersonalDTO.PersonalId"></esd-hidden>
+      <esd-hidden for="@Model.PrestamoPersonalDTO.MonedaDTO.EsLocal"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#cuotaTab" role="tab" data-toggle="tab">Cuotas</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="cuotaTab" role="tabpanel">
+            <div>
+               <esd-menubar id="cuotaMenuBar" size="Small" for="@Model.MenuItemList" onclick="cuotaMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="personalListPopup" title="Personal" onclick="personalListPopupOnClick" size="Large">
+   <div id="personalListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      habilitarSiMonedaLocal();
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarPrestamoCuota", "Prestamo")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PrestamoCuotaDTO.PrestamoPersonalId", value: $('#PrestamoPersonalId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '#Cuota', 'Monto', 'F. Vcto.', 'F.Cancela.', '','Tipo', '','Estado', '', ''],
+         colModel: [
+            { name: 'PrestamoCuotaId', hidden: true },
+            { name: 'PrestamoPersonalId', hidden: true },
+            { name: "Cuota", width: 60 },
+            {
+               name: "Monto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal');
+                  }
+               }
+            },
+            { name: "FechaVencimiento", width: 90, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "FechaCancelacion", width: 90, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: 'TipoCancelacionCuotaId', hidden: true },
+            { name: "TipoCancelacionCuota", width: 200 },
+            { name: 'EstadoCuotaId', hidden: true },
+            { name: "EstadoCuota", width: 200 },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            editCustomGridMenuBar('cuotaMenuBar', 'bandejaGrid');
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if ($.isNullOrEmpty(row.FechaCancelacion)) {
+               $("#cuotaMenuBar").appMenu('disabledButton', { buttonId: 'suspender', disabled: false });
+               $("#cuotaMenuBar").appMenu('disabledButton', { buttonId: 'pagar', disabled: false });
+            }
+
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('cuotaMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         loadComplete: function () {
+
+            var rowCount = $('#bandejaGrid').appGrid('rowCount');
+
+            if (rowCount > 0)
+               deshabilitarGenCrono();
+
+            var $this = $(this), rows = this.rows, l = rows.length, i, row;
+            for (i = 0; i < l; i++) {
+               row = rows[i];
+               if ($.inArray('jqgrow', row.className.split(' ')) >= 0) {
+                  var data = $('#bandejaGrid').appGrid('getRow', row.id);
+                  if ($.isNullOrEmpty(data.FechaCancelacion))
+                     $this.jqGrid('editRow', row.id, false);
+               }
+            }
+         },
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#personalListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal")',
+               container: 'personalListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function personalOnClick() {
+      $('#personalListPopup').showDialog();
+   };
+   function personalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('',row);
+   };
+   function personalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_personal_seleccion_requerida")');
+         return false;
+      }
+
+      $("#Personal").val(row.RazonSocial);
+      $("#PersonalId").val(row.PersonalId);
+      $('#personalListPopup').hideDialog();
+   };
+   function tipoPrestamoIdOnChange() {
+      var tipoPrestamoId = $("#TipoPrestamoId").val();
+      if ($.isNullOrEmpty(tipoPrestamoId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoPrestamo", "Prestamo")',
+         id: tipoPrestamoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               debugger;
+               if (response.data.Codigo === '@TipoPrestamoConstante.ADELANTO') {
+                  $('#CantidadCuotas').val(1);
+                  $('#CantidadCuotas').prop('readonly', true);
+               } else {
+                  $('#CantidadCuotas').val(0);
+                  $('#CantidadCuotas').prop('readonly', false);
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   }
+   function habilitarSiMonedaLocal() {
+      if($("#EsLocal").val() === '@SiNoConstante.S')
+         $("#MontoTipoCambio").prop('readonly',true);
+      else
+         $("#MontoTipoCambio").prop('readonly',false);
+   }
+   function monedaIdOnChange() {
+      var monedaId = $("#MonedaId").val();
+      if ($.isNullOrEmpty(monedaId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerMoneda", "Prestamo")',
+         id: monedaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#EsLocal').val(response.data.EsLocal);
+               habilitarSiMonedaLocal();
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Prestamo")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!validarDatos())
+         return false;
+
+      var prestamoCuotaList = [];
+
+      var list = $('#bandejaGrid').appGrid('getDataIDs');
+      for (i in list) {
+         var rowId = list[i];
+         if (isEmptyRecord(rowId))
+            continue;
+
+         var row = $('#bandejaGrid').appGrid('getRow', list[i]);
+
+         var prestamoCuota = [
+            { name: "PrestamoCuotaId", value: row.PrestamoCuotaId, type: 'int' },
+            { name: "PrestamoPersonalId", value: row.PrestamoPersonalId, type: 'int' },
+            { name: "Cuota", value: row.Cuota, type: 'int' },
+            { name: "Monto", value: $('#' + rowId + '_Monto').val(), type: 'decimal' },
+            { name: "TipoCancelacionCuotaId", value: row.TipoCancelacionCuotaId, type: 'int' },
+            { name: "EstadoCuotaId", value: row.EstadoCuotaId, type: 'int' },
+            { name: "FechaVencimiento", value: row.FechaVencimiento, type: 'date' },
+            { name: "@AppConstante.DTO_STATE", value: row['@AppConstante.DTO_STATE'], type: 'int' },
+            { name: "Estado", value: row.Estado }
+         ];
+
+         prestamoCuotaList.push(prestamoCuota);
+      }
+
+      $(this).saveView({
+         viewModel: [
+            { name: "PrestamoPersonalDTO.PrestamoPersonalId", value: $('#PrestamoPersonalId').val(), type: 'int' },
+            { name: "PrestamoPersonalDTO.PersonalId", value: $('#PersonalId').val(), type: 'int' },
+            { name: "PrestamoPersonalDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+            { name: "PrestamoPersonalDTO.MonedaId", value: $('#MonedaId').val(), type: 'int' },
+            { name: "PrestamoPersonalDTO.MontoTipoCambio", value: $('#MontoTipoCambio').val(), type: 'decimal' },
+            { name: "PrestamoPersonalDTO.Monto", value: $('#Monto').val(), type: 'decimal' },
+            { name: "PrestamoPersonalDTO.CantidadCuotas", value: $('#CantidadCuotas').val(), type: 'int' },
+            { name: "PrestamoPersonalDTO.FechaInicio", value: $('#FechaInicio').val(), type: 'date' },
+            { name: "PrestamoPersonalDTO.DiasCuota", value: $('#DiasCuota').val(), type: 'int' },
+            { name: "PrestamoPersonalDTO.TipoPrestamoId", value: $('#TipoPrestamoId').val(), type: 'int' },
+            { name: "PrestamoCuotaDTOList", value: prestamoCuotaList, type: 'list' }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Prestamo")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#PrestamoPersonalId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+               $('#bandejaGrid').appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function validarDatos() {
+      if (!$('#PersonalId').validateNumeric('@SR.GetString("RH_personal_seleccion_requerida")'))
+         return false;
+      if (!$('#Fecha').validateNumeric('@SR.GetString("RH_fecha_prestamo_requerida")'))
+         return false;
+      if (!$('#TipoPrestamoId').validateNumeric('@SR.GetString("RH_tipo_prestamo_seleccion_requerida")'))
+         return false;
+      if (!$('#MonedaId').validateNumeric('@SR.GetString("GEN_moneda_seleccion_requerida")'))
+         return false;
+      if ($('#EsLocal').val() === '@SiNoConstante.N') {
+         if (!$('#MontoTipoCambio').validateNumeric('@SR.GetString("GEN_tipo_cambio_monto_requerido")'))
+            return false;
+      }
+      if (!$('#Monto').validateNumeric('@SR.GetString("RH_monto_prestamo_rango_requerida")'))
+         return false;
+      if (!$('#CantidadCuotas').validateNumeric('@SR.GetString("RH_cant_cuotas_requerida")'))
+         return false;
+      if (!$('#FechaInicio').validateNumeric('@SR.GetString("RH_fecha_inicio_prestamo_requerida")'))
+         return false;
+      if (!$('#DiasCuota').validateNumeric('@SR.GetString("RH_dias_cuota_requerida")'))
+         return false;
+
+      return true;
+   };
+   function generarCronoOnClick() {
+
+      if (!validarDatos())
+         return false;
+
+      var cuotas = parseIntEx($('#CantidadCuotas').val())
+      var diasCuota = parseIntEx($('#DiasCuota').val())
+
+      var newDate = moment($('#FechaInicio').val(), '@JavaScriptConstant.DATE_FORMAT');
+
+      var monto = parseFloatEx($('#Monto').val())
+      var montoCuota = (monto / cuotas).toFixed(2);
+
+      var i;
+      for (i = 1; i <= cuotas; i++) {
+         var initdata = {
+            PrestamoCuotaId: 0,
+            PrestamoPersonalId: $('#PrestamoPersonalId').val(),
+            Cuota: i,
+            Monto: montoCuota,
+            TipoCancelacionCuotaId: @Model.TipoCancelacionCuotaId,
+            TipoCancelacionCuota: '@Model.TipoCancelacionCuotaNombre',
+            EstadoCuotaId: @Model.EstadoCuotaId,
+            EstadoCuota: '@Model.EstadoCuotaNombre',
+            FechaVencimiento: newDate.format('@JavaScriptConstant.DATE_FORMAT'),
+            '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#bandejaGrid").appGrid('addRow', initdata);
+         newDate = newDate.add(diasCuota, 'days');
+      }
+   };
+   function deshabilitarGenCrono() {
+      $('#Fecha').prop('readonly', true);
+      $('#TipoPrestamoId').prop('disabled', true);
+      $('#MonedaId').prop('disabled', true);
+      $('#MontoTipoCambio').prop('readonly', true);
+      $('#Monto').prop('readonly', true);
+      $('#CantidadCuotas').prop('readonly', true);
+      $('#FechaInicio').prop('readonly', true);
+      $('#DiasCuota').prop('readonly', true);
+      $('#generarCrono').prop('disabled', true);
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#PrestamoPersonalId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

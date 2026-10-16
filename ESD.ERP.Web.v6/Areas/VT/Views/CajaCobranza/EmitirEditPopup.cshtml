@@ -1,0 +1,83 @@
+﻿@model ESD.ERP.Web.Areas.VT.Models.CajaCobranzaViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="MedioPagoId" for="@Model.MedioPagoList" col-position="col-lg-6" label="Medio de Pago"
+                                    col-label-position="col-lg-3" onchange="mp_medioPagoIdOnChange();" in-modal="true"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoTotal" value="@Model.ComprobanteDTO.MontoTotalDocumento" col-position="col-lg-6" label="Total" col-label-position="col-lg-3"
+                                      enable="false" in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoAnticipoDescuento" value="@Model.ComprobanteDTO.MontoAnticipoDescuento" col-position="col-lg-6" label="Mto. Anticipo" col-label-position="col-lg-3"
+                                      enable="false" in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoSaldo" value="@Model.ComprobanteDTO.MontoTotalDocumento - Model.ComprobanteDTO.MontoAnticipoDescuento" col-position="col-lg-6" label="Saldo" col-label-position="col-lg-3"
+                                      enable="false" in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <label class="offset-1 col-form-label">Seleccione las Copias a Generar</label>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox id="paraClienteCheckBox" col-position="offset-lg-1 col-lg-10" label="Cliente" in-modal="true" enable="false" checked="true"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox id="paraAdmCheckBox" col-position="offset-lg-1 col-lg-10" label="Control Administrativo" in-modal="true" checked="true"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox id="paraDespachoCheckBox" col-position="offset-lg-1 col-lg-10" label="Despacho" in-modal="true" checked="true"></esd-checkbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<script type="text/javascript">
+   function mp_medioPagoIdOnChange() {
+
+      var medioPagoId = $("#mp-MedioPagoId").val();
+      if ($.isNullOrEmpty(medioPagoId)) {
+         return;
+      }
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var popupParams = getPopupParam('mp-edit-panel')
+
+      $('#' + popupParams.dialogId).postAction({
+         urlAction: '@Url.Action("AplicarTasaPorMedioPago", "Comprobante")',
+         viewModel: [
+            { name: "ComprobanteDTO.ComprobanteId", value: row.ComprobanteId, type: 'int' },
+            { name: "ComprobanteDTO.MedioPagoId", value: $('#mp-MedioPagoId').val(), type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               calcularTotalesGenerales(row.ComprobanteId);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function calcularTotalesGenerales(comprobanteId)
+   {
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTotales", "Comprobante")',
+         id: comprobanteId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-MontoTotal').val(numeral(response.data.MontoTotal).format('0,0.00'));
+               $('#mp-MontoAnticipoDescuento').val(numeral(response.data.MontoAnticipoDescuento).format('0,0.00'));
+               $('#mp-MontoSaldo').val(numeral(response.data.MontoTotal - response.data.MontoAnticipoDescuento).format('0,0.00'));
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+</script>

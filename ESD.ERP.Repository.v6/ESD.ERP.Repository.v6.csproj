@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Globals">
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>ESD.ERP.Repository</RootNamespace>
+    <AnalysisLevel>5.0</AnalysisLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ESD.Core.Data.v1\ESD.Core.Data.v1.csproj" />
+    <ProjectReference Include="..\ESD.Core.v1\ESD.Core.v1.csproj" />
+    <ProjectReference Include="..\ESD.ERP.Domain.v6\ESD.ERP.Domain.v6.csproj" />
+    <ProjectReference Include="..\ESD.ERP.Types.v6\ESD.ERP.Types.v6.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,502 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.TransportistaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-masktextbox for="@Model.TransportistaDTO.NumeroRuc" col-position="col-lg-2" label="R.U.C." col-label-position="col-lg-2"
+                                   mask="99999999999" enable="@Model.IsNew"></esd-masktextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.TransportistaDTO.RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2"></esd-textbox>
+                  <esd-textbox for="@Model.TransportistaDTO.NumeroInscripcionVehicular" col-position="col-lg-2" label="Num. Insc. Vehicular" col-label-position="col-lg-2"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.TransportistaDTO.TransportistaId"></esd-hidden>
+      <esd-hidden for="@Model.TipoDocumentoIdentidadString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#vehiculoTab" role="tab" data-toggle="tab">Vehiculos</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#conductorTab" role="tab" data-toggle="tab">Conductores</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="vehiculoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="vehiculoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="vehiculoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="vehiculoContainer">
+               <table id="vehiculoGrid"></table>
+               <div id="vehiculoPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="conductorTab" role="tabpanel">
+            <div>
+               <esd-menubar id="conductorMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="conductorMenuBarOnClick"></esd-menubar>
+               <esd-checkbox id="conductorVerAnulado" col-position="col-lg-3" label="Mostrar Anulados" onchange="conductorVerAnuladoOnChange()"
+                                      checkbox-style="Default"></esd-checkbox>
+            </div>
+            <div id="conductorContainer">
+               <table id="conductorGrid"></table>
+               <div id="conductorPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#vehiculoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarTransportistaUnidad", "Transportista")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "TransportistaUnidadDTO.TransportistaId", value: $('#TransportistaId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Marca', 'Modelo','Placa','Placa 2','', ''],
+         colModel: [
+            { name: 'TransportistaUnidadId', hidden: true },
+            { name: 'TransportistaId', hidden: true },
+            {
+               name: 'Marca', width: 150, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 20
+               }
+            },
+            {
+               name: 'Modelo', width: 150, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 20
+               }
+            },
+            {
+               name: 'Placa', width: 150, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 6
+               }
+            },
+            {
+               name: 'Placa2', width: 150, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 6
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#vehiculoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#vehiculoGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('vehiculoMenuBar', 'vehiculoGrid');
+            }
+            else
+               $("#vehiculoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('vehiculoMenuBar', 'vehiculoGrid');
+            $("#vehiculoGrid").appGrid('resizeGrid', 'vehiculoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('vehiculoContainer')
+      });
+
+      $("#conductorGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarTransportistaConductor", "Transportista")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "TransportistaConductorDTO.TransportistaId", value: $('#TransportistaId').val(), type:'int' },
+                     { name: "TransportistaConductorDTO.Estado", value: $('#conductorVerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Ap. Paterno', 'Ap. Materno','Nombres', '#Licencia','T/D','Num.Doc.Iden.','Telefono','', ''],
+         colModel: [
+            { name: 'TransportistaConductorId', hidden: true },
+            { name: 'TransportistaId', hidden: true },
+            {
+               name: 'ApellidoPaterno', width: 200, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 50
+               }
+            },
+            {
+               name: 'ApellidoMaterno', width: 200, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 50
+               }
+            },
+            {
+               name: 'Nombres', width: 200, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 50
+               }
+            },
+            {
+               name: 'NumeroLicencia', width: 150, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 20
+               }
+            },
+            {
+               name: 'TipoDocumentoIdentidadId', width: 200, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#TipoDocumentoIdentidadString').val(),
+               },
+               editrules: { required: true }
+            },
+            {
+               name: 'NumeroDocumentoIdentidad', width: 150, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 35
+               }
+            },
+            {
+               name: 'Telefono', width: 150, editable: true, editoptions: {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 15
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#conductorPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#conductorGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('conductorMenuBar', 'conductorGrid');
+            }
+            else
+               $("#conductorMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('conductorMenuBar', 'conductorGrid');
+            $("#conductorGrid").appGrid('resizeGrid', 'conductorContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('conductorContainer')
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#vehiculoTab':
+               $('#vehiculoGrid').appGrid('resizeGrid', 'vehiculoContainer');
+               $('#vehiculoGrid').jqGrid('setGridHeight', calculateGridHeight('vehiculoContainer'));
+               break;
+
+            case '#conductorTab':
+               $('#conductorGrid').appGrid('resizeGrid', 'conductorContainer');
+               $('#conductorGrid').jqGrid('setGridHeight', calculateGridHeight('conductorContainer'));
+               break;
+
+         }
+      })
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Transportista")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#NumeroRuc').validateString('@SR.GetString("MG_numero_ruc_requerido")'))
+         return false;
+      if (!$('#RazonSocial').validateString('@SR.GetString("MG_razon_social_requerida")'))
+         return false;
+      if (!$('#NumeroInscripcionVehicular').validateString('@SR.GetString("MG_numero_inscripcion_vehicular_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "TransportistaDTO.TransportistaId", value: $('#TransportistaId').val(), type: 'int' },
+            { name: "TransportistaDTO.NumeroRuc", value: $('#NumeroRuc').val() },
+            { name: "TransportistaDTO.RazonSocial", value: $('#RazonSocial').val() },
+            { name: "TransportistaDTO.NumeroInscripcionVehicular", value: $('#NumeroInscripcionVehicular').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Transportista")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#TransportistaId").val(response.data.Id);
+               $("#NumeroRuc").prop('readonly', true);
+               $('#vehiculoGrid').appGrid('reloadJSON');
+               $('#conductorGrid').appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function vehiculoMenuBarOnClick(key) {
+
+      var row = $('#vehiculoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               TransportistaUnidadId: 0,
+               TransportistaId: $('#TransportistaId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#vehiculoGrid").appGrid('addRow', initdata);
+            $("#vehiculoMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarVehiculoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#vehiculoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#vehiculoGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_Marca').validateString('@SR.GetString("MG_vehiculo_marca_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_Modelo').validateString('@SR.GetString("MG_vehiculo_modelo_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_Placa').validateString('@SR.GetString("MG_vehiculo_placa_requerido")'))
+               return false;
+
+            $("#vehiculoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#vehiculoGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarTransportistaUnidad", "Transportista")',
+                  viewModel: [
+                     { name: "TransportistaUnidadDTO.TransportistaUnidadId", value: row.TransportistaUnidadId, type: 'int' },
+                     { name: "TransportistaUnidadDTO.TransportistaId", value: $('#TransportistaId').val(), type: 'int' },
+                     { name: "TransportistaUnidadDTO.Marca", value: row.Marca },
+                     { name: "TransportistaUnidadDTO.Modelo", value: row.Modelo },
+                     { name: "TransportistaUnidadDTO.Placa", value: row.Placa },
+                     { name: "TransportistaUnidadDTO.Placa2", value: row.Placa2 },
+                     { name: "TransportistaUnidadDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#vehiculoGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#vehiculoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarTransportistaUnidad", "Transportista")',
+                     viewModel: [
+                        { name: "TransportistaUnidadDTO.TransportistaUnidadId", value: row.TransportistaUnidadId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#vehiculoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editarVehiculoInGrid() {
+      var rowId = $("#vehiculoGrid").appGrid("getSelectedRowId");
+      $('#vehiculoGrid').jqGrid('editRow', rowId);
+
+      $("#vehiculoMenuBar").appMenu('saveMenu');
+   };
+   function conductorMenuBarOnClick(key) {
+
+      var row = $('#conductorGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               TransportistaConductorId: 0,
+               TransportistaId: $('#TransportistaId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#conductorGrid").appGrid('addRow', initdata);
+            $("#conductorMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarConductorInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#conductorGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#conductorGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_ApellidoPaterno').validateString('@SR.GetString("MG_conductor_apellido_paterno_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_Nombres').validateString('@SR.GetString("MG_conductor_nombres_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_TipoDocumentoIdentidadId').validateNumeric('@SR.GetString("GEN_tipo_doc_identidad_seleccion_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_NumeroDocumentoIdentidad').validateString('@SR.GetString("GEN_numero_doc_identidad_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_NumeroLicencia').validateString('@SR.GetString("MG_conductor_licencia_conducir_requerido")'))
+               return false;
+
+            $("#conductorGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#conductorGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarTransportistaConductor", "Transportista")',
+                  viewModel: [
+                     { name: "TransportistaConductorDTO.TransportistaConductorId", value: row.TransportistaConductorId, type: 'int' },
+                     { name: "TransportistaConductorDTO.TransportistaId", value: $('#TransportistaId').val(), type: 'int' },
+                     { name: "TransportistaConductorDTO.ApellidoPaterno", value: row.ApellidoPaterno },
+                     { name: "TransportistaConductorDTO.ApellidoMaterno", value: row.ApellidoMaterno },
+                     { name: "TransportistaConductorDTO.Nombres", value: row.Nombres },
+                     { name: "TransportistaConductorDTO.TipoDocumentoIdentidadId", value: row.TipoDocumentoIdentidadId, type: 'int' },
+                     { name: "TransportistaConductorDTO.NumeroDocumentoIdentidad", value: row.NumeroDocumentoIdentidad },
+                     { name: "TransportistaConductorDTO.NumeroLicencia", value: row.NumeroLicencia },
+                     { name: "TransportistaConductorDTO.Telefono", value: row.Telefono },
+                     { name: "TransportistaConductorDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#conductorGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#conductorMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarTransportistaConductor", "Transportista")',
+                     viewModel: [
+                        { name: "TransportistaConductorDTO.TransportistaConductorId", value: row.TransportistaConductorId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#conductorGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editarConductorInGrid() {
+      var rowId = $("#conductorGrid").appGrid("getSelectedRowId");
+      $('#conductorGrid').jqGrid('editRow', rowId);
+
+      $("#conductorMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#TransportistaId").validateNumeric()) {
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+   function conductorVerAnuladoOnChange() {
+       $("#conductorGrid").appGrid('reloadJSON');
+   };
+</script>

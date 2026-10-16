@@ -1,0 +1,80 @@
+﻿@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.CM.Models.ProveCompraViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div class="row">
+         <div id="app-search-input-group" class="col-11">
+            <div class="form-group row">
+               <esd-textbox id="Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2" max-length="12" in-modal="true"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-textbox id="Descripcion" col-position="col-lg-10" label="Descripcion" col-label-position="col-lg-2" max-length="100" in-modal="true"></esd-textbox>
+            </div>
+         </div>
+         <div class="col-1">
+            <div class="form-group row">
+               <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()"></esd-button>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<div id="bandejaPopupContainer">
+   <table id="bandejaPopupGrid"></table>
+   <div id="bandejaPopupPager"></div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarProveedorProducto", "ProveCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ProveedorProductoDTO.ProveedorId", value: '@Model.ProveedorProductoDTO.ProveedorId', type: 'int' },
+                     { name: "ProveedorProductoDTO.ProductoDTO.Codigo", value: $('#mp-Codigo').val() },
+                     { name: "ProveedorProductoDTO.ProductoDTO.Descripcion", value: $('#mp-Descripcion').val() }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Codigo', 'Descripción', 'U.M.', 'Familia','','','','',''],
+         colModel: [
+            { name: 'ProductoId', hidden: true },
+            { name: "Codigo", width: 100 },
+            { name: "ProductoNombre", width: 350 },
+            { name: "UnidadMedidaNombre", width: 150 },
+            { name: "FamiliaProductoNombra", width: 250 },
+            { name: 'PesoNeto', hidden: true },
+            { name: 'MasterPack', hidden: true },
+            { name: 'TipoIgvId', hidden: true },
+            { name: 'TipoIgv', hidden: true },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('mp-edit-panel')
+
+            var row = $(this).getRowData(rowid);
+            proveedorProductoSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: 250
+      });
+   });
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-Codigo,#mp-Descripcion").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+</script>

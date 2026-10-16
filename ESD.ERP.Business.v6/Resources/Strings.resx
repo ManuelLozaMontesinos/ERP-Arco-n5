@@ -1,0 +1,318 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="EX_almacen_transaccion_ya_registrada" xml:space="preserve">
+    <value>La Transacción ya está registrada.</value>
+  </data>
+  <data name="EX_cantidad_mayor_al_saldo" xml:space="preserve">
+    <value>La cantidad no puede ser mayor a {0}</value>
+  </data>
+  <data name="EX_cantidad_mayor_al_saldo_en_producto" xml:space="preserve">
+    <value>La cantidad no puede ser mayor a {0} para el Producto {1}</value>
+  </data>
+  <data name="EX_clase_producto_ya_registrada" xml:space="preserve">
+    <value>La Clase {0} ya está registrada.</value>
+  </data>
+  <data name="EX_comprobante_canje_productos_no_iguales" xml:space="preserve">
+    <value>Los Productos/Servicios deben ser iguales.</value>
+  </data>
+  <data name="EX_comprobante_doc_identidad_invalido" xml:space="preserve">
+    <value>El Documento de Identidad del Cliente no es válido.</value>
+  </data>
+  <data name="EX_comprobante_ruc_invalido" xml:space="preserve">
+    <value>El RUC del Cliente no es válido.</value>
+  </data>
+  <data name="EX_comprobante_sin_items" xml:space="preserve">
+    <value>El Comprobante no tiene registrados Productos o Servicios.</value>
+  </data>
+  <data name="EX_comprobante_sin_items_tipo_producto" xml:space="preserve">
+    <value>El Comprobante no tiene registrados Productos.</value>
+  </data>
+  <data name="EX_comprobante_ya_esta_anulado" xml:space="preserve">
+    <value>El Comprobante ya está anulado.</value>
+  </data>
+  <data name="EX_comprobante_ya_esta_cerrado" xml:space="preserve">
+    <value>El Comprobante ya está cerrado.</value>
+  </data>
+  <data name="EX_comprobante_ya_esta_emitido" xml:space="preserve">
+    <value>El Comprobante ya está emitido.</value>
+  </data>
+  <data name="EX_cotizacion_con_comprobantes" xml:space="preserve">
+    <value>La Cotización tiene Comprobantes activos.</value>
+  </data>
+  <data name="EX_cotizacion_sin_anticipo" xml:space="preserve">
+    <value>El Pedido debe tener un anticipo del 50%.</value>
+  </data>
+  <data name="EX_cotizacion_producto_parcial" xml:space="preserve">
+    <value>La Cantidad no puede ser mayor al restante.</value>
+  </data>
+  <data name="EX_cotizacion_sin_items" xml:space="preserve">
+    <value>La Cotización/Pedido no tiene registrados Productos o Servicios.</value>
+  </data>
+  <data name="EX_documento_comercial_cliente_no_permitido" xml:space="preserve">
+    <value>El Tipo de Documento seleccionado no es permitido para el Cliente.</value>
+  </data>
+  <data name="EX_familia_producto_ya_registrada" xml:space="preserve">
+    <value>La Familia {0} ya está registrada.</value>
+  </data>
+  <data name="EX_grupo_producto_ya_registrado" xml:space="preserve">
+    <value>El Grupo {0} ya está registrado.</value>
+  </data>
+  <data name="EX_mes_cerrado" xml:space="preserve">
+    <value>El Mes está cerrado.</value>
+  </data>
+  <data name="EX_movimiento_almacen_sin_items" xml:space="preserve">
+    <value>El Movimiento no tiene registrados Productos.</value>
+  </data>
+  <data name="EX_nota_credito_sin_items" xml:space="preserve">
+    <value>La Nota de Credito no tiene registrados Productos o Servicios.</value>
+  </data>
+  <data name="EX_nota_credito_ya_esta_anulada" xml:space="preserve">
+    <value>La Nota de Credito ya está anulada.</value>
+  </data>
+  <data name="EX_nota_credito_ya_esta_emitida" xml:space="preserve">
+    <value>La Nota de Credito ya está emitida.</value>
+  </data>
+  <data name="EX_numero_documento_ya_registrado" xml:space="preserve">
+    <value>El Documento {0} : {1} ya está registrado.</value>
+  </data>
+  <data name="EX_numero_guia_ya_registrada" xml:space="preserve">
+    <value>La Guía {0} : {1} ya está registrada.</value>
+  </data>
+  <data name="EX_pedido_con_comprobantes" xml:space="preserve">
+    <value>El Pedido tiene Comprobantes activos.</value>
+  </data>
+  <data name="EX_periodo_empresa_sede_ya_registrado" xml:space="preserve">
+    <value>La Sede ya esta registrada para el Periodo.</value>
+  </data>
+  <data name="EX_periodo_ya_registrado" xml:space="preserve">
+    <value>El Periodo {0} ya está registrado.</value>
+  </data>
+  <data name="EX_personal_marcacion_ya_registrado" xml:space="preserve">
+    <value>El Trabajador ya está registrado.</value>
+  </data>
+  <data name="EX_planilla_ya_registrada" xml:space="preserve">
+    <value>La Planilla {0} ya está registrada.</value>
+  </data>
+  <data name="EX_proc_lotes_ya_habilitado" xml:space="preserve">
+    <value>El procesamiento por lotes solo puede estar habilitado en un Periodo</value>
+  </data>
+  <data name="EX_producto_sin_saldo" xml:space="preserve">
+    <value>El Producto {0} no tiene saldo para realizar el movimiento.</value>
+  </data>
+  <data name="EX_producto_sin_saldo2" xml:space="preserve">
+    <value>El Producto no tiene saldo para realizar el movimiento.</value>
+  </data>
+  <data name="EX_combo_producto_sin_saldo" xml:space="preserve">
+    <value>El Combo no tiene saldo para realizar el movimiento.</value>
+  </data>
+  <data name="EX_producto_sin_saldo_suficiente" xml:space="preserve">
+    <value>No tiene saldo suficiente para realizar el movimiento.</value>
+  </data>
+  <data name="EX_reclasificacion_sin_items" xml:space="preserve">
+    <value>La reclasificación no tiene registrados Productos.</value>
+  </data>
+  <data name="EX_regimen_pensionario_comision_ya_registrado" xml:space="preserve">
+    <value>El Tipo de Aporte/Comisión {0} ya está registrado o está vigente.</value>
+  </data>
+  <data name="EX_regimen_pensionario_esquema_ya_registrado" xml:space="preserve">
+    <value>El Tipo de Comisión {0} ya está registrado.</value>
+  </data>
+  <data name="EX_tipo_cambio_dia_ya_registrado" xml:space="preserve">
+    <value>El Tipo de Cambio ya está registrado para el Día y Moneda seleccionados.</value>
+  </data>
+  <data name="EX_regimen_pensionario_ya_registrado" xml:space="preserve">
+    <value>El Régimen Pensionario {0} ya está registrado.</value>
+  </data>
+  <data name="EX_rmv_ya_registrada" xml:space="preserve">
+    <value>Existe una Remuneración Mínima Vital que está vigente.</value>
+  </data>
+  <data name="EX_sede_central_ya_asignada" xml:space="preserve">
+    <value>Ya existe una Sede Central.</value>
+  </data>
+  <data name="EX_tipo_remuneracion_ya_registrado" xml:space="preserve">
+    <value>El Tipo de Remuneración {0} ya está registrado o está vigente para la Moneda seleccionada.</value>
+  </data>
+  <data name="EX_transaccion_almacen_ya_registrada" xml:space="preserve">
+    <value>La Transacción {0} ya está registrada.</value>
+  </data>
+  <data name="EX_uit_ya_registrada" xml:space="preserve">
+    <value>Existe una UIT que está vigente.</value>
+  </data>
+  <data name="EX_unidad_medida_ya_registrada" xml:space="preserve">
+    <value>La Unidad de Medida ya está registrada.</value>
+  </data>
+  <data name="EX_usuario_contrasena_anterior_incorrecta" xml:space="preserve">
+    <value>La contraseña anterior es incorrecta.</value>
+  </data>
+  <data name="EX_usuario_contrasena_incorrecto" xml:space="preserve">
+    <value>El nombre de usuario o la contraseña son incorrectos.</value>
+  </data>
+  <data name="EX_usuario_ya_registrado" xml:space="preserve">
+    <value>El Usuario {0} ya está registrado.</value>
+  </data>
+  <data name="EX_variable_calculo_ya_registrada" xml:space="preserve">
+    <value>La Variable {0} ya está registrada.</value>
+  </data>
+  <data name="EX_vendedor_ya_registrado" xml:space="preserve">
+    <value>El Vendedor {0} ya está registrado.</value>
+  </data>
+  <data name="EX_pedido_compra_sin_items" xml:space="preserve">
+    <value>El Pedido no tiene registrados Productos.</value>
+  </data>
+  <data name="EX_pedido_compra_items_cantidad_cero" xml:space="preserve">
+    <value>Debe registrar la(s) cantidad(es) para el(los) Producto(s).</value>
+  </data>
+  <data name="EX_orden_compra_items_cantidad_cero" xml:space="preserve">
+    <value>Debe registrar la(s) cantidad(es) para el(los) Producto(s)/Servicio(s).</value>
+  </data>
+  <data name="EX_orden_compra_items_precio_cero" xml:space="preserve">
+    <value>Debe registrar el precio unitario para el(los) Producto(s)/Servicio(s).</value>
+  </data>
+  <data name="EX_orden_compra_sin_items" xml:space="preserve">
+    <value>La Orden no tiene registrados Productos.</value>
+  </data>
+  <data name="EX_anticipo_ya_esta_anulado" xml:space="preserve">
+    <value>El Anticipo ya está anulado.</value>
+  </data>
+  <data name="EX_anticipo_ya_esta_emitido" xml:space="preserve">
+    <value>El Anticipo ya está emitido.</value>
+  </data>
+  <data name="EX_nota_credito_ya_esta_cerrada" xml:space="preserve">
+    <value>La Nota de Credito ya está cerrada.</value>
+  </data>
+  <data name="EX_anticipo_sin_aplicacion_requerida" xml:space="preserve">
+    <value>No puede aplicar mas Anticipos.</value>
+  </data>
+  <data name="EX_pedido_ya_enviado_produccion" xml:space="preserve">
+    <value>El Pedido ya fue enviado a Producción.</value>
+  </data>
+  <data name="EX_red_social_ya_registrada" xml:space="preserve">
+    <value>La Red Social ya está registrada.</value>
+  </data>
+  <data name="EX_oportunidad_venta_ya_registrada" xml:space="preserve">
+    <value>La Oportunidad ya está registrada.</value>
+  </data>
+  <data name="EX_guia_remision_sin_items" xml:space="preserve">
+    <value>La Guía de Remisión no tiene registrados Productos.</value>
+  </data>
+  <data name="EX_nota_credito_anulacion_otras_asociadas" xml:space="preserve">
+    <value>La Nota de Credito no se puede anular. Existen otros tipos de Notas de Credito asociadas.</value>
+  </data>
+</root>

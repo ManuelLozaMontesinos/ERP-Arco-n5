@@ -1,0 +1,38 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.AccesoExtViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div>
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalSolicitudAccesoDTO.HoraSolicitada" col-position="col-lg-2" label="Hora Solicitada" col-label-position="col-lg-3"
+                               in-modal="true" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.PersonalSolicitudAccesoDTO.HoraAutorizada" col-position="col-lg-2" label="Hora Autorizada" col-label-position="col-lg-3"
+                               in-modal="true" placeholder=""></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.PersonalSolicitudAccesoDTO.PersonalSolicitudAccesoId" in-modal="true"></esd-hidden>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#mp-HoraAutorizada").inputmask({ alias: "datetime", inputFormat: "HH:MM" });
+   });
+   function mp_validarDatos() {
+
+      if (!$('#mp-HoraAutorizada').inputmask("isComplete")){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("RH_personal_solicitud_acceso_hora_autorizada_requerida")');
+         return false;
+      }
+
+      return true;
+   };
+</script>

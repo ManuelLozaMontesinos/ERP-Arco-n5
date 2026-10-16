@@ -1,0 +1,582 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.AS.Models.EmpresaViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="SectorId" for="@Model.SectorList" selected-value="@Model.EmpresaDTO.SectorId" col-position="col-lg-2" label="Sector"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-masktextbox for="@Model.EmpresaDTO.RUC" col-position="col-lg-2" label="RUC" col-label-position="col-lg-2"
+                                   mask="99999999999"></esd-masktextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.EmpresaDTO.Nombre" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+                  <esd-textbox for="@Model.EmpresaDTO.NombreComercial" col-position="col-lg-3" label="Nombre. Comer." col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoViaId" for="@Model.TipoViaList" selected-value="@Model.EmpresaDTO.TipoViaId" col-position="col-lg-2" label="Tipo de Via"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.EmpresaDTO.NombreVia" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+                  <esd-textbox for="@Model.EmpresaDTO.NumeroVia" col-position="col-lg-1" label="Numero" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.EmpresaDTO.Interior" col-position="col-lg-1" label="Interior" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.EmpresaDTO.Departamento" col-position="col-lg-1" label="#Dpto" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.EmpresaDTO.Lote" col-position="col-lg-2" label="Lote" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.EmpresaDTO.Manzana" col-position="col-lg-1" label="Manzana" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.EmpresaDTO.Kilometro" col-position="col-lg-1" label="KM" col-label-position="col-lg-1"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.EmpresaDTO.Block" col-position="col-lg-1" label="Block" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+                  <esd-textbox for="@Model.EmpresaDTO.Etapa" col-position="col-lg-2" label="Etapa" col-label-position="col-lg-2"
+                               max-length="10"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoZonaId" for="@Model.TipoZonaList" selected-value="@Model.EmpresaDTO.TipoZonaId" col-position="col-lg-2" label="Tipo de Zona"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.EmpresaDTO.NombreZona" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Departamento"
+                                    col-label-position="col-lg-2" onchange="departamentoIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-3" label="Provincia"
+                                    col-label-position="col-lg-1" onchange="provinciaIdOnChange();"></esd-dropdownlist>
+                  <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.EmpresaDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                    col-label-position="col-lg-1"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="BancoId" for="@Model.BancoList" selected-value="@Model.EmpresaDTO.BancoId" col-position="col-lg-2" label="Banco Detracción"
+                                    col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox for="@Model.EmpresaDTO.NumeroCuentaDetraccion" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="20"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.EmpresaDTO.EmpresaId"></esd-hidden>
+      <esd-hidden id="EmpresaSedeList" value="@Model.EmpresaSedeString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#sedeTab" role="tab" data-toggle="tab">Sedes</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#sedePeriodoTab" role="tab" data-toggle="tab">Sedes por Periodo</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="sedeTab" role="tabpanel">
+            <div>
+               <esd-menubar id="sedeMenuBar" size="Small" menu-style="NewEditDelete" onclick="sedeMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="sedePeriodoTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-dropdownlist id="PeriodoId" for="@Model.PeriodoList" col-position="col-lg-2" label="Periodo" col-label-position="col-lg-2"
+                                       onchange="periodoIdOnChange()"></esd-dropdownlist>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="sedePeriodoMenuBar" size="Small" for="@Model.MenuItemList" onclick="sedePeriodoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="sedePeriodoContainer">
+               <table id="sedePeriodoGrid"></table>
+               <div id="sedePeriodoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="sedeEditPopup" title="Sede" size="Large" onclick="sedeEditPopupOnClick" enable-dismissclick="true">
+   <div id="sedeEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarEmpresaSede", "Empresa")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "EmpresaSedeDTO.EmpresaId", value: $('#EmpresaId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Sede', 'Nombre','Direccion','Es Central','Cod. SUNAT','',''],
+         colModel: [
+            { name: 'EmpresaSedeId', hidden: true },
+            { name: "Codigo", width: 80 },
+            { name: "Nombre", width: 200 },
+            { name: "Direccion", width: 300 },
+            { name: "EsCentral", width: 200 },
+            { name: "CodigoSunat", width: 100 },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows == 0)
+               editCustomGridMenuBar('sedeMenuBar', 'bandejaGrid');
+            else
+               $("#sedeMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('sedeMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#sedeEditPopup').setDialog({
+         onShow: function (p) {
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            var urlAction = '';
+            if (p.editAction === '@ViewModelEditAction.New')
+               urlAction = '@Url.Action("CrearSede", "Empresa")';
+            else
+               urlAction = '@Url.Action("EditarSede", "Empresa")';
+
+            $(this).getView({
+               urlAction: urlAction,
+               viewModel: [
+                  { name: "EmpresaSedeDTO.EmpresaSedeId", value: row.EmpresaSedeId, type:'int' }
+               ],
+               container: 'sedeEditPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+
+      $("#sedePeriodoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarPeriodoEmpresaSede", "Empresa")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PeriodoEmpresaSedeDTO.PeriodoId", value: $('#PeriodoId').val(), type: 'int', castNull:true },
+                     { name: "PeriodoEmpresaSedeDTO.EmpresaSedeDTO.EmpresaId", value: $('#EmpresaId').val(), type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','Sede','',''],
+         colModel: [
+            { name: 'PeriodoEmpresaSedeId', hidden: true },
+            { name: 'PeriodoId', hidden: true },
+            { name: 'EmpresaSedeId', width: 350, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#EmpresaSedeList').val()
+               },
+               editrules: { required: true }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#sedePeriodoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#sedePeriodoGrid').appGrid('editableRowsCount');
+            if (editableRows == 0)
+               editCustomGridMenuBar('sedePeriodoMenuBar', 'sedePeriodoGrid');
+            else
+               $("#sedePeriodoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('sedePeriodoMenuBar', 'sedePeriodoGrid');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('sedePeriodoContainer')
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#sedePeriodoTab':
+               $('#sedePeriodoGrid').appGrid('resizeGrid', 'sedePeriodoContainer');
+               $('#sedePeriodoGrid').jqGrid('setGridHeight', calculateGridHeight('sedePeriodoContainer'));
+               break;
+         }
+      })
+   });
+   function departamentoIdOnChange() {
+
+      var departamentoId = $("#DepartamentoId").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#ProvinciaId").prop('disabled', true);
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#ProvinciaId").val('');
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "Empresa")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#ProvinciaId').find('option').remove().end();
+               $("#ProvinciaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#DepartamentoId").val())) {
+                  $("#ProvinciaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function provinciaIdOnChange() {
+
+      var provinciaId = $("#ProvinciaId").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#DistritoId").val('');
+      $("#DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "Empresa")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#DistritoId').find('option').remove().end();
+               $("#DistritoId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#DistritoId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Empresa")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#SectorId').validateNumeric('@SR.GetString("AS_sector_seleccion_requerida")'))
+         return false;
+      if (!$('#Nombre').validateString('@SR.GetString("MG_razon_social_requerida")'))
+         return false;
+      if (!$('#RUC').validateString('@SR.GetString("MG_numero_ruc_requerido")'))
+         return false;
+      if (!$('#TipoViaId').validateNumeric('@SR.GetString("MG_tipo_via_seleccion_requerida")'))
+         return false;
+      if (!$('#TipoZonaId').validateNumeric('@SR.GetString("MG_tipo_zona_seleccion_requerida")'))
+         return false;
+      if (!$('#DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+         return false;
+      if (!$('#ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+         return false;
+      if (!$('#DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "EmpresaDTO.EmpresaId", value: $('#EmpresaId').val(), type : 'int' },
+            { name: "EmpresaDTO.SectorId", value: $('#SectorId').val(), type: 'int' },
+            { name: "EmpresaDTO.Nombre", value: $('#Nombre').val() },
+            { name: "EmpresaDTO.NombreComercial", value: $('#NombreComercial').val() },
+            { name: "EmpresaDTO.RUC", value: $('#RUC').val() },
+            { name: "EmpresaDTO.TipoViaId", value: $('#TipoViaId').val(), type:'int' },
+            { name: "EmpresaDTO.NombreVia", value: $('#NombreVia').val() },
+            { name: "EmpresaDTO.NumeroVia", value: $('#NumeroVia').val() },
+            { name: "EmpresaDTO.Interior", value: $('#Interior').val() },
+            { name: "EmpresaDTO.Departamento", value: $('#Departamento').val() },
+            { name: "EmpresaDTO.Lote", value: $('#Lote').val() },
+            { name: "EmpresaDTO.Manzana", value: $('#Manzana').val() },
+            { name: "EmpresaDTO.Kilometro", value: $('#Kilometro').val() },
+            { name: "EmpresaDTO.Block", value: $('#Block').val() },
+            { name: "EmpresaDTO.Etapa", value: $('#Etapa').val() },
+            { name: "EmpresaDTO.TipoZonaId", value: $('#TipoZonaId').val(), type: 'int' },
+            { name: "EmpresaDTO.NombreZona", value: $('#NombreZona').val() },
+            { name: "EmpresaDTO.DistritoId", value: $('#DistritoId').val(), type: 'int' },
+            { name: "EmpresaDTO.BancoId", value: $('#BancoId').val(), type: 'int' },
+            { name: "EmpresaDTO.NumeroCuentaDetraccion", value: $('#NumeroCuentaDetraccion').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Empresa")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#EmpresaId").val(response.data.Id);
+               $("#Codigo").prop('readonly', true);
+               $("#bandejaGrid").appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function sedeMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               EmpresaSedeId: 0,
+               EmpresaId: $('#EmpresaId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#bandejaGrid").appGrid('addRow', initdata);
+            $("#sedeMenuBar").appMenu('saveMenu');
+            $('#sedeEditPopup').showDialog({ editAction : '@ViewModelEditAction.New'});
+            break;
+
+         case '@MenuItemKey.EDIT':
+            $('#sedeEditPopup').showDialog({ editAction : '@ViewModelEditAction.Edit'});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarSede", "Empresa")',
+                     viewModel: [
+                        { name: "EmpresaSedeDTO.EmpresaSedeId", value: row.EmpresaSedeId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function sedeEditPopupOnClick(key) {
+
+      switch (key) {
+         case 'ok':
+            if (!mp_validarDatos())
+               return false;
+
+            var row = $("#bandejaGrid").appGrid("getSelectedRow");
+            setModifiedDTO(row);
+
+            $('#sedeEditPopup').saveView({
+               viewModel: [
+                  { name: "EmpresaSedeDTO.EmpresaSedeId", value: $('#mp-EmpresaSedeId').val(), type: 'int' },
+                  { name: "EmpresaSedeDTO.EmpresaId", value: $('#EmpresaId').val(), type: 'int' },
+                  { name: "EmpresaSedeDTO.Nombre", value: $('#mp-Nombre').val() },
+                  { name: "EmpresaSedeDTO.CodigoSunat", value: $('#mp-CodigoSunat').val() },
+                  { name: "EmpresaSedeDTO.TipoViaId", value: $('#mp-TipoViaId').val(), type: 'int' },
+                  { name: "EmpresaSedeDTO.NombreVia", value: $('#mp-NombreVia').val() },
+                  { name: "EmpresaSedeDTO.NumeroVia", value: $('#mp-NumeroVia').val() },
+                  { name: "EmpresaSedeDTO.Interior", value: $('#mp-Interior').val() },
+                  { name: "EmpresaSedeDTO.Departamento", value: $('#mp-Departamento').val() },
+                  { name: "EmpresaSedeDTO.Lote", value: $('#mp-Lote').val() },
+                  { name: "EmpresaSedeDTO.Manzana", value: $('#mp-Manzana').val() },
+                  { name: "EmpresaSedeDTO.Kilometro", value: $('#mp-Kilometro').val() },
+                  { name: "EmpresaSedeDTO.Block", value: $('#mp-Block').val() },
+                  { name: "EmpresaSedeDTO.Etapa", value: $('#mp-Etapa').val() },
+                  { name: "EmpresaSedeDTO.TipoZonaId", value: $('#mp-TipoZonaId').val(), type: 'int' },
+                  { name: "EmpresaSedeDTO.NombreZona", value: $('#mp-NombreZona').val() },
+                  { name: "EmpresaSedeDTO.DistritoId", value: $('#mp-DistritoId').val(), type: 'int' },
+                  { name: "EmpresaSedeDTO.Telefono", value: $('#mp-Telefono').val() },
+                  { name: "EmpresaSedeDTO.Telefono2", value: $('#mp-Telefono2').val() },
+                  { name: "EmpresaSedeDTO.Email", value: $('#mp-Email').val(), textCase: 'lower' },
+                  { name: "EmpresaSedeDTO.EsCentral", value: $('#mp-EsCentral').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+                  { name: "EmpresaSedeDTO.DTOState", value: row.DTOState, type: 'int' }
+               ],
+               urlAction: '@Url.Action("GrabarSede", "Empresa")',
+               onSuccess: function (response) {
+                  if (response.success) {
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     $('#sedeEditPopup').hideDialog();
+                     $('#bandejaGrid').appGrid('reloadJSON');
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  }
+               }
+            });
+            break;
+
+         default:
+            $('#bandejaGrid').appGrid('reloadJSON');
+            break;
+      }
+   };
+   function periodoIdOnChange() {
+      $("#sedePeriodoGrid").appGrid('reloadJSON');
+   };
+   function sedePeriodoMenuBarOnClick(key) {
+
+      var row = $('#sedePeriodoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      if (!$('#PeriodoId').validateNumeric('@SR.GetString("AS_periodo_seleccion_requerida")'))
+         return;
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               PeriodoEmpresaSedeId: 0,
+               PeriodoId: $('#PeriodoId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#sedePeriodoGrid").appGrid('addRow', initdata);
+            $("#sedePeriodoMenuBar").appMenu('saveMenu');
+            $('#PeriodoId').prop("disabled", true); 
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#sedePeriodoGrid").appGrid("getSelectedRowId");
+
+            $("#sedePeriodoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#sedePeriodoGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarPeriodoEmpresaSede", "Empresa")',
+                  viewModel: [
+                     { name: "PeriodoEmpresaSedeDTO.PeriodoId", value: row.PeriodoId, type: 'int' },
+                     { name: "PeriodoEmpresaSedeDTO.EmpresaSedeId", value: row.EmpresaSedeId, type: 'int' },
+                     { name: "PeriodoEmpresaSedeDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#sedePeriodoGrid").appGrid('reloadJSON');
+                        $('#PeriodoId').prop("disabled", false); 
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#sedePeriodoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#sedePeriodoGrid").appGrid('reloadJSON');
+            $('#PeriodoId').prop("disabled", false); 
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarPeriodoEmpresaSede", "Empresa")',
+                     viewModel: [
+                        { name: "PeriodoEmpresaSedeDTO.PeriodoEmpresaSedeId", value: row.PeriodoEmpresaSedeId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#sedePeriodoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#EmpresaId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   }
+</script>

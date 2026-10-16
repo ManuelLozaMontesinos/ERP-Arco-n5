@@ -1,0 +1,155 @@
+﻿@{
+   Layout = null;
+}
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Model.LoginViewModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+   <title>SIGANET | Log in</title>
+
+   <link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/dist/css/adminlte.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/css/alertifyjs/alertify.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/css/alertifyjs/themes/bootstrap.min.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/css/app.login.css" asp-append-version="true">
+   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+   <style>
+      .container-login100 {
+         width: 100%;
+         min-height: 100vh;
+         display: -webkit-box;
+         display: -webkit-flex;
+         display: -moz-box;
+         display: -ms-flexbox;
+         display: flex;
+         flex-wrap: wrap;
+         justify-content: center;
+         align-items: center;
+         padding: 15px;
+         background-repeat: no-repeat;
+         background-size: cover;
+         background-position: center;
+         position: relative;
+         z-index: 1;
+         background-image: url('@Url.Content("~/img/bg-02.jpg")');
+      }
+   </style>
+</head>
+<body class="hold-transition login-page">
+   <div class="container-login100">
+      <div class="login-box">
+         <div class="login-logo">
+            <div class="form-group" style="margin-bottom: 8px;">
+               <img src="~/img/erp-lg-logo.png" alt="SIGANET" class="center-block">
+            </div>
+         </div>
+         <!-- /.login-logo -->
+         <div class="card">
+            <div id="loginForm" class="card-body login-card-body">
+               <br />
+               <br />
+               <div id="div-login-msg" class="alert alert-danger" style="display:none">
+                  <span id="text-login-msg"></span>
+               </div>
+               <p class="login-box-msg">Solicite ampliación de Horario de Acceso</p>
+               <form asp-controller="Login" asp-action="Index" method="post" asp-antiforgery="true">
+                  <div class="input-group mb-3">
+                     <input id="UserName" name="UserName" type="text" class="form-control" placeholder="Usuario" readonly value="@Model.UsuarioDTO.UsuarioLogon">
+                     <div class="input-group-append">
+                        <div class="input-group-text">
+                           <span class="fas fa-user"></span>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="mb-3 row">
+                     <label class="col-lg-3 col-form-label" for="HoraSolicitada">Hora solicitada</label>
+                     <div class="col-lg-4">
+                        <input class="form-control form-control-sm" id="HoraSolicitada" name="HoraSolicitada" type="text" value="@Model.HoraSolicitada">
+                     </div>
+                  </div>
+                  <div class="form-group row">
+                     <div class="offset-2 col-4">
+                        <button id="cancelButton" type="button" class="btn btn-default btn-block" onclick="location.href='@Url.Action("SignOut","Login")'">Cancelar</button>
+                     </div>
+                     <div class="col-4">
+                        <button id="okButton" type="button" class="btn btn-primary btn-block" onclick="grabar();">Aceptar</button>
+                     </div>
+                  </div>
+               </form>
+               <br />
+            </div>
+            <!-- /.login-card-body -->
+         </div>
+      </div>
+      <input type="hidden" id="UsuarioId" value="@Model.UsuarioDTO.UsuarioId" />
+   </div>
+   <!-- /.login-box -->
+   <script src="~/plugins/jquery/jquery.min.js" asp-append-version="true"></script>
+   <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+   <script src="~/dist/js/adminlte.min.js" asp-append-version="true"></script>
+   <script src="~/lib/loading-overlay/dist/loadingoverlay.min.js" asp-append-version="true"></script>
+   <script src="~/js/alertify.min.js" asp-append-version="true"></script>
+   <script src="~/plugins/inputmask/jquery.inputmask.min.js" asp-append-version="true"></script>
+   <script src="~/js/app.main.js" asp-append-version="true"></script>
+   <script type="text/javascript">
+      $(document).ready(function () {
+         $("#HoraSolicitada").inputmask({ alias: "datetime", inputFormat: "HH:MM" });
+      });
+      function grabar() {
+
+         if (!$('#HoraSolicitada').inputmask("isComplete")){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AS_usuario_horario_hora_solicitada_requerida")');
+            return false;
+         }
+
+         var token = $('[name=__RequestVerificationToken]').val();
+
+         var postData = {
+            UsuarioId: $("#UsuarioId").val(),
+            HoraSolicitada: $("#HoraSolicitada").val(),
+            __RequestVerificationToken: token
+         };
+
+         $('#okButton').prop('disabled', true);
+
+         $('#loginForm').LoadingOverlay('show', {
+            background: "rgba(255, 255, 255, 0.8)",
+            imageResizeFactor: 0.5
+         });
+
+         var baseurl = $(location).attr('href');
+
+         $.ajax({
+            url: baseurl,
+            method: 'POST',
+            dataType: 'json',
+            data: postData,
+            error: function (xhr, ajaxOptions, thrownError) {
+               $('#okButton').prop('disabled', false);
+               $('#loginForm').LoadingOverlay('hide');
+
+               alert("Error: " + ajaxOptions + " " + thrownError);
+               alert(xhr.getAllResponseHeaders());
+            },
+            success: function (response) {
+               if (response.success) {
+                  window.location.href = '@Url.Action("SignOut","Login")';
+               }
+               else {
+
+                  $('#text-login-msg').html(response.message);
+                  $('#div-login-msg').show();
+                  $('#okButton').prop('disabled', false);
+                  $('#loginForm').LoadingOverlay('hide');
+               }
+            }
+         });
+      };
+   </script>
+</body>
+</html>

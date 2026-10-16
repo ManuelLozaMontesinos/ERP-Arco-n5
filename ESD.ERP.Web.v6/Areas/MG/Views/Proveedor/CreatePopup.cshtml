@@ -1,0 +1,385 @@
+﻿@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.MG.Models.ProveedorViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoNaturalezaJuridicaId" for="@Model.TipoNaturalezaJuridicaList" selected-value="@Model.ProveedorDTO.TipoNaturalezaJuridicaId"
+                                    col-position="col-lg-2" label="Tipo de Persona" col-label-position="col-lg-2" enable="@Model.IsNew"
+                                    onchange="mp_tipoNaturalezaJuridicaIdOnChange();" in-modal="true"></esd-dropdownlist>
+                  <esd-masktextbox for="@Model.ProveedorDTO.NumeroRuc" col-position="col-lg-2" label="RUC" col-label-position="col-lg-2"
+                                   mask="99999999999" onchange="mp_numeroRucOnChange()" in-modal="true"></esd-masktextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2"
+                               max-length="150" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Abreviatura" col-position="col-lg-2" label="Nombre. Comer." col-label-position="col-lg-2"
+                               max-length="50" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.ApellidoPaterno" col-position="col-lg-2" label="Apellido Paterno" col-label-position="col-lg-2"
+                               max-length="50" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.ApellidoMaterno" col-position="col-lg-2" label="Apellido Materno" col-label-position="col-lg-2"
+                               max-length="50" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Nombres" col-position="col-lg-2" label="Nombres" col-label-position="col-lg-2"
+                               max-length="50" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoIdentidadId" for="@Model.TipoDocumentoIdentidadList" selected-value="@Model.ProveedorDTO.TipoDocumentoIdentidadId"
+                                    col-position="col-lg-2" label="Tipo Doc. Identidad" col-label-position="col-lg-2" onchange="mp_tipoDocumentoIdentidadIdOnChange();"
+                                    in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2"
+                               in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Telefono" col-position="col-lg-2" label="#Telefono" col-label-position="col-lg-2"
+                               max-length="15"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoViaId" for="@Model.TipoViaList" selected-value="@Model.ProveedorDTO.TipoViaId" col-position="col-lg-2" label="Tipo de Via"
+                                    col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.ProveedorDTO.NombreVia" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.NumeroVia" col-position="col-lg-1" label="Numero" col-label-position="col-lg-1"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Interior" col-position="col-lg-1" label="Interior" col-label-position="col-lg-1"
+                               max-length="10" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.Departamento" col-position="col-lg-1" label="#Dpto" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Lote" col-position="col-lg-2" label="Lote" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Manzana" col-position="col-lg-1" label="Manzana" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Kilometro" col-position="col-lg-1" label="KM" col-label-position="col-lg-1"
+                               max-length="10" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ProveedorDTO.Block" col-position="col-lg-1" label="Block" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+                  <esd-textbox for="@Model.ProveedorDTO.Etapa" col-position="col-lg-2" label="Etapa" col-label-position="col-lg-2"
+                               max-length="10" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoZonaId" for="@Model.TipoZonaList" selected-value="@Model.ProveedorDTO.TipoZonaId" col-position="col-lg-2" label="Tipo de Zona"
+                                    col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+                  <esd-textbox for="@Model.ProveedorDTO.NombreZona" col-position="col-lg-3" label="Nombre" col-label-position="col-lg-1"
+                               max-length="50" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="DepartamentoId" for="@Model.DepartamentoList" selected-value="@Model.DepartamentoId" col-position="col-lg-2" label="Departamento"
+                                    col-label-position="col-lg-2" onchange="mp_departamentoIdOnChange();" in-modal="true"></esd-dropdownlist>
+                  <esd-dropdownlist id="ProvinciaId" for="@Model.ProvinciaList" selected-value="@Model.ProvinciaId" col-position="col-lg-3" label="Provincia"
+                                    col-label-position="col-lg-1" onchange="mp_provinciaIdOnChange();" in-modal="true"></esd-dropdownlist>
+                  <esd-dropdownlist id="DistritoId" for="@Model.DistritoList" selected-value="@Model.ProveedorDTO.DistritoId" col-position="col-lg-3" label="Distrito"
+                                    col-label-position="col-lg-1" in-modal="true"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.ProveedorDTO.ProveedorId" in-modal="true"></esd-hidden>
+   <esd-hidden id="TipoNaturalezaJuridica" value="@Model.ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo" in-modal="true"></esd-hidden>
+   <esd-hidden for="@Model.ProveedorDTO.TipoDocumentoIdentidadDTO.FormatoValidacion" in-modal="true"></esd-hidden>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+      mp_habilitarPorNaturaleza();
+   });
+   function mp_habilitarPorNaturaleza() {
+      if ($('#mp-TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.NATURAL') {
+         $('#mp-RazonSocial').prop('readonly', true);
+         $('#mp-Abreviatura').prop('readonly', true);
+         $('#mp-ApellidoPaterno').prop('readonly', false);
+         $('#mp-ApellidoMaterno').prop('readonly', false);
+         $('#mp-Nombres').prop('readonly', false);
+         $('#mp-TipoDocumentoIdentidadId').prop('disabled', false);
+         $('#mp-NumeroDocumentoIdentidad').prop('readonly', false);
+         $('#mp-ApellidoPaterno').focus();
+      }else {
+         $('#mp-RazonSocial').prop('readonly', false);
+         $('#mp-Abreviatura').prop('readonly', false);
+         $('#mp-ApellidoPaterno').prop('readonly', true);
+         $('#mp-ApellidoMaterno').prop('readonly', true);
+         $('#mp-Nombres').prop('readonly', true);
+         $('#mp-TipoDocumentoIdentidadId').prop('disabled', true);
+         $('#mp-NumeroDocumentoIdentidad').prop('readonly', true);
+         $('#mp-RazonSocial').focus();
+      }
+   }
+   function mp_tipoNaturalezaJuridicaIdOnChange() {
+
+      var tipoNaturalezaJuridicaId = $('#mp-TipoNaturalezaJuridicaId').val();
+
+      if ($.isNullOrEmpty(tipoNaturalezaJuridicaId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerPorTipoNaturalezaJuridica", "Proveedor")',
+         id: tipoNaturalezaJuridicaId,
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#mp-TipoNaturalezaJuridica').val(response.data.codigo);
+               $('#mp-TipoDocumentoIdentidadId').find('option').remove().end();
+               $("#mp-TipoDocumentoIdentidadId").addItems(response.data.list);
+               $('#mp-FormatoValidacion').val(response.data.formatoValidacion);
+               mp_habilitarPorNaturaleza();
+
+               if (response.data.tipoDocumentoIdentidadId === 0)
+                  $("#mp-TipoDocumentoIdentidadId").val($("#mp-TipoDocumentoIdentidadId option:first").val());
+               else
+                  $("#mp-TipoDocumentoIdentidadId").val(response.data.tipoDocumentoIdentidadId);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_numeroRucOnChange() {
+
+      var numeroRuc = $('#mp-NumeroRuc').val();
+
+      if ($.isNullOrEmpty(numeroRuc))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerDesdeSunat", "Proveedor")',
+         id: numeroRuc,
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#mp-TipoNaturalezaJuridicaId').val(response.data.tipoNaturalezaJuridicaId);
+               $('#mp-TipoNaturalezaJuridica').val(response.data.tipoNaturalezaJuridica);
+               $('#mp-RazonSocial').val(response.data.razonSocial);
+               $('#mp-TipoViaId').val(response.data.tipoViaId);
+               $('#mp-NombreVia').val(response.data.nombreVia);
+               $('#mp-NumeroVia').val(response.data.numeroVia);
+               $('#mp-Interior').val(response.data.interior);
+               $('#mp-Departamento').val(response.data.departamento);
+               $('#mp-Lote').val(response.data.lote);
+               $('#mp-Manzana').val(response.data.manzana);
+               $('#mp-Kilometro').val(response.data.kilometro);
+               $('#mp-TipoZonaId').val(response.data.tipoZonaId);
+               $('#mp-NombreZona').val(response.data.nombreZona);
+
+               mp_tipoNaturalezaJuridicaIdOnChange();
+               sleep(200);
+               mp_tipoDocumentoIdentidadIdOnChange();
+               sleep(200);
+               if ($('#mp-TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.JURIDICO')
+                  $('#mp-NumeroDocumentoIdentidad').val(numeroRuc);
+
+               $('#mp-DepartamentoId').val(response.data.departamentoId);
+
+               $('#mp-ProvinciaId').find('option').remove().end();
+               $("#mp-ProvinciaId").addItems(response.data.provinciaList);
+               $('#mp-ProvinciaId').val(response.data.provinciaId);
+
+               $('#mp-DistritoId').find('option').remove().end();
+               $("#mp-DistritoId").addItems(response.data.distritoList);
+               $('#mp-DistritoId').val(response.data.distritoId);
+            }
+         }
+      });
+   };
+   function mp_tipoDocumentoIdentidadIdOnChange()
+   {
+      var tipoDocumentoIdentidadId = $('#mp-TipoDocumentoIdentidadId').val();
+
+      if ($.isNullOrEmpty(tipoDocumentoIdentidadId))
+         return;
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoDocumentoIdentidad", "Proveedor")',
+         id: tipoDocumentoIdentidadId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-NumeroDocumentoIdentidad').inputmask('remove');
+
+               if (!$.isNullOrEmpty(response.data.FormatoValidacion))
+                  $('#mp-NumeroDocumentoIdentidad').inputmask(response.data.FormatoValidacion);
+               else
+                  $('#mp-NumeroDocumentoIdentidad').inputmask('remove');
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_validarTipoDocumentoIdentidadId(){
+
+      if (!$('#mp-NumeroDocumentoIdentidad').inputmask("isComplete")){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_numero_doc_identidad_incorrecto")');
+         return false;
+      }
+
+      if ($('#mp-TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.JURIDICO') {
+         if (!$('#mp-NumeroRuc').inputmask("isComplete")){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_numero_ruc_incorrecto")');
+            return false;
+         }
+      }
+
+      return true;
+   };
+   function mp_departamentoIdOnChange() {
+
+      var departamentoId = $("#mp-DepartamentoId").val();
+      if ($.isNullOrEmpty(departamentoId)) {
+         $("#mp-ProvinciaId").prop('disabled', true);
+         $("#mp-DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#mp-ProvinciaId").val('');
+      $("#mp-DistritoId").val('');
+      $("#mp-DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarProvincia", "Proveedor")',
+         id: departamentoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-ProvinciaId').find('option').remove().end();
+               $("#mp-ProvinciaId").addItems(response.data);
+
+               if (!$.isNullOrEmpty($("#mp-DepartamentoId").val())) {
+                  $("#mp-ProvinciaId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_provinciaIdOnChange() {
+
+      var provinciaId = $("#mp-ProvinciaId").val();
+      if ($.isNullOrEmpty(provinciaId)) {
+         $("#mp-DistritoId").prop('disabled', true);
+         return;
+      }
+
+      $("#mp-DistritoId").val('');
+      $("#mp-DistritoId").prop('disabled', true);
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ListarDistrito", "Proveedor")',
+         id: provinciaId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#mp-DistritoId').find('option').remove().end();
+               $("#mp-DistritoId").addItems(response.data);
+
+               if (!$.isNullOrEmpty(provinciaId)) {
+                  $("#mp-DistritoId").removeAttr("disabled");
+               }
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function mp_validarDatos() {
+
+      if ($('#mp-TipoNaturalezaJuridica').val() === '@TipoNaturalezaJuridicaConstante.NATURAL') {
+         if (!$('#mp-ApellidoPaterno').validateString('@SR.GetString("RH_apellido_paterno_requerido")'))
+            return false;
+         if (!$('#mp-Nombres').validateString('@SR.GetString("GEN_nombres_requerido")'))
+            return false;
+         if (!$('#mp-TipoDocumentoIdentidadId').validateNumeric('@SR.GetString("GEN_tipo_doc_identidad_seleccion_requerida")'))
+            return false;
+         if (!$('#mp-NumeroDocumentoIdentidad').validateString('@SR.GetString("GEN_numero_doc_identidad_requerido")'))
+            return false;
+         if (!$.isNullOrEmpty($('#mp-NumeroRuc').val())) {
+            if (!$('#mp-NumeroRuc').inputmask("isComplete")){
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("MG_numero_ruc_incorrecto")');
+               return false;
+            }
+         }
+      } else {
+         if (!$('#mp-RazonSocial').validateString('@SR.GetString("MG_razon_social_requerida")'))
+            return false;
+         if (!$('#mp-NumeroRuc').validateString('@SR.GetString("MG_numero_ruc_requerido")'))
+            return false;
+      }
+
+      if(!mp_validarTipoDocumentoIdentidadId())
+         return false;
+      if (!$('#mp-TipoViaId').validateNumeric('@SR.GetString("MG_tipo_via_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-TipoZonaId').validateNumeric('@SR.GetString("MG_tipo_zona_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-DepartamentoId').validateNumeric('@SR.GetString("MG_departamento_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-ProvinciaId').validateNumeric('@SR.GetString("MG_provincia_seleccion_requerida")'))
+         return false;
+      if (!$('#mp-DistritoId').validateNumeric('@SR.GetString("MG_distrito_seleccion_requerida")'))
+         return false;
+
+      return true;
+   };
+   function mp_grabarDatos() {
+
+      if (!mp_validarDatos())
+         return false;
+
+      $('#mp-edit-panel').saveView({
+         viewModel: [
+            { name: "ProveedorDTO.ProveedorId", value: $('#mp-ProveedorId').val(), type: 'int' },
+            { name: "ProveedorDTO.TipoNaturalezaJuridicaId", value: $('#mp-TipoNaturalezaJuridicaId').val(), type: 'int' },
+            { name: "ProveedorDTO.TipoNaturalezaJuridicaDTO.Codigo", value: $('#mp-TipoNaturalezaJuridica').val() },
+            { name: "ProveedorDTO.RazonSocial", value: $('#mp-RazonSocial').val() },
+            { name: "ProveedorDTO.Abreviatura", value: $('#mp-Abreviatura').val() },
+            { name: "ProveedorDTO.ApellidoPaterno", value: $('#mp-ApellidoPaterno').val() },
+            { name: "ProveedorDTO.ApellidoMaterno", value: $('#mp-ApellidoMaterno').val() },
+            { name: "ProveedorDTO.Nombres", value: $('#mp-Nombres').val() },
+            { name: "ProveedorDTO.TipoDocumentoIdentidadId", value: $('#mp-TipoDocumentoIdentidadId').val(), type: 'int' },
+            { name: "ProveedorDTO.NumeroDocumentoIdentidad", value: $('#mp-NumeroDocumentoIdentidad').val() },
+            { name: "ProveedorDTO.NumeroRuc", value: $('#mp-NumeroRuc').val() },
+            { name: "ProveedorDTO.Telefono", value: $('#mp-Telefono').val() },
+            { name: "ProveedorDTO.TipoViaId", value: $('#mp-TipoViaId').val(), type: 'int' },
+            { name: "ProveedorDTO.NombreVia", value: $('#mp-NombreVia').val() },
+            { name: "ProveedorDTO.NumeroVia", value: $('#mp-NumeroVia').val() },
+            { name: "ProveedorDTO.Interior", value: $('#mp-Interior').val() },
+            { name: "ProveedorDTO.Departamento", value: $('#mp-Departamento').val() },
+            { name: "ProveedorDTO.Lote", value: $('#mp-Lote').val() },
+            { name: "ProveedorDTO.Manzana", value: $('#mp-Manzana').val() },
+            { name: "ProveedorDTO.Kilometro", value: $('#mp-Kilometro').val() },
+            { name: "ProveedorDTO.Block", value: $('#mp-Block').val() },
+            { name: "ProveedorDTO.Etapa", value: $('#mp-Etapa').val() },
+            { name: "ProveedorDTO.TipoZonaId", value: $('#mp-TipoZonaId').val(), type: 'int' },
+            { name: "ProveedorDTO.NombreZona", value: $('#mp-NombreZona').val() },
+            { name: "ProveedorDTO.Referencia", value: $('#mp-Referencia').val() },
+            { name: "ProveedorDTO.DistritoId", value: $('#mp-DistritoId').val(), type: 'int' },
+         ],
+         urlAction: '@Url.Action("GrabarPopup", "Proveedor", new { Area = "MG" })',
+         onSuccess: function (response) {
+
+            if (response.success) {
+
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               var row = {
+                  ProveedorId: response.data.Id,
+                  Codigo: response.data.Codigo,
+                  TipoNaturalezaJuridicaId: response.data.TipoNaturalezaJuridicaId,
+                  TipoNaturalezaJuridica: response.data.TipoNaturalezaJuridica,
+                  RazonSocial: response.data.RazonSocial,
+                  NumeroDocumentoIdentidad: response.data.NumeroDocumentoIdentidad
+               };
+
+               proveedorCreatedPopup(row);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+</script>

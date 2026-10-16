@@ -1,0 +1,73 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.FeriadoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-datetimepicker for="@Model.FeriadoDTO.Fecha" col-position="col-lg-2" label="Fecha"
+                                      col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.FeriadoDTO.Estado" col-position="offset-lg-2 col-lg-2" label="Activo"></esd-checkbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.FeriadoDTO.FeriadoId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Feriado")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "FeriadoDTO.FeriadoId", value: $('#FeriadoId').val(), type: 'int' },
+            { name: "FeriadoDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+            { name: "FeriadoDTO.Estado", value: $('#Estado').prop('checked') ? '@EstadoConstante.ACTIVO' : '@EstadoConstante.INACTIVO' },
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Feriado")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#FeriadoId").val(response.data.Id);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

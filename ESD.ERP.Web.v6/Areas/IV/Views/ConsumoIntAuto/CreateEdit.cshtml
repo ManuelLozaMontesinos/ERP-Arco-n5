@@ -1,0 +1,138 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Service.DTO;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.ConsumoIntAutoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.MovimientoAlmacenDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.MovimientoAlmacenDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-2"
+                                      enable="@Model.IsNew"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-2" label="Almacen" col-label-position="col-lg-2"
+                                    enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Personal" value="@Model.MovimientoAlmacenDTO?.PersonalDTO?.ProveedorDTO?.RazonSocial" col-position="col-lg-6"
+                                     label="Solicitante" col-label-position="col-lg-2" enable="@Model.IsNew"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="CentroCostoId" for="@Model.CentroCostoList" col-position="col-lg-2" label="Centro de Costo" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.MovimientoAlmacenDTO.Observacion" col-position="col-lg-6" label="Observacion" col-label-position="col-lg-2"
+                                max-length="400" rows="3" enable="false"></esd-textarea>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.MovimientoAlmacenDTO.MovimientoAlmacenId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarMovimientoAlmacenProducto", "ConsumoIntAuto")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "MovimientoAlmacenProductoDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val() || '0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','', '','Código','Producto','Detalle','','', '','U.M.','Cantidad','',''],
+         colModel: [
+            { name: 'MovimientoAlmacenProductoId', hidden: true },
+            { name: 'MovimientoAlmacenId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 100, editable: false },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'Descripcion', width: 200, editable: false, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'CantidadDocumento', hidden: true },
+            { name: 'PesoNetoDocumento', hidden: true },
+            { name: 'PesoBrutoDocumento', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 100, editable: false },
+            { name: "Cantidad", width: 100, align: 'right', formatter: 'number', editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         gridComplete: function () {
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case 'aprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case 'desaprobar':
+            aprobarDesaprobar(key);
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "ConsumoIntAuto")'
+            });
+            break;
+      }
+   };
+   function aprobarDesaprobar(key) {
+
+      var urlAction = key === 'aprobar' ? '@Url.Action("Aprobar", "ConsumoIntAuto")' : '@Url.Action("Desaprobar", "ConsumoIntAuto")';
+
+      $(this).saveView({
+         viewModel: [
+            { name: "MovimientoAlmacenDTO.MovimientoAlmacenId", value: $('#MovimientoAlmacenId').val(), type: 'int' }
+         ],
+         buttonId: key,
+         urlAction: urlAction,
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $(this).getView({
+                  urlAction: '@Url.Action("Index", "ConsumoIntAuto")'
+               });
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+</script>

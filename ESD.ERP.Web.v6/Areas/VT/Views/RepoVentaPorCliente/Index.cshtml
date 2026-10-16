@@ -1,0 +1,133 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.ReporteGenViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="PreviewExport" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card">
+      <div class="card">
+         <div class="card-body">
+            <div class="row">
+               <div id="app-search-input-group" class="col-12">
+                  <div class="form-group row">
+                     <esd-radiobutton id="tipoRegistro" group-name="tipoRadio" label="Registro de Ventas" col-position="offset-lg-1 col-lg-4" checked="true"></esd-radiobutton>
+                  </div>
+                  <div class="form-group row">
+                     <esd-radiobutton id="tipoConsolidado" group-name="tipoRadio" label="Consolidado General" col-position="offset-lg-1 col-lg-4"></esd-radiobutton>
+                  </div>
+                  <div class="form-group row">
+                     <esd-radiobutton id="tipoConsoProducto" group-name="tipoRadio" label="Consolidado por Producto" col-position="offset-lg-1 col-lg-4"></esd-radiobutton>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div class="card">
+         <div class="card-body">
+            <div class="row">
+               <div id="app-search-input-group" class="col-12">
+                  <div class="form-group row">
+                     <esd-radiobutton id="PorMes" group-name="seleccionRadio" label="Mes" col-position="offset-lg-1 col-lg-1" checked="true"
+                                      onchange="seleccionRadioOnChange()"></esd-radiobutton>
+                     <esd-dropdownlist id="MesId" for="@Model.SeleccionList" col-position="col-lg-6"></esd-dropdownlist>
+                  </div>
+                  <div class="form-group row">
+                     <esd-radiobutton id="PorDia" group-name="seleccionRadio" label="Dia" col-position="offset-lg-1 col-lg-1"
+                                      onchange="seleccionRadioOnChange()"></esd-radiobutton>
+                     <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-1" enable="false"></esd-datetimepicker>
+                     <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-1" enable="false"></esd-datetimepicker>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div id="app-search-input-group" class="col-12">
+                        <div class="form-group row">
+                            <esd-checkbox id="ExcluirObsequio" col-position="offset-lg-1 col-lg-10" label="Excluir Obsequios"></esd-checkbox>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+   </div>
+</section>
+<script type="text/javascript">
+
+   function seleccionRadioOnChange() {
+
+      if ($('#PorMes').prop('checked')) {
+         $('#MesId').prop('disabled', false);
+         $('#FechaDesde').prop('readonly', true);
+         $('#FechaHasta').prop('readonly', true);
+         $('#FechaDesde').val('');
+         $('#FechaHasta').val('');
+      };
+
+      if ($('#PorDia').prop('checked')) {
+         $('#FechaDesde').prop('readonly', false);
+         $('#FechaHasta').prop('readonly', false);
+         $('#MesId').prop('disabled', true);
+         $('#MesId').val('');
+      };
+   };
+   function obtenerTipoReporte(){
+      var tipoReporte;
+
+      tipoReporte = '@DigitoConstante.UNO';
+      if ($("#tipoConsolidado").is(':checked')){
+         tipoReporte = '@DigitoConstante.DOS';
+      }
+      if ($("#tipoConsoProducto").is(':checked')){
+         tipoReporte = '@DigitoConstante.TRES';
+      }
+
+      return tipoReporte;
+   }
+   function menuBarOnClick(key) {
+
+      if ($('#PorMes').prop('checked')) {
+         if (!$('#MesId').validateNumeric('@SR.GetString("GEN_mes_seleccion_requerida")'))
+            return false;
+      };
+
+      if ($('#PorDia').prop('checked')) {
+         if (!$('#FechaDesde').validateString('@SR.GetString("GEN_fecha_requerida")'))
+            return false;
+         if (!$('#FechaHasta').validateString('@SR.GetString("GEN_fecha_requerida")'))
+            return false;
+      }
+
+      var reportParam = "tipoReporte=" + obtenerTipoReporte()
+         + "&mesContableId=" + $("#MesId").val()
+         + "&fechaDesde=" + $("#FechaDesde").val()
+         + "&fechaHasta=" + $("#FechaHasta").val()
+         + "&excluirObsequio=" + ($('#ExcluirObsequio').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N');
+
+      var format = '';
+      switch (key) {
+
+         case '@MenuItemKey.PREVIEW':
+            format = '@ReportFormatConstant.PDF'
+            break;
+         case '@MenuItemKey.EXPORT_XLS':
+            format = '@ReportFormatConstant.EXCEL'
+            break;
+         case '@MenuItemKey.EXPORT_DATA_XLS':
+            format = '@ReportFormatConstant.EXCELDATA'
+            break;
+      }
+
+      $(this).getReport({
+         urlAction: '@Url.Action("ReportTo", "RepoVentaPorCliente")',
+         parameters: reportParam,
+         format: format,
+         onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+      });
+
+      return true;
+   };
+</script>

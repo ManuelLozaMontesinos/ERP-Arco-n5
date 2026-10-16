@@ -1,0 +1,480 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.CM.Models.ValorizaCompraViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="PreviewExport" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="codigoCab" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2" max-length="5"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="condicionPagoId" for="@Model.CondicionPagoList" col-position="col-lg-2" label="Condicion de Pago" col-label-position="col-lg-2"></esd-dropdownlist>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-checkbox id="verAnulado" col-position="col-lg-3" label="Mostrar Anulados" onchange="VerAnuladoOnChange()"
+                                checkbox-style="Default"></esd-checkbox>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-hidden for="@Model.CondicionPagoString"></esd-hidden>
+      <esd-hidden for="@Model.TipoDocumentoComercialString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#comprobanteTab" role="tab" data-toggle="tab">Comprobantes</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="comprobanteTab" role="tabpanel">
+            <div>
+               <esd-menubar id="comprobanteMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="comprobanteMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="ordenCompraListPopup" title="Orden de Compra" onclick="ordenCompraListPopupOnClick" size="Large">
+   <div id="ordenCompraListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "ValorizaCompra")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "OrdenCompraComprobanteDTO.OrdenCompraDTO.Codigo", value: $('#codigoCab').val() },
+                     { name: "OrdenCompraComprobanteDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "PedidoCompraDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
+                     { name: "OrdenCompraComprobanteDTO.OrdenCompraDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "OrdenCompraComprobanteDTO.CondicionPagoId", value: $('#condicionPagoId').val() || 0, type: 'int' },
+                     { name: "OrdenCompraComprobanteDTO.Estado", value: $('#verAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'O/C','','T/D', 'Serie', 'Numero', 'Fecha', 'Fecha Vcto', '','Proveedor', 'Mon', 'Mto. Bruto', 'Impuesto',
+            'Mto. Total', 'Condicion Pago', '','',''],
+         colModel: [
+            { name: 'OrdenCompraComprobanteId', hidden: true },
+            { name: 'OrdenCompraId', hidden: true },
+            { name: 'Codigo', width: 55 },
+            {
+               name: '_selOC', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.OrdenCompraComprobanteId) && rowObject.OrdenCompraComprobanteId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="O/C" name="ordenCompraButton"' + disabled + ' onclick="mostrarOrdenCompra(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            {
+               name: 'TipoDocumentoComercialId', width: 150, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#TipoDocumentoComercialString').val()
+               },
+               editrules: { required: true }
+            },
+            {
+               name: 'Serie', width: 60, editable: true, edittype: 'text',
+               editoptions:
+               {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 4
+               }
+            },
+            {
+               name: 'Numero', width: 100, editable:true, edittype: 'text',
+               editoptions:
+               {
+                  class: 'form-control-sm app-text-transform',
+                  maxlength: 8
+               }
+            },
+            {
+               name: "Fecha", width: 90, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            {
+               name: "FechaVcto", width: 90, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            { name: 'ProveedorId', hidden: true },
+            { name: "RazonSocial", width: 200 },
+            { name: "Moneda", width: 60 },
+            { name: "MontoBruto", width: 100, align: 'right', formatter: 'number' },
+            { name: "MontoImpuesto", width: 80, align: 'right', formatter: 'number' },
+            {
+               name: "MontoTotal", width: 100, align: 'right', editable: true, formatter: 'number',
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal();
+                        }
+                     });
+                  }
+               }
+            },
+            {
+               name: 'CondicionPagoId', width: 200, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#CondicionPagoString').val()
+               },
+               editrules: { required: true }
+            },
+            { name: 'RegistroReferencialId', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('comprobanteMenuBar', 'bandejaGrid');
+            }
+            else
+               $("#comprobanteMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('comprobanteMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#ordenCompraListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "OrdenCompra")',
+               viewModel: [
+                  { name: "OrdenCompraDTO.TipoProductoDTO.Codigo", value: '@TipoProductoConstante.PRODUCTO' },
+                  { name: "OrdenCompraDTO.EstadoAprobacionDTO.Codigo", value: '@EstadoAprobacionConstante.APROBADO' },
+                  { name: "OrdenCompraDTO.EstadoOrdenCompraList", value: ['@EstadoOrdenCompraConstante.ORDEN_COMPRA', '@EstadoOrdenCompraConstante.INGRESO_PARCIAL', '@EstadoOrdenCompraConstante.ATENDIDA'], type: 'listString' },
+                  { name: "OrdenCompraDTO.Estado", value: '@EstadoConstante.ACTIVO' }
+               ],
+               container: 'ordenCompraListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function calcularTotal() {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var rowId = $('#bandejaGrid').appGrid('getSelectedRowId');
+
+      $(this).postAction({
+         viewModel: [
+            { name: "OrdenCompraComprobanteDTO.OrdenCompraId", value: row.OrdenCompraId, type: 'int' },
+            { name: "OrdenCompraComprobanteDTO.MontoTotal", value: $('#' + rowId + '_MontoTotal').val(), type: 'decimal' }
+         ],
+         urlAction: '@Url.Action("CalcularMontoTotal", "ValorizaCompra")',
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#bandejaGrid').jqGrid('setCell', rowId, 'MontoBruto', response.data.MontoBruto);
+               $('#bandejaGrid').jqGrid('setCell', rowId, 'MontoImpuesto', response.data.MontoImpuesto);
+               $('#' + rowId + '_MontoTotal').val(response.data.MontoTotal);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#Codigo, #NumeroDocumentoIdentidad, #RazonSocial,#TipoProductoId, #condicionPagoId").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#Codigo").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#Codigo").val())) {
+               var valueFmt = padLeadingZeros($("#Codigo").val(), 5)
+               $("#Codigo").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#codigoCab").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#codigoCab").val())) {
+               var valueFmt = padLeadingZeros($("#codigoCab").val(), 5)
+               $("#codigoCab").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      var reportParam = "proveedorId=" + row.ProveedorId
+         + "&fecha=" + row.Fecha
+
+      switch (key) {
+         case '@MenuItemKey.PREVIEW':
+            format = '@ReportFormatConstant.PDF'
+            break;
+         case '@MenuItemKey.EXPORT_XLS':
+            format = '@ReportFormatConstant.EXCEL'
+            break;
+      }
+
+      $(this).getReport({
+         urlAction: '@Url.Action("ReportTo", "ValorizaCompra")',
+         parameters: reportParam,
+         format: format,
+         onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+      });
+      return true;
+   };
+
+   function VerAnuladoOnChange() {
+        $("#bandejaGrid").appGrid('reloadJSON');
+   };
+
+   function comprobanteMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               OrdenCompraComprobanteId: 0,
+               MontoBruto: 0,
+               MontoImpuesto : 0,
+               MontoTotal: 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#bandejaGrid").appGrid('addRow', initdata);
+            $("#comprobanteMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editaComprobanteInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+            if ($.isNullOrEmpty(row.Codigo)) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("IV_atributo_OrdenCompraId")');
+               return false;
+            }
+            if (!$('#' + rowId + '_TipoDocumentoComercialId').validateNumeric('@SR.GetString("MG_tipo_documento_comercial_seleccion_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_Numero').validateString('@SR.GetString("GEN_numero_doc_comercial_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_MontoTotal').validateNumeric('@SR.GetString("VT_monto_total_comprobante_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_CondicionPagoId').validateNumeric('@SR.GetString("MG_condicion_pago_seleccion_requerida")'))
+               return false;
+
+            $("#bandejaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarOrdenCompraComprobante", "ValorizaCompra")',
+                  viewModel: [
+                     { name: "OrdenCompraComprobanteDTO.OrdenCompraComprobanteId", value: row.OrdenCompraComprobanteId, type: 'int' },
+                     { name: "OrdenCompraComprobanteDTO.OrdenCompraId", value: row.OrdenCompraId, type: 'int' },
+                     { name: "OrdenCompraComprobanteDTO.TipoDocumentoComercialId", value: row.TipoDocumentoComercialId, type: 'int' },
+                     { name: "OrdenCompraComprobanteDTO.Serie", value: row.Serie },
+                     { name: "OrdenCompraComprobanteDTO.Numero", value: row.Numero },
+                     { name: "OrdenCompraComprobanteDTO.Fecha", value: row.Fecha, type: 'date' },
+                     { name: "OrdenCompraComprobanteDTO.FechaVencimiento", value: row.FechaVcto, type: 'date' },
+                     { name: "OrdenCompraComprobanteDTO.MontoBruto", value: row.MontoBruto, type: 'decimal' },
+                     { name: "OrdenCompraComprobanteDTO.MontoImpuesto", value: row.MontoImpuesto, type: 'decimal' },
+                     { name: "OrdenCompraComprobanteDTO.MontoTotal", value: row.MontoTotal, type: 'decimal' },
+                     { name: "OrdenCompraComprobanteDTO.CondicionPagoId", value: row.CondicionPagoId, type: 'int' },
+                     { name: "OrdenCompraComprobanteDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#comprobanteMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarOrdenCompraComprobante", "ValorizaCompra")',
+                     viewModel: [
+                        { name: "OrdenCompraComprobanteDTO.OrdenCompraComprobanteId", value: row.OrdenCompraComprobanteId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editaComprobanteInGrid() {
+      var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      $('#bandejaGrid').jqGrid('editRow', rowId);
+
+      $('#' + rowId + '_TipoDocumentoComercialId').prop('disabled', true);
+
+      if (!$.isNullOrEmpty(row.RegistroReferencialId)) {
+         $('#' + rowId + '_Serie').prop('readonly', true);
+         $('#' + rowId + '_Numero').prop('readonly', true);
+      }
+
+      $("#comprobanteMenuBar").appMenu('saveMenu');
+   };
+   function mostrarOrdenCompra() {
+      $('#ordenCompraListPopup').showDialog();
+   };
+   function ordenCompraListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      ordenCompraSelectedPopup('',row);
+   };
+   function ordenCompraSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("CM_orden_compra_seleccion_requerida")');
+         return false;
+      }
+
+      var rowId = $('#bandejaGrid').appGrid('getSelectedRowId');
+
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'OrdenCompraId', row.OrdenCompraId);
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'Codigo', row.Codigo);
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'ProveedorId', row.ProveedorId);
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'RazonSocial', row.RazonSocial);
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'Moneda', row.Moneda);
+
+      $('#ordenCompraListPopup').hideDialog();
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

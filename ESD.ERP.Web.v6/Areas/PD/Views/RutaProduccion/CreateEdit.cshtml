@@ -1,0 +1,426 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.PD.Models.RutaProduccionViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.RutaProduccionDTO.Nombre" col-position="col-lg-8" label="Nombre"
+                               col-label-position="col-lg-2" max-length="100"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.RutaProduccionDTO.RutaProduccionId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#procesoTab" role="tab" data-toggle="tab">Procesos</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#subProcesoTab" role="tab" data-toggle="tab">Sub Procesos</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="procesoTab" role="tabpanel">
+            <div>
+               <esd-menubar id="subProcesoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="procesoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="subProcesoTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-dropdownlist id="ProcesoProduccionId" for="@Model.ProcesoProduccionList" col-position="col-lg-4" label="Proceso" col-label-position="col-lg-2"
+                                       onchange="subProcesoProduccionIdOnChange()"></esd-dropdownlist>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="subProcesoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="subProcesoMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="subProcesoContainer">
+               <table id="subProcesoGrid"></table>
+               <div id="subProcesoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="personalListPopup" title="Operador" onclick="personalListPopupOnClick" size="Large">
+   <div id="personalListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+            url: "@Url.Action("ListarSubProcesoProduccion", "RutaProduccion")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "SubProcesoProduccionDTO.ProcesoProduccionId", value: $('#ProcesoProduccionId').val() ||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Nombre', '', ''],
+         colModel: [
+            { name: 'SubProcesoProduccionId', hidden: true },
+            { name: 'ProcesoProduccionId', hidden: true },
+            { name: 'Nombre', width: 350, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm app-text-transform', maxlength: 100 } },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('subProcesoMenuBar', 'bandejaGrid');
+            }
+            else
+               $("#subProcesoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('subProcesoMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+
+            $('#SubProcesoProduccionId').find('option').remove().end();
+            $('#SubProcesoProduccionId').append(new Option('@SelectListFirstOptionNameConstant.SELECT', ''));
+            var data = $("#bandejaGrid").appGrid('getData');
+            $.each(data, function (index, item) {
+               if (item.Estado === '@EstadoConstante.ACTIVO') {
+                  var option = new Option(item.Nombre, item.SubProcesoProduccionId);
+                  $('#SubProcesoProduccionId').append(option);
+               }
+            });
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+      $("#personalGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarSubProcesoProduccionPersonal", "RutaProduccion")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "SubProcesoProduccionPersonalDTO.SubProcesoProduccionId", value: $('#SubProcesoProduccionId').val()||'0', type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Apellidos y Nombres', '',''],
+         colModel: [
+            { name: 'SubProcesoProduccionPersonalId', hidden: true },
+            { name: 'SubProcesoProduccionId', hidden: true },
+            { name: 'PersonalId', hidden: true },
+            { name: 'RazonSocial', width: 400, editable: false },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#personalPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#personalGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('personalMenuBar', 'personalGrid');
+            }
+            else
+               $("#personalMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('personalMenuBar', 'personalGrid');
+            $("#personalGrid").appGrid('resizeGrid', 'personalContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('personalContainer')
+      });
+
+      $('#personalListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal", new { Area = "RH" })',
+               container: 'personalListPopupContent',
+               viewModel: [
+                  { name: "PersonalDTO.NullFechaCese", value: '@EstadoConstante.ACTIVO' },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#subProcesoTab':
+               $('#bandejaGrid').appGrid('resizeGrid', 'bandejaContainer');
+               $('#bandejaGrid').jqGrid('setGridHeight', calculateGridHeight('bandejaContainer'));
+               break;
+            case '#personalTab':
+               $('#personalGrid').appGrid('resizeGrid', 'personalContainer');
+               $('#personalGrid').jqGrid('setGridHeight', calculateGridHeight('personalContainer'));
+               break;
+         }
+      })
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "RutaProduccion")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("PD_nombre_proceso_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "ProcesoProduccionDTO.ProcesoProduccionId", value: $('#ProcesoProduccionId').val(), type: 'int' },
+            { name: "ProcesoProduccionDTO.Nombre", value: $('#Nombre').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "RutaProduccion")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#ProcesoProduccionId").val(response.data.Id);
+               $("#bandejaGrid").appGrid('reloadJSON');
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function subProcesoMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               SubProcesoProduccionId: 0,
+               ProcesoProduccionId: $('#ProcesoProduccionId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#bandejaGrid").appGrid('addRow', initdata);
+            $("#subProcesoMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarDiaInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_Nombre').validateString('@SR.GetString("PD_nombre_sub_proceso_requerido")'))
+               return false;
+
+            $("#bandejaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarSubProcesoProduccion", "RutaProduccion")',
+                  viewModel: [
+                     { name: "SubProcesoProduccionDTO.SubProcesoProduccionId", value: row.SubProcesoProduccionId, type: 'int' },
+                     { name: "SubProcesoProduccionDTO.ProcesoProduccionId", value: $('#ProcesoProduccionId').val(), type: 'int' },
+                     { name: "SubProcesoProduccionDTO.Nombre", value: row.Nombre },
+                     { name: "SubProcesoProduccionDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#subProcesoMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+      }
+      return true;
+   };
+   function editarDiaInGrid() {
+      var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+      $('#bandejaGrid').jqGrid('editRow', rowId);
+
+      $("#subProcesoMenuBar").appMenu('saveMenu');
+   };
+   function personalMenuBarOnClick(key) {
+
+      var row = $('#personalGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+
+            if (!$('#SubProcesoProduccionId').validateNumeric('@SR.GetString("PD_sub_proceso_seleccion_requerida")'))
+               return false;
+
+            mostrarPersonal();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#personalGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            row = $("#personalGrid").appGrid('getSelectedRow');
+
+            $(this).saveView({
+               urlAction: '@Url.Action("GrabarSubProcesoProduccionPersonal", "RutaProduccion")',
+               viewModel: [
+                  { name: "SubProcesoProduccionPersonalDTO.SubProcesoProduccionPersonalId", value: row.SubProcesoProduccionPersonalId, type: 'int' },
+                  { name: "SubProcesoProduccionPersonalDTO.SubProcesoProduccionId", value: row.SubProcesoProduccionId, type: 'int' },
+                  { name: "SubProcesoProduccionPersonalDTO.PersonalId", value: row.PersonalId, type: 'int' },
+                  { name: "SubProcesoProduccionPersonalDTO.DTOState", value: row.DTOState, type: 'int' }
+               ],
+               onSuccess: function (response) {
+                  if (response.success) {
+                     $("#personalGrid").appGrid('reloadJSON');
+                     msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                  } else {
+                     msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                     $("#personalMenuBar").appMenu('saveMenu');
+                  }
+               }
+            });
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarSubProcesoProduccionPersonal", "RutaProduccion")',
+                     viewModel: [
+                        { name: "SubProcesoProduccionPersonalDTO.SubProcesoProduccionPersonalId", value: row.SubProcesoProduccionPersonalId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#personalGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function subProcesoProduccionIdOnChange() {
+      $("#personalGrid").appGrid('reloadJSON');
+   };
+   function mostrarPersonal() {
+      $('#personalListPopup').showDialog();
+   };
+   function personalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('',row);
+   };
+   function personalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("PD_operador_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#personalGrid").appGrid('getData');
+      var selectedData = _.where(data, { PersonalId: parseInt(row.PersonalId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("PD_operador_ya_seleccionado")');
+         return false;
+      }
+
+      var initdata = {
+         SubProcesoProduccionPersonalId: 0,
+         SubProcesoProduccionId: $('#SubProcesoProduccionId').val(),
+         PersonalId: row.PersonalId,
+         RazonSocial: row.RazonSocial,
+         '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+         Estado: '@EstadoConstante.ACTIVO'
+      };
+      $("#personalGrid").appGrid('addRow', initdata);
+      $("#personalMenuBar").appMenu('saveMenu');
+
+      $('#personalListPopup').hideDialog();
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#ProcesoProduccionId").validateNumeric()) {
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

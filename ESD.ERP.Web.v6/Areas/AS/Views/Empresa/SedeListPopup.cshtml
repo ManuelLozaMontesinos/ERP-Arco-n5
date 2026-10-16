@@ -1,0 +1,78 @@
+﻿@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.AS.Models.EmpresaViewModel
+<div id="@ViewBag.ModalEditId">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-10">
+               <div class="form-group row">
+                  <esd-dropdownlist id="EmpresaId" for="@Model.EmpresaList" selected-value="@Model.EmpresaSedeDTO.EmpresaId" col-position="col-lg-8" label="Empresa"
+                                    col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Nombre" col-position="col-lg-10" label="Nombre" col-label-position="col-lg-2" max-length="100" in-modal="true"></esd-textbox>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="mp_clearButtonOnClick()" in-modal="true"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaPopupContainer">
+      <table id="bandejaPopupGrid"></table>
+      <div id="bandejaPopupPager"></div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarEmpresaSede", "Empresa")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "EmpresaSedeDTO.EmpresaId", value: $('#mp-EmpresaId').val()||0, type:'int' },
+                     { name: "EmpresaSedeDTO.Nombre", value: $('#mp-Nombre').val() },
+                     { name: "EmpresaSedeDTO.Estado", value: '@EstadoConstante.ACTIVO' },
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','Nombre'],
+         colModel: [
+            { name: 'EmpresaSedeId', hidden: true },
+            { name: 'EmpresaId', hidden: true },
+            { name: "Nombre", width: 200 }
+         ],
+         pager: "#bandejaPopupPager",
+         ondblClickRow: function (rowid) {
+
+            var popupParams = getPopupParam('@ViewBag.ModalEditId')
+
+            var row = $(this).getRowData(rowid);
+            sedeSelectedPopup(popupParams.dialogId, row);
+         },
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         },
+         height: 250
+      });
+   });
+
+   function mp_clearButtonOnClick() {
+      $('#mp-edit-panel').find('input:text').val('');
+      $('#bandejaPopupGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#mp-EmpresaId, #mp-Nombre").change(function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
+      });
+   });
+
+</script>

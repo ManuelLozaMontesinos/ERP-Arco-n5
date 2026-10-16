@@ -1,0 +1,37 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.CotizacionViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-datetimepicker id="Fecha" col-position="col-lg-4" label="Fecha" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-8" label="Almacen"
+                                    col-label-position="col-lg-2" in-modal="true"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      var totalAlmacen = $('#mp-AlmacenId > option').length;
+      if (totalAlmacen <= 1) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_vendedor_almacen_no_configurado")');
+      }
+   });
+   function mp_validarDatos() {
+      if (!$('#mp-Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+
+      if (!$('#mp-AlmacenId').validateNumeric('@SR.GetString("IV_almacen_seleccion_requerida")'))
+         return false;
+
+      return true;
+   }
+</script>

@@ -1,0 +1,32 @@
+﻿@model ESD.ERP.Web.Areas.AS.Models.UsuarioViewModel
+<div id="mp-search-panel">
+   <div class="card">
+      <div class="card-body">
+         <div id="mp-search-input-group" class="col-lg-12">
+            @if (@Model.ContrasenaAnteriorVisible)
+            {
+               <div class="form-group row">
+                  <esd-textbox for="@Model.ContrasenaAnterior" col-position="col-lg-8" label="Contraseña Anterior" col-label-position="col-lg-4"
+                               max-length="50" is-password="true" in-modal="true"></esd-textbox>
+               </div>
+            }
+            <div class="form-group row">
+               <esd-textbox for="@Model.Contrasena" col-position="col-lg-8" label="Contraseña" col-label-position="col-lg-4"
+                            max-length="50" is-password="true" in-modal="true"></esd-textbox>
+            </div>
+            <div class="form-group row">
+               <esd-textbox for="@Model.ContrasenaConfirmada" col-position="col-lg-8" label="Confirmar Contraseña"
+                            col-label-position="col-lg-4" max-length="50" is-password="true" in-modal="true"></esd-textbox>
+            </div>
+            @if (!@Model.ContrasenaAnteriorVisible)
+            {
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.CambiarContrasenaProximo" col-position="offset-lg-2 col-lg-10"
+                                label="El usuario debe cambiar la contraseña en la proxima sesión" in-modal="true"></esd-checkbox>
+               </div>
+            }
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.UsuarioDTO.UsuarioId" in-modal="true"></esd-hidden>
+</div>

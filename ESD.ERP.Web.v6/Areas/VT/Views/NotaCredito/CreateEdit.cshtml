@@ -1,0 +1,846 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.NotaCreditoViewModel
+<esd-menubar id="menuBar" title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-10">
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoNotaCreditoId" for="@Model.TipoNotaCreditoList" col-position="col-lg-6" label="Tipo de Nota"
+                                    col-label-position="col-lg-2" onchange="tipoNotaCreditoIdOnChange()" enable="@Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Comprobante" button-style="List" value="@Model.NotaCreditoDTO.ComprobanteDTO.TipoDocumentoComercialDTO.Abreviatura" col-position="col-lg-2"
+                                     label="Doc. a Modificar" col-label-position="col-lg-2" onclick="comprobanteOnClick" enable="@Model.IsNew"></esd-buttontextbox>
+                  <esd-textbox id="ComprobanteSerie" value="@Model.NotaCreditoDTO.ComprobanteDTO.Serie" col-position="col-lg-1" enable="false"></esd-textbox>
+                  <esd-textbox id="ComprobanteNumero" value="@Model.NotaCreditoDTO.ComprobanteDTO.Numero" col-position="col-lg-2" enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  @{
+                     if (Model.IsNew)
+                     {
+                        <esd-dropdownlist id="Serie" for="@Model.SerieList" col-position="col-lg-1" label="Serie" col-label-position="col-lg-2"
+                                          onchange="serieOnChange();" enable="@Model.IsNew"></esd-dropdownlist>
+                     }
+                     else
+                     {
+                        <esd-textbox for="@Model.NotaCreditoDTO.Serie" col-position="col-lg-1" label="Serie" col-label-position="col-lg-2" enable="false"></esd-textbox>
+                     }
+                  }
+                  <esd-textbox for="@Model.NotaCreditoDTO.Numero" col-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-datetimepicker for="@Model.NotaCreditoDTO.Fecha" col-position="col-lg-2" label="Fecha" col-label-position="col-lg-1"
+                                      enable="@Model.IsNew"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Cotizacion" value="@Model.NotaCreditoDTO.ComprobanteDTO?.CotizacionDTO?.Codigo" col-position="col-lg-2" label="Pedido"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox id="Moneda" value="@Model.NotaCreditoDTO.ComprobanteDTO?.MonedaDTO.Nombre" col-position="col-lg-2" label="Moneda"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-numerictextbox for="@Model.NotaCreditoDTO.ComprobanteDTO.MontoTipoCambio" col-position="col-lg-2" label="T/C" col-label-position="col-lg-2"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.NotaCreditoDTO.ComprobanteDTO.ProveedorDTO.RazonSocial" col-position="col-lg-7" label="Cliente"
+                               col-label-position="col-lg-2" enable="false"></esd-textbox>
+                  <esd-textbox for="@Model.NotaCreditoDTO.ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Doc." col-label-position="col-lg-1"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-buttontextbox id="Vendedor" button-style="List" value="@Model.NotaCreditoDTO.VendedorDTO.ProveedorDTO.RazonSocial" col-position="col-lg-4" label="Vendedor"
+                                     col-label-position="col-lg-2" onclick="vendedorOnClick"></esd-buttontextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textarea for="@Model.NotaCreditoDTO.Observacion" col-position="col-lg-6" label="Sustento" col-label-position="col-lg-2"
+                                max-length="400" rows="2"></esd-textarea>
+               </div>
+            </div>
+            <div class="col-2">
+               <div class="form-group row">
+                  <esd-textbox id="EstadoComprobanteNombre" value="@Model.NotaCreditoDTO.EstadoComprobanteDTO.Nombre" col-position="col-lg-6" label="Estado" col-label-position="col-lg-6"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <br />
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoNeto" value="@Model.NotaCreditoDTO.MontoNeto" col-position="col-lg-6" label="Mto. Neto" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoIgv" value="@Model.NotaCreditoDTO.MontoIgv" col-position="col-lg-6" label="IGV" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="MontoTotal" value="@Model.NotaCreditoDTO.MontoTotal" col-position="col-lg-6" label="Total" col-label-position="col-lg-6"
+                                      enable="false"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.NotaCreditoDTO.NotaCreditoId"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.ComprobanteDTO.ComprobanteId"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.VendedorId"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.ImpuestoTasaId"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.ImpuestoTasaDTO.Tasa"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.EsContingencia"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.TipoNotaCreditoDTO.AfectaAlmacen"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.TipoNotaCreditoDTO.EsIngreso"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.TipoNotaCreditoDTO.PermiteEditItem"></esd-hidden>
+      <esd-hidden for="@Model.NotaCreditoDTO.TipoNotaCreditoDTO.PermiteEditarCantidad"></esd-hidden>
+      <esd-hidden id="EstadoComprobante" value="@Model.NotaCreditoDTO.EstadoComprobanteDTO.Codigo"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#productoTab" role="tab" data-toggle="tab">Productos/Servicios</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="productoTab" role="tabpanel">
+            <div class="form-inline">
+               <div class="col-6">
+                  <esd-menubar id="productoMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="productoMenuBarOnClick"></esd-menubar>
+               </div>
+               <div class="col-6">
+                  <esd-checkbox id="productoVerAnulado" col-position="offset-lg-9 col-lg-3" label="Mostrar Anulados" onchange="productoVerAnuladoOnChange()"
+                                checkbox-style="Default"></esd-checkbox>
+               </div>
+            </div>
+            <div id="productoContainer">
+               <table id="productoGrid"></table>
+               <div id="productoPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="comprobanteListPopup" title="Comprobantes Emitidos" onclick="comprobanteListPopupOnClick" size="Large">
+   <div id="comprobanteListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="vendedorListPopup" title="Clientes" onclick="vendedorListPopupOnClick" size="Large">
+   <div id="vendedorListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="comprobanteProductoListPopup" title="Productos/Servicios" onclick="comprobanteProductoListPopupOnClick" size="Large">
+   <div id="comprobanteProductoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#productoGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarNotaCreditoProducto", "NotaCredito")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "NotaCreditoProductoDTO.NotaCreditoId", value: $('#NotaCreditoId').val() || '0', type: 'int' },
+                     { name: "NotaCreditoProductoDTO.Estado", value: $('#productoVerAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '','', 'Código', 'Producto', '', '', 'U.M.', '', 'Detalle', 'Cant.Doc.','', '', '', 'Cantidad', '', '', 'P.U.',
+            '', '', 'IGV', 'Total','', '', ''],
+         colModel: [
+            { name: 'NotaCreditoProductoId', hidden: true },
+            { name: 'NotaCreditoId', hidden: true },
+            { name: 'ComprobanteProductoId', hidden: true },
+            { name: 'ProductoId', hidden: true },
+            { name: 'Codigo', width: 90 },
+            { name: 'ProductoNombre', width: 350, editable: false },
+            { name: 'TipoProducto', hidden: true },
+            { name: 'UnidadMedidaId', hidden: true },
+            { name: 'UnidadMedidaNombre', width: 80, editable: false },
+            { name: 'TipoIgv', hidden: true },
+            { name: 'Descripcion', width: 220, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 150 } },
+            { name: 'CantidadDocumento', width: 100, align: 'right', formatter: 'number' },
+            { name: 'Cantidad', hidden: true },
+            { name: 'CantidadPresentacion', hidden: true },
+            { name: 'CantidadEquivalente', hidden: true },
+            {
+               name: "CantidadVenta", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(false);
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'ValorUnitarioComprobante', hidden: true },
+            { name: 'PrecioUnitarioComprobante', hidden: true },
+            {
+               name: "PrecioUnitario", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                           calcularTotal(false);
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'MontoBruto', hidden: true },
+            { name: 'MontoNeto', hidden: true },
+            { name: 'MontoIgv', width: 100, align: 'right', formatter: 'number' },
+            {
+               name: "MontoTotal", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).prop('readonly', true);
+                  }
+               }
+            },
+            { name: 'TipoAfectacionIgvId', hidden: true },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#productoPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            if ($('#EstadoComprobante').val() === '@EstadoComprobanteConstante.EMITIDO') {
+               $('#productoMenuBar').appMenu('disabled');
+               return;
+            }
+
+            var editableRows = $('#productoGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            }
+            else
+               $("#productoMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('productoMenuBar', 'productoGrid');
+            $("#productoGrid").appGrid('resizeGrid', 'productoContainer');
+            calcularTotalesGenerales();
+
+            if ($('#EstadoComprobante').val() === '@EstadoComprobanteConstante.EMITIDO') {
+               $('#productoMenuBar').appMenu('disabled');
+            }
+            habilitarCerrado();
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('productoContainer')
+      });
+
+      $('#comprobanteListPopup').setDialog({
+         onShow: function (p) {
+
+            var list = ['@TipoDocumentoComercialConstante.FACTURA', '@TipoDocumentoComercialConstante.BOLETA_VENTA'];
+
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Comprobante")',
+               container: 'comprobanteListPopupContent',
+               viewModel: [
+                  { name: "ComprobanteDTO.TipoDocumentoComercialList", value: list , type: 'listString' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#vendedorListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Vendedor")',
+               container: 'vendedorListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#comprobanteProductoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ComprobanteProductoListPopup", "Comprobante")',
+               container: 'comprobanteProductoListPopupContent',
+               viewModel: [
+                  { name: 'ComprobanteProductoDTO.ComprobanteId', value: $('#ComprobanteId').val(), type: 'int' },
+                  { name: 'ComprobanteProductoDTO.ConSaldoNotaCredito', value: '@EstadoConstante.ACTIVO' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function tipoNotaCreditoIdOnChange() {
+
+      var tipoNotaCreditoId = $("#TipoNotaCreditoId").val();
+      if ($.isNullOrEmpty(tipoNotaCreditoId)) {
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTipoNotaCredito", "NotaCredito")',
+         id: tipoNotaCreditoId,
+         onSuccess: function (response) {
+            if (response.success) {
+               
+               $("#AfectaAlmacen").val(response.data.AfectaAlmacen);
+               $("#EsIngreso").val(response.data.EsIngreso);
+               $("#PermiteEditItem").val(response.data.PermiteEditItem);
+               $("#PermiteEditarCantidad").val(response.data.PermiteEditarCantidad);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function serieOnChange() {
+
+      var documentoComercialSerieId = $("#Serie").val();
+      if ($.isNullOrEmpty(documentoComercialSerieId)) {
+         $('#EsContingencia').val('');
+         return;
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerDocumentoSerie", "NotaCredito")',
+         id: documentoComercialSerieId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $("#EsContingencia").val(response.data.EsContingencia);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function comprobanteOnClick() {
+      $('#comprobanteListPopup').showDialog();
+   };
+   function comprobanteListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      comprobanteSelectedPopup('',row);
+   };
+   function comprobanteSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("VT_comprobante_seleccion_requerida")');
+         return false;
+      }
+
+      $('#ComprobanteId').val(row.ComprobanteId);
+      $('#Comprobante').val(row.TipoDocumentoComercialNombre);
+      $('#ComprobanteSerie').val(row.Serie);
+      $('#ComprobanteNumero').val(row.Numero);
+      $('#Cotizacion').val(row.CotizacionPedido);
+      $('#Moneda').val(row.Moneda);
+      $('#Proveedor').val(row.RazonSocial);
+      $('#NumeroDocumentoIdentidad').val(row.NumeroDocumentoIdentidad);
+      if ($.isNullOrEmpty($('#Vendedor').val())) {
+         $('#VendedorId').val(row.VendedorId);
+         $('#Vendedor').val(row.VendedorNombre);
+      }
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerComprobante", "Comprobante")',
+         id: row.ComprobanteId,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#Tasa').val(response.data.Tasa);
+               listarSerie(response.data.TipoDocumentoComercialId);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+      $('#ImpuestoTasaId').val(row.ImpuestoTasaId);
+
+      $('#comprobanteListPopup').hideDialog();
+   };
+   function listarSerie(tipoDocumentoComercialId) {
+      $(this).postAction({
+         urlAction: '@Url.Action("ListarSerie", "NotaCredito")',
+         viewModel: [
+            { name: "ComprobanteDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+            { name: "ComprobanteDTO.TipoDocumentoComercialId", value: tipoDocumentoComercialId, type: 'int' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#Serie').find('option').remove().end();
+               $("#Serie").addItems(response.data.list);
+               $('#EsContingencia').val(response.data.esContingencia);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   }
+   function vendedorOnClick(key) {
+      $('#vendedorListPopup').showDialog();
+   };
+   function vendedorListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      vendedorSelectedPopup('',row);
+   };
+   function vendedorSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("VT_vendedor_seleccion_requerida")');
+         return false;
+      }
+
+      $('#VendedorId').val(row.VendedorId);
+      $('#Vendedor').val(row.RazonSocial);
+
+      $('#vendedorListPopup').hideDialog();
+   };
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "NotaCredito")'
+            });
+            break;
+
+         case 'cerrar':
+            cerrarNota();
+            break;
+      }
+   };
+   function validarDatos() {
+
+      if (!$('#TipoNotaCreditoId').validateNumeric('@SR.GetString("VT_tipo_nota_credito_seleccion_requerida")'))
+         return false;
+      if (!$('#Serie').validateString('@SR.GetString("GEN_serie_requerida")'))
+         return false;
+      if (!$('#Fecha').validateString('@SR.GetString("GEN_fecha_requerida")'))
+         return false;
+      if (!$('#ComprobanteId').validateNumeric('@SR.GetString("VT_nota_credito_comprobante_seleccion_requerida")'))
+         return false;
+      if (!$('#VendedorId').validateNumeric('@SR.GetString("VT_vendedor_seleccion_requerida")'))
+         return false;
+      if (!$('#Observacion').validateString('@SR.GetString("VT_nota_credito_sustento_requerido")'))
+         return false;
+
+      return true;
+   };
+   function grabarDatosCrearModelo() {
+      var model = [
+         { name: "NotaCreditoDTO.NotaCreditoId", value: $('#NotaCreditoId').val(), type: 'int' },
+         { name: "NotaCreditoDTO.Serie", value: $('#Serie').is('input:text') ? $('#Serie').val() : $("#Serie option:selected").text() },
+         { name: "NotaCreditoDTO.Fecha", value: $('#Fecha').val(), type: 'date' },
+         { name: "NotaCreditoDTO.Numero", value: $('#Numero').val() },
+         { name: "NotaCreditoDTO.TipoNotaCreditoId", value: $('#TipoNotaCreditoId').val(), type: 'int' },
+         { name: "NotaCreditoDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+         { name: "NotaCreditoDTO.VendedorId", value: $('#VendedorId').val(), type: 'int' },
+         { name: "NotaCreditoDTO.ImpuestoTasaId", value: $('#ImpuestoTasaId').val(), type: 'int' },
+         { name: "NotaCreditoDTO.Observacion", value: $('#Observacion').val() },
+         { name: "NotaCreditoDTO.EsContingencia", value: $('#EsContingencia').val() }
+      ];
+
+      return model;
+   }
+   function grabarDatos() {
+
+      if (!validarDatos())
+         return false;
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "NotaCredito")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#NotaCreditoId").val(response.data.Id);
+               $("#TipoNotaCreditoId").prop('disabled', true);
+               if ($('#Serie').is('input:text'))
+                  $('#Serie').prop('readonly', true);
+               else
+                  $('#Serie').prop('disabled', true);
+               $("#Fecha").prop('disabled', true);
+               $("#productoGrid").appGrid('reloadJSON');
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function cerrarNota() {
+
+      if (!validarDatos())
+         return false;
+
+      $(this).saveView({
+         viewModel: grabarDatosCrearModelo(),
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Cerrar", "NotaCredito")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                
+               $("#Numero").val(response.data.Numero);
+               $("#EstadoComprobante").val(response.data.EstadoComprobante);
+               $("#EstadoComprobanteNombre").val(response.data.EstadoComprobanteNombre);
+               $("#productoGrid").appGrid('reloadJSON');
+               habilitarCerrado();
+
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+            }
+
+         }
+      });
+   };
+   function habilitarCerrado() {
+
+      if ($('#EstadoComprobante').val() === '@EstadoComprobanteConstante.CERRADO' ||
+         $('#EstadoComprobante').val() === '@EstadoComprobanteConstante.EMITIDO') {
+
+         $("#menuBar").appMenu('disabledButton', { buttonList: '@MenuItemKey.SAVE,cerrar', disabled: true });
+
+         $('#Vendedor').appButtonTextBox('disabled', { disabled: true });
+         $("#Observacion").prop('readonly', true);
+      }
+   };
+   function productoMenuBarOnClick(key) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarProducto();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarProductoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#productoGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_CantidadVenta').validateNumeric('@SR.GetString("GEN_cantidad_requerida")'))
+               return false;
+            if (!$('#' + rowId + '_PrecioUnitario').validateNumeric('@SR.GetString("VT_precio_unitario_requerido")'))
+               return false;
+
+            calcularTotal(true);
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarNotaCreditoProducto", "NotaCredito")',
+                     viewModel: [
+                        { name: "NotaCreditoProductoDTO.NotaCreditoProductoId", value: row.NotaCreditoProductoId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#productoGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+      }
+      return true;
+   };
+   function mostrarProducto() {
+      $('#comprobanteProductoListPopup').showDialog();
+   };
+   function comprobanteProductoListPopupOnClick() {
+      var list = $('#bandejaPopupGrid').appGrid('getSelectedRowIdList');
+
+      if (list.length === 0) {
+         msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("VT_comprobante_producto_multiple_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      for (i in list) {
+         var row = $('#bandejaPopupGrid').appGrid('getRow', list[i]);
+         selectedList.push(row.ComprobanteProductoId);
+      }
+
+      grabarNotaCreditoProducto(selectedList);
+   };
+   function comprobanteProductoSelectedPopup(sourceId, row) {
+
+      if ($.isEmpty(row)) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_comprobante_producto_seleccion_requerida")');
+         return false;
+      }
+
+      var selectedList = [];
+      selectedList.push(row.ComprobanteProductoId);
+
+      grabarNotaCreditoProducto(selectedList);
+
+   };
+   function grabarNotaCreditoProducto(list) {
+
+      $(this).saveView({
+         urlAction: '@Url.Action("AgregarComprobanteProducto", "NotaCredito")',
+         viewModel: [
+            { name: "NotaCreditoProductoDTO.NotaCreditoId", value: $('#NotaCreditoId').val(), type: 'int' },
+            { name: "NotaCreditoProductoDTO.NotaCreditoDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+            { name: "NotaCreditoProductoDTO.ComprobanteProductoIdList", value: list, type: 'listInt' }
+         ],
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#comprobanteProductoListPopup').hideDialog();
+               $("#productoGrid").appGrid('reloadJSON');
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+               $("#productoMenuBar").appMenu('saveMenu');
+            }
+         }
+      });
+   };
+   function permiteCantidadFraccion(cantidad, row, rowId) {
+
+      var integerPart = parseInt(cantidad);
+      var fracPart = (cantidad % 1);
+
+      if (row.UsarIncrementoFraccion === '@SiNoConstante.S') {
+
+         if(integerPart > 0 && fracPart !=0){
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("VT_cantidad_ingreso_no_decimal")');
+            $('#' + rowId + '_PrecioUnitario').val(row.PrecioUnitarioLista);
+            return false;
+         }
+      }
+
+      return true;
+   };
+   function calcularPrecioUnitario(cantidad,row,rowId){
+
+      if (row.UsarIncrementoFraccion == '@SiNoConstante.S'){
+
+         if ($('#IgnorarIncrementoFraccion').val() === '@SiNoConstante.S')
+            return;
+
+         var fracPart = (cantidad % 1);
+         if(fracPart != 0){
+
+            var puLista = parseFloatEx(row.PrecioUnitarioLista);
+
+            var porcentajeFraccionPU = parseFloatEx($('#PorcentajeFraccionPU').val());
+            var puFinal = puLista + roundEx(puLista * roundEx(porcentajeFraccionPU / 100, 4), 1);
+
+            $('#' + rowId + '_PrecioUnitario').val(puFinal);
+         }
+      } 
+   };
+   function calcularTotal(grabar) {
+
+      var row = $('#productoGrid').appGrid('getSelectedRow');
+      var rowId = $('#productoGrid').appGrid('getSelectedRowId');
+
+      var cantidad = parseFloatEx($('#' + rowId + '_CantidadVenta').val()) || 0;
+      var cantidadEquivalente = parseFloatEx(row.CantidadEquivalente);
+      if (cantidadEquivalente > 0)
+         cantidad = cantidad * cantidadEquivalente;
+
+      if (!permiteCantidadFraccion(cantidad, row, rowId))
+         return;
+
+      calcularPrecioUnitario(cantidad, row, rowId);
+
+      $(this).postAction({
+         viewModel: [
+            { name: "NotaCreditoProductoDTO.NotaCreditoProductoId", value: row.NotaCreditoProductoId, type: 'int' },
+            { name: "NotaCreditoProductoDTO.ComprobanteProductoId", value: row.ComprobanteProductoId, type: 'int' },
+            { name: "NotaCreditoProductoDTO.Cantidad", value: cantidad, type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.PrecioUnitario", value: $('#' + rowId + '_PrecioUnitario').val(), type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.Cantidad", value: cantidad, type: 'decimal' },
+            { name: "CalculadorVentaItemDTO.TipoIgv", value: row.TipoIgv },
+            { name: "CalculadorVentaItemDTO.ImpuestoTasa", value: $('#Tasa').val(), type: 'decimal' }
+         ],
+         urlAction: '@Url.Action("VerificarSaldoCalcularMontos", "NotaCredito")',
+         onSuccess: function (response) {
+            if (response.success) {
+
+               $('#productoGrid').jqGrid('setCell', rowId, 'Cantidad', cantidad);
+               if (cantidadEquivalente > 0)
+                  $('#productoGrid').jqGrid('setCell', rowId, 'CantidadPresentacion', parseFloatEx($('#' + rowId + '_CantidadVenta').val()));
+
+               $('#productoGrid').jqGrid('setCell', rowId, 'ValorUnitario', response.data.ValorUnitario);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoBruto', response.data.MontoBruto);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoNeto', response.data.MontoNeto);
+               $('#productoGrid').jqGrid('setCell', rowId, 'MontoIgv', response.data.MontoImpuesto);
+               $('#' + rowId + '_MontoTotal').val(response.data.MontoTotal);
+
+               if (grabar)
+                  grabarProducto(rowId);
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function editarProductoInGrid() {
+      var rowId = $("#productoGrid").appGrid("getSelectedRowId");
+      var row = $("#productoGrid").appGrid("getSelectedRow");
+      $('#productoGrid').jqGrid('editRow', rowId);
+
+      if ($('#PermiteEditItem').val() === '@SiNoConstante.N') {
+         $('#' + rowId + '_CantidadVenta').prop('readonly', true);
+         $('#' + rowId + '_PrecioUnitario').prop('readonly', true);
+      }
+      else {
+         habilitarSiEsProducto(rowId, row.TipoProducto);
+      }
+
+      $("#productoMenuBar").appMenu('saveMenu');
+   };
+   function habilitarSiEsProducto(rowId, tipoProducto) {
+
+      if ($("#PermiteEditarCantidad").val() === '@SiNoConstante.N') {
+         $('#' + rowId + '_CantidadVenta').prop('readonly', true);
+         $('#' + rowId + '_PrecioUnitario').prop('readonly', false);
+      } else {
+         if (tipoProducto === '@TipoProductoConstante.PRODUCTO')
+            $('#' + rowId + '_PrecioUnitario').prop('readonly', true);
+         else
+            $('#' + rowId + '_PrecioUnitario').prop('readonly', false);
+      }
+   };
+   function grabarProducto(rowId) {
+      $("#productoGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+         var row = $("#productoGrid").appGrid('getSelectedRow');
+
+         setModifiedDTO(row);
+         $(this).saveView({
+            urlAction: '@Url.Action("GrabarNotaCreditoProducto", "NotaCredito")',
+            viewModel: [
+               { name: "NotaCreditoProductoDTO.NotaCreditoProductoId", value: row.NotaCreditoProductoId, type: 'int' },
+               { name: "NotaCreditoProductoDTO.NotaCreditoId", value: row.NotaCreditoId, type: 'int' },
+               { name: "NotaCreditoProductoDTO.ComprobanteProductoId", value: row.ComprobanteProductoId, type: 'int' },
+               { name: "NotaCreditoProductoDTO.ProductoId", value: row.ProductoId, type: 'int' },
+               { name: "NotaCreditoProductoDTO.Descripcion", value: row.Descripcion },
+               { name: "NotaCreditoProductoDTO.Cantidad", value: row.Cantidad, type: 'decimal' },
+               { name: "NotaCreditoProductoDTO.PrecioUnitario", value: row.PrecioUnitario, type: 'decimal' },
+               { name: "NotaCreditoProductoDTO.MontoBruto", value: row.MontoBruto, type: 'decimal' },
+               { name: "NotaCreditoProductoDTO.MontoNeto", value: row.MontoNeto, type: 'decimal' },
+               { name: "NotaCreditoProductoDTO.MontoIgv", value: row.MontoIgv, type: 'decimal' },
+               { name: "NotaCreditoProductoDTO.MontoTotal", value: row.MontoTotal, type: 'decimal' },
+               { name: "NotaCreditoProductoDTO.TipoAfectacionIgvId", value: row.TipoAfectacionIgvId, type: 'int' },
+               { name: "NotaCreditoProductoDTO.DTOState", value: row.DTOState, type: 'int' }
+            ],
+            onSuccess: function (response) {
+               if (response.success) {
+                  $("#productoGrid").appGrid('reloadJSON');
+                  msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               } else {
+                  msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                  $("#productoMenuBar").appMenu('saveMenu');
+               }
+            }
+         });
+      }});
+   };
+   function calcularTotalesGenerales()
+   {
+
+      $(this).getAction({
+         urlAction: '@Url.Action("ObtenerTotales", "NotaCredito")',
+         id: $('#NotaCreditoId').val() || 0,
+         onSuccess: function (response) {
+            if (response.success) {
+               $('#MontoBruto').val(numeral(response.data.MontoBruto).format('0,0.00'));
+               $('#MontoNeto').val(numeral(response.data.MontoNeto).format('0,0.00'));
+               $('#MontoIgv').val(numeral(response.data.MontoIgv).format('0,0.00'));
+               $('#MontoTotal').val(numeral(response.data.MontoTotal).format('0,0.00'));
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+         }
+      });
+   };
+   function productoVerAnuladoOnChange() {
+      $("#productoGrid").appGrid('reloadJSON');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#NotaCreditoId").validateNumeric()) {
+         $("#menuBar").appMenu('disabledButton', { buttonList: 'emitir', disabled: true });
+         $('#' + key).appMenu('disabled');
+      }
+      else {
+         if ($('#PermiteEditItem').val() === '@SiNoConstante.N') {
+            $('#' + key).appMenu('disabled');
+            return;
+         }
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+      }
+   };
+</script>

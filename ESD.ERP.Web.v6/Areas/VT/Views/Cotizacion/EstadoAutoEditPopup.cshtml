@@ -1,0 +1,104 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@model ESD.ERP.Web.Areas.VT.Models.CotizacionViewModel
+<div id="mp-edit-panel">
+   <div class="card-body">
+      <div class="form-inline">
+         <div class="col-6">
+            <esd-button content="Actualizar" button-style="Info" size="Small" onclick="mp_actualizarOnClick();"></esd-button>
+         </div>
+         <div class="col-6 form-inline justify-content-end">
+            <esd-button id="aplicarButton" content="Aplicar Autorizadas" button-style="Success" size="Small" class="mr-sm-1" 
+                        onclick="mp_aplicarOnClick();" in-modal="true" enable="false"></esd-button>
+            <esd-button id="cancelButton" content="Cancelar Pendientes" button-style="Warning" size="Small" class="mr-sm-1" 
+                        onclick="mp_cancelarPendientesOnClick();" in-modal="true" enable="false"></esd-button>
+         </div>
+      </div>
+      <div class="form-group row">
+         <br />
+      </div>
+      <div id="bandejaPopupContainer">
+         <table id="bandejaPopupGrid"></table>
+      </div>
+   </div>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarCotizacionAutorizacion", "Cotizacion")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "CotizacionAutorizacionDTO.CotizacionId", value: $('#CotizacionId').val(), type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','Autorizacion a Solicitar','','Usuario', 'Fecha','','Estado',],
+         colModel: [
+            { name: 'CotizacionAutorizacionId', hidden: true },
+            { name: 'TipoAutorizacionId', hidden: true },
+            { name: 'TipoAutorizacion', hidden: true },
+            { name: 'TipoAutorizacionNombre', width: 200 },
+            { name: 'UsuarioId', hidden: true },
+            { name: 'UsuarioNombre', width: 200 },
+            { name: 'FechaAutorizacion', width: 100, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: 'EstadoAprobacion', hidden: true },
+            { name: 'EstadoAprobacionNombre', width: 200 }
+         ],
+         gridComplete: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+
+            var data = $('#bandejaPopupGrid').appGrid('getData');
+
+            var totalPendientes = 0;
+            var totalAutorizadas = 0;
+            data.forEach(function (item) {
+               if (item.EstadoAprobacion === '@EstadoAprobacionConstante.PENDIENTE_APROBACION')
+                  totalPendientes++;
+               else
+                  totalAutorizadas++;
+            });
+            $("#mp-cancelButton").prop('disabled', true);
+            $("#mp-aplicarButton").prop('disabled', true);
+
+            if (totalPendientes > 0)
+               $("#mp-cancelButton").prop('disabled', false);
+            if (totalAutorizadas > 0)
+               $("#mp-aplicarButton").prop('disabled', false);
+
+         },
+         height: 100
+      });
+   });
+   function mp_actualizarOnClick() {
+      $("#bandejaPopupGrid").appGrid('reloadJSON');
+   };
+   function mp_tieneAprobacionesPendientes() {
+      $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+
+      var data = $('#bandejaPopupGrid').appGrid('getData');
+
+      var total = data.length;
+      var totalPendientes = 0;
+      data.forEach(function (item) {
+         if (item.EstadoAprobacion === '@EstadoAprobacionConstante.PENDIENTE_APROBACION')
+            totalPendientes++;
+      });
+
+      if (total === 0)
+         return false;
+
+      if (totalPendientes === 0)
+         return false;
+
+      if (totalPendientes === total)
+         return false;
+
+      return true;
+   };
+</script>

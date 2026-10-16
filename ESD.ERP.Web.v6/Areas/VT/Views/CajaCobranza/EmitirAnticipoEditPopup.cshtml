@@ -1,0 +1,26 @@
+﻿@model ESD.ERP.Web.Areas.VT.Models.CajaCobranzaViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="MedioPagoId" for="@Model.MedioPagoList" col-position="col-lg-6" label="Medio de Pago"
+                                    col-label-position="col-lg-3" enable="false" in-modal="true"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="Monto" value="@Model.AnticipoClienteDTO.Monto" col-position="col-lg-6" label="Total" col-label-position="col-lg-3"
+                                      enable="false" in-modal="true"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <label class="offset-1 col-form-label">Seleccione el Tipo de Documento a Emitir</label>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoDocumentoComercialId" for="@Model.TipoDocumentoComercialList" col-position="col-lg-6" label="Tipo de Documento"
+                                    col-label-position="col-lg-3" enable="false" in-modal="true"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>

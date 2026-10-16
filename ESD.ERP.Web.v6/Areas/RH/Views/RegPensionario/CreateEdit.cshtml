@@ -1,0 +1,456 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.RegPensionarioViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-masktextbox for="@Model.RegimenPensionarioDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                                   mask="99"></esd-masktextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.RegimenPensionarioDTO.Nombre" col-position="col-lg-6" label="Nombre" col-label-position="col-lg-2"
+                               max-length="100"></esd-textbox>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.RegimenPensionarioDTO.RegimenPensionarioId"></esd-hidden>
+      <esd-hidden id="TipoEsquemaPensionList" value="@Model.TipoEsquemaPensionString"></esd-hidden>
+      <esd-hidden id="TipoAporteComisionList" value="@Model.TipoAporteComisionString"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#esquemaTab" role="tab" data-toggle="tab">Tipo de Comisión</a>
+         </li>
+         <li class="nav-item">
+            <a class="nav-link" href="#comisionTab" role="tab" data-toggle="tab">Aportes y Comisiones</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="esquemaTab" role="tabpanel">
+            <div>
+               <esd-menubar id="esquemaMenuBar" size="Small" menu-style="NewDeleteAndSaveCancel" onclick="esquemaMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+         <div class="tab-pane" id="comisionTab" role="tabpanel">
+            <nav class="navbar bg-white">
+               <div class="col-12">
+                  <div class="form-group row">
+                     <esd-dropdownlist id="RegimenPensionarioEsquemaId" for="@Model.RegimenPensionarioEsquemaList" col-position="col-lg-4" label="Tipo de Comision"
+                                       col-label-position="col-lg-2" onchange="regimenPensionarioEsquemaIdOnChange()"></esd-dropdownlist>
+                  </div>
+               </div>
+            </nav>
+            <div>
+               <esd-menubar id="comisionMenuBar" size="Small" menu-style="NewEditAndSaveCancel" onclick="comisionMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="comisionContainer">
+               <table id="comisionGrid"></table>
+               <div id="comisionPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarRegimenPensionarioEsquema", "RegPensionario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "RegimenPensionarioEsquemaDTO.RegimenPensionarioId", value: $('#RegimenPensionarioId').val(), type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '','Tipo de Esquema','',''],
+         colModel: [
+            { name: 'RegimenPensionarioEsquemaId', hidden: true },
+            { name: 'RegimenPensionarioId', hidden: true },
+            {
+               name: 'TipoEsquemaPensionId', width: 350, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#TipoEsquemaPensionList').val()
+               },
+               editrules: { required: true }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows == 0)
+               editCustomGridMenuBar('esquemaMenuBar', 'bandejaGrid');
+            else
+               $("#esquemaMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('esquemaMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+      $("#comisionGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarRegimenPensionarioComision", "RegPensionario")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "RegimenPensionarioComisionDTO.RegimenPensionarioEsquemaId", value: $('#RegimenPensionarioEsquemaId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', 'Aporte/Comisión', '%', 'Fecha Inicio', 'Fecha Fin','',''],
+         colModel: [
+            { name: 'RegimenPensionarioComisionId', hidden: true },
+            { name: 'RegimenPensionarioEsquemaId', hidden: true },
+            {
+               name: 'TipoAporteComisionId', width: 350, editable: true, edittype: 'select', formatter: 'select', sortable: false,
+               editoptions: {
+                  class: 'form-control-sm',
+                  value: $('#TipoAporteComisionList').val()
+               },
+               editrules: { required: true }
+            },
+            {
+               name: "Porcentaje", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 9,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                  }
+               }
+            },
+            {
+               name: "FechaAlta", width: 110, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            {
+               name: "FechaBaja", width: 110, align: 'right', editable: true, sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT',
+               editoptions:
+               {
+                  class: 'form-control-sm',
+                  dataInit: function(elem) {
+                     $(elem).inputmask({
+                        alias: 'datetime',
+                        inputFormat: '@JavaScriptConstant.DATE_FORMAT.ToLower()',
+                        clearIncomplete: true
+                     });
+                  }
+               }
+            },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#comisionPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#comisionGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('comisionMenuBar', 'comisionGrid');
+
+               var row = $('#comisionGrid').appGrid('getSelectedRow');
+               if (!$.isNullOrEmpty(row.FechaBaja))
+                  $("#comisionMenuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.EDIT', disabled: true });
+            }
+            else
+               $("#comisionMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('comisionMenuBar', 'comisionGrid');
+            $("#comisionGrid").appGrid('resizeGrid', 'comisionContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('comisionContainer')
+      });
+
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+         var targetId = e.target.hash;
+         switch (targetId) {
+            case '#comisionTab':
+               $('#comisionGrid').appGrid('resizeGrid', 'comisionContainer');
+               $('#comisionGrid').jqGrid('setGridHeight', calculateGridHeight('comisionContainer'));
+               break;
+         }
+      })
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "RegPensionario")'
+            });
+            break;
+
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "RegimenPensionarioDTO.RegimenPensionarioId", value: $('#RegimenPensionarioId').val(), type: 'int' },
+            { name: "RegimenPensionarioDTO.Codigo", value: $('#Codigo').val() },
+            { name: "RegimenPensionarioDTO.Nombre", value: $('#Nombre').val() }
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "RegPensionario")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#RegimenPensionarioId").val(response.data.Id);
+               $("#bandejaGrid").appGrid('reloadJSON');
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+   function esquemaMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               RegimenPensionarioEsquemaId: 0,
+               RegimenPensionarioId: $('#RegimenPensionarioId').val(),
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#bandejaGrid").appGrid('addRow', initdata);
+            $("#esquemaMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarConceptoInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+            $("#bandejaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarRegimenPensionarioEsquema", "RegPensionario")',
+                  viewModel: [
+                     { name: "RegimenPensionarioEsquemaDTO.RegimenPensionarioEsquemaId", value: row.RegimenPensionarioEsquemaId, type: 'int' },
+                     { name: "RegimenPensionarioEsquemaDTO.RegimenPensionarioId", value: row.RegimenPensionarioId, type: 'int' },
+                     { name: "RegimenPensionarioEsquemaDTO.TipoEsquemaPensionId", value: row.TipoEsquemaPensionId, type: 'int' },
+                     { name: "RegimenPensionarioEsquemaDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $(this).getAction({
+                           urlAction: '@Url.Action("ListarEsquema", "RegPensionario")',
+                           id: row.RegimenPensionarioId,
+                           onSuccess: function (response) {
+                              if (response.success) {
+                                 $('#RegimenPensionarioEsquemaId').find('option').remove().end();
+                                 $("#RegimenPensionarioEsquemaId").addItems(response.data);
+                              } else {
+                                 msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                              }
+                           }
+                        });
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#esquemaMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarRegimenPensionarioEsquema", "RegPensionario")',
+                     viewModel: [
+                        { name: "RegimenPensionarioEsquemaDTO.RegimenPensionarioEsquemaId", value: row.RegimenPensionarioEsquemaId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editarConceptoInGrid() {
+      var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+      $('#bandejaGrid').jqGrid('editRow', rowId);
+
+      $("#esquemaMenuBar").appMenu('saveMenu');
+   };
+   function regimenPensionarioEsquemaIdOnChange() {
+      $("#comisionGrid").appGrid('reloadJSON');
+   }
+   function comisionMenuBarOnClick(key) {
+
+      var row = $('#comisionGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+
+            if (!$('#RegimenPensionarioEsquemaId').validateNumeric('@SR.GetString("RH_regimen_pensionario_comision_seleccion_requerida")'))
+               return;
+
+            var initdata = {
+               RegimenPensionarioComisionId: 0,
+               RegimenPensionarioEsquemaId: $('#RegimenPensionarioEsquemaId').val(),
+               Porcentaje: 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#comisionGrid").appGrid('addRow', initdata);
+            $("#comisionMenuBar").appMenu('saveMenu');
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarComisionInGrid();
+            var rowId = $("#comisionGrid").appGrid("getSelectedRowId");
+            $('#' + rowId + '_TipoAporteComisionId').prop('disabled', true);
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#comisionGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#comisionGrid").appGrid("getSelectedRowId");
+
+            if (!$('#' + rowId + '_FechaAlta').validateString('@SR.GetString("GEN_fecha_inicio_requerida")'))
+               return false;
+
+            $("#comisionGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#comisionGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarRegimenPensionarioComision", "RegPensionario")',
+                  viewModel: [
+                     { name: "RegimenPensionarioComisionDTO.RegimenPensionarioComisionId", value: row.RegimenPensionarioComisionId, type: 'int' },
+                     { name: "RegimenPensionarioComisionDTO.RegimenPensionarioEsquemaId", value: $('#RegimenPensionarioEsquemaId').val(), type: 'int' },
+                     { name: "RegimenPensionarioComisionDTO.TipoAporteComisionId", value: row.TipoAporteComisionId, type: 'int' },
+                     { name: "RegimenPensionarioComisionDTO.Porcentaje", value: row.Porcentaje, type: 'decimal' },
+                     { name: "RegimenPensionarioComisionDTO.FechaAlta", value: row.FechaAlta, type: 'date' },
+                     { name: "RegimenPensionarioComisionDTO.FechaBaja", value: row.FechaBaja, type: 'date' },
+                     { name: "RegimenPensionarioComisionDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#comisionGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#comisionMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+      }
+      return true;
+   };
+   function editarComisionInGrid() {
+      var rowId = $("#comisionGrid").appGrid("getSelectedRowId");
+      $('#comisionGrid').jqGrid('editRow', rowId);
+
+      $("#comisionMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+      if (!$("#RegimenPensionarioId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

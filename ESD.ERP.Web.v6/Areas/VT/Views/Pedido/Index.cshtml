@@ -1,0 +1,415 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.PedidoViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-textbox id="Codigo" col-position="col-lg-2" label="Código" col-label-position="col-lg-2" max-length="7"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="NumeroDocumentoIdentidad" col-position="col-lg-2" label="#Documento" col-label-position="col-lg-2" max-length="35"></esd-textbox>
+                  <esd-textbox id="RazonSocial" col-position="col-lg-6" label="Razon Social" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.Vendedor" col-position="col-lg-6" label="Vendedor" col-label-position="col-lg-2" max-length="150"></esd-textbox>
+                  <esd-dropdownlist id="EstadoCotizacionId" for="@Model.EstadoCotizacionList" col-position="col-lg-2" label="Estado" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-datetimepicker id="FechaDesde" col-position="col-lg-2" label="Desde" col-label-position="col-lg-2"></esd-datetimepicker>
+                  <esd-datetimepicker id="FechaHasta" col-position="col-lg-2" label="Hasta" col-label-position="col-lg-2"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-hidden for="@Model.FileId"></esd-hidden>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<esd-dialog id="saldoListPopup" title="Lista de Precios" onclick="catalogoListPopupOnClick" size="Large">
+   <div id="saldoListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="impresionPopup" title="Imprimir" onclick="impresionPopupClickOk" size="Large">
+   <div id="impresionPopupContent">
+      <textarea class="form-control" id="printTextArea" readonly="readonly" cols="144" rows="25"></textarea>
+   </div>
+</esd-dialog>
+<esd-dialog id="cambiarEstadoEditPopup" title="Cambiar Estado ..." onclick="cambiarEstadoEditPopupOnClick">
+   <div id="cambiarEstadoEditPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="vistaPreviaEditPopup" title="Vista Previa" onclick="vistaPreviaEditPopupOnClick">
+    <div id="vistaPreviaEditPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "Pedido")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "CotizacionDTO.Codigo", value: $('#Codigo').val() },
+                     { name: "CotizacionDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
+                     { name: "CotizacionDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
+                     { name: "CotizacionDTO.VendedorDTO.ProveedorDTO.RazonSocial", value: $('#Vendedor').val() },
+                     { name: "CotizacionDTO.EstadoCotizacionId", value: $('#EstadoCotizacionId').val() ||0, type:'int' },
+                     { name: "CotizacionDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
+                     { name: "CotizacionDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
+                  ]
+               ));
+            }
+         },
+            colNames: ['', 'Código', '', 'Fecha', 'Cliente', '#Doc', 'Vendedor', 'Mon.', 'Anticipo', 'Total', '', 'Estado', 'Producción', ''],
+         colModel: [
+            { name: 'CotizacionId', hidden: true },
+            { name: "Codigo", width: 80 },
+            { name: "ListaPrecioId", hidden: true},
+            { name: "Fecha", width: 70, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "RazonSocial", width: 300 },
+            { name: "NumeroDocumentoIdentidad", width: 100 },
+            { name: "VendedorNombre", width: 250 },
+            { name: "Moneda", width: 50 },
+            { name: "MontoAnticipo", width: 100, align: 'right', formatter: 'number', sorttype: 'number' },
+            { name: "MontoTotal", width: 100, align: 'right', formatter: 'number', sorttype: 'number' },
+            { name: 'EstadoCotizacion', hidden: true },
+            { name: "EstadoCotizacionNombre", width: 200 },
+            { name: "EnviadoProduccion", width: 80, align: 'center' },
+            { name: 'Estado', hidden: true },
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'consulta', disabled: false });
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if (row.Estado !== '@EstadoConstante.ACTIVO')
+               return;
+
+            if (row.EstadoCotizacion === '@EstadoCotizacionConstante.PEDIDO' ||
+               row.EstadoCotizacion === '@EstadoCotizacionConstante.FACTURADO_PARCIAL') {
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'cambiar_estado', disabled: false });
+
+               if (row.EstadoCotizacion === '@EstadoCotizacionConstante.PEDIDO')
+                  $("#menuBar").appMenu('disabledButton', { buttonId: 'cambiar_cotizacion', disabled: false });
+            }
+
+             if (row.EnviadoProduccion === '@SiNoConstante.S') {
+                 $("#menuBar").appMenu('disabledButton', { buttonId: 'cambiar_cotizacion', disabled: true });
+             }
+
+            if (parseFloatEx(row.MontoAnticipo) > 0)
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'reporte_anticipo', disabled: false });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+            $("#menuBar").appMenu('disabledButton', { buttonId: 'consulta', disabled: false });
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#saldoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("SaldoListPopup", "ListaPrecio")',
+               container: 'saldoListPopupContent',
+               selModel: [
+                  { name: "Moneda", value: '@MonedaConstante.SOLES' },
+                  { name: "ListaPrecioId", type: 'firstElement' },
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#cambiarEstadoEditPopup').setDialog({
+         onShow: function (p) {
+
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+            $(this).getView({
+               urlAction: '@Url.Action("CambiarEstadoEditPopup", "Pedido")',
+               container: 'cambiarEstadoEditPopupContent',
+               viewModel: [
+                  { name: 'CotizacionDTO.CotizacionId', value: row.CotizacionId, type: 'int' }
+               ],
+               showLoading: false,
+               hideLoading: false
+            });
+         }
+      });
+      $('#vistaPreviaEditPopup').setDialog({
+          onShow: function (p) {
+             var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+             $(this).getView({
+                urlAction: '@Url.Action("VistaPreviaEditPopup", "Cotizacion")',
+                container: 'vistaPreviaEditPopupContent',
+                showLoading: false,
+                hideLoading: false
+             });
+          }
+       });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+       $('#Vendedor').val('@Model.Vendedor');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#Codigo, #NumeroDocumentoIdentidad, #RazonSocial,#Vendedor,#EstadoCotizacionId").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+      $("#Codigo").keydown(function (e) {
+         if (event.which == 13) {
+            if (!$.isNullOrEmpty($("#Codigo").val())) {
+               var valueFmt = padLeadingZeros($("#Codigo").val(), 7)
+               $("#Codigo").val(valueFmt);
+            }
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaDesde").keydown(function (e) {
+         if (event.which == 13) {
+            $("#FechaHasta").val($("#FechaDesde").val());
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+      $("#FechaHasta").keydown(function (e) {
+         if (event.which == 13) {
+            event.preventDefault();
+            $('#bandejaGrid').appGrid('reloadJSON');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW','consulta'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case '@MenuItemKey.EDIT':
+            $(this).getView({
+               editAction: '@ViewModelEditAction.Edit',
+               buttonId: key,
+               viewModel: [
+                  { name: "CotizacionDTO.CotizacionId", value: row.CotizacionId, type: 'int' }
+               ],
+               urlAction: '@Url.Action("Editar", "Pedido")'
+            });
+            break;
+
+         case 'cambiar_cotizacion':
+            cambiarEstadoCotizacion(row);
+            break;
+
+         case '@MenuItemKey.PREVIEW':
+              $('#vistaPreviaEditPopup').showDialog();
+            break;
+
+         case 'reporte_anticipo':
+            generarFormato(key, '@DataFormatoImpresionConstante.PEDIDO_ADELANTO', row.CotizacionId);
+            break;
+
+         case 'consulta':
+            $('#saldoListPopup').showDialog();
+            break;
+
+         case 'cambiar_cotizacion':
+            cambiarEstado(row);
+            break;
+
+         case 'cambiar_estado':
+            $('#cambiarEstadoEditPopup').showDialog();
+            break;
+      }
+      return true;
+   };
+
+   function vistaPreviaEditPopupOnClick() {
+
+       var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+       var reportParam = "cotizacionId=" + row.CotizacionId + "&incluyePeso="
+          + ($('#mp-IncluyePesoCheckBox').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N')
+          + "&listaPrecioId=" + row.ListaPrecioId;
+
+       $('#vistaPreviaEditPopup').hideDialog();
+
+       $(this).getReport({
+          urlAction: '@Url.Action("ReportTo", "Pedido")',
+          parameters: reportParam,
+          onFailMessage: '@SR.GetString("GEN_archivo_descarga_invalida")'
+       });
+    };
+
+   function generarFormato(buttonId, key, id){
+
+      var basePrintUrl = '@Model.ServidorImpresion';
+      var dataUrl = '@Model.DataUrl';
+
+      if($.isNullOrEmpty(basePrintUrl)){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+         return;
+      }
+
+      $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: true });
+
+      $("#FileId").val('');
+      try{
+         $.ajax({
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            url: basePrintUrl + 'PrintDocument?key=' + key + '&id=' + id + '&dataUrl=' + dataUrl,
+            processData: false,
+            dataType: "jsonp",
+            jsonp: 'callback',
+            jsonpCallback: 'jsonpCallback',
+            beforeSend: function () {
+               $('#impresionPopup').showDialog();
+               $('#impresionPopupContent').showLoadingOverlay();
+            },
+            success: function (data) {
+               $('#impresionPopupContent').hideLoadingOverlay();
+
+               if(data === null)
+               {
+                  $('#impresionPopup').hideDialog();
+                  msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_reporte_sin_datos")');
+                  return;
+               }
+
+               $('#printTextArea').val(data[1]);
+               $("#FileId").val(data[0]);
+               $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+               $('#impresionPopup').hideDialog();
+               $('#impresionPopupContent').hideLoadingOverlay();
+               $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+
+               switch(jqXHR.status){
+                  case 404:
+                     msgAlert(msgAlertTypeConstant.ERROR, '@SR.GetString("AJX_servicio_impresion_no_activo")');
+                     break;
+                  default:
+                     msgAlert(msgAlertTypeConstant.ERROR, textStatus);
+                     break;
+               }
+            }
+         });
+      } catch(exception){
+         $('#impresionPopup').hideDialog();
+         $('#impresionPopupContent').hideLoadingOverlay();
+         $("#menuBar").appMenu('disabledButton', { buttonId: buttonId, disabled: false });
+      }
+   };
+   function impresionPopupClickOk(){
+
+      $('#impresionPopup').modal('hide');
+
+      var basePrintUrl = '@Model.ServidorImpresion';
+      if($.isNullOrEmpty(basePrintUrl)){
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("AJX_servicio_impresion_no_configurado")');
+         return;
+      }
+      var id = $("#FileId").val();
+
+      try{
+         $.ajax({
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            url: basePrintUrl + 'PrintFile?id=' + id,
+            processData: false,
+            dataType: "jsonp",
+            jsonp: 'callback',
+            jsonpCallback: 'jsonpCallback',
+            success: function (data) {
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+               msgAlert(msgAlertTypeConstant.ERROR, errorThrown);
+            }
+         });
+      } catch(exception){
+         throw exception;
+      }
+   };
+   function cambiarEstadoCotizacion(row) {
+
+      $(this).saveView({
+         viewModel: [
+            { name: "CotizacionDTO.CotizacionId", value: row.CotizacionId, type: 'int' }
+         ],
+         buttonId: 'cambiar_cotizacion',
+         urlAction: '@Url.Action("CambiarEstadoCotizacion", "Pedido")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#bandejaGrid').appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+
+         }
+      });
+   };
+   function cambiarEstadoEditPopupOnClick() {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      $(this).saveView({
+         viewModel: [
+            { name: "CotizacionDTO.CotizacionId", value: row.CotizacionId, type: 'int' },
+            { name: "CotizacionDTO.EstadoCotizacionId", value: $('#mp-EstadoCotizacionId').val(), type: 'int' } 
+         ],
+         buttonId: 'cambiar_cotizacion',
+         urlAction: '@Url.Action("CambiarEstado", "Pedido")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+               $('#bandejaGrid').appGrid('reloadJSON');
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+
+         }
+      });
+
+      $('#cambiarEstadoEditPopup').hideDialog();
+   }
+</script>

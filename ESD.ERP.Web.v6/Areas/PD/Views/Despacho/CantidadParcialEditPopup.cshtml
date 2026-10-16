@@ -1,0 +1,289 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.PD.Models.DespachoViewModel
+<div id="@Model.ModalEditId">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.ComprobanteProductoDTO.ProductoDTO.Codigo" col-position="col-lg-2" label="Codigo"
+                               col-label-position="col-lg-2" enable="false" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox id="Proveedor" value="@Model.ComprobanteProductoDTO.ProductoDTO.Descripcion" col-position="col-lg-7" label="Producto"
+                               col-label-position="col-lg-2" enable="false" in-modal="true"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-numerictextbox id="Cantidad" value="@Model.ComprobanteProductoDTO.Cantidad" col-position="col-lg-2" label="Cantidad" col-label-position="col-lg-2"
+                                      enable="false" in-modal="true"></esd-numerictextbox>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="mp_detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#mp_entregaTab" role="tab" data-toggle="tab">Entregas</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="mp_entregaTab" role="tabpanel">
+            <div class="form-inline">
+               <div class="col-6">
+                  <esd-menubar id="mp_entregaMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="mp_entregaMenuBarOnClick"></esd-menubar>
+               </div>
+            </div>
+            <div id="parcialPopupContainer">
+               <table id="parcialPopupGrid"></table>
+               <div id="parcialPopupPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <esd-hidden for="@Model.ComprobanteProductoDTO.ComprobanteProductoId" in-modal="true"></esd-hidden>
+   <esd-hidden id="ReloadGrid" in-modal="true"></esd-hidden>
+</div>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#parcialPopupGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarComprobanteProductoEntrega", "Despacho")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "ComprobanteProductoEntregaDTO.ComprobanteProductoId", value: $('#mp-ComprobanteProductoId').val() || '0', type: 'int' },
+                     { name: "ComprobanteProductoDTO.Estado", value: '@EstadoConstante.ACTIVO' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', 'Cantidad','', 'Atendido Por', '','Fecha','Entregado a','Observación','', ''],
+         colModel: [
+            { name: 'ComprobanteProductoEntregaId', hidden: true },
+            {
+               name: "Cantidad", width: 90, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 19,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                     $(elem).keydown(function (e) {
+                        if (e.keyCode == 13) {
+                           e.preventDefault();
+                        }
+                     });
+                  }
+               }
+            },
+            { name: 'PersonalId', hidden: true },
+            { name: "PersonalNombre", width: 200 },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Personal" id="mp_' + options.rowId + '_personalButton" disabled onclick="mp_mostrarPersonal(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            { name: "Fecha", width: 100, align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_TIME_FORMAT' },
+            { name: "EntregaDespacho", width: 150, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm app-text-transform', maxlength: 100 } },
+            { name: "Observacion", width: 220, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm app-text-transform', maxlength: 200 } },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#parcialPopupPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#parcialPopupGrid').appGrid('editableRowsCount');
+            if (editableRows === 0) {
+               editCustomGridMenuBar('mp_entregaMenuBar', 'parcialPopupGrid');
+            }
+            else
+               $("#mp_entregaMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            mp_editCustomGridMenuBar('mp_entregaMenuBar', 'parcialPopupGrid');
+            $("#parcialPopupGrid").appGrid('resizeGrid', 'parcialPopupContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: 250
+      });
+   });
+   function mp_entregaMenuBarOnClick(key) {
+
+      var row = $('#parcialPopupGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            var initdata = {
+               ComprobanteProductoEntregaId: 0,
+               Cantidad: 0,
+               '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
+               Estado: '@EstadoConstante.ACTIVO'
+            };
+            $("#parcialPopupGrid").appGrid('addRow', initdata);
+            $("#mp_entregaMenuBar").appMenu('saveMenu');
+
+            var rowId = $("#parcialPopupGrid").appGrid("getSelectedRowId");
+            $('#mp_' + rowId + '_personalButton').prop('disabled', false);
+            break;
+
+         case '@MenuItemKey.EDIT':
+            mp_editarEntregaInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#parcialPopupGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#parcialPopupGrid").appGrid("getSelectedRowId");
+            var row = $('#parcialPopupGrid').appGrid('getSelectedRow');
+
+            if ($.isNullOrEmpty(row.PersonalId)) {
+               msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("PD_personal_atendido_por_seleccion_requerida")');
+               return false;
+            }
+
+            if (!mp_validarSubTotales(rowId))
+               return false;
+
+            $("#parcialPopupGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               var row = $("#parcialPopupGrid").appGrid('getSelectedRow');
+
+               var popupParams = getPopupParam('@Model.ModalEditId')
+
+               setModifiedDTO(row);
+               $('#' + popupParams.dialogId).saveView({
+                  urlAction: '@Url.Action("GrabarComprobanteProductoEntrega", "Despacho")',
+                  viewModel: [
+                     { name: "ComprobanteProductoEntregaDTO.ComprobanteProductoEntregaId", value: row.ComprobanteProductoEntregaId, type: 'int' },
+                     { name: "ComprobanteProductoEntregaDTO.ComprobanteProductoId", value: $('#mp-ComprobanteProductoId').val(), type: 'int' },
+                     { name: "ComprobanteProductoEntregaDTO.ComprobanteProductoDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' },
+                     { name: "ComprobanteProductoEntregaDTO.Cantidad", value: row.Cantidad, type: 'decimal' },
+                     { name: "ComprobanteProductoEntregaDTO.EntregaDespacho", value: row.EntregaDespacho },
+                     { name: "ComprobanteProductoEntregaDTO.Observacion", value: row.Observacion },
+                     { name: "ComprobanteProductoEntregaDTO.PersonalId", value: row.PersonalId, type: 'int' },
+                     { name: "ComprobanteProductoEntregaDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#parcialPopupGrid").appGrid('reloadJSON');
+                        $('#mp-ReloadGrid').val('@SiNoConstante.S');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+                        $('#' + popupParams.dialogId).getAction({
+                           urlAction: '@Url.Action("ObtenerComprobanteEstadoDespacho", "Despacho")',
+                           id: $('#ComprobanteId').val(),
+                           onSuccess: function (response) {
+                              if (response.success) {
+
+                                 $('#EstadoDespacho').val(response.data.EstadoDespacho);
+                                 $('#ObservacionDespacho').val(response.data.ObservacionDespacho);
+
+                                 if ($('#EstadoDespacho').val() === '@EstadoDespachoConstante.ATENDIDO') {
+                                    $("#menuBar").appMenu('disabledButton', { buttonId: 'cerrar', disabled: true });
+                                    $('#productoMenuBar').appMenu('disabled');
+                                 }
+                              } else {
+                                 msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                              }
+                           }
+                        });
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#mp_entregaMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarComprobanteProductoEntrega", "Despacho")',
+                     viewModel: [
+                        { name: "ComprobanteProductoEntregaDTO.ComprobanteProductoEntregaId", value: row.ComprobanteProductoEntregaId, type: 'int' },
+                        { name: "ComprobanteProductoEntregaDTO.ComprobanteProductoId", value: $('#mp-ComprobanteProductoId').val(), type: 'int' },
+                        { name: "ComprobanteProductoEntregaDTO.ComprobanteProductoDTO.ComprobanteId", value: $('#ComprobanteId').val(), type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#parcialPopupGrid').appGrid('reloadJSON');
+                           $('#mp-ReloadGrid').val('@SiNoConstante.S');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function mp_validarSubTotales(rowId) {
+      var data = $('#parcialPopupGrid').appGrid('getData');
+      var row = $('#parcialPopupGrid').appGrid('getSelectedRow');
+
+      var cantidad = parseFloatEx($('#' + rowId + '_Cantidad').val()) || 0;
+      var cantidadMaxima = parseFloatEx($('#mp-Cantidad').val());
+      var total = 0;
+
+      data.forEach(function (item) {
+         if (row.ComprobanteProductoEntregaId != item.ComprobanteProductoEntregaId &&
+            item.Estado != '@EstadoConstante.INACTIVO') {
+            total += parseFloatEx(item.Cantidad);
+         }
+      });
+      total += cantidad;
+
+      if (total > cantidadMaxima) {
+         var msg = '@SR.GetString("PD_comprobante_entrega_cantidad_mayor_al_documento")';
+         msg = msg.replace('{0}', numeral(cantidadMaxima).format('0,0.00'));
+         msgAlert(msgAlertTypeConstant.INFORMATION, msg);
+         return false;
+      }
+
+      return true;
+   };
+   function mp_editarEntregaInGrid() {
+      var rowId = $("#parcialPopupGrid").appGrid("getSelectedRowId");
+      $('#parcialPopupGrid').jqGrid('editRow', rowId);
+
+      $('#mp_' + rowId + '_personalButton').prop('disabled', false);
+      $("#mp_entregaMenuBar").appMenu('saveMenu');
+   };
+   function mp_mostrarPersonal() {
+      $('#personalListPopup3').showDialog();
+   };
+   function mp_editCustomGridMenuBar(key, gridName) {
+      if (!$("#mp-ComprobanteProductoId").validateNumeric()) {
+         $('#' + key).appMenu('disabled');
+      }
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+   };
+</script>

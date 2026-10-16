@@ -1,0 +1,368 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.Core.Service.DTO;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.RH.Models.PlanillaRegulaViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-dropdownlist id="PlanillaId" for="@Model.PlanillaList" col-position="col-lg-4" label="Planilla"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MesId" for="@Model.MesList" col-position="col-lg-2" label="Mes"
+                                    col-label-position="col-lg-2" enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.PlanillaProcesoDTO.ProcesoAnual" col-position="col-lg-1" label="# de Proceso"
+                                      col-label-position="col-lg-1" numeric-type="Integer" enable="false"></esd-numerictextbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="MonedaId" for="@Model.MonedaList" col-position="col-lg-2" label="Moneda" col-label-position="col-lg-2"
+                                    enable="false"></esd-dropdownlist>
+                  <esd-numerictextbox for="@Model.PlanillaProcesoDTO.MontoTipoCambio" col-position="col-lg-1" label="T/C"
+                                      col-label-position="col-lg-1" enable="false"></esd-numerictextbox>
+                  <esd-datetimepicker for="@Model.PlanillaProcesoDTO.FechaDesde" col-position="col-lg-2" label="Fecha Inicio"
+                                      col-label-position="col-lg-1" enable="false"></esd-datetimepicker>
+                  <esd-datetimepicker for="@Model.PlanillaProcesoDTO.FechaHasta" col-position="col-lg-2" label="Fecha Fin"
+                                      col-label-position="col-lg-1" enable="false"></esd-datetimepicker>
+               </div>
+               <div class="form-group row">
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.PlanillaProcesoDTO.PlanillaProcesoId"></esd-hidden>
+   </div>
+   <div>
+      <ul class="nav nav-tabs" role="tablist" id="detailTab">
+         <li class="nav-item">
+            <a class="nav-link active" href="#regulaTab" role="tab" data-toggle="tab">Trabajador y Concepto</a>
+         </li>
+      </ul>
+      <div class="tab-content">
+         <div class="tab-pane active" id="regulaTab" role="tabpanel">
+            <div>
+               <esd-menubar id="regularizacionMenuBar" size="Small" menu-style="CRUDAndSaveCancel" onclick="regularizacionMenuBarOnClick"></esd-menubar>
+            </div>
+            <div id="bandejaContainer">
+               <table id="bandejaGrid"></table>
+               <div id="bandejaPager"></div>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
+<esd-dialog id="personalListPopup" title="Personal" onclick="personalListPopupOnClick" size="Large">
+   <div id="personalListPopupContent"></div>
+</esd-dialog>
+<esd-dialog id="conceptoListPopup" title="Concepto Remunerativo" onclick="conceptoListPopupOnClick" size="Default">
+   <div id="conceptoListPopupContent"></div>
+</esd-dialog>
+<script type="text/javascript">
+
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarRegularizacion", "PlanillaRegula")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "PlanillaProcesoRegularizacionDTO.PlanillaProcesoId", value: $('#PlanillaProcesoId').val()||'0', type:'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['', '', '', 'Apellidos y Nombres','', '','Concepto','', 'Monto', 'Observacion','',''],
+         colModel: [
+            { name: 'PlanillaProcesoRegularizacionId', hidden: true },
+            { name: 'PlanillaProcesoId', hidden: true },
+            { name: 'PersonalId', hidden: true },
+            { name: 'RazonSocial', width: 260, editable: false },
+            {
+               name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.PlanillaProcesoRegularizacionId) && rowObject.PlanillaProcesoRegularizacionId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Trabajador" name="personalButton"' + disabled+' onclick="mostrarPersonal(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            { name: 'ConceptoRemunerativoId', hidden: true },
+            { name: 'ConceptoRemunerativoNombre', width: 200, editable: false },
+            {
+               name: '_selC', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {
+                  var disabled = '';
+                  if (!$.isNullOrEmpty(rowObject.PlanillaProcesoRegularizacionId) && rowObject.PlanillaProcesoRegularizacionId !== 0)
+                     disabled = ' disabled';
+
+                  return '<button class="btn btn-xs btn-outline-secondary" title="Concepto Remunerativo" name="conceptoButton"' + disabled +' onclick="mostrarConcepto(' + options.rowId + ');"><span class=\'fas fa-list\'/></button>';
+               }
+            },
+            {
+               name: "Monto", width: 100, align: 'right', formatter: 'number', editable: true, sortable: false,
+               editoptions: {
+                  maxlength: 9,
+                  class: 'form-control-sm',
+                  dataInit: function (elem) {
+                     $(elem).inputmask('decimal', { digits: 2, allowMinus: false });
+                  }
+               }
+            },
+            { name: 'Observacion', width: 400, editable: true, edittype: 'text', editoptions: { class: 'form-control-sm', maxlength: 200 } },
+            { name: 'Estado', hidden: true },
+            { name: '@AppConstante.DTO_STATE', hidden: true }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+            if (editableRows == 0) {
+               editCustomGridMenuBar('regularizacionMenuBar', 'bandejaGrid');
+            }
+            else
+               $("#regularizacionMenuBar").appMenu('saveMenu');
+         },
+         gridComplete: function () {
+            editCustomGridMenuBar('regularizacionMenuBar', 'bandejaGrid');
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+
+      $('#personalListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "Personal")',
+               container: 'personalListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+      $('#conceptoListPopup').setDialog({
+         onShow: function (p) {
+            $(this).getView({
+               urlAction: '@Url.Action("ListPopup", "ConceptoRemu")',
+               viewModel: [
+                  { name: "ConceptoRemunerativoDTO.EsRegularizacion", value: '@SiNoConstante.S' },
+               ],               
+               container: 'conceptoListPopupContent',
+               showLoading: false,
+               hideLoading: false
+            });
+         },
+         onShown: function () {
+            $("#bandejaPopupGrid").appGrid('resizeGrid', 'bandejaPopupContainer');
+         }
+      });
+   });
+   function menuBarOnClick(key) {
+
+      switch (key) {
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "PlanillaRegula")'
+            });
+            break;
+
+      }
+   };
+   function mostrarPersonal() {
+      $('#personalListPopup').showDialog();
+   };
+   function personalListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      personalSelectedPopup('',row);
+   };
+   function personalSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_personal_seleccion_requerida")');
+         return false;
+      }
+
+      var data = $("#bandejaGrid").appGrid('getData');
+      var selectedData = _.where(data, { PersonalId: parseInt(row.PersonalId)});
+      if (selectedData.length > 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("RH_personal_ya_seleccionado")');
+         return false;
+      }
+
+      var editableRows = $('#bandejaGrid').appGrid('editableRowsCount');
+      if (editableRows == 0) {
+         var initdata = {
+            PlanillaProcesoRegularizacionId: 0,
+            PlanillaProcesoId: $('#PlanillaProcesoId').val(),
+            PersonalId: row.PersonalId,
+            RazonSocial: row.RazonSocial,
+            Monto: 0,
+            '@AppConstante.DTO_STATE': '@(((int) DTOState.Added).ToString())',
+            Estado: '@EstadoConstante.ACTIVO'
+         };
+         $("#bandejaGrid").appGrid('addRow', initdata);
+         $("#regularizacionMenuBar").appMenu('saveMenu');
+      } else {
+         var rowId = $('#bandejaGrid').appGrid('getSelectedRowId');
+
+         $('#bandejaGrid').jqGrid('setCell', rowId, 'PersonalId', row.PersonalId);
+         $('#bandejaGrid').jqGrid('setCell', rowId, 'RazonSocial', row.RazonSocial);
+      }
+
+      $('#personalListPopup').hideDialog();
+   }
+   function mostrarConcepto() {
+      $('#conceptoListPopup').showDialog();
+   };
+   function conceptoListPopupOnClick() {
+
+      var row = $('#bandejaPopupGrid').appGrid('getSelectedRow');
+
+      conceptoRemunerativoSelectedPopup('', row);
+   };
+   function conceptoRemunerativoSelectedPopup(sourceId, row) {
+
+      if($.isEmpty(row)){
+         msgAlert(msgAlertTypeConstant.INFORMATION,'@SR.GetString("RH_concepto_remunerativo_seleccion_requerida")');
+         return false;
+      }
+
+      var rowId = $('#bandejaGrid').appGrid('getSelectedRowId');
+
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'ConceptoRemunerativoId', row.ConceptoRemunerativoId);
+      $('#bandejaGrid').jqGrid('setCell', rowId, 'ConceptoRemunerativoNombre', row.Nombre);
+
+      $('#conceptoListPopup').hideDialog();
+   };
+   function regularizacionMenuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+      var excludeKeys = ['@MenuItemKey.NEW'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+         case '@MenuItemKey.NEW':
+            mostrarPersonal();
+            break;
+
+         case '@MenuItemKey.EDIT':
+            editarRegularizacionInGrid();
+            break;
+
+         case '@MenuItemKey.CANCEL':
+            $("#bandejaGrid").appGrid('reloadJSON');
+            break;
+
+         case '@MenuItemKey.SAVE':
+
+            var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+
+            if ($.isNullOrEmpty(row.RazonSocial)) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("RH_personal_seleccion_requerida")');
+               return false;
+            }
+            if ($.isNullOrEmpty(row.ConceptoRemunerativoNombre)) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("RH_concepto_remunerativo_seleccion_requerida")');
+               return false;
+            }
+            if (!$('#' + rowId + '_Monto').validateNumeric('@SR.GetString("RH_monto_regularizacion_requerido")'))
+               return false;
+            if (!$('#' + rowId + '_Observacion').validateNumeric('@SR.GetString("AS_observacion_requerida")'))
+               return false;
+
+            $("#bandejaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
+               row = $("#bandejaGrid").appGrid('getSelectedRow');
+
+               setModifiedDTO(row);
+               $(this).saveView({
+                  urlAction: '@Url.Action("GrabarRegularizacion", "PlanillaRegula")',
+                  viewModel: [
+                     { name: "PlanillaProcesoRegularizacionDTO.PlanillaProcesoRegularizacionId", value: row.PlanillaProcesoRegularizacionId, type: 'int' },
+                     { name: "PlanillaProcesoRegularizacionDTO.PlanillaProcesoId", value: row.PlanillaProcesoId, type: 'int' },
+                     { name: "PlanillaProcesoRegularizacionDTO.PersonalId", value: row.PersonalId, type: 'int' },
+                     { name: "PlanillaProcesoRegularizacionDTO.ConceptoRemunerativoId", value: row.ConceptoRemunerativoId, type: 'int' },
+                     { name: "PlanillaProcesoRegularizacionDTO.Monto", value: row.Monto, type: 'decimal' },
+                     { name: "PlanillaProcesoRegularizacionDTO.Observacion", value: row.Observacion },
+                     { name: "PlanillaProcesoRegularizacionDTO.DTOState", value: row.DTOState, type: 'int' }
+                  ],
+                  onSuccess: function (response) {
+                     if (response.success) {
+                        $("#bandejaGrid").appGrid('reloadJSON');
+                        msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                     } else {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        $("#regularizacionMenuBar").appMenu('saveMenu');
+                     }
+                  }
+               });
+            }});
+            break;
+
+         case '@MenuItemKey.DELETE':
+
+            $(this).confirm({
+               title: '@SR.GetString("APPMP_anular_titulo")',
+               message: '@SR.GetString("GEN_registro_seleccionado_anular_pregunta")',
+               onConfirm: function () {
+                  $(this).saveView({
+                     urlAction: '@Url.Action("EliminarRegularizacion", "PlanillaRegula")',
+                     viewModel: [
+                        { name: "PlanillaProcesoRegularizacionDTO.PlanillaProcesoRegularizacionId", value: row.PlanillaProcesoRegularizacionId, type: 'int' }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+   function editarRegularizacionInGrid() {
+      var rowId = $("#bandejaGrid").appGrid("getSelectedRowId");
+      $('#bandejaGrid').jqGrid('editRow', rowId);
+
+      $("#regularizacionMenuBar").appMenu('saveMenu');
+   };
+   function editCustomGridMenuBar(key, gridName) {
+
+      if ($('#EstadoPlanillaProceso').val() === '@EstadoPlanillaProcesoConstante.CERRADA') {
+         $('#' + key).appMenu('disabled');
+         return;
+      }
+
+      if (!$("#PlanillaProcesoId").validateNumeric())
+         $('#' + key).appMenu('disabled');
+      else
+         $('#' + key).appMenu('editMenu', { gridName: gridName, isEditableGrid: true });
+
+      $('#' + key).appMenu('disabledButton', { buttonId: 'importar', disabled: false });
+   };
+</script>

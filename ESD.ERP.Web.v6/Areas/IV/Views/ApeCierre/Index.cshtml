@@ -1,0 +1,156 @@
+﻿@using ESD.Core;
+@using ESD.Core.Web;
+@using ESD.Core.Web.JS;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.ApeCierreViewModel
+<esd-menubar id="menuBar" Title="@Model.Title" for="@Model.MenuItemList" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div id="app-search-card" class="card">
+      <div class="card-body">
+         <div class="row">
+            <div id="app-search-input-group" class="col-11">
+               <div class="form-group row">
+                  <esd-dropdownlist id="AlmacenId" for="@Model.AlmacenList" col-position="col-lg-3" label="Almacen" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+            </div>
+            <div class="col-1">
+               <div class="form-group row">
+                  <esd-button id="clearButton" content="Limpiar" button-style="Primary" size="Small" block="true" onclick="clearButtonOnClick()"></esd-button>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div id="bandejaContainer">
+      <table id="bandejaGrid"></table>
+      <div id="bandejaPager"></div>
+   </div>
+</section>
+<script type="text/javascript">
+   $(document).ready(function () {
+
+      $("#bandejaGrid").jqGrid({
+         @GridHelper.DefaultProperties()
+         url: "@Url.Action("ListarBandeja", "ApeCierre")",
+         postData: {
+            jsonModel: function () {
+               return JSON.stringify(modelToObject(
+                  [
+                     { name: "MovimientoAlmacenCierreDTO.AlmacenId", value: $('#AlmacenId').val() || 0, type: 'int' }
+                  ]
+               ));
+            }
+         },
+         colNames: ['','','','Mes', 'Fecha Cierre','', 'Estado'],
+         colModel: [
+            { name: 'MovimientoAlmacenCierreId', hidden: true },
+            { name: "MesContableId", hidden: true },
+            { name: "MesContable", hidden: true },
+            { name: "MesContableNombre", width: 350 },
+            { name: "FechaCierre", width: 100 , align: 'right', sorttype: 'date', datefmt: '@JavaScriptConstant.GRID_DATE_FORMAT' },
+            { name: "EstadoAperturaCierre", hidden: true },
+            { name: "EstadoAperturaCierreNombre", width: 250 }
+         ],
+         pager: "#bandejaPager",
+         onSelectRow: function (rowid) {
+            if (rowid == null || rowid == 0)
+               return;
+
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            var row = $('#bandejaGrid').appGrid('getSelectedRow');
+            if (row.EstadoAperturaCierre === '@EstadoAperturaCierreConstante.APERTURA')
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'cierre', disabled: false });
+
+            if (row.EstadoAperturaCierre !== '@EstadoAperturaCierreConstante.APERTURA')
+               $("#menuBar").appMenu('disabledButton', { buttonId: 'apertura', disabled: false });
+         },
+         gridComplete: function () {
+            $('#menuBar').appMenu('editMenu', { gridName: 'bandejaGrid' });
+            $("#bandejaGrid").appGrid('resizeGrid', 'bandejaContainer');
+         },
+         @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
+         height: calculateGridHeight('bandejaContainer')
+      });
+   });
+   function clearButtonOnClick() {
+      $('#app-search-input-group').find('input:text').val('');
+      $('#AlmacenId').val('');
+      $('#bandejaGrid').appGrid('reloadJSON');
+   }
+   $(function () {
+      $("#AlmacenId").change(function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
+      });
+   });
+   function menuBarOnClick(key) {
+
+      var row = $('#bandejaGrid').appGrid('getSelectedRow');
+
+      var excludeKeys = ['@MenuItemKey.NEW','@MenuItemKey.EXIT'];
+      if(excludeKeys.indexOf(key) == -1){
+         if ($.isEmpty(row)) {
+            msgAlert(msgAlertTypeConstant.INFORMATION, '@SR.GetString("GEN_registro_seleccionado_requerido")');
+            return;
+         }
+      }
+
+      switch (key) {
+
+         case 'apertura':
+            $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            $(this).confirm({
+               title: '@SR.GetString("APP_MP_aperturar_titulo")',
+               message: '@SR.GetString("IV_almacen_saldo_aperturar_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("Aperturar", "ApeCierre")',
+                     viewModel: [
+                        { name: "MovimientoAlmacenCierreDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+                        { name: "MovimientoAlmacenCierreDTO.MesContableId", value: row.MesContableId, type: 'int' },
+                        { name: "MovimientoAlmacenCierreDTO.MesContableDTO.Nombre", value: row.MesContableNombre }
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+
+         case 'cierre':
+            $('#menuBar').appMenu('disabledButton', { buttonId: key, disabled: true });
+            $(this).confirm({
+               title: '@SR.GetString("APP_MP_cerrar_titulo")',
+               message: '@SR.GetString("IV_almacen_saldo_cerrar_pregunta")',
+               onConfirm: function () {
+
+                  $(this).saveView({
+                     urlAction: '@Url.Action("Cerrar", "ApeCierre")',
+                     viewModel: [
+                        { name: "MovimientoAlmacenCierreDTO.AlmacenId", value: $('#AlmacenId').val(), type: 'int' },
+                        { name: "MovimientoAlmacenCierreDTO.MesContableId", value: row.MesContableId, type: 'int' },
+                        { name: "MovimientoAlmacenCierreDTO.MesContableDTO.Nombre", value: row.MesContableNombre}
+                     ],
+                     onSuccess: function (response) {
+                        if (response.success) {
+                           $('#bandejaGrid').appGrid('reloadJSON');
+                           msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+                        } else {
+                           msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+                        }
+                     }
+                  });
+               }
+            });
+            break;
+      }
+      return true;
+   };
+</script>

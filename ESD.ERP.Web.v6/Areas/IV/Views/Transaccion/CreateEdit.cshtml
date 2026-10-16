@@ -1,0 +1,82 @@
+﻿@using ESD.Core.Web;
+@using ESD.ERP.Common;
+@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.IV.Models.TransaccionViewModel
+<esd-menubar id="menuBar" title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
+<section id="app-content" class="content">
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="form-group row">
+                  <esd-textbox for="@Model.TransaccionAlmacenDTO.Codigo" col-position="col-lg-2" label="Codigo" col-label-position="col-lg-2"
+                               enable="false"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-textbox for="@Model.TransaccionAlmacenDTO.Nombre" col-position="col-lg-8" label="Nombre" col-label-position="col-lg-2"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoMovimientoAlmacenId" for="@Model.TipoMovimientoAlmacenList" col-position="col-lg-2" label="Tipo de Movimiento" col-label-position="col-lg-2"
+                                    enable="Model.IsNew"></esd-dropdownlist>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.TransaccionAlmacenDTO.EsCompra" col-position="offset-lg-2 col-lg-2" label="Es Compra"></esd-checkbox>
+               </div>
+               <div class="form-group row">
+                  <esd-dropdownlist id="TipoOperacionId" for="@Model.TipoOperacionList" col-position="col-lg-4" label="Tipo de Operación" col-label-position="col-lg-2"></esd-dropdownlist>
+               </div>
+            </div>
+         </div>
+      </div>
+      <esd-viewmodelstate for="@Model.ViewModelState.Value"></esd-viewmodelstate>
+      <esd-hidden for="@Model.TransaccionAlmacenDTO.TransaccionAlmacenId"></esd-hidden>
+   </div>
+</section>
+<script type="text/javascript">
+   function menuBarOnClick(key) {
+
+      switch (key) {
+         case '@MenuItemKey.SAVE':
+            grabarDatos();
+            break;
+
+         case '@MenuItemKey.EXIT':
+            $(this).getView({
+               urlAction: '@Url.Action("Index", "Transaccion")'
+            });
+            break;
+      }
+   };
+   function grabarDatos() {
+
+      if (!$('#Nombre').validateString('@SR.GetString("GEN_nombre_requerido")'))
+         return false;
+
+      $(this).saveView({
+         viewModel: [
+            { name: "TransaccionAlmacenDTO.TransaccionAlmacenId", value: $('#TransaccionAlmacenId').val(), type: 'int' },
+            { name: "TransaccionAlmacenDTO.Nombre", value: $('#Nombre').val() },
+            { name: "TransaccionAlmacenDTO.TipoMovimientoAlmacenId", value: $('#TipoMovimientoAlmacenId').val(), type: 'int' },
+            { name: "TransaccionAlmacenDTO.EsCompra", value: $('#EsCompra').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' },
+            { name: "TransaccionAlmacenDTO.TipoOperacionId", value: $('#TipoOperacionId').val(), type: 'int'}
+         ],
+         buttonId: '@MenuItemKey.SAVE',
+         urlAction: '@Url.Action("Grabar", "Transaccion")',
+         onSuccess: function (response) {
+
+            if (response.success) {
+               msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
+
+               $("#TransaccionAlmacenId").val(response.data.Id);
+               $("#Codigo").val(response.data.Codigo);
+               $('#TipoMovimientoAlmacenId').prop('readonly', true);
+               ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
+
+            } else {
+               msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
+            }
+            $("#menuBar").appMenu('disabledButton', { buttonId: '@MenuItemKey.SAVE', disabled: false });
+         }
+      });
+   };
+</script>

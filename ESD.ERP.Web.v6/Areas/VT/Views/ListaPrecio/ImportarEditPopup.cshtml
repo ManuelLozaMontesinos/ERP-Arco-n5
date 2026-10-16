@@ -1,0 +1,105 @@
+﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.VT.Models.ListaPrecioViewModel
+<div id="mp-edit-panel">
+   <div class="card">
+      <h6 class="card-header">Estructura del Archivo</h6>
+      <div class="card-body">
+         <div class="table-responsive erp-table-responsive">
+            <table class="table table-sm">
+               <thead>
+                  <tr>
+                     <th scope="col" width="30%">Columna</th>
+                     <th scope="col">Descripción</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  @foreach (var item in Model.DataImportItemDTOList)
+                  {
+                     <tr>
+                        <td class="font-weight-bold">@item.Columna</td>
+                        <td>@item.Descripcion</td>
+                     </tr>
+                  }
+               </tbody>
+            </table>
+         </div>
+      </div>
+   </div>
+   <div class="card">
+      <div class="card-body">
+         <div class="row">
+            <div class="col-12">
+               <div class="row">
+                  <div class="col-9">
+                     <div id="mp-container" class="form-group row">
+                        <esd-textbox id="mp-ArchivoExcel" col-position="col-lg-10" label="Archivo"
+                                     col-label-position="col-lg-2" enable="false"></esd-textbox>
+                     </div>
+                  </div>
+                  <div class="col-3">
+                     <div class="form-group">
+                        <esd-button id="mp-ArchivoExcelButton" content="Seleccionar" button-style="Primary" size="Small"></esd-button>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+<style type="text/css">
+   .erp-table-responsive {
+      height: 200px;
+   }
+
+   thead tr:nth-child(1) th {
+      background: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+   }
+</style>
+<script type="text/javascript">
+   $(document).ready(function () {
+      $('#mp-ArchivoExcel').val('');
+      $('.progress-bar').css('width', '0%')
+
+      $(this).uploadFile({
+         browseButton: 'mp-ArchivoExcelButton',
+         container: 'mp-container',
+         urlAction: '@Url.Action("SubirListaPrecioGeneral", "ListaPrecio")',
+         title: "Archivo (XLS)",
+         extensions: "xls,xlsx",
+         parameters: { listaPrecioId: $('#ListaPrecioId').val() },
+         onInit: function (uploader) {
+            $("#importarEditPopup-OkButton").off('click');
+            $("#importarEditPopup-OkButton").click(function () {
+               if (!$('#mp-ArchivoExcel').validateString('@SR.GetString("GEN_archivo_seleccion_requerida")'))
+                  return false;
+               $('#importarEditPopupContent').showLoadingOverlay();
+               uploader.start();
+
+            });
+         },
+         onFilesAdded: function (files) {
+            files.forEach(function (file) {
+               $('#mp-ArchivoExcel').val(file.name);
+            });
+         },
+         onCompleted: function (info) {
+            var response = JSON.parse(info.response);
+
+            if (!$.isNullOrEmpty(response.data)) {
+               $('#logTextArea').val('');
+               $('#logTextArea').val(response.data);
+               $('#logPopup').showDialog();
+            } else
+               msgAlert(msgAlertTypeConstant.SUCCESS, '@SR.GetString("GEN_proceso_concluido")');
+
+            $("#productoGrid").appGrid('reloadJSON');
+            $('#importarEditPopupContent').hideLoadingOverlay();
+            $('#importarEditPopup').hideDialog();
+         },
+      });
+   });
+</script>
