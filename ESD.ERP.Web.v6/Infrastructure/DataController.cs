@@ -160,19 +160,75 @@ namespace ESD.ERP.Web.Infrastructure
 
          return rolMenuDTOList ?? new List<RolMenuDTO>();
       }
+      private bool EsPermisoCoincidente(RolMenuDTO p, string controllerName, string areaName = null, string menuUrl = null)
+      {
+         if (p?.MenuDTO == null)
+            return false;
+
+         string menuDtoUrl = p.MenuDTO.Url ?? string.Empty;
+         string menuDtoArea = p.MenuDTO.Area ?? string.Empty;
+
+         var menuDtoSegments = menuDtoUrl.Trim().Trim('/').Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+         // 1. If explicit menuUrl was passed, check direct URL or segment match
+         if (!string.IsNullOrWhiteSpace(menuUrl))
+         {
+            string cleanMenuUrl = menuUrl.Trim().Trim('/').ToLower();
+            string cleanDtoUrl = menuDtoUrl.Trim().Trim('/').ToLower();
+
+            if (cleanMenuUrl == cleanDtoUrl)
+               return true;
+
+            var inputSegments = cleanMenuUrl.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var seg in inputSegments)
+            {
+               if (seg.Equals("index", StringComparison.OrdinalIgnoreCase) || 
+                   seg.Equals("listar", StringComparison.OrdinalIgnoreCase) || 
+                   seg.Equals("crear", StringComparison.OrdinalIgnoreCase) || 
+                   seg.Equals("editar", StringComparison.OrdinalIgnoreCase)) 
+                  continue;
+
+               if (menuDtoSegments.Any(ms => ms.Equals(seg, StringComparison.OrdinalIgnoreCase)))
+                  return true;
+            }
+         }
+
+         // 2. Match by controllerName
+         if (!string.IsNullOrWhiteSpace(controllerName))
+         {
+            string cleanController = controllerName.EndsWith("Controller", StringComparison.OrdinalIgnoreCase) 
+               ? controllerName.Substring(0, controllerName.Length - 10) 
+               : controllerName;
+
+            bool controllerMatches = menuDtoSegments.Any(s => s.Equals(cleanController, StringComparison.OrdinalIgnoreCase));
+            if (controllerMatches)
+            {
+               if (!string.IsNullOrWhiteSpace(areaName) && !string.IsNullOrWhiteSpace(menuDtoArea))
+               {
+                  return areaName.Equals(menuDtoArea, StringComparison.OrdinalIgnoreCase);
+               }
+               return true;
+            }
+         }
+
+         return false;
+      }
       public bool TienePermisoEscritura(string menuUrl = null)
       {
          if (EsAdministrador())
             return true;
 
-         string controllerName;
-         if (string.IsNullOrEmpty(menuUrl))
+         string controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
+         string areaName = ControllerContext.RouteData?.Values["area"]?.ToString() ?? string.Empty;
+
+         if (string.IsNullOrEmpty(controllerName) && !string.IsNullOrEmpty(menuUrl))
          {
-            controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
-         }
-         else
-         {
-            controllerName = menuUrl.TrimStart('/').Split('/')[0];
+            var parts = menuUrl.Trim().Trim('/').Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 0)
+            {
+               controllerName = parts.Length > 1 ? parts[1] : parts[0];
+               if (parts.Length > 1) areaName = parts[0];
+            }
          }
 
          if (string.IsNullOrEmpty(controllerName))
@@ -190,13 +246,9 @@ namespace ESD.ERP.Web.Infrastructure
          if (permisos == null || permisos.Count == 0)
             return false;
 
-         string target = controllerName.Trim().ToLower();
-
          return permisos.Any(p =>
             p.Escritura == SiNoConstante.S &&
-            p.MenuDTO != null &&
-            !string.IsNullOrEmpty(p.MenuDTO.Url) &&
-            p.MenuDTO.Url.TrimStart('/').Split('/')[0].Trim().ToLower() == target
+            EsPermisoCoincidente(p, controllerName, areaName, menuUrl)
          );
       }
       public bool TienePermisoLectura(string menuUrl = null)
@@ -204,14 +256,17 @@ namespace ESD.ERP.Web.Infrastructure
          if (EsAdministrador())
             return true;
 
-         string controllerName;
-         if (string.IsNullOrEmpty(menuUrl))
+         string controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
+         string areaName = ControllerContext.RouteData?.Values["area"]?.ToString() ?? string.Empty;
+
+         if (string.IsNullOrEmpty(controllerName) && !string.IsNullOrEmpty(menuUrl))
          {
-            controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
-         }
-         else
-         {
-            controllerName = menuUrl.TrimStart('/').Split('/')[0];
+            var parts = menuUrl.Trim().Trim('/').Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 0)
+            {
+               controllerName = parts.Length > 1 ? parts[1] : parts[0];
+               if (parts.Length > 1) areaName = parts[0];
+            }
          }
 
          if (string.IsNullOrEmpty(controllerName))
@@ -229,13 +284,9 @@ namespace ESD.ERP.Web.Infrastructure
          if (permisos == null || permisos.Count == 0)
             return false;
 
-         string target = controllerName.Trim().ToLower();
-
          return permisos.Any(p =>
             p.Lectura == SiNoConstante.S &&
-            p.MenuDTO != null &&
-            !string.IsNullOrEmpty(p.MenuDTO.Url) &&
-            p.MenuDTO.Url.TrimStart('/').Split('/')[0].Trim().ToLower() == target
+            EsPermisoCoincidente(p, controllerName, areaName, menuUrl)
          );
       }
       public override void OnActionExecuting(ActionExecutingContext context)
@@ -263,6 +314,10 @@ namespace ESD.ERP.Web.Infrastructure
          {
             context.HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
             context.HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
+            if (context.HttpContext.Response != null && !context.HttpContext.Response.HasStarted)
+            {
+               context.HttpContext.Response.Headers["X-App-SoloLectura"] = tieneEscritura ? "false" : "true";
+            }
          }
 
          // Universal backend write protection for read-only roles
@@ -347,9 +402,9 @@ namespace ESD.ERP.Web.Infrastructure
          {
             context.HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
             context.HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
-            if (!tieneEscritura)
+            if (context.HttpContext.Response != null && !context.HttpContext.Response.HasStarted)
             {
-               context.HttpContext.Response.Headers["X-App-SoloLectura"] = "true";
+               context.HttpContext.Response.Headers["X-App-SoloLectura"] = tieneEscritura ? "false" : "true";
             }
          }
 
@@ -377,9 +432,9 @@ namespace ESD.ERP.Web.Infrastructure
          {
             HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
             HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
-            if (!tieneEscritura)
+            if (HttpContext.Response != null && !HttpContext.Response.HasStarted)
             {
-               HttpContext.Response.Headers["X-App-SoloLectura"] = "true";
+               HttpContext.Response.Headers["X-App-SoloLectura"] = tieneEscritura ? "false" : "true";
             }
          }
 
@@ -423,9 +478,9 @@ namespace ESD.ERP.Web.Infrastructure
          {
             HttpContext.Items["TienePermisoEscritura"] = tieneEscritura;
             HttpContext.Items["EsSoloLectura"] = !tieneEscritura;
-            if (!tieneEscritura)
+            if (HttpContext.Response != null && !HttpContext.Response.HasStarted)
             {
-               HttpContext.Response.Headers["X-App-SoloLectura"] = "true";
+               HttpContext.Response.Headers["X-App-SoloLectura"] = tieneEscritura ? "false" : "true";
             }
          }
 

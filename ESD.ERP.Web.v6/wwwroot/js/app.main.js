@@ -1,4 +1,4 @@
-function getBaseUrl() {
+﻿function getBaseUrl() {
    var url = window.location.href;
    var lastIndex = url.lastIndexOf("/");
    var result = url.substring(0, lastIndex)
@@ -181,6 +181,150 @@ function padLeadingZeros(num, size) {
  * --------------------------------------------
  */
 (function ($) {
+   window.aplicarPermisosVista = function (c, settings, jqXHR) {
+   if (!c || c.length === 0) {
+      c = $('#workspace');
+   }
+   settings = settings || {};
+
+   var headerSoloLectura = jqXHR && typeof jqXHR.getResponseHeader === 'function' ? jqXHR.getResponseHeader('X-App-SoloLectura') : null;
+   var isSoloLectura = false;
+   if (headerSoloLectura !== null && headerSoloLectura !== undefined && headerSoloLectura !== '') {
+      isSoloLectura = (headerSoloLectura === 'true');
+      window.esSoloLectura = isSoloLectura;
+   } else if (typeof window.esSoloLectura === 'boolean') {
+      isSoloLectura = window.esSoloLectura;
+   } else {
+      isSoloLectura = false;
+      window.esSoloLectura = false;
+   }
+   $('#__esSoloLectura').val(isSoloLectura ? 'true' : 'false');
+
+   var hasBandejaMarkers = c.find('#bandejaGrid, #bandejaContainer, #app-search-card').length > 0;
+   var isExplicitDetail = (settings.editAction === 'Edit' || settings.editAction === 'New');
+   var isBandejaView = hasBandejaMarkers && !isExplicitDetail;
+
+   if (isSoloLectura) {
+      if (isBandejaView) {
+         if (window.removeBreadcrumbSubAction) { window.removeBreadcrumbSubAction(); }
+
+         // In Bandeja: Hide write actions from main menubar
+         c.find('[id$="_opt_new"], [id$="_opt_delete"], [id$="_opt_save"], [id$="_opt_cancel"], [id$="_opt_soli_auto"], [id$="_opt_gen_pedido"], [id$="_opt_gen_compro"], [id$="_opt_cambiar_cotizacion"], [id$="_opt_cambiar_estado"], [id$="_opt_enviar_prod"], [id$="_opt_cerrar"], [id$="_opt_extornar"]').hide();
+
+         // Change 'Editar' to 'Consultar' with search icon
+         c.find('#menuBar_opt_edit, [id$="_opt_edit"]').each(function() {
+            var btn = $(this);
+            btn.find('span').attr('class', 'fas fa-search');
+            var textNode = btn.contents().filter(function() { return this.nodeType === 3; });
+            if (textNode.length > 0) {
+               textNode[0].nodeValue = ' Consultar';
+            } else {
+               btn.html('<span class="fas fa-search"></span> Consultar');
+            }
+         });
+
+         // In Bandeja / Index / Search views: Filters, search fields and buttons must remain 100% active and operative!
+         c.find('#app-search-card input, #app-search-card select, #app-search-card textarea, #app-search-input-group input, #app-search-input-group select, #app-search-input-group textarea').prop('disabled', false);
+         c.find('#app-search-card button, #app-search-card .input-group-append, #app-search-card .input-group-append *, #app-search-card .app-button-textbox button, #app-search-card .btn, #clearButton, [id$="clearButton"], [id$="searchButton"]').prop('disabled', false).show();
+      } else {
+         // Detail / Form / Consultation view
+         if (window.appendNavbarBreadcrumb) { window.appendNavbarBreadcrumb('Consultar'); }
+
+         // Hide write buttons in main menubar
+         c.find('#menuBar [id$="_opt_new"], #menuBar [id$="_opt_delete"], #menuBar [id$="_opt_save"], #menuBar [id$="_opt_cancel"], #menuBar [id$="_opt_soli_auto"], #menuBar [id$="_opt_gen_pedido"], #menuBar [id$="_opt_gen_compro"], #menuBar [id$="_opt_cambiar_cotizacion"], #menuBar [id$="_opt_cambiar_estado"], #menuBar [id$="_opt_enviar_prod"], #menuBar [id$="_opt_cerrar"], #menuBar [id$="_opt_extornar"]').hide();
+
+         // Hide secondary menubars (detail grids like productoMenuBar, entregaMenuBar)
+         c.find('.esd-menubar:not(#menuBar)').hide();
+
+         var bloquearCamposLectura = function () {
+            var target = c.find('#app-content').length > 0 ? c.find('#app-content') : c;
+
+            // Disable all textboxes, selects, textareas outside search card
+            target.find('input:not([type=hidden]), select, textarea')
+               .not('#app-search-card *, #app-search-input-group *')
+               .prop('disabled', true);
+
+            // Disable checkboxes and radios and prevent clicking on labels/wrappers
+            target.find('input[type=checkbox], input[type=radio]')
+               .not('#app-search-card *, #app-search-input-group *')
+               .prop('disabled', true);
+            target.find('.icheck-primary, .custom-control, .custom-checkbox, .custom-radio')
+               .not('#app-search-card *, #app-search-input-group *')
+               .css('pointer-events', 'none');
+
+            // Disable Select2 dropdowns
+            target.find('select.select2, select[data-select2-id]').prop('disabled', true);
+            target.find('.select2-container')
+               .not('#app-search-card *, #app-search-input-group *')
+               .css('pointer-events', 'none')
+               .addClass('select2-container--disabled');
+
+            // Disable and lock DateTimePicker triggers (calendar icons)
+            target.find('[data-toggle="datetimepicker"], [data-target*="datetimepicker"], .input-group-append:has(.fa-calendar), .input-group-append:has(.fa-calendar-alt), .input-group-append:has([data-toggle="datetimepicker"])')
+               .not('#app-search-card *, #app-search-input-group *')
+               .prop('disabled', true)
+               .css('pointer-events', 'none');
+
+            // Disable and hide custom button-textbox / search popup buttons
+            target.find('.app-button-textbox button, .app-input-group-button, .input-group-append button')
+               .not('#app-search-card *, #app-search-input-group *')
+               .prop('disabled', true)
+               .css('pointer-events', 'none')
+               .hide();
+
+            // Disable action buttons inside form (assign, directions, etc.)
+            target.find('button.btn')
+               .not('#clearButton, [id$="clearButton"], [id$="searchButton"], #menuBar *, #app-search-card *, #app-search-input-group *')
+               .prop('disabled', true)
+               .css('pointer-events', 'none');
+
+            // Disable detail jqgrid inputs and interactions
+            target.find('.ui-jqgrid-bdiv input, .ui-jqgrid-bdiv select, .ui-jqgrid-bdiv textarea, .ui-jqgrid-bdiv button')
+               .prop('disabled', true);
+         };
+
+         bloquearCamposLectura();
+         setTimeout(bloquearCamposLectura, 150);
+      }
+   } else {
+      // WRITE MODE (Escritura):
+      window.esSoloLectura = false;
+
+      if (isBandejaView) {
+         if (window.removeBreadcrumbSubAction) { window.removeBreadcrumbSubAction(); }
+
+         // Ensure write buttons in menubar are shown
+         c.find('[id$="_opt_new"], [id$="_opt_delete"], [id$="_opt_save"], [id$="_opt_cancel"], [id$="_opt_soli_auto"], [id$="_opt_gen_pedido"], [id$="_opt_gen_compro"], [id$="_opt_cambiar_cotizacion"], [id$="_opt_cambiar_estado"], [id$="_opt_enviar_prod"], [id$="_opt_cerrar"], [id$="_opt_extornar"]').show();
+
+         // Restore 'Editar' text if previously changed to 'Consultar'
+         c.find('#menuBar_opt_edit, [id$="_opt_edit"]').each(function() {
+            var btn = $(this);
+            var textNode = btn.contents().filter(function() { return this.nodeType === 3; });
+            if (textNode.length > 0 && textNode[0].nodeValue.trim() === 'Consultar') {
+               textNode[0].nodeValue = ' Editar';
+               btn.find('span').attr('class', 'fas fa-pencil-alt');
+            }
+         });
+      } else {
+         // Form / Detail Edit or Create view in Write Mode
+         if (settings.editAction === 'Edit' && window.appendNavbarBreadcrumb) {
+            window.appendNavbarBreadcrumb('Editar');
+         } else if (settings.editAction === 'New' && window.appendNavbarBreadcrumb) {
+            window.appendNavbarBreadcrumb('Nuevo');
+         }
+
+         // Show secondary menubars (e.g. productoMenuBar, entregaMenuBar)
+         c.find('.esd-menubar').show();
+
+         // Ensure pointer-events are unblocked
+         c.find('[data-toggle="datetimepicker"], [data-target*="datetimepicker"], .input-group-append, .select2-container, .icheck-primary, .custom-control').css('pointer-events', '');
+
+         // Ensure lookup buttons are visible
+         c.find('.input-group-append button, .app-button-textbox button').show();
+      }
+   }
+};
+
    $.fn.getView = function (options) {
       var defaults = {
          rowId: 0,
@@ -273,47 +417,9 @@ function padLeadingZeros(num, size) {
                }
                }
 
-               var headerSoloLectura = jqXHR ? jqXHR.getResponseHeader('X-App-SoloLectura') : null;
-               var isSoloLectura = false;
-               if (headerSoloLectura !== null) {
-                  isSoloLectura = (headerSoloLectura === 'true');
-                  window.esSoloLectura = isSoloLectura;
-               } else {
-                  isSoloLectura = (window.esSoloLectura === true || $('#__esSoloLectura').val() === 'true');
-               }
-
-               if (isSoloLectura) {
-                  var c = !$.isNullOrEmpty(settings.container) ? $("#" + settings.container) : $('#workspace');
-
-                  c.find('#menuBar_opt_edit, [id$="_opt_edit"]').each(function() {
-                     var btn = $(this);
-                     btn.find('span').attr('class', 'fas fa-search');
-                     var textNode = btn.contents().filter(function() { return this.nodeType === 3; });
-                     if (textNode.length > 0) {
-                        textNode[0].nodeValue = ' Consultar';
-                     } else {
-                        btn.html('<span class="fas fa-search"></span> Consultar');
-                     }
-                  });
-
-                  c.find('[id$="_opt_new"], [id$="_opt_delete"], [id$="_opt_save"], [id$="_opt_cancel"], [id$="_opt_soli_auto"], [id$="_opt_gen_pedido"], [id$="_opt_gen_compro"], [id$="_opt_cambiar_cotizacion"], [id$="_opt_cambiar_estado"], [id$="_opt_enviar_prod"], [id$="_opt_cerrar"], [id$="_opt_extornar"]').hide();
-
-                  var isBandejaView = c.find('#bandejaGrid, #bandejaContainer, #app-search-card, #app-search-input-group, .ui-jqgrid').length > 0;
-
-                  if (isBandejaView) {
-                     if (window.removeBreadcrumbSubAction) { window.removeBreadcrumbSubAction(); }
-                     // In Bandeja / Index / Search views: Filters, search fields and buttons must remain 100% active and operative!
-                     c.find('#app-search-card input, #app-search-card select, #app-search-card textarea, #app-search-input-group input, #app-search-input-group select, #app-search-input-group textarea').prop('disabled', false);
-                     c.find('#app-search-card button, #app-search-card .input-group-append, #app-search-card .input-group-append *, #app-search-card .app-button-textbox button, #app-search-card .btn, #clearButton, [id$="clearButton"], [id$="searchButton"]').prop('disabled', false).show();
-                  } else if (settings.editAction === 'Edit' || c.find('#app-content').length > 0) {
-                     if (settings.editAction === 'Edit' && window.appendNavbarBreadcrumb) { window.appendNavbarBreadcrumb('Consultar'); }
-                     // In detail/consult views (CreateEdit): form fields are locked for consultation
-                     c.find('#app-content input:not([type=hidden]), #app-content select, #app-content textarea').not('#app-search-card *, #app-search-input-group *').prop('disabled', true);
-                     c.find('.input-group-append button, .app-button-textbox button').not('#app-search-card *, #app-search-input-group *').prop('disabled', true).hide();
-                     c.find('.esd-menubar:not(#menuBar)').hide();
-                  }
-               } else {
-                  window.esSoloLectura = false;
+               var c = !$.isNullOrEmpty(settings.container) ? $("#" + settings.container) : $('#workspace');
+               if (typeof window.aplicarPermisosVista === 'function') {
+                  window.aplicarPermisosVista(c, settings, jqXHR);
                }
 
                if (typeof settings.onSuccess === 'function')
@@ -904,47 +1010,9 @@ function createSelectedItemList(selModel) {
                }
                }
 
-               var headerSoloLectura = jqXHR ? jqXHR.getResponseHeader('X-App-SoloLectura') : null;
-               var isSoloLectura = false;
-               if (headerSoloLectura !== null) {
-                  isSoloLectura = (headerSoloLectura === 'true');
-                  window.esSoloLectura = isSoloLectura;
-               } else {
-                  isSoloLectura = (window.esSoloLectura === true || $('#__esSoloLectura').val() === 'true');
-               }
-
-               if (isSoloLectura) {
-                  var c = !$.isNullOrEmpty(settings.container) ? $("#" + settings.container) : $('#workspace');
-
-                  c.find('#menuBar_opt_edit, [id$="_opt_edit"]').each(function() {
-                     var btn = $(this);
-                     btn.find('span').attr('class', 'fas fa-search');
-                     var textNode = btn.contents().filter(function() { return this.nodeType === 3; });
-                     if (textNode.length > 0) {
-                        textNode[0].nodeValue = ' Consultar';
-                     } else {
-                        btn.html('<span class="fas fa-search"></span> Consultar');
-                     }
-                  });
-
-                  c.find('[id$="_opt_new"], [id$="_opt_delete"], [id$="_opt_save"], [id$="_opt_cancel"], [id$="_opt_soli_auto"], [id$="_opt_gen_pedido"], [id$="_opt_gen_compro"], [id$="_opt_cambiar_cotizacion"], [id$="_opt_cambiar_estado"], [id$="_opt_enviar_prod"], [id$="_opt_cerrar"], [id$="_opt_extornar"]').hide();
-
-                  var isBandejaView = c.find('#bandejaGrid, #bandejaContainer, #app-search-card, #app-search-input-group, .ui-jqgrid').length > 0;
-
-                  if (isBandejaView) {
-                     if (window.removeBreadcrumbSubAction) { window.removeBreadcrumbSubAction(); }
-                     // In Bandeja / Index / Search views: Filters, search fields and buttons must remain 100% active and operative!
-                     c.find('#app-search-card input, #app-search-card select, #app-search-card textarea, #app-search-input-group input, #app-search-input-group select, #app-search-input-group textarea').prop('disabled', false);
-                     c.find('#app-search-card button, #app-search-card .input-group-append, #app-search-card .input-group-append *, #app-search-card .app-button-textbox button, #app-search-card .btn, #clearButton, [id$="clearButton"], [id$="searchButton"]').prop('disabled', false).show();
-                  } else if (settings.editAction === 'Edit' || c.find('#app-content').length > 0) {
-                     if (settings.editAction === 'Edit' && window.appendNavbarBreadcrumb) { window.appendNavbarBreadcrumb('Consultar'); }
-                     // In detail/consult views (CreateEdit): form fields are locked for consultation
-                     c.find('#app-content input:not([type=hidden]), #app-content select, #app-content textarea').not('#app-search-card *, #app-search-input-group *').prop('disabled', true);
-                     c.find('.input-group-append button, .app-button-textbox button').not('#app-search-card *, #app-search-input-group *').prop('disabled', true).hide();
-                     c.find('.esd-menubar:not(#menuBar)').hide();
-                  }
-               } else {
-                  window.esSoloLectura = false;
+               var c = !$.isNullOrEmpty(settings.container) ? $("#" + settings.container) : $('#workspace');
+               if (typeof window.aplicarPermisosVista === 'function') {
+                  window.aplicarPermisosVista(c, settings, jqXHR);
                }
 
                if (typeof settings.onSuccess === 'function')
@@ -1373,7 +1441,7 @@ function isEmptyRecord(rowId) {
       privateEditGridMenuBar: function (isNew, isEditableGrid) {
          this.disabled();
 
-         var isSoloLectura = window.esSoloLectura === true || $('#__esSoloLectura').val() === 'true';
+         var isSoloLectura = window.esSoloLectura === true;
 
          if (!isSoloLectura) {
             this.disabledButton({ buttonId: 'new', disabled: false });

@@ -11,6 +11,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ESD.ERP.Web.Controllers
 {
+   public class TopPedidoDTO
+   {
+      public int Id { get; set; }
+      public string Codigo { get; set; }
+      public string Cliente { get; set; }
+      public decimal Monto { get; set; }
+      public string MontoFormateado { get; set; }
+   }
+
    public class HomeController : AuthorizedController
    {
       private readonly IComprobanteProxy comprobanteProxy;
@@ -38,19 +47,30 @@ namespace ESD.ERP.Web.Controllers
 
       private dynamic ObtenerMetricasDesdeBD()
       {
-         decimal facturacionMes = 1506785.22m;
+         decimal facturacionMes = 0m;
          int pedidosActivos = 169;
          int cotizacionesActivas = 7637;
-         int ordenesProduccionMes = 1510;
-         int ordenesCompraMes = 18;
+         int ordenesProduccionMes = 0;
+         int ordenesCompraMes = 0;
+         var topPedidos = new List<TopPedidoDTO>();
 
-         var mesesVentas = new[] { "May", "Jun", "Jul", "Ago", "Set", "Oct" };
+         var mesesVentas = new[] { "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre" };
          var ventas2025 = new double[] { 2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1 };
          var ventas2026 = new double[] { 3015.2, 2931.8, 2901.6, 3090.7, 1506.8, 0 };
 
-         var stackedLabels = new[] { "January", "February", "March", "April", "May", "June", "July" };
-         var dsElectronics = new int[] { 65, 59, 80, 81, 56, 55, 40 };
-         var dsDigital = new int[] { 28, 48, 40, 19, 86, 27, 90 };
+         string[] mesesCortos = { "", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic" };
+         DateTime hoy = DateTime.Today;
+         var fechasLista = new List<DateTime>();
+         var stackedDias = new List<string>();
+         for (int i = 5; i >= 0; i--)
+         {
+            DateTime f = hoy.AddDays(-i).Date;
+            fechasLista.Add(f);
+            stackedDias.Add(f.Day + " " + mesesCortos[f.Month]);
+         }
+
+         var dsCentral = new double[] { 0, 0, 0, 0, 0, 203.6 };
+         var dsIlo = new double[] { 0, 0, 0, 0, 0, 0 };
 
          int prodEnProceso = 42;
          int prodCulminadas = 118;
@@ -63,17 +83,19 @@ namespace ESD.ERP.Web.Controllers
             {
                conn.Open();
 
-               // 1. Facturación del mes (monto_total del último mes activo)
+               // 1. Facturacion del mes actual (sumatoria solo de comprobantes con estado EMITIDA)
                try
                {
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = @"
-                        SELECT TOP 1 ISNULL(SUM(monto_total), 0) AS total
-                        FROM comprobante
-                        WHERE fecha IS NOT NULL AND estado = 'A'
-                        GROUP BY YEAR(fecha), MONTH(fecha)
-                        ORDER BY YEAR(fecha) DESC, MONTH(fecha) DESC";
+                        SELECT ISNULL(SUM(c.monto_total), 0) AS total
+                        FROM comprobante c
+                        INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
+                        WHERE YEAR(c.fecha) = YEAR(GETDATE()) 
+                          AND MONTH(c.fecha) = MONTH(GETDATE()) 
+                          AND c.estado = 'A'
+                          AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)";
                      var val = cmd.ExecuteScalar();
                      if (val != null && val != DBNull.Value)
                      {
@@ -101,7 +123,7 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 3. Cotizaciones Activas (año actual / activas)
+               // 3. Cotizaciones Activas (ano actual / activas)
                try
                {
                   using (var cmd = conn.CreateCommand())
@@ -119,17 +141,17 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 4. Órdenes de Producción del mes
+               // 4. Ordenes de Produccion del mes actual
                try
                {
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = @"
-                        SELECT TOP 1 COUNT(*) 
+                        SELECT COUNT(*) 
                         FROM orden_pro
-                        WHERE fecha IS NOT NULL AND estado = 'A'
-                        GROUP BY YEAR(fecha), MONTH(fecha)
-                        ORDER BY YEAR(fecha) DESC, MONTH(fecha) DESC";
+                        WHERE YEAR(fecha) = YEAR(GETDATE()) 
+                          AND MONTH(fecha) = MONTH(GETDATE()) 
+                          AND estado = 'A'";
                      var val = cmd.ExecuteScalar();
                      if (val != null && val != DBNull.Value)
                      {
@@ -139,17 +161,17 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 5. Órdenes de Compra del mes
+               // 5. Ordenes de Compra del mes actual
                try
                {
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = @"
-                        SELECT TOP 1 COUNT(*) 
+                        SELECT COUNT(*) 
                         FROM orden_co
-                        WHERE fecha IS NOT NULL AND estado = 'A'
-                        GROUP BY YEAR(fecha), MONTH(fecha)
-                        ORDER BY YEAR(fecha) DESC, MONTH(fecha) DESC";
+                        WHERE YEAR(fecha) = YEAR(GETDATE()) 
+                          AND MONTH(fecha) = MONTH(GETDATE()) 
+                          AND estado = 'A'";
                      var val = cmd.ExecuteScalar();
                      if (val != null && val != DBNull.Value)
                      {
@@ -159,7 +181,7 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 6. Evolución de Ventas (2025 vs 2026 por mes)
+               // 6. Evolucion de Ventas (2025 vs 2026 por mes)
                try
                {
                   using (var cmd = conn.CreateCommand())
@@ -189,32 +211,72 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 7. Stacked Bar Chart (desglose real por tipo de comprobante escalado a gráfico)
+               // 7. Stacked Bar Chart: Diferencia de Ventas dia a dia (ultimos 5 dias hasta hoy)
                try
                {
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = @"
                         SELECT 
-                            MONTH(c.fecha) AS mes,
-                            SUM(CASE WHEN t.abrev = 'FAC' THEN 1 ELSE 0 END) AS facturas,
-                            SUM(CASE WHEN t.abrev = 'B/V' THEN 1 ELSE 0 END) AS boletas
+                            CAST(c.fecha AS DATE) AS fecha_dia,
+                            ROUND(SUM(CASE WHEN s.empresa_sede_id = 1 THEN c.monto_total ELSE 0 END), 2) AS central,
+                            ROUND(SUM(CASE WHEN s.empresa_sede_id = 2 THEN c.monto_total ELSE 0 END), 2) AS ilo
                         FROM comprobante c
-                        INNER JOIN tipo_doc_com t ON c.tipo_doc_com_id = t.tipo_doc_com_id
-                        WHERE YEAR(c.fecha) = 2026 AND MONTH(c.fecha) BETWEEN 1 AND 7 AND c.estado = 'A'
-                        GROUP BY MONTH(c.fecha)
-                        ORDER BY mes";
+                        INNER JOIN periodo_emp_sede p ON c.periodo_emp_sede_id = p.periodo_emp_sede_id
+                        INNER JOIN empresa_sede s ON p.empresa_sede_id = s.empresa_sede_id
+                        WHERE c.fecha >= CAST(DATEADD(day, -5, GETDATE()) AS DATE) 
+                          AND c.fecha < CAST(DATEADD(day, 1, GETDATE()) AS DATE)
+                          AND c.estado = 'A'
+                        GROUP BY CAST(c.fecha AS DATE)
+                        ORDER BY fecha_dia";
                      using (var reader = cmd.ExecuteReader())
                      {
                         while (reader.Read())
                         {
-                           int mes = Convert.ToInt32(reader["mes"]);
-                           int idx = mes - 1;
-                           if (idx >= 0 && idx < 7)
+                           DateTime fDia = Convert.ToDateTime(reader["fecha_dia"]).Date;
+                           int idx = fechasLista.IndexOf(fDia);
+                           if (idx >= 0 && idx < 6)
                            {
-                              dsElectronics[idx] = (int)Math.Round(Convert.ToInt32(reader["facturas"]) / 50.0);
-                              dsDigital[idx] = (int)Math.Round(Convert.ToInt32(reader["boletas"]) / 50.0);
+                              dsCentral[idx] = Convert.ToDouble(reader["central"]);
+                              dsIlo[idx] = Convert.ToDouble(reader["ilo"]);
                            }
+                        }
+                     }
+                  }
+               }
+               catch { }
+
+               // 8. Top 5 pedidos del dia
+               try
+               {
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT TOP 5 
+                            c.cotiza_id, 
+                            c.cotiza, 
+                            ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres)), 'Sin Cliente')) AS cliente, 
+                            c.monto_total
+                        FROM cotiza c
+                        LEFT JOIN proveedor p ON c.proveedor_id = p.proveedor_id
+                        WHERE c.es_pedido = 'S' 
+                          AND c.estado = 'A' 
+                          AND c.fecha >= CAST(GETDATE() AS DATE) 
+                          AND c.fecha < DATEADD(day, 1, CAST(GETDATE() AS DATE))
+                        ORDER BY c.monto_total DESC";
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        while (reader.Read())
+                        {
+                           decimal monto = Convert.ToDecimal(reader["monto_total"]);
+                           topPedidos.Add(new TopPedidoDTO
+                           {
+                              Id = Convert.ToInt32(reader["cotiza_id"]),
+                              Codigo = reader["cotiza"]?.ToString()?.Trim(),
+                              Cliente = reader["cliente"]?.ToString()?.Trim(),
+                              Monto = monto,
+                              MontoFormateado = "S/ " + monto.ToString("N2")
+                           });
                         }
                      }
                   }
@@ -234,11 +296,12 @@ namespace ESD.ERP.Web.Controllers
             mesesVentas = mesesVentas,
             ventas2025 = ventas2025,
             ventas2026 = ventas2026,
-            stackedLabels = stackedLabels,
-            dsElectronics = dsElectronics,
-            dsDigital = dsDigital,
+            stackedLabels = stackedDias,
+            dsCentral = dsCentral,
+            dsIlo = dsIlo,
             prodLabels = new[] { "En Proceso", "Culminadas", "Pendientes", "Anuladas" },
-            prodValores = new[] { prodEnProceso, prodCulminadas, prodPendientes, prodAnuladas }
+            prodValores = new[] { prodEnProceso, prodCulminadas, prodPendientes, prodAnuladas },
+            topPedidos = topPedidos
          };
       }
 
@@ -262,6 +325,10 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.CotizacionesActivas = metricas.cotizacionesActivas;
          ViewBag.OrdenesProduccionMes = metricas.ordenesProduccionMes;
          ViewBag.OrdenesCompraMes = metricas.ordenesCompraMes;
+         ViewBag.TopPedidos = metricas.topPedidos;
+         ViewBag.StackedLabels = metricas.stackedLabels;
+         ViewBag.DsCentral = metricas.dsCentral;
+         ViewBag.DsIlo = metricas.dsIlo;
 
          bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest"
                     || !string.IsNullOrEmpty(Request.Headers["x-app-cid"])
@@ -299,6 +366,7 @@ namespace ESD.ERP.Web.Controllers
                   ordenesProduccionMes = metricas.ordenesProduccionMes,
                   ordenesCompraMes = metricas.ordenesCompraMes
                },
+               topPedidos = metricas.topPedidos,
                graficoVentas = new
                {
                   meses = metricas.mesesVentas,
@@ -312,13 +380,13 @@ namespace ESD.ERP.Web.Controllers
                   {
                      new
                      {
-                        label = "Electronics",
-                        data = metricas.dsElectronics
+                        label = "Central",
+                        data = metricas.dsCentral
                      },
                      new
                      {
-                        label = "Digital Goods",
-                        data = metricas.dsDigital
+                        label = "Ilo",
+                        data = metricas.dsIlo
                      }
                   }
                },
@@ -339,25 +407,29 @@ namespace ESD.ERP.Web.Controllers
                message = ex.Message,
                kpis = new
                {
-                  facturacionMes = "S/ 1,506,785.22",
+                  facturacionMes = "S/ 0.00",
                   pedidosActivos = "169",
                   cotizacionesActivas = "7,637",
-                  ordenesProduccionMes = "1,510",
-                  ordenesCompraMes = "18"
+                  ordenesProduccionMes = "0",
+                  ordenesCompraMes = "0"
+               },
+               topPedidos = new object[]
+               {
+                  new { id = 396855, codigo = "0052110", cliente = "A&L GENERAL SERVICES S.A.C.", monto = 203.60, montoFormateado = "S/ 203.60" }
                },
                graficoVentas = new
                {
-                  meses = new[] { "May", "Jun", "Jul", "Ago", "Set", "Oct" },
+                  meses = new[] { "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre" },
                   ventas2025 = new[] { 2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1 },
                   ventas2026 = new[] { 3015.2, 2931.8, 2901.6, 3090.7, 1506.8, 0 }
                },
                graficoStackedBar = new
                {
-                  labels = new[] { "January", "February", "March", "April", "May", "June", "July" },
+                  labels = new[] { "12 Oct", "13 Oct", "14 Oct", "15 Oct", "16 Oct", "17 Oct" },
                   datasets = new object[]
                   {
-                     new { label = "Electronics", data = new[] { 65, 59, 80, 81, 56, 55, 40 } },
-                     new { label = "Digital Goods", data = new[] { 28, 48, 40, 19, 86, 27, 90 } }
+                     new { label = "Central", data = new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 203.6 } },
+                     new { label = "Ilo", data = new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 } }
                   }
                },
                graficoProduccion = new
