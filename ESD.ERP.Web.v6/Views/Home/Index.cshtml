@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
     string facturacionMes = ViewBag.FacturacionMes ?? "S/ 0.00";
@@ -8,9 +8,14 @@
     string ordenesCompraMes = ViewBag.OrdenesCompraMes ?? "0";
     var topPedidos = ViewBag.TopPedidos as List<ESD.ERP.Web.Controllers.TopPedidoDTO> ?? new List<ESD.ERP.Web.Controllers.TopPedidoDTO>();
     var clientesInactivos = ViewBag.ClientesInactivos as List<ESD.ERP.Web.Controllers.ClienteInactivoDTO> ?? new List<ESD.ERP.Web.Controllers.ClienteInactivoDTO>();
-    var stackedDiasDefault = ViewBag.StackedLabels as List<string> ?? new List<string> { "12 Oct", "13 Oct", "14 Oct", "15 Oct", "16 Oct", "17 Oct" };
-    var dsCentralDefault = ViewBag.DsCentral as double[] ?? new double[] { 0, 0, 0, 0, 0, 203.6 };
-    var dsIloDefault = ViewBag.DsIlo as double[] ?? new double[] { 0, 0, 0, 0, 0, 0 };
+    var stackedDiasDefault = ViewBag.StackedLabels as List<string> ?? new List<string> { "8 Oct", "9 Oct", "10 Oct", "11 Oct", "12 Oct", "13 Oct", "14 Oct", "15 Oct", "16 Oct", "17 Oct", "18 Oct", "19 Oct" };
+    var dsCentralDefault = ViewBag.DsCentral as double[] ?? new double[12];
+    var dsIloDefault = ViewBag.DsIlo as double[] ?? new double[12];
+    var mesesVentasDefault = ViewBag.MesesVentas as string[] ?? new string[] { "Noviembre", "Diciembre", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre" };
+    var ventas2025Default = ViewBag.Ventas2025 as double[] ?? new double[] { 2924.0, 2963.7, 2695.5, 2472.1, 2814.4, 2630.9, 2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1 };
+    var ventas2026Default = ViewBag.Ventas2026 as double[] ?? new double[] { 0.0, 0.0, 2860.8, 2989.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    var prodLabelsDefault = ViewBag.ProdLabels as string[] ?? new string[] { "En Proceso", "Culminadas", "Pendientes", "Anuladas" };
+    var prodValoresDefault = ViewBag.ProdValores as int[] ?? new int[] { 0, 0, 0, 0 };
 }
 <script type="text/javascript">
     if (window.resetNavbarBreadcrumb) {
@@ -21,12 +26,17 @@
 <!-- Content Header (Page header) -->
 <div class="content-header pb-2">
     <div class="container-fluid">
-        <div class="row align-items-center mb-1">
-            <div class="col-sm-12">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-1" style="gap: 12px;">
+            <div>
                 <h1 class="m-0 text-dark font-weight-bold" style="font-size: 1.45rem; letter-spacing: -0.02em;">
                     <i class="fas fa-tachometer-alt text-primary mr-2"></i>Tablero de Control
                 </h1>
                 <small class="text-muted" style="font-size: 0.825rem;">SIGANET ERP &mdash; M&eacute;tricas en Tiempo Real (Sincronizado con BD <code>esderp_v6</code>)</small>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary btn-sm shadow-sm font-weight-600 px-3 py-1 d-inline-flex align-items-center" id="btn-gestionar-dashboard" data-toggle="modal" data-target="#modal-gestionar-dashboard" style="border-radius: 6px; font-size: 0.875rem; letter-spacing: 0.01em;">
+                    <i class="fas fa-sliders-h mr-2"></i> Gestionar Dashboard
+                </button>
             </div>
         </div>
     </div>
@@ -37,8 +47,8 @@
     <div class="container-fluid">
 
         <!-- 1. FILA DE TARJETAS KPI (4 por fila, la 5ta cae a la 2da fila) -->
-        <div class="row">
-            <!-- 1. Facturación del mes -->
+        <div class="row" id="row-kpis-metricas">
+            <!-- 1. FacturaciÃ³n del mes -->
             <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
                 <div class="small-box bg-info shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
@@ -86,7 +96,7 @@
                 </div>
             </div>
 
-            <!-- 4. Órdenes de Producción del mes -->
+            <!-- 4. Ã“rdenes de ProducciÃ³n del mes -->
             <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
                 <div class="small-box bg-warning shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
@@ -102,7 +112,7 @@
                 </div>
             </div>
 
-            <!-- 5. Órdenes de Compra del mes (Cae a la 2da fila) -->
+            <!-- 5. Ã“rdenes de Compra del mes (Cae a la 2da fila) -->
             <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
                 <div class="small-box bg-danger shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
@@ -119,25 +129,28 @@
             </div>
         </div>
 
-        <!-- 2. SECCIÓN PRINCIPAL (Gráficos y Accesos Rápidos con estilo unificado card-outline) -->
-        <div class="row">
+        <!-- 2. SECCIÃ“N PRINCIPAL (GrÃ¡ficos y Accesos RÃ¡pidos con estilo unificado card-outline) -->
+        <div class="row" id="row-main-dashboard">
 
             <!-- Columna Izquierda (7 columnas) -->
-            <div class="col-lg-7">
+            <div class="col-lg-7" id="col-main-left">
 
-                <!-- 1. Gráfico de Ventas -->
-                <div class="card card-primary card-outline shadow-sm mb-4">
-                    <div class="card-header border-0">
+                <!-- 1. GrÃ¡fico de Ventas -->
+                <div class="card card-primary card-outline shadow-sm mb-4" id="area-evolucion-ventas">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-chart-line text-primary mr-2"></i>Evoluci&oacute;n de Ventas (Miles de Soles)
                         </h3>
-                        <div class="card-tools">
-                            <span class="badge badge-success px-2 py-1 mr-2"><i class="fas fa-sync-alt mr-1"></i>Sincronizado BD</span>
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Filtro de meses">
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-ventas-6" onclick="setVentasMeses(6);">6m</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-ventas-8" onclick="setVentasMeses(8);">8m</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-ventas-10" onclick="setVentasMeses(10);">10m</button>
+                                <button type="button" class="btn btn-primary active btn-sm px-2" id="btn-ventas-12" onclick="setVentasMeses(12);">12m</button>
+                            </div>
+                            <span class="badge badge-success px-2 py-1 mr-2" id="badge-meses-ventas"><i class="fas fa-calendar-alt mr-1"></i>12 Meses (&Uacute;ltimos 12 meses)</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
-                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -145,100 +158,210 @@
                         <div class="position-relative mb-3" style="height: 250px;">
                             <canvas id="salesChart" height="240"></canvas>
                         </div>
-                        <div class="d-flex flex-row justify-content-end align-items-center text-sm">
-                            <span class="mr-3 font-weight-500 text-muted">
-                                <i class="fas fa-square text-primary mr-1"></i> A&ntilde;o Actual (2026)
+                        <div class="d-flex flex-wrap justify-content-end align-items-center text-sm" style="gap: 12px;">
+                            <span class="font-weight-500 text-muted">
+                                <i class="fas fa-chart-line mr-1" style="color: #fd7e14;"></i> Puente Dic &rarr; Ene
                             </span>
                             <span class="font-weight-500 text-muted">
-                                <i class="fas fa-square mr-1" style="color: #94a3b8;"></i> A&ntilde;o Anterior (2025)
+                                <i class="fas fa-chart-line text-success mr-1"></i> L&iacute;nea Actual
+                            </span>
+                            <span class="font-weight-500 text-muted">
+                                <i class="fas fa-chart-line text-warning mr-1"></i> L&iacute;nea Anterior
+                            </span>
+                            <span class="font-weight-500 text-muted">
+                                <i class="fas fa-square text-primary mr-1"></i> Barra Actual
+                            </span>
+                            <span class="font-weight-500 text-muted">
+                                <i class="fas fa-square mr-1" style="color: #94a3b8;"></i> Barra Anterior
                             </span>
                         </div>
                     </div>
                 </div>
 
                 <style>
-    /* Botones de seleccion interactiva de sedes en Diferencia */
-    .btn-sede-filter {
-        display: inline-flex;
-        align-items: center;
-        padding: 3px 10px;
-        font-size: 0.8rem;
-        border-radius: 6px;
-        transition: all 0.2s ease-in-out;
-        cursor: pointer;
-        user-select: none;
-        background-color: transparent;
-        line-height: 1.4;
+    /* Asegurar que las herramientas de cabecera queden 100% esquinadas a la derecha */
+    .content .card-header,
+    .card-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
     }
-    .btn-sede-filter:focus {
-        outline: none !important;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    .content .card-header::after,
+    .content .card-header::before,
+    .card-header::after,
+    .card-header::before {
+        display: none !important;
+        content: none !important;
+        clear: none !important;
     }
-    /* Sede Central Activa */
-    .btn-sede-filter.btn-central.active {
-        background-color: rgba(0, 123, 255, 0.12);
-        border: 1px solid #007bff;
-        color: #0056b3;
-        font-weight: 600;
+    .content .card-header > .card-title,
+    .card-header > .card-title {
+        margin-right: auto !important;
+        flex-shrink: 0 !important;
     }
-    html.dark-mode .btn-sede-filter.btn-central.active {
-        background-color: rgba(59, 130, 246, 0.22);
-        border: 1px solid #3b82f6;
-        color: #93c5fd;
+    .content .card-header > .card-tools,
+    .card-header > .card-tools {
+        margin-left: auto !important;
+        margin-right: 0 !important;
+        float: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        flex-shrink: 0 !important;
     }
-    /* Sede Ilo Activa */
-    .btn-sede-filter.btn-ilo.active {
-        background-color: rgba(148, 163, 184, 0.18);
-        border: 1px solid #94a3b8;
-        color: #334155;
-        font-weight: 600;
-    }
-    html.dark-mode .btn-sede-filter.btn-ilo.active {
-        background-color: rgba(100, 116, 139, 0.25);
-        border: 1px solid #64748b;
-        color: #cbd5e1;
-    }
-    /* Inactivo (deseleccionado) */
-    .btn-sede-filter.inactive {
-        opacity: 0.45;
-        border: 1px dashed #cbd5e1;
-        color: #94a3b8;
-        background-color: transparent;
-    }
-    html.dark-mode .btn-sede-filter.inactive {
-        opacity: 0.4;
-        border: 1px dashed #475569;
-        color: #64748b;
-    }
-    .btn-sede-filter.inactive:hover {
-        opacity: 0.85;
-        transform: translateY(-1px);
-    }
-    .btn-sede-filter.active:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-    }
-    .badge-interactive {
-        transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-    .badge-interactive:hover {
-        transform: scale(1.05);
-        opacity: 0.9;
-    }
-</style>
-                <!-- 2. CONTROL: DIFERENCIA (Central vs. Ilo - Últimos 5 días) -->
-                <div class="card card-primary card-outline shadow-sm mb-4">
-                    <div class="card-header border-0">
+                    .btn-sede-filter {
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 3px 10px;
+                        font-size: 0.8rem;
+                        border-radius: 6px;
+                        transition: all 0.2s ease-in-out;
+                        cursor: pointer;
+                        user-select: none;
+                        background-color: transparent;
+                        line-height: 1.4;
+                    }
+                    .btn-sede-filter:focus {
+                        outline: none !important;
+                        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+                    }
+                    .btn-sede-filter.btn-central {
+                        border: 1px solid #007bff;
+                        color: #007bff;
+                    }
+                    .btn-sede-filter.btn-central.active {
+                        background-color: #007bff;
+                        color: #ffffff;
+                    }
+                    .btn-sede-filter.btn-central.inactive {
+                        opacity: 0.45;
+                        border-color: #ced4da;
+                        color: #6c757d;
+                        background-color: transparent;
+                    }
+                    .btn-sede-filter.btn-ilo {
+                        border: 1px solid #6c757d;
+                        color: #6c757d;
+                    }
+                    .btn-sede-filter.btn-ilo.active {
+                        background-color: #6c757d;
+                        color: #ffffff;
+                    }
+                    .btn-sede-filter.btn-ilo.inactive {
+                        opacity: 0.45;
+                        border-color: #ced4da;
+                        color: #6c757d;
+                        background-color: transparent;
+                    }
+                    .btn-sede-filter.btn-vs {
+                        border: 1px solid #17a2b8;
+                        color: #17a2b8;
+                        font-weight: 700;
+                        padding: 1px 9px;
+                        font-size: 0.75rem;
+                        border-radius: 4px;
+                        transition: all 0.2s ease;
+                    }
+                    .btn-sede-filter.btn-vs.active {
+                        background-color: #17a2b8;
+                        color: #ffffff;
+                        box-shadow: 0 1px 3px rgba(23, 162, 184, 0.35);
+                    }
+                    .btn-sede-filter.btn-vs.inactive {
+                        opacity: 0.45;
+                        border-color: #ced4da;
+                        color: #6c757d;
+                        background-color: transparent;
+                    }
+                    body.dark-mode .btn-sede-filter.btn-central {
+                        border-color: #3b82f6;
+                        color: #3b82f6;
+                    }
+                    body.dark-mode .btn-sede-filter.btn-central.active {
+                        background-color: #2563eb;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .btn-sede-filter.btn-ilo {
+                        border-color: #94a3b8;
+                        color: #cbd5e1;
+                    }
+                    body.dark-mode .btn-sede-filter.btn-ilo.active {
+                        background-color: #64748b;
+                        color: #ffffff;
+                    }
+                    body.dark-mode .btn-sede-filter.btn-vs {
+                        border-color: #06b6d4;
+                        color: #06b6d4;
+                    }
+                    body.dark-mode .btn-sede-filter.btn-vs.active {
+                        background-color: #0891b2;
+                        color: #ffffff;
+                    }
+                    /* Estilos para Gestionar Dashboard */
+                    #btn-gestionar-dashboard {
+                        transition: all 0.2s ease;
+                        border-radius: 6px;
+                    }
+                    #btn-gestionar-dashboard:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 3px 8px rgba(0, 123, 255, 0.25);
+                    }
+                    .dashboard-area-card:hover {
+                        border-color: #007bff !important;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard .modal-content {
+                        background-color: #1e293b;
+                        color: #e2e8f0;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard .modal-header,
+                    body.dark-mode #modal-gestionar-dashboard .modal-footer {
+                        background-color: #0f172a !important;
+                        border-color: #334155 !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard .modal-body {
+                        background-color: #1e293b !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard .dashboard-area-card {
+                        background-color: #334155 !important;
+                        border-color: #475569 !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard .dashboard-area-card .font-weight-600 {
+                        color: #f8fafc !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard .dashboard-area-card .text-muted {
+                        color: #94a3b8 !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard .close {
+                        color: #cbd5e1 !important;
+                    }
+                    body.dark-mode #btn-gestionar-dashboard {
+                        background-color: #0891b2;
+                        border-color: #0891b2;
+                        color: #ffffff;
+                    }
+                    body.dark-mode #btn-gestionar-dashboard:hover {
+                        background-color: #06b6d4;
+                        border-color: #06b6d4;
+                    }
+                </style>
+
+                <!-- 2. CONTROL: DIFERENCIA (Central vs. Ilo) -->
+                <div class="card card-primary card-outline shadow-sm mb-4" id="area-diferencia-sedes">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-chart-bar text-primary mr-2"></i>Diferencia
                         </h3>
-                        <div class="card-tools">
-                            <span id="badge-filtro-sedes" class="badge badge-info px-2 py-1 mr-2 badge-interactive" style="cursor: pointer;" title="Restablecer ambas sedes"><i class="fas fa-building mr-1"></i>Central vs. Ilo (&Uacute;ltimos 5 d&iacute;as)</span>
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Filtro de d&iacute;as">
+                                <button type="button" class="btn btn-primary active btn-sm px-2" id="btn-dias-6" onclick="setDiferenciaDias(6);">6d</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-dias-8" onclick="setDiferenciaDias(8);">8d</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-dias-10" onclick="setDiferenciaDias(10);">10d</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-dias-12" onclick="setDiferenciaDias(12);">12d</button>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
-                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -253,6 +376,9 @@
                             <button type="button" id="btn-filtro-central" class="btn btn-xs btn-sede-filter btn-central active" data-sede="central" title="Ver solo Sede Central">
                                 <i class="fas fa-square text-primary mr-1"></i> <span class="font-weight-600">Central</span>
                             </button>
+                            <button type="button" id="btn-filtro-vs" class="btn btn-xs btn-sede-filter btn-vs active" title="Comparar ambas sedes (Central vs. Ilo)">
+                                <span class="font-weight-bold">VS</span>
+                            </button>
                             <button type="button" id="btn-filtro-ilo" class="btn btn-xs btn-sede-filter btn-ilo active" data-sede="ilo" title="Ver solo Sede Ilo">
                                 <i class="fas fa-square mr-1" style="color: #94a3b8;"></i> <span class="font-weight-600">Ilo</span>
                             </button>
@@ -263,20 +389,17 @@
             </div>
 
             <!-- Columna Derecha (5 columnas) -->
-            <div class="col-lg-5">
+            <div class="col-lg-5" id="col-main-right">
 
-                <!-- 3. Accesos Rápidos -->
-                <div class="card card-success card-outline shadow-sm mb-4">
-                    <div class="card-header border-0">
+                <!-- 3. Accesos RÃ¡pidos del ERP -->
+                <div class="card card-success card-outline shadow-sm mb-4" id="area-accesos-rapidos">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-bolt text-success mr-2"></i>Accesos R&aacute;pidos
                         </h3>
-                        <div class="card-tools">
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
-                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -304,39 +427,39 @@
                     </div>
                 </div>
 
-                <!-- 4. Gráfico de Producción en Planta -->
-                <div class="card card-warning card-outline shadow-sm mb-4">
-                    <div class="card-header border-0">
+                <!-- 4. GrÃ¡fico de ProducciÃ³n en Planta -->
+                <div class="card card-warning card-outline shadow-sm mb-4" id="area-estado-produccion">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-chart-pie text-warning mr-2"></i>Estado de Producci&oacute;n
                         </h3>
-                        <div class="card-tools">
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <span class="badge badge-warning px-2 py-1 mr-2" id="badge-prod-mes"><i class="fas fa-calendar-alt mr-1"></i>Mes Actual</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
-                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
                     <div class="card-body pt-1 pb-3" style="position: relative; height: 260px;">
                         <canvas id="productionChart" height="210"></canvas>
+                        <div id="productionChartEmpty" class="d-none text-center text-muted" style="position: absolute; top: 45%; left: 0; right: 0; transform: translateY(-50%);">
+                            <i class="fas fa-industry fa-2x mb-2 text-secondary" style="opacity: 0.5;"></i>
+                            <div class="font-weight-500">Sin &oacute;rdenes de producci&oacute;n registradas</div>
+                            <small class="text-muted">en el mes actual</small>
+                        </div>
                     </div>
                 </div>
 
                 <!-- 5. Tarjeta informativa de Base de Datos en Tiempo Real -->
-                <div class="card card-outline card-success shadow-sm mb-4" style="border-radius: 8px;">
-                    <div class="card-header border-0">
+                <div class="card card-outline card-success shadow-sm mb-4" id="area-db-tiempo-real" style="border-radius: 8px;">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-database text-success mr-2"></i>Base de Datos en Tiempo Real
                         </h3>
-                        <div class="card-tools">
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
                             <span class="badge badge-success px-2 py-1 mr-2"><i class="fas fa-check-circle mr-1"></i>Sincronizado</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
-                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -359,22 +482,23 @@
 
         </div>
 
-        <!-- 3. SECCION: TOP 5 PEDIDOS DEL DIA Y CLIENTES INACTIVOS (+5 MESES) -->
-        <div class="row">
-            <!-- 3.1. Top 5 Pedidos del Día (Izquierda) -->
-            <div class="col-xl-6 col-lg-6 col-md-12 col-12">
+        <!-- 3. SECCION: TOP 5/10 PEDIDOS DEL DIA Y CLIENTES INACTIVOS -->
+        <div class="row" id="row-tablas-detalle">
+            <!-- 3.1. Top 5 / Top 10 Pedidos del DÃ­a (Izquierda) -->
+            <div class="col-lg-6 mb-4" id="area-top-pedidos">
                 <div class="card card-primary card-outline shadow-sm mb-4">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
-                            <i class="fas fa-crown text-warning mr-2"></i>Top 5 Pedidos del D&iacute;a
+                            <i class="fas fa-crown text-warning mr-2"></i>Top Pedidos del D&iacute;a
                         </h3>
-                        <div class="card-tools">
-                            <span class="badge badge-primary px-2 py-1 mr-2"><i class="fas fa-calendar-day mr-1"></i>Hoy</span>
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Cantidad pedidos">
+                                <button type="button" class="btn btn-primary active btn-sm px-2" id="btn-top-5" onclick="cambiarTopPedidos(5);">Top 5</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-top-10" onclick="cambiarTopPedidos(10);">Top 10</button>
+                            </div>
+                            <span class="badge badge-primary px-2 py-1 mr-2" id="badge-top-pedidos"><i class="fas fa-calendar-day mr-1"></i>Top 5 Hoy</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
-                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -391,22 +515,23 @@
                                 @if (topPedidos != null && topPedidos.Count > 0)
                                 {
                                     int ranking = 1;
-                                    foreach (var item in topPedidos)
+                                    foreach (var p in topPedidos.Take(5))
                                     {
+                                        string badgeClass = ranking == 1 ? "badge-warning text-dark" : "badge-light border";
                                         <tr>
                                             <td class="text-center font-weight-bold text-primary py-2" style="white-space: nowrap;">
-                                                <span class="badge @(ranking == 1 ? "badge-warning text-dark" : "badge-light border") mr-1">#@ranking</span>
-                                                <span>@item.Id</span>
-                                                @if (!string.IsNullOrEmpty(item.Codigo))
+                                                <span class="badge @badgeClass mr-1">#@ranking</span>
+                                                <span>@p.Id</span>
+                                                @if (!string.IsNullOrEmpty(p.Codigo))
                                                 {
-                                                    <small class="text-muted">(@item.Codigo)</small>
+                                                    <small class="text-muted">(@p.Codigo)</small>
                                                 }
                                             </td>
                                             <td class="py-2">
-                                                <span class="font-weight-600">@item.Cliente</span>
+                                                <span class="font-weight-600">@p.Cliente</span>
                                             </td>
                                             <td class="text-right font-weight-bold text-success py-2" style="white-space: nowrap;">
-                                                @item.MontoFormateado
+                                                @p.MontoFormateado
                                             </td>
                                         </tr>
                                         ranking++;
@@ -424,28 +549,37 @@
                         </table>
                     </div>
                     <div class="card-footer clearfix border-top-0 py-2">
-                        <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Pedidos con mayor importe registrados durante el d&iacute;a</small>
+                        <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Pedidos m&aacute;s grandes registrados en la fecha de hoy</small>
                         <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'pedido/index' });" class="btn btn-xs btn-outline-primary float-right">
-                            <i class="fas fa-arrow-circle-right mr-1"></i>Ver todos los Pedidos
+                            <i class="fas fa-list mr-1"></i>Ver Todos los Pedidos
                         </a>
                     </div>
                 </div>
             </div>
 
             <!-- 3.2. Clientes sin Compras (+5 Meses) (Derecha) -->
-            <div class="col-xl-6 col-lg-6 col-md-12 col-12">
+            <div class="col-lg-6 mb-4" id="area-clientes-inactivos">
                 <div class="card card-warning card-outline shadow-sm mb-4">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-user-clock text-warning mr-2"></i>Clientes sin Compras (&ge; 5 Meses)
                         </h3>
-                        <div class="card-tools">
-                            <span class="badge badge-warning text-dark px-2 py-1 mr-2"><i class="fas fa-history mr-1"></i>Inactivos</span>
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="d-inline-flex align-items-center mr-2">
+                                <select id="select-meses-inactivos" class="form-control form-control-sm" style="width: auto; height: 28px; padding: 2px 8px; font-size: 0.8rem;">
+                                    <option value="3">&ge; 3 Meses</option>
+                                    <option value="5" selected>&ge; 5 Meses</option>
+                                    <option value="6">&ge; 6 Meses</option>
+                                    <option value="9">&ge; 9 Meses</option>
+                                    <option value="12">&ge; 12 Meses</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mr-2" id="btn-ver-mas-clientes" onclick="alternarVerMasClientesInactivos();" style="height: 28px; padding: 2px 8px; font-size: 0.8rem;">
+                                <i class="fas fa-chevron-down mr-1"></i>Ver m&aacute;s (10)
+                            </button>
+                            <span class="badge badge-warning text-dark px-2 py-1 mr-2" id="badge-clientes-inactivos"><i class="fas fa-history mr-1"></i>Inactivos</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
-                            </button>
-                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
-                                <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
@@ -462,7 +596,7 @@
                                 @if (clientesInactivos != null && clientesInactivos.Count > 0)
                                 {
                                     int ranking = 1;
-                                    foreach (var c in clientesInactivos)
+                                    foreach (var c in clientesInactivos.Take(5))
                                     {
                                         <tr>
                                             <td class="text-center font-weight-bold text-secondary py-2" style="white-space: nowrap;">
@@ -497,7 +631,7 @@
                         </table>
                     </div>
                     <div class="card-footer clearfix border-top-0 py-2">
-                        <small class="text-muted"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Clientes que no compran desde hace 5 meses</small>
+                        <small class="text-muted"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Listado ordenado por mayor tiempo de inactividad</small>
                         <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'cliente/index' });" class="btn btn-xs btn-outline-warning text-dark float-right">
                             <i class="fas fa-users mr-1"></i>Ver Directorio
                         </a>
@@ -508,9 +642,220 @@
     </div>
 </section>
 
+<!-- ======================================================== -->
+<!-- MODAL: GESTIONAR DASHBOARD (Areas Visibles)              -->
+<!-- ======================================================== -->
+<div class="modal fade" id="modal-gestionar-dashboard" tabindex="-1" role="dialog" aria-labelledby="modalGestionarDashboardLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-light py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="modal-header-icon mr-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border-radius: 8px; background-color: rgba(0, 123, 255, 0.12); color: #007bff;">
+                        <i class="fas fa-sliders-h fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold mb-0 text-dark" id="modalGestionarDashboardLabel" style="font-size: 1.15rem;">
+                            Gestionar Dashboard
+                        </h5>
+                        <small class="text-muted">Activa o desactiva las &aacute;reas que deseas visualizar en tu pantalla de inicio</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Cerrar" style="font-size: 1.5rem; opacity: 0.6; outline: none;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4" style="background-color: #f8fafc; max-height: 70vh; overflow-y: auto;">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="text-xs font-weight-600 text-uppercase text-muted" style="letter-spacing: 0.05em;">
+                        &Aacute;reas del Dashboard (<span id="modal-conteo-areas-activas" class="font-weight-bold text-primary">8</span> de 8 activas)
+                    </span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary btn-xs px-2" id="btn-modal-marcar-todos" title="Mostrar todas las Ã¡reas">
+                            <i class="fas fa-check-double mr-1"></i>Marcar Todos
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-modal-desmarcar-todos" title="Ocultar todas las Ã¡reas">
+                            <i class="fas fa-times mr-1"></i>Desmarcar Todos
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-xs px-2" id="btn-modal-restablecer" title="Restablecer vista por defecto">
+                            <i class="fas fa-undo mr-1"></i>Restablecer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column" style="gap: 10px;">
+                    <!-- 1. Tarjetas de MÃ©tricas -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-kpis" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(23, 162, 184, 0.12); color: #17a2b8; flex-shrink: 0;">
+                                <i class="fas fa-th-large fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Tarjetas de M&eacute;tricas (KPIs)</div>
+                                <small class="text-muted">Facturaci&oacute;n del Mes, Pedidos Activos, Cotizaciones, &Oacute;rdenes de Producci&oacute;n y Compras</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-kpis" data-area="kpis" checked>
+                            <label class="custom-control-label" for="chk-area-kpis"></label>
+                        </div>
+                    </label>
+
+                    <!-- 2. EvoluciÃ³n de Ventas -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-evolucion-ventas" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(0, 123, 255, 0.12); color: #007bff; flex-shrink: 0;">
+                                <i class="fas fa-chart-line fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Evoluci&oacute;n de Ventas (Miles de Soles)</div>
+                                <small class="text-muted">Gr&aacute;fico comparativo de ventas mensuales de los &uacute;ltimos 12 meses m&oacute;viles</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-evolucion-ventas" data-area="evolucion-ventas" checked>
+                            <label class="custom-control-label" for="chk-area-evolucion-ventas"></label>
+                        </div>
+                    </label>
+
+                    <!-- 3. Diferencia Central vs. Ilo -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-diferencia-sedes" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(40, 167, 69, 0.12); color: #28a745; flex-shrink: 0;">
+                                <i class="fas fa-chart-bar fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Diferencia (Central vs. Ilo)</div>
+                                <small class="text-muted">Comparativo diario entre sedes con l&iacute;nea de tendencia, filtros de d&iacute;as (6d-12d) y bot&oacute;n VS</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-diferencia-sedes" data-area="diferencia-sedes" checked>
+                            <label class="custom-control-label" for="chk-area-diferencia-sedes"></label>
+                        </div>
+                    </label>
+
+                    <!-- 4. Accesos RÃ¡pidos -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-accesos-rapidos" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(40, 167, 69, 0.12); color: #28a745; flex-shrink: 0;">
+                                <i class="fas fa-bolt fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Accesos R&aacute;pidos</div>
+                                <small class="text-muted">Botones directos a m&oacute;dulos de Cotizaciones, Pedidos, Facturar, Producci&oacute;n, Compras y Productos</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-accesos-rapidos" data-area="accesos-rapidos" checked>
+                            <label class="custom-control-label" for="chk-area-accesos-rapidos"></label>
+                        </div>
+                    </label>
+
+                    <!-- 5. Estado de ProducciÃ³n -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-estado-produccion" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(255, 193, 7, 0.15); color: #d39e00; flex-shrink: 0;">
+                                <i class="fas fa-chart-pie fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Estado de Producci&oacute;n</div>
+                                <small class="text-muted">Gr&aacute;fico circular con distribuci&oacute;n de &oacute;rdenes en planta (En Proceso, Culminadas, Pendientes, Anuladas)</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-estado-produccion" data-area="estado-produccion" checked>
+                            <label class="custom-control-label" for="chk-area-estado-produccion"></label>
+                        </div>
+                    </label>
+
+                    <!-- 6. Base de Datos en Tiempo Real -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-db-tiempo-real" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(40, 167, 69, 0.12); color: #28a745; flex-shrink: 0;">
+                                <i class="fas fa-database fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Base de Datos en Tiempo Real</div>
+                                <small class="text-muted">Tarjeta informativa de sincronizaci&oacute;n de cat&aacute;logo de BD y polling activo</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-db-tiempo-real" data-area="db-tiempo-real" checked>
+                            <label class="custom-control-label" for="chk-area-db-tiempo-real"></label>
+                        </div>
+                    </label>
+
+                    <!-- 7. Top Pedidos del DÃ­a -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-top-pedidos" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(0, 123, 255, 0.12); color: #007bff; flex-shrink: 0;">
+                                <i class="fas fa-crown fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Top Pedidos del D&iacute;a</div>
+                                <small class="text-muted">Tabla detallada de pedidos de mayor facturaci&oacute;n (conmutador Top 5 / Top 10)</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-top-pedidos" data-area="top-pedidos" checked>
+                            <label class="custom-control-label" for="chk-area-top-pedidos"></label>
+                        </div>
+                    </label>
+
+                    <!-- 8. Clientes sin Compras -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-clientes-inactivos" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(255, 193, 7, 0.15); color: #d39e00; flex-shrink: 0;">
+                                <i class="fas fa-user-clock fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Clientes sin Compras (Inactivos)</div>
+                                <small class="text-muted">Tabla de seguimiento a clientes inactivos con selector de antig&uuml;edad (&ge; 3, 5, 6, 9, 12 meses)</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-clientes-inactivos" data-area="clientes-inactivos" checked>
+                            <label class="custom-control-label" for="chk-area-clientes-inactivos"></label>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between align-items-center">
+                <small class="text-muted"><i class="fas fa-check-circle mr-1 text-success"></i>Los cambios se aplican y guardan autom&aacute;ticamente.</small>
+                <button type="button" class="btn btn-primary btn-sm px-4 font-weight-600" data-dismiss="modal">
+                    <i class="fas fa-check mr-1"></i> Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
     $(document).ready(function () {
         var cid = $('#__cid').val() || '@cid';
+
+        // Formato monetario peruano: S/ 310,879.10 o si pasa al millon S/ 3'456,890.00
+        function formatMonedaPeruana(valor) {
+            if (valor === null || valor === undefined || isNaN(valor)) return 'S/ 0.00';
+            var num = Number(valor);
+            var isNeg = num < 0;
+            num = Math.abs(num);
+            var partes = num.toFixed(2).split('.');
+            var entero = partes[0];
+            var decimales = partes[1];
+
+            if (entero.length > 6) {
+                var millones = entero.slice(0, entero.length - 6);
+                var miles = entero.slice(entero.length - 6, entero.length - 3);
+                var unidades = entero.slice(entero.length - 3);
+                var millonesFmt = millones.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                entero = millonesFmt + "'" + miles + "," + unidades;
+            } else if (entero.length > 3) {
+                entero = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            return (isNeg ? '-' : '') + 'S/ ' + entero + '.' + decimales;
+        }
 
         function getThemeConfig() {
             var isDark = $('body').hasClass('dark-mode') || $('html').hasClass('dark-mode');
@@ -528,65 +873,188 @@
         var productionChartInstance = null;
         var stackedBarChartInstance = null;
 
-        var lastStackedCentral = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsCentralDefault));
-        var lastStackedIlo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsIloDefault));
+        var allStackedLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(stackedDiasDefault));
+        var allStackedCentral = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsCentralDefault));
+        var allStackedIlo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsIloDefault));
+        var nivelesDias = [6, 8, 10, 12];
+        var diasActuales = 6;
+
+        var allSalesMeses = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(mesesVentasDefault));
+        var allSales2025 = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ventas2025Default));
+        var allSales2026 = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ventas2026Default));
+
+        // Generar series para la comparativa:
+        // - Barra Gris (2025): todos los 12 meses (Nov 2025 a Oct 2025)
+        // - Barra Azul (2026): Nov y Dic NO tienen barra azul (0). Solo Ene y Feb 2026 tienen barra azul
+        // - Linea Verde: nace en la barra gris de Diciembre 2025 y une con Enero y Febrero 2026
+        // - Linea Amarilla: conecta todas las barras grises de 2025
+        function generarSeriesVentas(n) {
+            var slicedMeses = (allSalesMeses || []).slice(-n);
+            var slicedBarra2025 = (allSales2025 || []).slice(-n);
+            var slicedBarra2026 = (allSales2026 || []).slice(-n);
+
+            var slicedLinea2026 = [];
+            for (var i = 0; i < slicedMeses.length; i++) {
+                var m = (slicedMeses[i] || '').toLowerCase();
+                if (m.indexOf('dic') >= 0 && (!slicedBarra2026[i] || Number(slicedBarra2026[i]) === 0)) {
+                    // Nace de la barra gris de diciembre de 2025
+                    slicedLinea2026.push(slicedBarra2025[i] || null);
+                } else if (slicedBarra2026[i] && Number(slicedBarra2026[i]) > 0) {
+                    slicedLinea2026.push(slicedBarra2026[i]);
+                } else {
+                    slicedLinea2026.push(null);
+                }
+            }
+
+            return {
+                meses: traducirMeses(slicedMeses),
+                linea2026: slicedLinea2026,
+                linea2025: slicedBarra2025.slice(),
+                barra2026: slicedBarra2026,
+                barra2025: slicedBarra2025
+            };
+        }
+
+        var nivelesMesesVentas = [6, 8, 10, 12];
+        var mesesVentasActuales = 12;
+
+        function stepVentasMeses(direccion) {
+            var curIdx = nivelesMesesVentas.indexOf(mesesVentasActuales);
+            if (curIdx === -1) curIdx = 0;
+            var newIdx = curIdx + direccion;
+            if (newIdx < 0) newIdx = 0;
+            if (newIdx >= nivelesMesesVentas.length) newIdx = nivelesMesesVentas.length - 1;
+            if (newIdx !== curIdx) {
+                setVentasMeses(nivelesMesesVentas[newIdx]);
+            }
+        }
+        window.stepVentasMeses = stepVentasMeses;
+
+        function setVentasMeses(meses) {
+            mesesVentasActuales = meses;
+            nivelesMesesVentas.forEach(function (m) {
+                var $btn = $('#btn-ventas-' + m);
+                if (m === meses) {
+                    $btn.removeClass('btn-outline-secondary').addClass('btn-primary active');
+                } else {
+                    $btn.removeClass('btn-primary active').addClass('btn-outline-secondary');
+                }
+            });
+
+            var $badge = $('#badge-meses-ventas');
+            if ($badge.length) {
+                if (meses === 12) {
+                    $badge.html('<i class="fas fa-calendar-alt mr-1"></i>12 Meses (\u00DAltimos 12 meses)');
+                } else {
+                    $badge.html('<i class="fas fa-calendar-alt mr-1"></i>\u00DAltimos ' + meses + ' meses');
+                }
+            }
+
+            actualizarChartVentasMeses();
+        }
+        window.setVentasMeses = setVentasMeses;
+
+        function actualizarChartVentasMeses() {
+            if (!salesChartInstance) return;
+
+            var series = generarSeriesVentas(mesesVentasActuales || 12);
+            salesChartInstance.data.labels = series.meses;
+            if (salesChartInstance.data.datasets[0]) salesChartInstance.data.datasets[0].data = series.linea2026;
+            if (salesChartInstance.data.datasets[1]) salesChartInstance.data.datasets[1].data = series.linea2025;
+            if (salesChartInstance.data.datasets[2]) salesChartInstance.data.datasets[2].data = series.barra2026;
+            if (salesChartInstance.data.datasets[3]) salesChartInstance.data.datasets[3].data = series.barra2025;
+            salesChartInstance.update();
+        }
+
+        var lastStackedCentral = (allStackedCentral || []).slice(-6);
+        var lastStackedIlo = (allStackedIlo || []).slice(-6);
 
         var sedesVisibles = { central: true, ilo: true };
+
+        function stepDiferenciaDias(direccion) {
+            var curIdx = nivelesDias.indexOf(diasActuales);
+            if (curIdx === -1) curIdx = 0;
+            var newIdx = curIdx + direccion;
+            if (newIdx < 0) newIdx = 0;
+            if (newIdx >= nivelesDias.length) newIdx = nivelesDias.length - 1;
+            if (newIdx !== curIdx) {
+                setDiferenciaDias(nivelesDias[newIdx]);
+            }
+        }
+        window.stepDiferenciaDias = stepDiferenciaDias;
+
+        function setDiferenciaDias(dias) {
+            diasActuales = dias;
+            nivelesDias.forEach(function (n) {
+                var $btn = $('#btn-dias-' + n);
+                if (n === dias) {
+                    $btn.removeClass('btn-outline-secondary').addClass('btn-primary active');
+                } else {
+                    $btn.removeClass('btn-primary active').addClass('btn-outline-secondary');
+                }
+            });
+
+            actualizarBotonesSedesUI();
+            actualizarChartDiferenciaDias();
+        }
+        window.setDiferenciaDias = setDiferenciaDias;
+
+        function actualizarChartDiferenciaDias() {
+            if (!stackedBarChartInstance) return;
+
+            var n = diasActuales || 6;
+            var slicedLabels = (allStackedLabels || []).slice(-n);
+            var slicedCentral = (allStackedCentral || []).slice(-n);
+            var slicedIlo = (allStackedIlo || []).slice(-n);
+
+            lastStackedCentral = slicedCentral;
+            lastStackedIlo = slicedIlo;
+
+            var slicedTrend = [];
+            for (var i = 0; i < slicedCentral.length; i++) {
+                var vC = sedesVisibles.central ? (slicedCentral[i] || 0) : 0;
+                var vI = sedesVisibles.ilo ? (slicedIlo[i] || 0) : 0;
+                slicedTrend.push(Math.round((vC + vI) * 100) / 100);
+            }
+
+            stackedBarChartInstance.data.labels = slicedLabels;
+            stackedBarChartInstance.data.datasets.forEach(function (ds) {
+                if (ds.type === 'line' || (ds.label && ds.label.indexOf('Pico') >= 0)) {
+                    ds.data = slicedTrend;
+                } else if (ds.label === 'Central' || (ds.label && ds.label.indexOf('Central') >= 0)) {
+                    ds.data = slicedCentral;
+                    ds.hidden = !sedesVisibles.central;
+                } else if (ds.label === 'Ilo' || (ds.label && ds.label.indexOf('Ilo') >= 0)) {
+                    ds.data = slicedIlo;
+                    ds.hidden = !sedesVisibles.ilo;
+                }
+            });
+
+            stackedBarChartInstance.update();
+        }
 
         function actualizarBotonesSedesUI() {
             var $btnCentral = $('#btn-filtro-central');
             var $btnIlo = $('#btn-filtro-ilo');
-            var $badge = $('#badge-filtro-sedes');
+            var $btnVs = $('#btn-filtro-vs');
 
             if (sedesVisibles.central && sedesVisibles.ilo) {
                 $btnCentral.removeClass('inactive').addClass('active').attr('title', 'Ver solo Sede Central');
                 $btnIlo.removeClass('inactive').addClass('active').attr('title', 'Ver solo Sede Ilo');
-                if ($badge.length) {
-                    $badge.attr('class', 'badge badge-info px-2 py-1 mr-2 badge-interactive')
-                          .html('<i class="fas fa-building mr-1"></i>Central vs. Ilo (\u00DAltimos 5 d\u00EDas)')
-                          .attr('title', 'Ambas sedes activas');
-                }
+                $btnVs.removeClass('inactive').addClass('active').attr('title', 'Ambas sedes activas (VS)');
             } else if (sedesVisibles.central && !sedesVisibles.ilo) {
-                $btnCentral.removeClass('inactive').addClass('active').attr('title', 'Sede Central activa (Clic para ver ambas)');
+                $btnCentral.removeClass('inactive').addClass('active').attr('title', 'Sede Central activa');
                 $btnIlo.removeClass('active').addClass('inactive').attr('title', 'Cambiar a Sede Ilo');
-                if ($badge.length) {
-                    $badge.attr('class', 'badge badge-primary px-2 py-1 mr-2 badge-interactive')
-                          .html('<i class="fas fa-building mr-1"></i>Solo Central')
-                          .attr('title', 'Clic para restablecer ambas sedes');
-                }
-            } else if (!sedesVisibles.central && sedesVisibles.ilo) {
+                $btnVs.removeClass('active').addClass('inactive').attr('title', 'Clic para comparar ambas sedes (VS)');
+            } else {
                 $btnCentral.removeClass('active').addClass('inactive').attr('title', 'Cambiar a Sede Central');
-                $btnIlo.removeClass('inactive').addClass('active').attr('title', 'Sede Ilo activa (Clic para ver ambas)');
-                if ($badge.length) {
-                    $badge.attr('class', 'badge badge-secondary px-2 py-1 mr-2 badge-interactive')
-                          .html('<i class="fas fa-building mr-1"></i>Solo Ilo')
-                          .attr('title', 'Clic para restablecer ambas sedes');
-                }
+                $btnIlo.removeClass('inactive').addClass('active').attr('title', 'Sede Ilo activa');
+                $btnVs.removeClass('active').addClass('inactive').attr('title', 'Clic para comparar ambas sedes (VS)');
             }
         }
 
         function aplicarFiltroSedes() {
-            if (stackedBarChartInstance) {
-                var dCentral = lastStackedCentral || [0, 0, 0, 0, 0, 203.6];
-                var dIlo = lastStackedIlo || [0, 0, 0, 0, 0, 0];
-
-                stackedBarChartInstance.data.datasets.forEach(function (ds) {
-                    if (ds.label === 'Central' || (ds.label && ds.label.indexOf('Central') >= 0)) {
-                        ds.hidden = !sedesVisibles.central;
-                    } else if (ds.label === 'Ilo' || (ds.label && ds.label.indexOf('Ilo') >= 0)) {
-                        ds.hidden = !sedesVisibles.ilo;
-                    } else if (ds.type === 'line' || (ds.label && ds.label.indexOf('Pico') >= 0)) {
-                        var newLine = [];
-                        for (var i = 0; i < dCentral.length; i++) {
-                            var vC = sedesVisibles.central ? (dCentral[i] || 0) : 0;
-                            var vI = sedesVisibles.ilo ? (dIlo[i] || 0) : 0;
-                            newLine.push(Math.round((vC + vI) * 100) / 100);
-                        }
-                        ds.data = newLine;
-                    }
-                });
-                stackedBarChartInstance.update();
-            }
+            actualizarChartDiferenciaDias();
             actualizarBotonesSedesUI();
         }
 
@@ -638,7 +1106,7 @@
             alternarSede('ilo', e);
         });
 
-        $(document).off('click', '#badge-filtro-sedes').on('click', '#badge-filtro-sedes', function (e) {
+        $(document).off('click', '#btn-filtro-vs').on('click', '#btn-filtro-vs', function (e) {
             e.preventDefault();
             sedesVisibles.central = true;
             sedesVisibles.ilo = true;
@@ -655,24 +1123,24 @@
                 ordenesCompraMes: "@Html.Raw(ordenesCompraMes)"
             },
             graficoVentas: {
-                meses: ["Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre"],
-                ventas2025: [2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1],
-                ventas2026: [3015.2, 2931.8, 2901.6, 3090.7, 1506.8, 0]
+                meses: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(mesesVentasDefault)),
+                ventas2025: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ventas2025Default)),
+                ventas2026: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ventas2026Default))
             },
             graficoProduccion: {
-                labels: ["En Proceso", "Culminadas", "Pendientes", "Anuladas"],
-                valores: [42, 118, 26, 4]
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(prodLabelsDefault)),
+                valores: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(prodValoresDefault))
             },
             graficoStackedBar: {
                 labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(stackedDiasDefault)),
                 datasets: [
                     {
-                        label: 'Central',
-                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsCentralDefault))
-                    },
-                    {
                         label: 'Ilo',
                         data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsIloDefault))
+                    },
+                    {
+                        label: 'Central',
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsCentralDefault))
                     }
                 ]
             }
@@ -701,17 +1169,51 @@
             return labels.map(function(m) { return mapa[m] || m; });
         }
 
-        function obtenerDiasLabelsDefault() {
-            var meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
-            var hoy = new Date();
-            var list = [];
-            for (var i = 5; i >= 0; i--) {
-                var d = new Date();
-                d.setDate(hoy.getDate() - i);
-                list.push(d.getDate() + ' ' + meses[d.getMonth()]);
+        var alignLinesWithBarsPlugin = {
+            id: 'alignLinesWithBars',
+            beforeDraw: function (chart) {
+                var meta0 = chart.getDatasetMeta(0);
+                var meta1 = chart.getDatasetMeta(1);
+                var meta2 = chart.getDatasetMeta(2);
+                var meta3 = chart.getDatasetMeta(3);
+
+                if (meta0 && meta0.data) {
+                    meta0.data.forEach(function (pt, i) {
+                        var valAzul = chart.data.datasets[2] && chart.data.datasets[2].data ? chart.data.datasets[2].data[i] : 0;
+                        if ((!valAzul || valAzul === 0) && meta3 && meta3.data && meta3.data[i]) {
+                            // En Diciembre de 2025 nace exactamente en la barra gris
+                            pt.x = meta3.data[i].x;
+                        } else if (meta2 && meta2.data && meta2.data[i]) {
+                            pt.x = meta2.data[i].x;
+                        }
+                    });
+                }
+                if (meta1 && meta3 && meta1.data && meta3.data) {
+                    meta1.data.forEach(function (pt, i) {
+                        if (meta3.data[i]) pt.x = meta3.data[i].x;
+                    });
+                }
+            },
+            beforeDatasetDraw: function (chart, args) {
+                var meta = chart.getDatasetMeta(args.index);
+                var meta2 = chart.getDatasetMeta(2);
+                var meta3 = chart.getDatasetMeta(3);
+                if (args.index === 0 && meta && meta.data) {
+                    meta.data.forEach(function (pt, i) {
+                        var valAzul = chart.data.datasets[2] && chart.data.datasets[2].data ? chart.data.datasets[2].data[i] : 0;
+                        if ((!valAzul || valAzul === 0) && meta3 && meta3.data && meta3.data[i]) {
+                            pt.x = meta3.data[i].x;
+                        } else if (meta2 && meta2.data && meta2.data[i]) {
+                            pt.x = meta2.data[i].x;
+                        }
+                    });
+                } else if (args.index === 1 && meta && meta.data && meta3 && meta3.data) {
+                    meta.data.forEach(function (pt, i) {
+                        if (meta3.data[i]) pt.x = meta3.data[i].x;
+                    });
+                }
             }
-            return list;
-        }
+        };
 
         function renderSalesChart(data) {
             if (!data) return;
@@ -726,23 +1228,100 @@
 
             if (typeof Chart === 'undefined') return;
 
+            if (data && data.meses && data.meses.length) allSalesMeses = data.meses;
+            if (data && data.ventas2025 && data.ventas2025.length) allSales2025 = data.ventas2025;
+            if (data && data.ventas2026 && data.ventas2026.length) allSales2026 = data.ventas2026;
+
+            var series = generarSeriesVentas(mesesVentasActuales || 12);
+
             salesChartInstance = new Chart(canvas.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: traducirMeses(data ? data.meses : null),
+                    labels: series.meses,
                     datasets: [
                         {
-                            label: 'A\u00F1o Actual (2026)',
+                            type: 'line',
+                            label: 'L\u00EDnea Actual',
+                            order: 0,
+                            data: series.linea2026,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.08)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: function(context) {
+                                var chart = context.chart;
+                                var labels = (chart && chart.data && chart.data.labels) ? chart.data.labels : [];
+                                var m = (labels[context.dataIndex] || '').toLowerCase();
+                                if (m.indexOf('dic') >= 0) return '#fd7e14';
+                                return '#28a745';
+                            },
+                            pointBorderColor: function(context) {
+                                var chart = context.chart;
+                                var labels = (chart && chart.data && chart.data.labels) ? chart.data.labels : [];
+                                var m = (labels[context.dataIndex] || '').toLowerCase();
+                                if (m.indexOf('dic') >= 0) return '#fd7e14';
+                                return '#28a745';
+                            },
+                            segment: {
+                                borderColor: function(ctx) {
+                                    var chart = ctx.chart;
+                                    var labels = (chart && chart.data && chart.data.labels) ? chart.data.labels : [];
+                                    var m0 = (labels[ctx.p0DataIndex] || '').toLowerCase();
+                                    var m1 = (labels[ctx.p1DataIndex] || '').toLowerCase();
+                                    if (m0.indexOf('dic') >= 0 && m1.indexOf('ene') >= 0) {
+                                        return '#fd7e14'; // Puente Diciembre 2025 -> Enero 2026 en naranja
+                                    }
+                                    return '#28a745';
+                                }
+                            },
+                            tension: 0.25,
+                            fill: false,
+                            spanGaps: false
+                        },
+                        {
+                            type: 'line',
+                            label: 'L\u00EDnea Anterior (2025)',
+                            order: 1,
+                            data: series.linea2025,
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.08)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#ffc107',
+                            pointBorderColor: '#ffc107',
+                            segment: {
+                                borderColor: function(ctx) {
+                                    var chart = ctx.chart;
+                                    var labels = (chart && chart.data && chart.data.labels) ? chart.data.labels : [];
+                                    var m0 = (labels[ctx.p0DataIndex] || '').toLowerCase();
+                                    var m1 = (labels[ctx.p1DataIndex] || '').toLowerCase();
+                                    if (m0.indexOf('dic') >= 0 && m1.indexOf('ene') >= 0) {
+                                        return 'transparent'; // Quita la union Diciembre 2025 a Enero 2025
+                                    }
+                                    return '#ffc107';
+                                }
+                            },
+                            tension: 0.25,
+                            fill: false
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Barra Actual (2026)',
+                            order: 2,
                             backgroundColor: theme.barCurrent,
                             borderColor: theme.barCurrent,
-                            data: data.ventas2026,
+                            data: series.barra2026,
                             borderRadius: 4
                         },
                         {
-                            label: 'A\u00F1o Anterior (2025)',
+                            type: 'bar',
+                            label: 'Barra Anterior (2025)',
+                            order: 3,
                             backgroundColor: theme.barPrevious,
                             borderColor: theme.barPrevious,
-                            data: data.ventas2025,
+                            data: series.barra2025,
                             borderRadius: 4
                         }
                     ]
@@ -753,9 +1332,22 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            filter: function(tooltipItem) {
+                                if (tooltipItem.parsed.y === null || tooltipItem.parsed.y === undefined || isNaN(tooltipItem.parsed.y)) return false;
+                                if (tooltipItem.datasetIndex === 0) {
+                                    var lbl = (tooltipItem.label || '').toLowerCase();
+                                    if (lbl.indexOf('dic') >= 0 || lbl.indexOf('nov') >= 0) return false;
+                                }
+                                return tooltipItem.datasetIndex === 0 || tooltipItem.datasetIndex === 1;
+                            },
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': S/ ' + context.parsed.y + 'k';
+                                    if (context.parsed.y === null || context.parsed.y === undefined) return '';
+                                    var anio = (context.datasetIndex === 0 || context.datasetIndex === 2) ? 'A\u00F1o Actual (2026)' : 'A\u00F1o 2025';
+                                    var montoEnSoles = (Number(context.parsed.y) || 0) * 1000;
+                                    return anio + ': ' + formatMonedaPeruana(montoEnSoles);
                                 }
                             }
                         }
@@ -774,7 +1366,8 @@
                             grid: { color: theme.gridColor }
                         }
                     }
-                }
+                },
+                plugins: [alignLinesWithBarsPlugin]
             });
         }
 
@@ -791,12 +1384,25 @@
 
             if (typeof Chart === 'undefined') return;
 
+            var rawData = data.valores || [];
+            var total = 0;
+            for (var i = 0; i < rawData.length; i++) {
+                total += (Number(rawData[i]) || 0);
+            }
+
+            var $empty = $('#productionChartEmpty');
+            if (total === 0) {
+                if ($empty.length) $empty.removeClass('d-none');
+            } else {
+                if ($empty.length) $empty.addClass('d-none');
+            }
+
             productionChartInstance = new Chart(canvas.getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: data.labels,
                     datasets: [{
-                        data: data.valores,
+                        data: rawData,
                         backgroundColor: theme.pieColors,
                         borderWidth: theme.isDark ? 2 : 1,
                         borderColor: theme.isDark ? '#343a40' : '#ffffff'
@@ -811,7 +1417,32 @@
                             labels: {
                                 color: theme.textColor,
                                 boxWidth: 14,
-                                padding: 12
+                                padding: 12,
+                                generateLabels: function (chart) {
+                                    var ds = chart.data.datasets[0];
+                                    return (chart.data.labels || []).map(function (label, idx) {
+                                        var val = (ds && ds.data) ? (ds.data[idx] || 0) : 0;
+                                        var fill = (ds && ds.backgroundColor && ds.backgroundColor[idx]) ? ds.backgroundColor[idx] : '#999';
+                                        return {
+                                            text: label + ' (' + val + ')',
+                                            fillStyle: fill,
+                                            strokeStyle: theme.isDark ? '#343a40' : '#ffffff',
+                                            lineWidth: 1,
+                                            hidden: false,
+                                            index: idx
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    var label = context.label || '';
+                                    var val = Number(context.raw) || 0;
+                                    var pct = total > 0 ? Math.round((val / total) * 100) : 0;
+                                    return ' ' + label + ': ' + val + ' orden' + (val === 1 ? '' : 'es') + ' (' + pct + '%)';
+                                }
                             }
                         }
                     },
@@ -833,80 +1464,67 @@
 
             if (typeof Chart === 'undefined') return;
 
-            var labels = (data && data.labels && data.labels.length) ? data.labels : obtenerDiasLabelsDefault();
-            var dCentral = (data && data.datasets && data.datasets.length > 0 && data.datasets[0].data) ? data.datasets[0].data : [0, 0, 0, 0, 0, 203.6];
-            var dIlo = (data && data.datasets && data.datasets.length > 1 && data.datasets[1].data) ? data.datasets[1].data : [0, 0, 0, 0, 0, 0];
-            var lCentral = 'Central';
-            var lIlo = 'Ilo';
-
-            if (data && data.datasets) {
-                for (var i = 0; i < data.datasets.length; i++) {
-                    var ds = data.datasets[i];
+            if (data && data.labels && data.labels.length) allStackedLabels = data.labels;
+            if (data && data.datasets && data.datasets.length >= 2) {
+                data.datasets.forEach(function (ds) {
                     if (ds.label === 'Central' || (ds.label && ds.label.indexOf('Central') >= 0)) {
-                        lCentral = ds.label;
-                        dCentral = ds.data || dCentral;
+                        allStackedCentral = ds.data;
                     } else if (ds.label === 'Ilo' || (ds.label && ds.label.indexOf('Ilo') >= 0)) {
-                        lIlo = ds.label;
-                        dIlo = ds.data || dIlo;
+                        allStackedIlo = ds.data;
                     }
-                }
+                });
             }
 
-            lastStackedCentral = dCentral;
-            lastStackedIlo = dIlo;
+            var n = diasActuales || 6;
+            var slicedLabels = (allStackedLabels || []).slice(-n);
+            var slicedCentral = (allStackedCentral || []).slice(-n);
+            var slicedIlo = (allStackedIlo || []).slice(-n);
 
-            var dTrend = [];
-            for (var i = 0; i < dCentral.length; i++) {
-                var vC = sedesVisibles.central ? (dCentral[i] || 0) : 0;
-                var vI = sedesVisibles.ilo ? (dIlo[i] || 0) : 0;
-                dTrend.push(Math.round((vC + vI) * 100) / 100);
+            var trendData = [];
+            for (var i = 0; i < slicedCentral.length; i++) {
+                var vC = sedesVisibles.central ? (slicedCentral[i] || 0) : 0;
+                var vI = sedesVisibles.ilo ? (slicedIlo[i] || 0) : 0;
+                trendData.push(Math.round((vC + vI) * 100) / 100);
             }
 
             stackedBarChartInstance = new Chart(canvas.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: slicedLabels,
                     datasets: [
                         {
                             type: 'line',
-                            label: 'L\u00EDnea de Picos',
-                            stack: 'picos',
-                            order: 0,
-                            data: dTrend,
+                            label: 'Pico / Tendencia',
+                            data: trendData,
                             borderColor: '#28a745',
-                            backgroundColor: 'rgba(40, 167, 69, 0.12)',
-                            borderWidth: 3,
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
                             pointBackgroundColor: '#28a745',
-                            pointBorderColor: '#ffffff',
-                            pointBorderWidth: 2,
-                            pointRadius: 4.5,
-                            pointHoverRadius: 7,
-                            pointHoverBackgroundColor: '#ffffff',
-                            pointHoverBorderColor: '#28a745',
+                            fill: false,
                             tension: 0.25,
-                            fill: false
+                            order: 0
                         },
                         {
                             type: 'bar',
-                            label: lIlo,
-                            stack: 'sedes',
-                            order: 2,
+                            label: 'Ilo',
                             backgroundColor: theme.barPrevious,
                             borderColor: theme.barPrevious,
-                            borderRadius: 0,
-                            data: dIlo,
-                            hidden: !sedesVisibles.ilo
+                            borderRadius: 4,
+                            data: slicedIlo,
+                            hidden: !sedesVisibles.ilo,
+                            order: 1
                         },
                         {
                             type: 'bar',
-                            label: lCentral,
-                            stack: 'sedes',
-                            order: 1,
+                            label: 'Central',
                             backgroundColor: theme.barCurrent,
                             borderColor: theme.barCurrent,
                             borderRadius: 4,
-                            data: dCentral,
-                            hidden: !sedesVisibles.central
+                            data: slicedCentral,
+                            hidden: !sedesVisibles.central,
+                            order: 2
                         }
                     ]
                 },
@@ -914,22 +1532,22 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        },
+                        legend: { display: false },
                         tooltip: {
                             mode: 'index',
                             intersect: false,
-                            itemSort: function(a, b) {
-                                return b.raw - a.raw;
+                            itemSort: function (a, b) {
+                                if (a.dataset.type === 'line') return -1;
+                                if (b.dataset.type === 'line') return 1;
+                                return (b.raw || 0) - (a.raw || 0);
                             },
                             callbacks: {
                                 label: function(context) {
-                                    var val = Number(context.parsed.y).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    var fmt = formatMonedaPeruana(context.parsed.y);
                                     if (context.dataset.type === 'line') {
-                                        return 'Pico M\u00E1ximo: S/ ' + val;
+                                        return 'Pico M\u00E1ximo: ' + fmt;
                                     }
-                                    return context.dataset.label + ': S/ ' + val;
+                                    return context.dataset.label + ': ' + fmt;
                                 }
                             }
                         }
@@ -937,12 +1555,8 @@
                     scales: {
                         x: {
                             stacked: true,
-                            ticks: {
-                                color: theme.textColor
-                            },
-                            grid: {
-                                display: false
-                            }
+                            ticks: { color: theme.textColor },
+                            grid: { display: false }
                         },
                         y: {
                             stacked: true,
@@ -956,9 +1570,7 @@
                                     return 'S/ ' + Number(value).toLocaleString();
                                 }
                             },
-                            grid: {
-                                color: theme.gridColor
-                            }
+                            grid: { color: theme.gridColor }
                         }
                     }
                 }
@@ -977,6 +1589,196 @@
         }
         initChartsImmediately();
 
+        // ==========================================
+        // GESTION DEL DASHBOARD (Areas Visibles)
+        // ==========================================
+        var STORAGE_AREAS_KEY = 'arco_dashboard_areas_visibles_v1';
+        var areasDashboardConfig = {
+            'kpis': { selector: '#row-kpis-metricas', visible: true },
+            'evolucion-ventas': { selector: '#area-evolucion-ventas', visible: true },
+            'diferencia-sedes': { selector: '#area-diferencia-sedes', visible: true },
+            'accesos-rapidos': { selector: '#area-accesos-rapidos', visible: true },
+            'estado-produccion': { selector: '#area-estado-produccion', visible: true },
+            'db-tiempo-real': { selector: '#area-db-tiempo-real', visible: true },
+            'top-pedidos': { selector: '#area-top-pedidos', visible: true },
+            'clientes-inactivos': { selector: '#area-clientes-inactivos', visible: true }
+        };
+
+        function cargarConfiguracionAreas() {
+            try {
+                var guardado = localStorage.getItem(STORAGE_AREAS_KEY);
+                if (guardado) {
+                    var parsed = JSON.parse(guardado);
+                    for (var key in parsed) {
+                        if (areasDashboardConfig.hasOwnProperty(key)) {
+                            areasDashboardConfig[key].visible = Boolean(parsed[key]);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Error leyendo configuracion de areas en localStorage:', e);
+            }
+        }
+
+        function guardarConfiguracionAreas() {
+            try {
+                var obj = {};
+                for (var key in areasDashboardConfig) {
+                    obj[key] = areasDashboardConfig[key].visible;
+                }
+                localStorage.setItem(STORAGE_AREAS_KEY, JSON.stringify(obj));
+            } catch (e) {
+                console.warn('Error guardando configuracion de areas en localStorage:', e);
+            }
+        }
+
+        function aplicarVisibilidadAreas() {
+            var activasCount = 0;
+            var totalCount = 0;
+
+            for (var key in areasDashboardConfig) {
+                totalCount++;
+                var item = areasDashboardConfig[key];
+                var $el = $(item.selector);
+                var $chk = $('#chk-area-' + key);
+
+                if (item.visible) {
+                    activasCount++;
+                    $el.removeClass('d-none');
+                    if ($chk.length) $chk.prop('checked', true);
+                } else {
+                    $el.addClass('d-none');
+                    if ($chk.length) $chk.prop('checked', false);
+                }
+            }
+
+            $('#modal-conteo-areas-activas').text(activasCount);
+
+            // Ajuste responsivo de columnas de la seccion principal
+            var leftVisible = areasDashboardConfig['evolucion-ventas'].visible || areasDashboardConfig['diferencia-sedes'].visible;
+            var rightVisible = areasDashboardConfig['accesos-rapidos'].visible || areasDashboardConfig['estado-produccion'].visible || areasDashboardConfig['db-tiempo-real'].visible;
+
+            var $colLeft = $('#col-main-left');
+            var $colRight = $('#col-main-right');
+            var $rowMain = $('#row-main-dashboard');
+
+            if (!leftVisible && !rightVisible) {
+                $rowMain.addClass('d-none');
+            } else {
+                $rowMain.removeClass('d-none');
+                if (leftVisible && !rightVisible) {
+                    $colLeft.removeClass('d-none col-lg-7').addClass('col-lg-12');
+                    $colRight.addClass('d-none');
+                } else if (!leftVisible && rightVisible) {
+                    $colLeft.addClass('d-none');
+                    $colRight.removeClass('d-none col-lg-5').addClass('col-lg-12');
+                } else {
+                    $colLeft.removeClass('d-none col-lg-12').addClass('col-lg-7');
+                    $colRight.removeClass('d-none col-lg-12').addClass('col-lg-5');
+                }
+            }
+
+            // Ajuste responsivo de la seccion de tablas
+            var topPedidosVis = areasDashboardConfig['top-pedidos'].visible;
+            var clientesVis = areasDashboardConfig['clientes-inactivos'].visible;
+            var $areaTop = $('#area-top-pedidos');
+            var $areaCli = $('#area-clientes-inactivos');
+            var $rowTablas = $('#row-tablas-detalle');
+
+            if (!topPedidosVis && !clientesVis) {
+                $rowTablas.addClass('d-none');
+            } else {
+                $rowTablas.removeClass('d-none');
+                if (topPedidosVis && !clientesVis) {
+                    $areaTop.removeClass('d-none col-lg-6').addClass('col-lg-12');
+                    $areaCli.addClass('d-none');
+                } else if (!topPedidosVis && clientesVis) {
+                    $areaTop.addClass('d-none');
+                    $areaCli.removeClass('d-none col-lg-6').addClass('col-lg-12');
+                } else {
+                    $areaTop.removeClass('d-none col-lg-12').addClass('col-lg-6');
+                    $areaCli.removeClass('d-none col-lg-12').addClass('col-lg-6');
+                }
+            }
+
+            // Redimensionar graficos Chart.js si cambiaron de tamano o visibilidad
+            setTimeout(function () {
+                if (salesChartInstance) salesChartInstance.resize();
+                if (stackedBarChartInstance) stackedBarChartInstance.resize();
+                if (productionChartInstance) productionChartInstance.resize();
+            }, 60);
+        }
+
+        // Eventos de switches
+        $(document).off('change', '.chk-dashboard-area').on('change', '.chk-dashboard-area', function () {
+            var areaKey = $(this).data('area');
+            var isChecked = $(this).is(':checked');
+            if (areasDashboardConfig.hasOwnProperty(areaKey)) {
+                areasDashboardConfig[areaKey].visible = isChecked;
+                guardarConfiguracionAreas();
+                aplicarVisibilidadAreas();
+            }
+        });
+
+        // Botones auxiliares del modal
+        $('#btn-modal-marcar-todos').on('click', function () {
+            for (var k in areasDashboardConfig) {
+                areasDashboardConfig[k].visible = true;
+            }
+            guardarConfiguracionAreas();
+            aplicarVisibilidadAreas();
+        });
+
+        $('#btn-modal-desmarcar-todos').on('click', function () {
+            for (var k in areasDashboardConfig) {
+                areasDashboardConfig[k].visible = false;
+            }
+            guardarConfiguracionAreas();
+            aplicarVisibilidadAreas();
+        });
+
+        $('#btn-modal-restablecer').on('click', function () {
+            for (var k in areasDashboardConfig) {
+                areasDashboardConfig[k].visible = true;
+            }
+            guardarConfiguracionAreas();
+            aplicarVisibilidadAreas();
+        });
+
+        // Inicializar visibilidad guardada
+        cargarConfiguracionAreas();
+        aplicarVisibilidadAreas();
+
+        // Soporte de rueda del raton sobre el grafico de Evolucion de Ventas (6 a 12 meses progresivo)
+        var canvasVentas = document.getElementById('salesChart');
+        if (canvasVentas && !canvasVentas.__wheelAttached) {
+            canvasVentas.__wheelAttached = true;
+            canvasVentas.addEventListener('wheel', function (e) {
+                e.preventDefault();
+                var delta = e.deltaY || e.detail || (-e.wheelDelta);
+                if (delta > 0) {
+                    stepVentasMeses(-1);
+                } else if (delta < 0) {
+                    stepVentasMeses(1);
+                }
+            }, { passive: false });
+        }
+
+        // Soporte de rueda del raton sobre el grafico de Diferencia (6 a 12 dias progresivo)
+        var canvasDiferencia = document.getElementById('stackedBarChart');
+        if (canvasDiferencia && !canvasDiferencia.__wheelAttached) {
+            canvasDiferencia.__wheelAttached = true;
+            canvasDiferencia.addEventListener('wheel', function (e) {
+                e.preventDefault();
+                var delta = e.deltaY || e.detail || (-e.wheelDelta);
+                if (delta > 0) {
+                    stepDiferenciaDias(-1);
+                } else if (delta < 0) {
+                    stepDiferenciaDias(1);
+                }
+            }, { passive: false });
+        }
+
         $(document).off('themeChanged.dashboard').on('themeChanged.dashboard', function (e, isDark) {
             if (lastDashboardData) {
                 if (lastDashboardData.graficoVentas) {
@@ -991,16 +1793,44 @@
             }
         });
 
-        function renderTopPedidos(lista) {
+        // Top Pedidos
+        var currentTopPedidosData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(topPedidos));
+        var currentTopLimit = 5;
+
+        function cambiarTopPedidos(limit) {
+            currentTopLimit = limit;
+            renderTopPedidos(currentTopPedidosData, currentTopLimit);
+            actualizarBotonesTopPedidosUI();
+        }
+        window.cambiarTopPedidos = cambiarTopPedidos;
+
+        function actualizarBotonesTopPedidosUI() {
+            var $btn5 = $('#btn-top-5');
+            var $btn10 = $('#btn-top-10');
+            var $badge = $('#badge-top-pedidos');
+            if (currentTopLimit === 10) {
+                $btn5.removeClass('btn-primary active').addClass('btn-outline-secondary');
+                $btn10.removeClass('btn-outline-secondary').addClass('btn-primary active');
+                if ($badge.length) $badge.html('<i class="fas fa-calendar-day mr-1"></i>Top 10 Hoy');
+            } else {
+                $btn5.removeClass('btn-outline-secondary').addClass('btn-primary active');
+                $btn10.removeClass('btn-primary active').addClass('btn-outline-secondary');
+                if ($badge.length) $badge.html('<i class="fas fa-calendar-day mr-1"></i>Top 5 Hoy');
+            }
+        }
+
+        function renderTopPedidos(lista, limit) {
             var $tbody = $('#tabla-top-pedidos tbody');
             if (!$tbody.length) return;
             if (!lista || !lista.length) {
                 $tbody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fas fa-info-circle mr-1"></i> No se registran pedidos en el d\u00EDa de hoy</td></tr>');
                 return;
             }
+            var maxItems = limit || currentTopLimit || 5;
+            var subLista = lista.slice(0, maxItems);
             var html = '';
-            for (var i = 0; i < lista.length; i++) {
-                var p = lista[i];
+            for (var i = 0; i < subLista.length; i++) {
+                var p = subLista[i];
                 var id = p.id !== undefined ? p.id : (p.Id !== undefined ? p.Id : '');
                 var codigo = p.codigo || p.Codigo || '';
                 var cliente = p.cliente || p.Cliente || 'Sin Cliente';
@@ -1022,20 +1852,48 @@
             $tbody.html(html);
         }
 
-        function renderClientesInactivos(lista) {
+        // Clientes Inactivos
+        var currentClientesInactivosData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(clientesInactivos));
+        var currentClientesInactivosLimit = 5;
+
+        function alternarVerMasClientesInactivos() {
+            if (currentClientesInactivosLimit === 5) {
+                currentClientesInactivosLimit = 10;
+            } else {
+                currentClientesInactivosLimit = 5;
+            }
+            actualizarBotonesVerMasUI();
+            var meses = parseInt($('#select-meses-inactivos').val()) || 5;
+            renderClientesInactivos(currentClientesInactivosData, meses, currentClientesInactivosLimit);
+        }
+        window.alternarVerMasClientesInactivos = alternarVerMasClientesInactivos;
+
+        function actualizarBotonesVerMasUI() {
+            var $btn = $('#btn-ver-mas-clientes');
+            if (!$btn.length) return;
+            if (currentClientesInactivosLimit === 10) {
+                $btn.html('<i class="fas fa-chevron-up mr-1"></i>Ver menos (5)').removeClass('btn-outline-secondary').addClass('btn-secondary');
+            } else {
+                $btn.html('<i class="fas fa-chevron-down mr-1"></i>Ver m&aacute;s (10)').removeClass('btn-secondary').addClass('btn-outline-secondary');
+            }
+        }
+
+        function renderClientesInactivos(lista, meses, limit) {
             var $tbody = $('#tabla-clientes-inactivos tbody');
             if (!$tbody.length) return;
             if (!lista || !lista.length) {
-                $tbody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> No se encontraron clientes con inactividad superior a 5 meses</td></tr>');
+                $tbody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> No se encontraron clientes con inactividad superior a ' + meses + ' meses</td></tr>');
                 return;
             }
+            var maxItems = limit || currentClientesInactivosLimit || 5;
+            var subLista = lista.slice(0, maxItems);
             var html = '';
-            for (var i = 0; i < lista.length; i++) {
-                var c = lista[i];
+            for (var i = 0; i < subLista.length; i++) {
+                var c = subLista[i];
                 var id = c.id !== undefined ? c.id : (c.Id !== undefined ? c.Id : '');
                 var codigo = c.codigo || c.Codigo || '';
                 var cliente = c.cliente || c.Cliente || 'Sin Nombre';
-                var fechaFormateada = c.fechaFormateada || c.FechaFormateada || '';
+                var fStr = c.fechaFormateada || c.FechaFormateada || '';
                 var rank = i + 1;
 
                 html += '<tr>' +
@@ -1047,7 +1905,7 @@
                     '<td class="py-2"><span class="font-weight-600">' + cliente + '</span></td>' +
                     '<td class="text-right py-2" style="white-space: nowrap;">' +
                         '<span class="badge badge-warning text-dark font-weight-bold px-2 py-1">' +
-                            '<i class="far fa-calendar-alt mr-1"></i>' + fechaFormateada +
+                            '<i class="far fa-calendar-alt mr-1"></i>' + fStr +
                         '</span>' +
                     '</td>' +
                 '</tr>';
@@ -1055,11 +1913,40 @@
             $tbody.html(html);
         }
 
+        $(document).off('change', '#select-meses-inactivos').on('change', '#select-meses-inactivos', function () {
+            var meses = $(this).val();
+            var $badge = $('#badge-clientes-inactivos');
+            if ($badge.length) {
+                $badge.html('<i class="fas fa-history mr-1"></i>Inactivos (&ge; ' + meses + 'm)');
+            }
+            var $tbody = $('#tabla-clientes-inactivos tbody');
+            $tbody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin mr-1"></i> Consultando clientes...</td></tr>');
+
+            $.ajax({
+                url: '@Url.Action("ObtenerClientesInactivos", "Home")',
+                type: 'GET',
+                data: { meses: meses, cid: cid },
+                headers: { 'x-app-cid': cid },
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        currentClientesInactivosData = res.data;
+                        renderClientesInactivos(res.data, meses, currentClientesInactivosLimit);
+                    } else {
+                        $tbody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> Sin clientes inactivos para este rango</td></tr>');
+                    }
+                },
+                error: function () {
+                    $tbody.html('<tr><td colspan="3" class="text-center text-danger py-3"><i class="fas fa-exclamation-circle mr-1"></i> Error al consultar datos</td></tr>');
+                }
+            });
+        });
+
         function sincronizarDashboard() {
+            var mesesAct = parseInt($('#select-meses-inactivos').val()) || 5;
             $.ajax({
                 url: '@Url.Action("ObtenerDatosDashboard", "Home")',
                 type: 'GET',
-                data: { cid: cid },
+                data: { cid: cid, mesesInactivos: mesesAct },
                 headers: { 'x-app-cid': cid },
                 success: function (res) {
                     if (res && res.success) {
@@ -1083,10 +1970,12 @@
                             renderStackedBarChart(res.graficoStackedBar);
                         }
                         if (res.topPedidos) {
-                            renderTopPedidos(res.topPedidos);
+                            currentTopPedidosData = res.topPedidos;
+                            renderTopPedidos(res.topPedidos, currentTopLimit);
                         }
                         if (res.clientesInactivos) {
-                            renderClientesInactivos(res.clientesInactivos);
+                            currentClientesInactivosData = res.clientesInactivos;
+                            renderClientesInactivos(res.clientesInactivos, mesesAct, currentClientesInactivosLimit);
                         }
                     }
                 },

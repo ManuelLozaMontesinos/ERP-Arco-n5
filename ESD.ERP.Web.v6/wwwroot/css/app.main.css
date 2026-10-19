@@ -123,8 +123,19 @@ body {
    color: #083B67 !important;
 }
 
-.jqgrid-deletedrow {
-   color: #FF0000;
+.jqgrid-deletedrow,
+tr.jqgrid-deletedrow td,
+.ui-jqgrid tr.jqgrid-deletedrow td,
+.ui-jqgrid tr.jqgrow.jqgrid-deletedrow td {
+   color: #dc2626 !important;
+}
+
+/* Saldo column highlight in Light Mode */
+.jqgrid-cell-saldo-destacado,
+.ui-jqgrid tr.jqgrow td.jqgrid-cell-saldo-destacado {
+   background-color: #fef08a !important;
+   color: #1e40af !important;
+   font-weight: bold !important;
 }
 
 /*
@@ -734,6 +745,108 @@ body.dark-mode .ui-jqgrid tr.ui-state-highlight:hover td {
    color: #bfdbfe !important;
 }
 
+/* Anulado / Inactivo / Deleted rows in Dark Mode: prominent soft-red text & subtle reddish row tint */
+body.dark-mode .jqgrid-deletedrow,
+body.dark-mode tr.jqgrid-deletedrow td,
+body.dark-mode .ui-jqgrid tr.jqgrid-deletedrow td,
+body.dark-mode .ui-jqgrid tr.jqgrow.jqgrid-deletedrow td {
+   color: #f87171 !important;
+}
+
+body.dark-mode tr.jqgrid-deletedrow,
+body.dark-mode .ui-jqgrid tr.jqgrow.jqgrid-deletedrow {
+   background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
+body.dark-mode tr.jqgrid-deletedrow:hover td,
+body.dark-mode .ui-jqgrid tr.jqgrow.jqgrid-deletedrow:hover td {
+   background-color: rgba(239, 68, 68, 0.22) !important;
+   color: #fca5a5 !important;
+}
+
+body.dark-mode tr.jqgrid-deletedrow .badge,
+body.dark-mode .ui-jqgrid tr.jqgrow.jqgrid-deletedrow .badge {
+   background-color: rgba(239, 68, 68, 0.25) !important;
+   color: #fca5a5 !important;
+   border: 1px solid rgba(239, 68, 68, 0.5) !important;
+}
+
+/* Saldo column & yellow-shaded columns in Dark Mode (sophisticated amber background + high-contrast text) */
+body.dark-mode .jqgrid-cell-saldo-destacado,
+body.dark-mode td.jqgrid-cell-saldo-destacado,
+body.dark-mode .ui-jqgrid tr.jqgrow td.jqgrid-cell-saldo-destacado,
+body.dark-mode td[style*="background: #FFFF80"],
+body.dark-mode td[style*="background:#FFFF80"],
+body.dark-mode td[style*="background: #ffff80"],
+body.dark-mode td[style*="background:#ffff80"],
+body.dark-mode td[style*="background: rgb(255, 255, 128)"],
+body.dark-mode .ui-jqgrid tr.jqgrow td[style*="background: #FFFF80"],
+body.dark-mode .ui-jqgrid tr.jqgrow td[style*="background:#FFFF80"],
+body.dark-mode .ui-jqgrid tr.jqgrow td[style*="background: #ffff80"],
+body.dark-mode .ui-jqgrid tr.jqgrow td[style*="background:#ffff80"],
+body.dark-mode .ui-jqgrid tr.jqgrow td[style*="background: rgb(255, 255, 128)"] {
+   background: rgba(245, 158, 11, 0.22) !important;
+   background-color: rgba(245, 158, 11, 0.22) !important;
+   color: #38bdf8 !important;
+   border-color: rgba(245, 158, 11, 0.35) !important;
+   font-weight: bold !important;
+}
+
+/* Jqgrid cell-warning & discount badge cells in Dark Mode */
+body.dark-mode .jqgrid-cell-warning,
+body.dark-mode td .jqgrid-cell-warning,
+body.dark-mode .ui-jqgrid tr.jqgrow td .jqgrid-cell-warning {
+   background: rgba(245, 158, 11, 0.28) !important;
+   background-color: rgba(245, 158, 11, 0.28) !important;
+   color: #fbbf24 !important;
+   border: 1px solid rgba(245, 158, 11, 0.55) !important;
+   font-weight: bold !important;
+}
+
+body.dark-mode .jqgrid-cell-success,
+body.dark-mode td .jqgrid-cell-success,
+body.dark-mode .ui-jqgrid tr.jqgrow td .jqgrid-cell-success {
+   background: rgba(16, 185, 129, 0.28) !important;
+   background-color: rgba(16, 185, 129, 0.28) !important;
+   color: #34d399 !important;
+   border: 1px solid rgba(16, 185, 129, 0.55) !important;
+   font-weight: bold !important;
+}
+
+body.dark-mode .jqgrid-cell-item-sold-out,
+body.dark-mode td .jqgrid-cell-item-sold-out,
+body.dark-mode .ui-jqgrid tr.jqgrow td .jqgrid-cell-item-sold-out {
+   background: rgba(239, 68, 68, 0.28) !important;
+   background-color: rgba(239, 68, 68, 0.28) !important;
+   color: #f87171 !important;
+   border: 1px solid rgba(239, 68, 68, 0.55) !important;
+   font-weight: bold !important;
+}
+
+body.dark-mode .jqgrid-cell-item-read-only,
+body.dark-mode td .jqgrid-cell-item-read-only,
+body.dark-mode .ui-jqgrid tr.jqgrow td .jqgrid-cell-item-read-only {
+   background: rgba(100, 116, 139, 0.35) !important;
+   background-color: rgba(100, 116, 139, 0.35) !important;
+   color: #cbd5e1 !important;
+   border: 1px solid rgba(148, 163, 184, 0.45) !important;
+   font-weight: bold !important;
+}
+
+body.dark-mode .table-warning,
+body.dark-mode .table-warning>th,
+body.dark-mode .table-warning>td {
+   background-color: rgba(245, 158, 11, 0.2) !important;
+   color: #fcd34d !important;
+   border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+body.dark-mode .badge-warning {
+   background-color: rgba(245, 158, 11, 0.25) !important;
+   color: #fbbf24 !important;
+   border: 1px solid rgba(245, 158, 11, 0.5) !important;
+}
+
 body.dark-mode .ui-jqgrid-pager,
 body.dark-mode #bandejaPager {
    background: #2b3035 !important;
@@ -1232,4 +1345,36 @@ body.dark-mode #app-navbar-breadcrumb .breadcrumb-item.active {
 
 body.dark-mode #app-navbar-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
    color: #64748b !important;
+}
+
+/* Estilos y alineacion perfecta de herramientas y controles en tarjetas de Dashboard */
+.content .card-header,
+.card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+.content .card-header::after,
+.content .card-header::before,
+.card-header::after,
+.card-header::before {
+    display: none !important;
+    content: none !important;
+    clear: none !important;
+}
+.content .card-header > .card-title,
+.card-header > .card-title {
+    margin-right: auto !important;
+    flex-shrink: 0 !important;
+}
+.content .card-header > .card-tools,
+.card-header > .card-tools {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    float: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-shrink: 0 !important;
 }

@@ -1,4 +1,5 @@
 ﻿using ESD.Core;
+using ESD.Core.Logging;
 using ESD.Core.Web;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
@@ -64,12 +65,16 @@ namespace ESD.ERP.Web.Areas.PD.Controllers
             string dataName = string.Empty;
 
             if (resumen == SiNoConstante.S)
+            {
                 dataName = "sp_rptpd_procesosProduccion";
                 reportName = "PD_ProcesosProduccionResumen";
+            }
 
             if (detallado == SiNoConstante.S)
+            {
                 dataName = "sp_rptpd_procesosProduccionDetallado";
                 reportName = "PD_ProcesosProduccionDetallado";
+            }
 
             string downloadFileName = reportName;
 
@@ -77,7 +82,15 @@ namespace ESD.ERP.Web.Areas.PD.Controllers
             switch (format)
             {
                 case ReportFormatConstant.PDF:
-                    fileContentResult = appHelper.ReportToPdf(reportName, parameters, downloadFileName);
+                    try
+                    {
+                        fileContentResult = appHelper.ReportToPdf(reportName, parameters, downloadFileName);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error("Error al generar PDF en Reporting Services para " + reportName + ": " + e.Message);
+                        fileContentResult = null;
+                    }
                     break;
 
                 case ReportFormatConstant.EXCEL:

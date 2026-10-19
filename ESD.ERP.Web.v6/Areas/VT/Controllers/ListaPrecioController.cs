@@ -1385,7 +1385,8 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
             }
          });
 
-         List<ListaPrecioDTO> listaPrecioDTOList = obtenerListaPrecio(periodoEmpresaSedeDTO, monedaId, vendedorDTO.VendedorId);
+         int vendedorId = vendedorDTO != null ? vendedorDTO.VendedorId : 0;
+         List<ListaPrecioDTO> listaPrecioDTOList = obtenerListaPrecio(periodoEmpresaSedeDTO, monedaId, vendedorId);
          model.ListaPrecioList = WebHelper.ToSelectListItem(listaPrecioDTOList, x => x.Id.ToString(), x => x.Nombre, SelectListFirstOptionType.Select);
 
          if (model.SelectedItemList == null)
@@ -1408,23 +1409,9 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
       }
         private List<ListaPrecioDTO> obtenerListaPrecio(PeriodoEmpresaSedeDTO periodoEmpresaSedeDTO, int monedaId, int vendedorId)
         {
-
-            List<ListaPrecioVendedorDTO> listaPrecioVendedorDTOList = listaPrecioVendedorProxy.Search(new ListaPrecioVendedorDTO()
-            {
-                VendedorId = vendedorId,
-                ListaPrecioDTO = new ListaPrecioDTO()
-                {
-                    EmpresaSedeDTO = periodoEmpresaSedeDTO.EmpresaSedeDTO,
-                    EmpresaSedeId = periodoEmpresaSedeDTO.EmpresaSedeId,
-                    MonedaId = monedaId,
-                    Estado = EstadoConstante.ACTIVO,
-                },
-                Estado = EstadoConstante.ACTIVO
-            });
-
             List<ListaPrecioDTO> listaPrecioDTOList = new List<ListaPrecioDTO>();
 
-            if (EsAdministrador())
+            if (EsAdministrador() || vendedorId == 0)
             {
                 listaPrecioDTOList = listaPrecioProxy.Search(new ListaPrecioDTO()
                 {
@@ -1436,6 +1423,18 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
             }
             else
             {
+                List<ListaPrecioVendedorDTO> listaPrecioVendedorDTOList = listaPrecioVendedorProxy.Search(new ListaPrecioVendedorDTO()
+                {
+                    VendedorId = vendedorId,
+                    ListaPrecioDTO = new ListaPrecioDTO()
+                    {
+                        EmpresaSedeDTO = periodoEmpresaSedeDTO.EmpresaSedeDTO,
+                        EmpresaSedeId = periodoEmpresaSedeDTO.EmpresaSedeId,
+                        MonedaId = monedaId,
+                        Estado = EstadoConstante.ACTIVO,
+                    },
+                    Estado = EstadoConstante.ACTIVO
+                });
                 listaPrecioDTOList = listaPrecioVendedorDTOList.Select(x => x.ListaPrecioDTO).ToList();
             }
             return listaPrecioDTOList;
@@ -1542,7 +1541,8 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
                }
             });
 
-            List<ListaPrecioDTO> listaPrecioDTOList = obtenerListaPrecio(periodoEmpresaSedeDTO, model.ListaPrecioDTO.MonedaId, vendedorDTO.VendedorId);
+            int vendedorId = vendedorDTO != null ? vendedorDTO.VendedorId : 0;
+            List<ListaPrecioDTO> listaPrecioDTOList = obtenerListaPrecio(periodoEmpresaSedeDTO, model.ListaPrecioDTO.MonedaId, vendedorId);
 
             resultResponse.Data = new
             {
