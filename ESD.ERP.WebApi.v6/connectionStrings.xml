@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <connectionStrings>
-	<connectionString name="default" value="data source=.;initial catalog=esderp_v6;persist security info=True;user id=sa;password=admin123*;"/>
+	<connectionString name="default" value="data source=.\SQLEXPRESS;initial catalog=esderp_v6;persist security info=True;user id=sa;password=admin123*;"/>
 </connectionStrings>

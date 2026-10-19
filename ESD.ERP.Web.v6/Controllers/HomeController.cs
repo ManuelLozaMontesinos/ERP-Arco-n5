@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -18,6 +18,16 @@ namespace ESD.ERP.Web.Controllers
       public string Cliente { get; set; }
       public decimal Monto { get; set; }
       public string MontoFormateado { get; set; }
+   }
+
+   public class ClienteInactivoDTO
+   {
+      public int Id { get; set; }
+      public string Codigo { get; set; }
+      public string Cliente { get; set; }
+      public DateTime FechaUltimaCompra { get; set; }
+      public string FechaFormateada { get; set; }
+      public int MesesSinComprar { get; set; }
    }
 
    public class HomeController : AuthorizedController
@@ -40,9 +50,38 @@ namespace ESD.ERP.Web.Controllers
          this.productoProxy = productoProxy;
       }
 
+      private static string _cachedConnectionString;
+
       private static string GetDbConnectionString()
       {
-         return "Server=localhost;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;";
+         if (!string.IsNullOrEmpty(_cachedConnectionString))
+         {
+            return _cachedConnectionString;
+         }
+
+         string[] candidates = new[]
+         {
+            "Server=.\\SQLEXPRESS;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=3;",
+            "Server=localhost;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=3;",
+            "Server=.\\SQLEXPRESS;Database=esderp_v6;User Id=sa;Password=admin123*;TrustServerCertificate=True;Connect Timeout=3;"
+         };
+
+         foreach (var cs in candidates)
+         {
+            try
+            {
+               using (var c = new SqlConnection(cs))
+               {
+                  c.Open();
+                  _cachedConnectionString = cs;
+                  return cs;
+               }
+            }
+            catch { }
+         }
+
+         _cachedConnectionString = candidates[0];
+         return _cachedConnectionString;
       }
 
       private dynamic ObtenerMetricasDesdeBD()
@@ -53,6 +92,7 @@ namespace ESD.ERP.Web.Controllers
          int ordenesProduccionMes = 0;
          int ordenesCompraMes = 0;
          var topPedidos = new List<TopPedidoDTO>();
+         var clientesInactivos = new List<ClienteInactivoDTO>();
 
          var mesesVentas = new[] { "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre" };
          var ventas2025 = new double[] { 2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1 };
@@ -282,6 +322,48 @@ namespace ESD.ERP.Web.Controllers
                   }
                }
                catch { }
+
+               // 9. Clientes sin compras desde hace 5 meses (Listado breve - Top 5)
+               try
+               {
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT TOP 5
+                            p.proveedor_id AS ClienteId,
+                            p.proveedor AS CodigoCliente,
+                            ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres + ' ' + ISNULL(p.apellido_pat, ''))), 'Sin Nombre')) AS ClienteNombre,
+                            MAX(v.fecha) AS FechaUltimaCompra,
+                            DATEDIFF(month, MAX(v.fecha), GETDATE()) AS MesesSinComprar
+                        FROM (
+                            SELECT proveedor_id, fecha FROM comprobante WHERE estado = 'A'
+                            UNION ALL
+                            SELECT proveedor_id, fecha FROM cotiza WHERE es_pedido = 'S' AND estado = 'A'
+                        ) v
+                        INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
+                        GROUP BY p.proveedor_id, p.proveedor, p.razon_social, p.nombres, p.apellido_pat
+                        HAVING MAX(v.fecha) <= DATEADD(month, -5, GETDATE())
+                        ORDER BY FechaUltimaCompra DESC";
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        while (reader.Read())
+                        {
+                           DateTime fUltima = Convert.ToDateTime(reader["FechaUltimaCompra"]);
+                           int meses = reader["MesesSinComprar"] != DBNull.Value ? Convert.ToInt32(reader["MesesSinComprar"]) : 5;
+                           clientesInactivos.Add(new ClienteInactivoDTO
+                           {
+                              Id = Convert.ToInt32(reader["ClienteId"]),
+                              Codigo = reader["CodigoCliente"]?.ToString()?.Trim(),
+                              Cliente = reader["ClienteNombre"]?.ToString()?.Trim(),
+                              FechaUltimaCompra = fUltima,
+                              FechaFormateada = fUltima.ToString("dd/MM/yyyy"),
+                              MesesSinComprar = meses
+                           });
+                        }
+                     }
+                  }
+               }
+               catch { }
             }
          }
          catch { }
@@ -301,7 +383,8 @@ namespace ESD.ERP.Web.Controllers
             dsIlo = dsIlo,
             prodLabels = new[] { "En Proceso", "Culminadas", "Pendientes", "Anuladas" },
             prodValores = new[] { prodEnProceso, prodCulminadas, prodPendientes, prodAnuladas },
-            topPedidos = topPedidos
+            topPedidos = topPedidos,
+            clientesInactivos = clientesInactivos
          };
       }
 
@@ -326,6 +409,7 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.OrdenesProduccionMes = metricas.ordenesProduccionMes;
          ViewBag.OrdenesCompraMes = metricas.ordenesCompraMes;
          ViewBag.TopPedidos = metricas.topPedidos;
+         ViewBag.ClientesInactivos = metricas.clientesInactivos;
          ViewBag.StackedLabels = metricas.stackedLabels;
          ViewBag.DsCentral = metricas.dsCentral;
          ViewBag.DsIlo = metricas.dsIlo;
@@ -367,6 +451,7 @@ namespace ESD.ERP.Web.Controllers
                   ordenesCompraMes = metricas.ordenesCompraMes
                },
                topPedidos = metricas.topPedidos,
+               clientesInactivos = metricas.clientesInactivos,
                graficoVentas = new
                {
                   meses = metricas.mesesVentas,

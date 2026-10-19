@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
     string facturacionMes = ViewBag.FacturacionMes ?? "S/ 0.00";
@@ -7,6 +7,7 @@
     string ordenesProduccionMes = ViewBag.OrdenesProduccionMes ?? "0";
     string ordenesCompraMes = ViewBag.OrdenesCompraMes ?? "0";
     var topPedidos = ViewBag.TopPedidos as List<ESD.ERP.Web.Controllers.TopPedidoDTO> ?? new List<ESD.ERP.Web.Controllers.TopPedidoDTO>();
+    var clientesInactivos = ViewBag.ClientesInactivos as List<ESD.ERP.Web.Controllers.ClienteInactivoDTO> ?? new List<ESD.ERP.Web.Controllers.ClienteInactivoDTO>();
     var stackedDiasDefault = ViewBag.StackedLabels as List<string> ?? new List<string> { "12 Oct", "13 Oct", "14 Oct", "15 Oct", "16 Oct", "17 Oct" };
     var dsCentralDefault = ViewBag.DsCentral as double[] ?? new double[] { 0, 0, 0, 0, 0, 203.6 };
     var dsIloDefault = ViewBag.DsIlo as double[] ?? new double[] { 0, 0, 0, 0, 0, 0 };
@@ -358,9 +359,10 @@
 
         </div>
 
-        <!-- 3. SECCION: TOP 5 PEDIDOS DEL DIA -->
-        <div class="row justify-content-center">
-            <div class="col-xl-7 col-lg-8 col-md-10 col-12">
+        <!-- 3. SECCION: TOP 5 PEDIDOS DEL DIA Y CLIENTES INACTIVOS (+5 MESES) -->
+        <div class="row">
+            <!-- 3.1. Top 5 Pedidos del Día (Izquierda) -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-12">
                 <div class="card card-primary card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center">
                         <h3 class="card-title font-weight-bold m-0">
@@ -380,9 +382,9 @@
                         <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-top-pedidos">
                             <thead class="thead-light">
                                 <tr>
-                                    <th style="width: 22%; text-align: center;">ID del Pedido</th>
+                                    <th style="width: 24%; text-align: center;">ID del Pedido</th>
                                     <th>Cliente</th>
-                                    <th style="width: 26%; text-align: right;">Monto / Total</th>
+                                    <th style="width: 28%; text-align: right;">Monto / Total</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -425,6 +427,79 @@
                         <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Pedidos con mayor importe registrados durante el d&iacute;a</small>
                         <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'pedido/index' });" class="btn btn-xs btn-outline-primary float-right">
                             <i class="fas fa-arrow-circle-right mr-1"></i>Ver todos los Pedidos
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3.2. Clientes sin Compras (+5 Meses) (Derecha) -->
+            <div class="col-xl-6 col-lg-6 col-md-12 col-12">
+                <div class="card card-warning card-outline shadow-sm mb-4">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center">
+                        <h3 class="card-title font-weight-bold m-0">
+                            <i class="fas fa-user-clock text-warning mr-2"></i>Clientes sin Compras (&ge; 5 Meses)
+                        </h3>
+                        <div class="card-tools">
+                            <span class="badge badge-warning text-dark px-2 py-1 mr-2"><i class="fas fa-history mr-1"></i>Inactivos</span>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Cerrar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-clientes-inactivos">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 24%; text-align: center;">ID del Cliente</th>
+                                    <th>Cliente</th>
+                                    <th style="width: 28%; text-align: right;">&Uacute;ltima Compra</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (clientesInactivos != null && clientesInactivos.Count > 0)
+                                {
+                                    int ranking = 1;
+                                    foreach (var c in clientesInactivos)
+                                    {
+                                        <tr>
+                                            <td class="text-center font-weight-bold text-secondary py-2" style="white-space: nowrap;">
+                                                <span class="badge badge-light border mr-1">#@ranking</span>
+                                                <span>@c.Id</span>
+                                                @if (!string.IsNullOrEmpty(c.Codigo))
+                                                {
+                                                    <small class="text-muted">(@c.Codigo)</small>
+                                                }
+                                            </td>
+                                            <td class="py-2">
+                                                <span class="font-weight-600">@c.Cliente</span>
+                                            </td>
+                                            <td class="text-right py-2" style="white-space: nowrap;">
+                                                <span class="badge badge-warning text-dark font-weight-bold px-2 py-1">
+                                                    <i class="far fa-calendar-alt mr-1"></i>@c.FechaFormateada
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        ranking++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-3">
+                                            <i class="fas fa-check-circle text-success mr-1"></i> No se encontraron clientes con inactividad superior a 5 meses
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer clearfix border-top-0 py-2">
+                        <small class="text-muted"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Clientes que no compran desde hace 5 meses</small>
+                        <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'cliente/index' });" class="btn btn-xs btn-outline-warning text-dark float-right">
+                            <i class="fas fa-users mr-1"></i>Ver Directorio
                         </a>
                     </div>
                 </div>
@@ -947,6 +1022,39 @@
             $tbody.html(html);
         }
 
+        function renderClientesInactivos(lista) {
+            var $tbody = $('#tabla-clientes-inactivos tbody');
+            if (!$tbody.length) return;
+            if (!lista || !lista.length) {
+                $tbody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> No se encontraron clientes con inactividad superior a 5 meses</td></tr>');
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < lista.length; i++) {
+                var c = lista[i];
+                var id = c.id !== undefined ? c.id : (c.Id !== undefined ? c.Id : '');
+                var codigo = c.codigo || c.Codigo || '';
+                var cliente = c.cliente || c.Cliente || 'Sin Nombre';
+                var fechaFormateada = c.fechaFormateada || c.FechaFormateada || '';
+                var rank = i + 1;
+
+                html += '<tr>' +
+                    '<td class="text-center font-weight-bold text-secondary py-2" style="white-space: nowrap;">' +
+                        '<span class="badge badge-light border mr-1">#' + rank + '</span>' +
+                        '<span>' + id + '</span>' +
+                        (codigo ? ' <small class="text-muted">(' + codigo + ')</small>' : '') +
+                    '</td>' +
+                    '<td class="py-2"><span class="font-weight-600">' + cliente + '</span></td>' +
+                    '<td class="text-right py-2" style="white-space: nowrap;">' +
+                        '<span class="badge badge-warning text-dark font-weight-bold px-2 py-1">' +
+                            '<i class="far fa-calendar-alt mr-1"></i>' + fechaFormateada +
+                        '</span>' +
+                    '</td>' +
+                '</tr>';
+            }
+            $tbody.html(html);
+        }
+
         function sincronizarDashboard() {
             $.ajax({
                 url: '@Url.Action("ObtenerDatosDashboard", "Home")',
@@ -976,6 +1084,9 @@
                         }
                         if (res.topPedidos) {
                             renderTopPedidos(res.topPedidos);
+                        }
+                        if (res.clientesInactivos) {
+                            renderClientesInactivos(res.clientesInactivos);
                         }
                     }
                 },
