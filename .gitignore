@@ -364,3 +364,15 @@ FodyWeavers.xsd
 
 # OS
 **/.DS_Store
+*.xml
+*.xml
+ESD.ERP.ExportDataApi.v6/connectionStrings.xml
+ESD.ERP.IntegrationApi.v6/connectionStrings.xml
+ESD.ERP.WebApi.v6/connectionStrings.xml
+*.xml
+ESD.ERP.ExportDataApi.v6/connectionStrings.xml
+ESD.ERP.IntegrationApi.v6/connectionStrings.xml
+ESD.ERP.WebApi.v6/connectionStrings.xml
+ESD.ERP.ExportDataApi.v6/connectionStrings.xml
+ESD.ERP.IntegrationApi.v6/connectionStrings.xml
+ESD.ERP.WebApi.v6/connectionStrings.xml

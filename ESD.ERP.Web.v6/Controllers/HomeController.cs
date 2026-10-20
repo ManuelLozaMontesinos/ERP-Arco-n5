@@ -30,6 +30,19 @@ namespace ESD.ERP.Web.Controllers
       public int MesesSinComprar { get; set; }
    }
 
+   public class VendedorDTO
+   {
+      public int id { get; set; }
+      public string nombre { get; set; }
+   }
+
+   public class RolDTO
+   {
+      public int id { get; set; }
+      public string codigo { get; set; }
+      public string nombre { get; set; }
+   }
+
    public class HomeController : AuthorizedController
    {
       private readonly IComprobanteProxy comprobanteProxy;
@@ -93,6 +106,14 @@ namespace ESD.ERP.Web.Controllers
          int ordenesCompraMes = 0;
          var topPedidos = new List<TopPedidoDTO>();
          var clientesInactivos = new List<ClienteInactivoDTO>();
+         double sumatoriaPedidosMes = 0;
+         int cantidadPedidosMes = 0;
+         var listaVendedores = new List<VendedorDTO>();
+         int primerVendedorId = 50;
+         string primerVendedorNombre = "CRISTIAN";
+         var vendedorCantidades = new List<int>();
+         var vendedorMontos = new List<double>();
+         var listaRoles = new List<RolDTO>();
 
          string[] nombresMeses = { "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
          DateTime hoy = DateTime.Today;
@@ -378,6 +399,40 @@ namespace ESD.ERP.Web.Controllers
                         }
                      }
                   }
+
+                  // Si el dia de hoy no tuviera pedidos (ej. backup restaurado), usar los mas recientes de respaldo
+                  if (topPedidos.Count == 0)
+                  {
+                     using (var cmd = conn.CreateCommand())
+                     {
+                        cmd.CommandText = @"
+                           SELECT TOP 10 
+                               c.cotiza_id, 
+                               c.cotiza, 
+                               ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres)), 'Sin Cliente')) AS cliente, 
+                               c.monto_total
+                           FROM cotiza c
+                           LEFT JOIN proveedor p ON c.proveedor_id = p.proveedor_id
+                           WHERE c.es_pedido = 'S' 
+                             AND c.estado = 'A' 
+                           ORDER BY c.fecha DESC, c.monto_total DESC";
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                           while (reader.Read())
+                           {
+                              decimal monto = Convert.ToDecimal(reader["monto_total"]);
+                              topPedidos.Add(new TopPedidoDTO
+                              {
+                                 Id = Convert.ToInt32(reader["cotiza_id"]),
+                                 Codigo = reader["cotiza"]?.ToString()?.Trim(),
+                                 Cliente = reader["cliente"]?.ToString()?.Trim(),
+                                 Monto = monto,
+                                 MontoFormateado = "S/ " + monto.ToString("N2")
+                              });
+                           }
+                        }
+                     }
+                  }
                }
                catch { }
 
@@ -422,6 +477,141 @@ namespace ESD.ERP.Web.Controllers
                   }
                }
                catch { }
+
+               // 5b. Sumatoria de Pedidos del Mes Actual (Pedido=2, Facturado=3, Factura Parcial=4)
+               try
+               {
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT 
+                            ROUND(ISNULL(SUM(monto_total), 0), 2) AS sumatoria,
+                            COUNT(*) AS cantidad
+                        FROM cotiza
+                        WHERE es_pedido = 'S' 
+                          AND estado = 'A'
+                          AND estado_cotiza_id IN (2, 3, 4)
+                          AND YEAR(fecha) = YEAR(GETDATE()) 
+                          AND MONTH(fecha) = MONTH(GETDATE())";
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        if (reader.Read())
+                        {
+                           if (reader["sumatoria"] != DBNull.Value) sumatoriaPedidosMes = Convert.ToDouble(reader["sumatoria"]);
+                           if (reader["cantidad"] != DBNull.Value) cantidadPedidosMes = Convert.ToInt32(reader["cantidad"]);
+                        }
+                     }
+                  }
+               }
+               catch { }
+
+               // 9. Vendedores activos y pedidos diarios recientes
+               try
+               {
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT v.vendedor_id, v.abrev AS nombre, COUNT(*) AS total_pedidos
+                        FROM cotiza c
+                        INNER JOIN vendedor v ON c.vendedor_id = v.vendedor_id
+                        WHERE c.es_pedido = 'S' AND c.estado = 'A' AND v.estado = 'A'
+                          AND c.fecha >= DATEADD(month, -2, GETDATE())
+                        GROUP BY v.vendedor_id, v.abrev
+                        ORDER BY total_pedidos DESC";
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        bool isFirst = true;
+                        while (reader.Read())
+                        {
+                           int vid = Convert.ToInt32(reader["vendedor_id"]);
+                           string vnom = reader["nombre"].ToString().Trim();
+                           if (isFirst)
+                           {
+                              primerVendedorId = vid;
+                              primerVendedorNombre = vnom;
+                              isFirst = false;
+                           }
+                           listaVendedores.Add(new VendedorDTO { id = vid, nombre = vnom });
+                        }
+                     }
+                  }
+               }
+               catch { }
+
+               // Pedidos diarios del primer vendedor (ultimos 12 dias)
+               try
+               {
+                  var mapaVendedor = new Dictionary<string, (int cantidad, double monto)>();
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT 
+                            CAST(c.fecha AS DATE) AS dia,
+                            COUNT(*) AS cantidad,
+                            ROUND(SUM(c.monto_total), 2) AS monto
+                        FROM cotiza c
+                        WHERE c.es_pedido = 'S' AND c.estado = 'A'
+                          AND c.vendedor_id = @vid
+                          AND c.fecha >= @fDesde AND c.fecha < @fHasta
+                        GROUP BY CAST(c.fecha AS DATE)";
+                     cmd.Parameters.AddWithValue("@vid", primerVendedorId);
+                     cmd.Parameters.AddWithValue("@fDesde", fechasLista[0]);
+                     cmd.Parameters.AddWithValue("@fHasta", hoy.AddDays(1));
+
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        while (reader.Read())
+                        {
+                           DateTime d = Convert.ToDateTime(reader["dia"]);
+                           int cant = Convert.ToInt32(reader["cantidad"]);
+                           double mto = Convert.ToDouble(reader["monto"]);
+                           mapaVendedor[d.ToString("yyyy-MM-dd")] = (cant, mto);
+                        }
+                     }
+                  }
+
+                  foreach (var f in fechasLista)
+                  {
+                     string k = f.ToString("yyyy-MM-dd");
+                     if (mapaVendedor.ContainsKey(k))
+                     {
+                        vendedorCantidades.Add(mapaVendedor[k].cantidad);
+                        vendedorMontos.Add(mapaVendedor[k].monto);
+                     }
+                     else
+                     {
+                        vendedorCantidades.Add(0);
+                        vendedorMontos.Add(0.0);
+                     }
+                  }
+               }
+               catch { }
+
+               // 10. Lista de Roles del sistema
+               try
+               {
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT rol_id, rol AS codigo, nombre
+                        FROM rol
+                        WHERE estado = 'A'
+                        ORDER BY nombre";
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        while (reader.Read())
+                        {
+                           listaRoles.Add(new RolDTO
+                           {
+                              id = Convert.ToInt32(reader["rol_id"]),
+                              codigo = reader["codigo"].ToString().Trim(),
+                              nombre = reader["nombre"].ToString().Trim()
+                           });
+                        }
+                     }
+                  }
+               }
+               catch { }
             }
          }
          catch { }
@@ -429,6 +619,14 @@ namespace ESD.ERP.Web.Controllers
          return new
          {
             facturacionMes = "S/ " + facturacionMes.ToString("N2"),
+            pedidosMesMonto = "S/ " + sumatoriaPedidosMes.ToString("N2"),
+            pedidosMesCantidad = cantidadPedidosMes,
+            listaVendedores = listaVendedores,
+            primerVendedorId = primerVendedorId,
+            primerVendedorNombre = primerVendedorNombre,
+            vendedorCantidades = vendedorCantidades,
+            vendedorMontos = vendedorMontos,
+            listaRoles = listaRoles,
             pedidosActivos = pedidosActivos.ToString("N0"),
             cotizacionesActivas = cotizacionesActivas.ToString("N0"),
             ordenesProduccionMes = ordenesProduccionMes.ToString("N0"),
@@ -461,7 +659,24 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.cid = cid;
 
          var metricas = ObtenerMetricasDesdeBD();
+         bool esAdmin = false;
+         try { esAdmin = EsAdministrador(); } catch { esAdmin = true; }
+         ViewBag.EsAdmin = esAdmin;
+
+         List<string> userRoles = new List<string>();
+         try { userRoles = ObtenerRoles(); } catch { }
+         ViewBag.UserRoles = userRoles;
+         ViewBag.RolActualCodigo = (userRoles != null && userRoles.Count > 0) ? userRoles[0] : "S0001";
+         ViewBag.ListaRoles = metricas.listaRoles;
+
          ViewBag.FacturacionMes = metricas.facturacionMes;
+         ViewBag.PedidosMesMonto = metricas.pedidosMesMonto;
+         ViewBag.PedidosMesCantidad = metricas.pedidosMesCantidad;
+         ViewBag.ListaVendedores = metricas.listaVendedores;
+         ViewBag.VendedorIdInicial = metricas.primerVendedorId;
+         ViewBag.VendedorNombreInicial = metricas.primerVendedorNombre;
+         ViewBag.VendedorCantidades = metricas.vendedorCantidades;
+         ViewBag.VendedorMontos = metricas.vendedorMontos;
          ViewBag.PedidosActivos = metricas.pedidosActivos;
          ViewBag.CotizacionesActivas = metricas.cotizacionesActivas;
          ViewBag.OrdenesProduccionMes = metricas.ordenesProduccionMes;
@@ -511,7 +726,17 @@ namespace ESD.ERP.Web.Controllers
                   pedidosActivos = metricas.pedidosActivos,
                   cotizacionesActivas = metricas.cotizacionesActivas,
                   ordenesProduccionMes = metricas.ordenesProduccionMes,
-                  ordenesCompraMes = metricas.ordenesCompraMes
+                  ordenesCompraMes = metricas.ordenesCompraMes,
+                  pedidosMesMonto = metricas.pedidosMesMonto,
+                  pedidosMesCantidad = metricas.pedidosMesCantidad
+               },
+               vendedores = metricas.listaVendedores,
+               vendedorData = new
+               {
+                  id = metricas.primerVendedorId,
+                  nombre = metricas.primerVendedorNombre,
+                  cantidades = metricas.vendedorCantidades,
+                  montos = metricas.vendedorMontos
                },
                topPedidos = metricas.topPedidos,
                clientesInactivos = metricas.clientesInactivos,
@@ -586,6 +811,97 @@ namespace ESD.ERP.Web.Controllers
                    valores = new[] { 0, 0, 0, 0 }
                }
             });
+         }
+      }
+
+      [HttpGet]
+      public JsonResult ObtenerPedidosVendedor(int vendedorId, int dias = 12)
+      {
+         try
+         {
+            if (dias < 4 || dias > 30) dias = 12;
+            DateTime hoy = DateTime.Today;
+            string[] mesesCortos = { "", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic" };
+            var diasList = new List<DateTime>();
+            var labelsList = new List<string>();
+
+            for (int i = dias - 1; i >= 0; i--)
+            {
+               DateTime f = hoy.AddDays(-i).Date;
+               diasList.Add(f);
+               labelsList.Add(f.Day + " " + mesesCortos[f.Month]);
+            }
+
+            var mapa = new Dictionary<string, (int cantidad, double monto)>();
+            int totalPedidos = 0;
+            double totalMonto = 0;
+
+            using (var conn = new SqlConnection(GetDbConnectionString()))
+            {
+               conn.Open();
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = @"
+                     SELECT 
+                         CAST(c.fecha AS DATE) AS dia,
+                         COUNT(*) AS cantidad,
+                         ROUND(SUM(c.monto_total), 2) AS monto
+                     FROM cotiza c
+                     WHERE c.es_pedido = 'S' AND c.estado = 'A'
+                       AND c.vendedor_id = @vid
+                       AND c.fecha >= @fDesde AND c.fecha < @fHasta
+                     GROUP BY CAST(c.fecha AS DATE)";
+                  cmd.Parameters.AddWithValue("@vid", vendedorId);
+                  cmd.Parameters.AddWithValue("@fDesde", diasList[0]);
+                  cmd.Parameters.AddWithValue("@fHasta", hoy.AddDays(1));
+
+                  using (var reader = cmd.ExecuteReader())
+                  {
+                     while (reader.Read())
+                     {
+                        DateTime d = Convert.ToDateTime(reader["dia"]);
+                        int cant = Convert.ToInt32(reader["cantidad"]);
+                        double mto = Convert.ToDouble(reader["monto"]);
+                        mapa[d.ToString("yyyy-MM-dd")] = (cant, mto);
+                        totalPedidos += cant;
+                        totalMonto += mto;
+                     }
+                  }
+               }
+            }
+
+            var cantidades = new List<int>();
+            var montos = new List<double>();
+            foreach (var f in diasList)
+            {
+               string k = f.ToString("yyyy-MM-dd");
+               if (mapa.ContainsKey(k))
+               {
+                  cantidades.Add(mapa[k].cantidad);
+                  montos.Add(mapa[k].monto);
+               }
+               else
+               {
+                  cantidades.Add(0);
+                  montos.Add(0.0);
+               }
+            }
+
+            return Json(new
+            {
+               success = true,
+               vendedorId = vendedorId,
+               dias = dias,
+               labels = labelsList,
+               cantidades = cantidades,
+               montos = montos,
+               totalPedidos = totalPedidos,
+               totalMonto = "S/ " + totalMonto.ToString("N2")
+            });
+         }
+         catch (Exception ex)
+         {
+            return Json(new { success = false, message = ex.Message });
          }
       }
 

@@ -2,6 +2,15 @@
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
     string facturacionMes = ViewBag.FacturacionMes ?? "S/ 0.00";
+    string pedidosMesMonto = ViewBag.PedidosMesMonto ?? "S/ 0.00";
+    int pedidosMesCantidad = ViewBag.PedidosMesCantidad != null ? Convert.ToInt32(ViewBag.PedidosMesCantidad) : 0;
+    bool esAdmin = ViewBag.EsAdmin != null ? (bool)ViewBag.EsAdmin : false;
+    string usuarioLogonActual = ViewBag.Usuario ?? "administrador";
+    string rolActualCodigo = ViewBag.RolActualCodigo ?? "S0001";
+    int vendedorIdInicial = ViewBag.VendedorIdInicial != null ? Convert.ToInt32(ViewBag.VendedorIdInicial) : 50;
+    string vendedorNombreInicial = ViewBag.VendedorNombreInicial ?? "Cristian";
+    var vendedorCantidadesDefault = ViewBag.VendedorCantidades as List<int> ?? new List<int> { 0, 0, 0, 0, 0, 0 };
+    var vendedorMontosDefault = ViewBag.VendedorMontos as List<double> ?? new List<double> { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     string pedidosActivos = ViewBag.PedidosActivos ?? "169";
     string cotizacionesActivas = ViewBag.CotizacionesActivas ?? "7,637";
     string ordenesProduccionMes = ViewBag.OrdenesProduccionMes ?? "0";
@@ -16,6 +25,8 @@
     var ventas2026Default = ViewBag.Ventas2026 as double[] ?? new double[] { 0.0, 0.0, 2860.8, 2989.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
     var prodLabelsDefault = ViewBag.ProdLabels as string[] ?? new string[] { "En Proceso", "Culminadas", "Pendientes", "Anuladas" };
     var prodValoresDefault = ViewBag.ProdValores as int[] ?? new int[] { 0, 0, 0, 0 };
+    var listaVendedores = ViewBag.ListaVendedores as List<ESD.ERP.Web.Controllers.VendedorDTO> ?? new List<ESD.ERP.Web.Controllers.VendedorDTO>();
+    var listaRoles = ViewBag.ListaRoles as List<ESD.ERP.Web.Controllers.RolDTO> ?? new List<ESD.ERP.Web.Controllers.RolDTO>();
 }
 <script type="text/javascript">
     if (window.resetNavbarBreadcrumb) {
@@ -33,7 +44,13 @@
                 </h1>
                 <small class="text-muted" style="font-size: 0.825rem;">SIGANET ERP &mdash; M&eacute;tricas en Tiempo Real (Sincronizado con BD <code>esderp_v6</code>)</small>
             </div>
-            <div>
+            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                @if (esAdmin)
+                {
+                    <button type="button" class="btn btn-outline-primary btn-sm shadow-sm font-weight-600 px-3 py-1 d-inline-flex align-items-center" id="btn-gestionar-dashboard-rol" data-toggle="modal" data-target="#modal-gestionar-dashboard-rol" style="border-radius: 6px; font-size: 0.875rem; letter-spacing: 0.01em;">
+                        <i class="fas fa-user-shield mr-2"></i> Gestionar Dashboard por Rol
+                    </button>
+                }
                 <button type="button" class="btn btn-primary btn-sm shadow-sm font-weight-600 px-3 py-1 d-inline-flex align-items-center" id="btn-gestionar-dashboard" data-toggle="modal" data-target="#modal-gestionar-dashboard" style="border-radius: 6px; font-size: 0.875rem; letter-spacing: 0.01em;">
                     <i class="fas fa-sliders-h mr-2"></i> Gestionar Dashboard
                 </button>
@@ -48,7 +65,7 @@
 
         <!-- 1. FILA DE TARJETAS KPI (4 por fila, la 5ta cae a la 2da fila) -->
         <div class="row" id="row-kpis-metricas">
-            <!-- 1. FacturaciÃ³n del mes -->
+            <!-- 1. Facturación del mes -->
             <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
                 <div class="small-box bg-info shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
@@ -96,7 +113,7 @@
                 </div>
             </div>
 
-            <!-- 4. Ã“rdenes de ProducciÃ³n del mes -->
+            <!-- 4. Órdenes de Producción del mes -->
             <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
                 <div class="small-box bg-warning shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
@@ -112,7 +129,7 @@
                 </div>
             </div>
 
-            <!-- 5. Ã“rdenes de Compra del mes (Cae a la 2da fila) -->
+            <!-- 5. Órdenes de Compra del mes (Cae a la 2da fila) -->
             <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3">
                 <div class="small-box bg-danger shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
@@ -127,15 +144,34 @@
                     </a>
                 </div>
             </div>
+
+            <!-- 6. Sumatoria de Pedidos del Mes (Pedido, Factura Parcial, Facturado) -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-pedidos-monto">
+                <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
+                    <div class="inner">
+                        <h3 id="kpi-pedidos-cantidad" style="color: #ffffff !important; font-weight: 700;">@pedidosMesCantidad.ToString("N0")</h3>
+                        <p class="font-weight-500" style="color: rgba(255, 255, 255, 0.95) !important;">
+                            Pedidos del Mes
+                        </p>
+                    </div>
+                    <div class="icon" style="color: rgba(255, 255, 255, 0.25) !important;">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <a href="javascript:void(0);" class="small-box-footer font-weight-600 d-flex justify-content-between align-items-center px-3" style="background-color: rgba(0, 0, 0, 0.12) !important; color: #ffffff !important; text-decoration: none;">
+                        <span id="kpi-pedidos-monto-footer">Total: @pedidosMesMonto</span>
+                        <span><i class="fas fa-arrow-circle-right"></i></span>
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <!-- 2. SECCIÃ“N PRINCIPAL (GrÃ¡ficos y Accesos RÃ¡pidos con estilo unificado card-outline) -->
+        <!-- 2. SECCIÓN PRINCIPAL (Gráficos y Accesos Rápidos con estilo unificado card-outline) -->
         <div class="row" id="row-main-dashboard">
 
             <!-- Columna Izquierda (7 columnas) -->
             <div class="col-lg-7" id="col-main-left">
 
-                <!-- 1. GrÃ¡fico de Ventas -->
+                <!-- 1. Gráfico de Ventas -->
                 <div class="card card-primary card-outline shadow-sm mb-4" id="area-evolucion-ventas">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
@@ -345,6 +381,63 @@
                         background-color: #06b6d4;
                         border-color: #06b6d4;
                     }
+                    /* Estilos para Gestionar Dashboard por Rol */
+                    #btn-gestionar-dashboard-rol {
+                        transition: all 0.2s ease;
+                        border-radius: 6px;
+                    }
+                    #btn-gestionar-dashboard-rol:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 3px 8px rgba(13, 110, 253, 0.25);
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .modal-content {
+                        background-color: #1e293b;
+                        color: #e2e8f0;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .modal-header,
+                    body.dark-mode #modal-gestionar-dashboard-rol .modal-footer {
+                        background-color: #0f172a !important;
+                        border-color: #334155 !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .modal-body {
+                        background-color: #1e293b !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .dashboard-area-card {
+                        background-color: #334155 !important;
+                        border-color: #475569 !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .dashboard-area-card .font-weight-600 {
+                        color: #f8fafc !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .dashboard-area-card .text-muted {
+                        color: #94a3b8 !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .close {
+                        color: #cbd5e1 !important;
+                    }
+                    body.dark-mode #modal-gestionar-dashboard-rol .form-group.bg-light {
+                        background-color: #0f172a !important;
+                        border-color: #334155 !important;
+                    }
+                    body.dark-mode #select-rol-dashboard {
+                        background-color: #1e293b;
+                        color: #f8fafc;
+                        border-color: #475569;
+                    }
+                    body.dark-mode #select-vendedor-chart {
+                        background-color: #1e293b;
+                        color: #f8fafc;
+                        border-color: #475569;
+                    }
+                    body.dark-mode #btn-gestionar-dashboard-rol {
+                        border-color: #0284c7;
+                        color: #38bdf8;
+                    }
+                    body.dark-mode #btn-gestionar-dashboard-rol:hover {
+                        background-color: #0284c7;
+                        border-color: #0284c7;
+                        color: #ffffff;
+                    }
                 </style>
 
                 <!-- 2. CONTROL: DIFERENCIA (Central vs. Ilo) -->
@@ -366,7 +459,7 @@
                         </div>
                     </div>
                     <div class="card-body pt-1">
-                        <div class="position-relative mb-3" style="height: 250px;">
+                        <div class="position-relative mb-3" id="diferencia-chart-container" style="height: 250px;" title="Usa la rueda del rat&oacute;n para cambiar el rango de d&iacute;as (6d, 8d, 10d, 12d)">
                             <canvas id="stackedBarChart" height="240"></canvas>
                         </div>
                         <div class="d-flex flex-row justify-content-end align-items-center" style="gap: 8px;">
@@ -386,12 +479,66 @@
                     </div>
                 </div>
 
+                <!-- 3. CONTROL: PEDIDOS POR VENDEDOR (D&iacute;a a D&iacute;a) -->
+                <div class="card card-primary card-outline shadow-sm mb-4" id="area-pedidos-vendedor">
+                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2 flex-wrap" style="gap: 8px;">
+                        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                            <h3 class="card-title font-weight-bold m-0">
+                                <i class="fas fa-user-tag text-primary mr-2"></i>Pedidos por Vendedor
+                            </h3>
+                            <div class="d-inline-flex align-items-center">
+                                <select id="select-vendedor-chart" class="form-control form-control-sm font-weight-600 shadow-sm" style="width: 200px; height: 31px; font-size: 0.85rem; border-radius: 6px;">
+                                    @if (listaVendedores != null)
+                                    {
+                                        foreach (var v in listaVendedores)
+                                        {
+                                            if (v.id == vendedorIdInicial)
+                                            {
+                                                <option value="@v.id" selected="selected">@v.nombre</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@v.id">@v.nombre</option>
+                                            }
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Filtro de d&iacute;as vendedor">
+                                <button type="button" class="btn btn-primary active btn-sm px-2" id="btn-vendedor-dias-6" onclick="setVendedorDias(6);">6d</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-vendedor-dias-8" onclick="setVendedorDias(8);">8d</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-vendedor-dias-10" onclick="setVendedorDias(10);">10d</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-vendedor-dias-12" onclick="setVendedorDias(12);">12d</button>
+                            </div>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body pt-1">
+                        <div class="position-relative mb-3" id="vendedor-chart-container" style="height: 250px;" title="Usa la rueda del rat&oacute;n para cambiar el rango de d&iacute;as (6d, 8d, 10d, 12d)">
+                            <canvas id="vendedorBarChart" height="240"></canvas>
+                        </div>
+                        <div class="d-flex flex-row justify-content-between align-items-center px-1 text-xs text-muted flex-wrap" style="gap: 6px;">
+                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                <span><i class="fas fa-chart-line text-success mr-1"></i>Pico / Tendencia diaria</span>
+                                <span id="vendedor-total-monto" class="badge badge-light border text-dark font-weight-600 px-2 py-1">Total: S/ 0.00</span>
+                            </div>
+                            <div>
+                                <span id="vendedor-total-pedidos" class="badge badge-primary font-weight-600 px-2 py-1">0 pedidos en el periodo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Columna Derecha (5 columnas) -->
             <div class="col-lg-5" id="col-main-right">
 
-                <!-- 3. Accesos RÃ¡pidos del ERP -->
+                <!-- 3. Accesos Rápidos del ERP -->
                 <div class="card card-success card-outline shadow-sm mb-4" id="area-accesos-rapidos">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
@@ -427,7 +574,7 @@
                     </div>
                 </div>
 
-                <!-- 4. GrÃ¡fico de ProducciÃ³n en Planta -->
+                <!-- 4. Gráfico de Producción en Planta -->
                 <div class="card card-warning card-outline shadow-sm mb-4" id="area-estado-produccion">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
@@ -667,13 +814,13 @@
             <div class="modal-body p-4" style="background-color: #f8fafc; max-height: 70vh; overflow-y: auto;">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
                     <span class="text-xs font-weight-600 text-uppercase text-muted" style="letter-spacing: 0.05em;">
-                        &Aacute;reas del Dashboard (<span id="modal-conteo-areas-activas" class="font-weight-bold text-primary">8</span> de 8 activas)
+                        &Aacute;reas del Dashboard (<span id="modal-conteo-areas-activas" class="font-weight-bold text-primary">9</span> de <span id="modal-conteo-areas-permitidas" class="font-weight-bold text-dark">9</span> disponibles)
                     </span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-primary btn-xs px-2" id="btn-modal-marcar-todos" title="Mostrar todas las Ã¡reas">
+                        <button type="button" class="btn btn-outline-primary btn-xs px-2" id="btn-modal-marcar-todos" title="Mostrar todas las áreas">
                             <i class="fas fa-check-double mr-1"></i>Marcar Todos
                         </button>
-                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-modal-desmarcar-todos" title="Ocultar todas las Ã¡reas">
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-modal-desmarcar-todos" title="Ocultar todas las áreas">
                             <i class="fas fa-times mr-1"></i>Desmarcar Todos
                         </button>
                         <button type="button" class="btn btn-outline-info btn-xs px-2" id="btn-modal-restablecer" title="Restablecer vista por defecto">
@@ -682,8 +829,12 @@
                     </div>
                 </div>
 
+                <div id="modal-areas-ninguna-permitida" class="alert alert-warning text-center py-3 d-none mb-3" style="border-radius: 8px;">
+                    <i class="fas fa-lock mr-2"></i>El administrador ha desactivado todos los controles para este rol.
+                </div>
+
                 <div class="d-flex flex-column" style="gap: 10px;">
-                    <!-- 1. Tarjetas de MÃ©tricas -->
+                    <!-- 1. Tarjetas de Métricas -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-kpis" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(23, 162, 184, 0.12); color: #17a2b8; flex-shrink: 0;">
@@ -700,7 +851,7 @@
                         </div>
                     </label>
 
-                    <!-- 2. EvoluciÃ³n de Ventas -->
+                    <!-- 2. Evolución de Ventas -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-evolucion-ventas" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(0, 123, 255, 0.12); color: #007bff; flex-shrink: 0;">
@@ -734,7 +885,24 @@
                         </div>
                     </label>
 
-                    <!-- 4. Accesos RÃ¡pidos -->
+                    <!-- Pedidos por Vendedor -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-pedidos-vendedor" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(13, 110, 253, 0.12); color: #0d6efd; flex-shrink: 0;">
+                                <i class="fas fa-user-tag fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Pedidos por Vendedor</div>
+                                <small class="text-muted">Evoluci&oacute;n diaria de pedidos y montos por vendedor</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-pedidos-vendedor" data-area="pedidos-vendedor" checked>
+                            <label class="custom-control-label" for="chk-area-pedidos-vendedor"></label>
+                        </div>
+                    </label>
+
+                    <!-- 4. Accesos Rápidos -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-accesos-rapidos" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(40, 167, 69, 0.12); color: #28a745; flex-shrink: 0;">
@@ -751,7 +919,7 @@
                         </div>
                     </label>
 
-                    <!-- 5. Estado de ProducciÃ³n -->
+                    <!-- 5. Estado de Producción -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-estado-produccion" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(255, 193, 7, 0.15); color: #d39e00; flex-shrink: 0;">
@@ -830,6 +998,249 @@
     </div>
 </div>
 
+    <!-- ======================================================== -->
+    <!-- MODAL: GESTIONAR DASHBOARD POR ROL (Solo Administradores) -->
+    <!-- ======================================================== -->
+    <div class="modal fade" id="modal-gestionar-dashboard-rol" tabindex="-1" role="dialog" aria-labelledby="modalGestionarDashboardRolLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header bg-light py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="modal-header-icon mr-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; border-radius: 8px; background-color: rgba(13, 110, 253, 0.12); color: #0d6efd;">
+                            <i class="fas fa-user-shield fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title font-weight-bold mb-0 text-dark" id="modalGestionarDashboardRolLabel" style="font-size: 1.15rem;">
+                                Gestionar Dashboard por Rol
+                            </h5>
+                            <small class="text-muted">Configura las &aacute;reas y controles visibles en el dashboard para cada rol de usuario</small>
+                        </div>
+                    </div>
+                    <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Cerrar" style="font-size: 1.5rem; opacity: 0.6; outline: none;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body px-4 py-3" style="max-height: 70vh; overflow-y: auto;">
+                    <!-- Selector de Rol -->
+                    <div class="form-group mb-3 p-3 bg-light rounded border">
+                        <label for="select-rol-dashboard" class="font-weight-600 mb-1 text-dark d-flex align-items-center">
+                            <i class="fas fa-id-badge text-primary mr-2"></i> Seleccionar Rol a Gestionar:
+                        </label>
+                        <select id="select-rol-dashboard" class="form-control form-control-sm font-weight-600 shadow-sm" style="height: 38px; font-size: 0.95rem; border-radius: 6px;">
+                            @if (listaRoles != null)
+                            {
+                                foreach (var r in listaRoles)
+                                {
+                                    <option value="@r.codigo">@r.nombre (@r.codigo)</option>
+                                }
+                            }
+                        </select>
+                        <div class="d-flex align-items-center justify-content-between flex-wrap mt-2" style="gap: 8px;">
+                            <small class="form-text text-muted m-0">
+                                Los cambios se aplicar&aacute;n a todos los usuarios con este rol (las &aacute;reas desactivadas quedar&aacute;n invisibles en sus opciones).
+                            </small>
+                            <button type="button" class="btn btn-outline-info btn-xs font-weight-600 shadow-sm" id="btn-aplicar-vista-rol" title="Ver el Dashboard y el modal Gestionar Dashboard simulando este Rol">
+                                <i class="fas fa-eye mr-1"></i>Ver Dashboard como este Rol
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-xs text-uppercase font-weight-bold text-muted" style="letter-spacing: 0.05em;">
+                            &Aacute;reas Visibles para este Rol (<span id="modal-rol-conteo-areas-activas" class="text-primary font-weight-bold">9</span> de 9)
+                        </span>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary btn-xs font-weight-600 px-2" id="btn-modal-rol-marcar-todos">Marcar Todos</button>
+                            <button type="button" class="btn btn-outline-secondary btn-xs font-weight-600 px-2" id="btn-modal-rol-desmarcar-todos">Desmarcar Todos</button>
+                            <button type="button" class="btn btn-outline-danger btn-xs font-weight-600 px-2" id="btn-modal-rol-restablecer" title="Restablecer a valores por defecto del sistema">Restablecer</button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- 1. KPIs -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-kpis" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd;">
+                                        <i class="fas fa-cubes"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Tarjetas de M&eacute;tricas (KPIs)</span>
+                                        <small class="text-muted">Resumen r&aacute;pido de ventas, pedidos, compras y producci&oacute;n</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-kpis" data-area="kpis" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-kpis"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 2. Evolucion Ventas -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-evolucion-ventas" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(40, 167, 69, 0.1); color: #28a745;">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Evoluci&oacute;n de Ventas</span>
+                                        <small class="text-muted">Comparativa hist&oacute;rica de ventas 2025 vs. 2026</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-evolucion-ventas" data-area="evolucion-ventas" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-evolucion-ventas"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 3. Diferencia Sedes -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-diferencia-sedes" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(23, 162, 184, 0.1); color: #17a2b8;">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Diferencia (Sedes)</span>
+                                        <small class="text-muted">Comparativa d&iacute;a a d&iacute;a Central vs. Ilo</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-diferencia-sedes" data-area="diferencia-sedes" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-diferencia-sedes"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 4. Pedidos por Vendedor -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-pedidos-vendedor" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd;">
+                                        <i class="fas fa-user-tag"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Pedidos por Vendedor</span>
+                                        <small class="text-muted">Evoluci&oacute;n diaria de pedidos y montos por vendedor</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-pedidos-vendedor" data-area="pedidos-vendedor" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-pedidos-vendedor"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 5. Accesos Rapidos -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-accesos-rapidos" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(40, 167, 69, 0.1); color: #28a745;">
+                                        <i class="fas fa-th-large"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Accesos R&aacute;pidos</span>
+                                        <small class="text-muted">Atajos a m&oacute;dulos frecuentes del ERP</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-accesos-rapidos" data-area="accesos-rapidos" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-accesos-rapidos"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 6. Estado Produccion -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-estado-produccion" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(255, 193, 7, 0.15); color: #e0a800;">
+                                        <i class="fas fa-chart-pie"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Estado de Producci&oacute;n</span>
+                                        <small class="text-muted">Gr&aacute;fico circular con estado de &oacute;rdenes</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-estado-produccion" data-area="estado-produccion" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-estado-produccion"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 7. Base de Datos en Tiempo Real -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-db-tiempo-real" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(108, 117, 125, 0.1); color: #6c757d;">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Base de Datos (Tiempo Real)</span>
+                                        <small class="text-muted">Monitor de conexi&oacute;n y estado de sincronizaci&oacute;n</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-db-tiempo-real" data-area="db-tiempo-real" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-db-tiempo-real"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 8. Top 5 Pedidos -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-top-pedidos" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd;">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Top Pedidos del D&iacute;a</span>
+                                        <small class="text-muted">Tabla con los pedidos de mayor valor de hoy</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-top-pedidos" data-area="top-pedidos" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-top-pedidos"></label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- 9. Clientes Inactivos -->
+                        <div class="col-md-6 mb-3">
+                            <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-clientes-inactivos" style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center mr-3">
+                                    <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.1); color: #dc3545;">
+                                        <i class="fas fa-user-clock"></i>
+                                    </div>
+                                    <div>
+                                        <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Clientes sin Compras</span>
+                                        <small class="text-muted">Seguimiento de clientes inactivos por meses</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-lg m-0">
+                                    <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-clientes-inactivos" data-area="clientes-inactivos" checked>
+                                    <label class="custom-control-label" for="chk-rol-area-clientes-inactivos"></label>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle mr-1"></i>Los cambios se guardan autom&aacute;ticamente al activar o desactivar cada switch.
+                    </small>
+                    <button type="button" class="btn btn-primary btn-sm px-4 font-weight-600" data-dismiss="modal">
+                        <i class="fas fa-check mr-1"></i> Listo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script type="text/javascript">
     $(document).ready(function () {
         var cid = $('#__cid').val() || '@cid';
@@ -872,6 +1283,13 @@
         var salesChartInstance = null;
         var productionChartInstance = null;
         var stackedBarChartInstance = null;
+        var vendedorChartInstance = null;
+
+        var allVendedorLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(stackedDiasDefault));
+        var allVendedorCantidades = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(vendedorCantidadesDefault));
+        var allVendedorMontos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(vendedorMontosDefault));
+        var vendedorDiasActuales = 6;
+        var vendedorIdActual = @vendedorIdInicial;
 
         var allStackedLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(stackedDiasDefault));
         var allStackedCentral = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dsCentralDefault));
@@ -1583,20 +2001,252 @@
                 renderSalesChart(lastDashboardData.graficoVentas);
                 renderProductionChart(lastDashboardData.graficoProduccion);
                 renderStackedBarChart(lastDashboardData.graficoStackedBar);
+                var nVend = vendedorDiasActuales || 6;
+                renderVendedorChart(
+                    (allVendedorLabels || []).slice(-nVend),
+                    (allVendedorCantidades || []).slice(-nVend),
+                    (allVendedorMontos || []).slice(-nVend)
+                );
             } else {
                 setTimeout(initChartsImmediately, 80);
             }
         }
         initChartsImmediately();
 
-        // ==========================================
-        // GESTION DEL DASHBOARD (Areas Visibles)
-        // ==========================================
-        var STORAGE_AREAS_KEY = 'arco_dashboard_areas_visibles_v1';
+        // ========================================================
+        // GRAFICO: PEDIDOS POR VENDEDOR (Dia a Dia)
+        // ========================================================
+        function renderVendedorChart(labels, cantidades, montos, totalPedidos, totalMonto) {
+            var theme = getThemeConfig();
+            var canvas = document.getElementById('vendedorBarChart');
+            if (!canvas) return;
+
+            if (vendedorChartInstance) {
+                vendedorChartInstance.destroy();
+                vendedorChartInstance = null;
+            }
+
+            if (typeof Chart === 'undefined') return;
+
+            labels = labels || [];
+            cantidades = cantidades || [];
+            montos = montos || [];
+
+            if (totalPedidos === undefined || totalPedidos === null) {
+                totalPedidos = cantidades.reduce(function(a, b) { return a + (Number(b) || 0); }, 0);
+            }
+            if (!totalMonto) {
+                var sumMto = montos.reduce(function(a, b) { return a + (Number(b) || 0); }, 0);
+                totalMonto = formatMonedaPeruana(sumMto);
+            }
+
+            $('#vendedor-total-pedidos').text(totalPedidos + ' pedido' + (totalPedidos === 1 ? '' : 's') + ' en el periodo');
+            $('#vendedor-total-monto').text('Total: ' + totalMonto);
+
+            vendedorChartInstance = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Tendencia Pedidos',
+                            data: cantidades,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#ffffff',
+                            fill: false,
+                            tension: 0.25,
+                            order: 0
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Cantidad de Pedidos',
+                            backgroundColor: theme.barCurrent,
+                            borderColor: theme.barCurrent,
+                            borderRadius: 4,
+                            data: cantidades,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: theme.isDark ? '#0f172a' : '#1e293b',
+                            titleColor: '#ffffff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: theme.isDark ? '#334155' : '#475569',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.type === 'line') {
+                                        return 'Pico / Tendencia: ' + context.parsed.y + ' pedidos';
+                                    }
+                                    var nVend = vendedorDiasActuales || 6;
+                                    var currentMontos = (allVendedorMontos || []).slice(-nVend);
+                                    var idx = context.dataIndex;
+                                    var mto = (currentMontos && currentMontos.length > idx) ? currentMontos[idx] : 0;
+                                    return [
+                                        'Pedidos: ' + context.parsed.y,
+                                        'Monto Total: ' + formatMonedaPeruana(mto)
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: theme.textColor },
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                color: theme.textColor,
+                                callback: function(value) {
+                                    return value + ' ped.';
+                                }
+                            },
+                            grid: { color: theme.gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        var nivelesVendedorDias = [6, 8, 10, 12];
+
+        function stepVendedorDias(direccion) {
+            var curIdx = nivelesVendedorDias.indexOf(vendedorDiasActuales);
+            if (curIdx === -1) curIdx = 0;
+            var newIdx = curIdx + direccion;
+            if (newIdx < 0) newIdx = 0;
+            if (newIdx >= nivelesVendedorDias.length) newIdx = nivelesVendedorDias.length - 1;
+            if (newIdx !== curIdx) {
+                setVendedorDias(nivelesVendedorDias[newIdx]);
+            }
+        }
+        window.stepVendedorDias = stepVendedorDias;
+
+        function setVendedorDias(dias) {
+            vendedorDiasActuales = dias;
+            [6, 8, 10, 12].forEach(function(n) {
+                var $btn = $('#btn-vendedor-dias-' + n);
+                if (n === dias) {
+                    $btn.removeClass('btn-outline-secondary').addClass('btn-primary active');
+                } else {
+                    $btn.removeClass('btn-primary active').addClass('btn-outline-secondary');
+                }
+            });
+
+            actualizarChartVendedorDias();
+        }
+        window.setVendedorDias = setVendedorDias;
+
+        function actualizarChartVendedorDias() {
+            if (!vendedorChartInstance) {
+                var nVend = vendedorDiasActuales || 6;
+                renderVendedorChart(
+                    (allVendedorLabels || []).slice(-nVend),
+                    (allVendedorCantidades || []).slice(-nVend),
+                    (allVendedorMontos || []).slice(-nVend)
+                );
+                return;
+            }
+
+            var n = vendedorDiasActuales || 6;
+            var slicedLabels = (allVendedorLabels || []).slice(-n);
+            var slicedCantidades = (allVendedorCantidades || []).slice(-n);
+            var slicedMontos = (allVendedorMontos || []).slice(-n);
+
+            var totalPedidos = slicedCantidades.reduce(function(a, b) { return a + (Number(b) || 0); }, 0);
+            var sumMto = slicedMontos.reduce(function(a, b) { return a + (Number(b) || 0); }, 0);
+
+            $('#vendedor-total-pedidos').text(totalPedidos + ' pedido' + (totalPedidos === 1 ? '' : 's') + ' en el periodo');
+            $('#vendedor-total-monto').text('Total: ' + formatMonedaPeruana(sumMto));
+
+            vendedorChartInstance.data.labels = slicedLabels;
+            if (vendedorChartInstance.data.datasets[0]) {
+                vendedorChartInstance.data.datasets[0].data = slicedCantidades;
+            }
+            if (vendedorChartInstance.data.datasets[1]) {
+                vendedorChartInstance.data.datasets[1].data = slicedCantidades;
+            }
+            vendedorChartInstance.update();
+        }
+
+        var currentVendedorAjax = null;
+        function cargarDatosVendedor(vendedorId) {
+            vendedorIdActual = vendedorId;
+            if (currentVendedorAjax && currentVendedorAjax.readyState !== 4) {
+                currentVendedorAjax.abort();
+            }
+            currentVendedorAjax = $.ajax({
+                url: '/Home/ObtenerPedidosVendedor',
+                type: 'GET',
+                data: { vendedorId: vendedorId, dias: 12, cid: cid },
+                headers: { 'x-app-cid': cid },
+                success: function(res) {
+                    if (res && res.success) {
+                        allVendedorLabels = res.labels;
+                        allVendedorCantidades = res.cantidades;
+                        allVendedorMontos = res.montos;
+                        actualizarChartVendedorDias();
+                    }
+                },
+                error: function(err) {
+                    if (err.statusText !== 'abort') {
+                        console.warn('Error obteniendo pedidos del vendedor:', err);
+                    }
+                }
+            });
+        }
+
+        $(document).on('change', '#select-vendedor-chart', function() {
+            var vid = parseInt($(this).val(), 10);
+            if (vid > 0) {
+                cargarDatosVendedor(vid);
+            }
+        });
+
+        // ========================================================
+        // GESTION DEL DASHBOARD (Areas Visibles y Filtro por Rol)
+        // ========================================================
+        var currentUsername = '@usuarioLogonActual';
+        var currentRoleCode = '@rolActualCodigo';
+        var esUsuarioAdmin = @(esAdmin ? "true" : "false");
+        var STORAGE_ROLES_KEY = 'arco_dashboard_roles_config_v1';
+
+        // Clave de almacenamiento aislada por usuario y por rol para evitar que un perfil sobreescriba a otro
+        function getStorageAreasKey() {
+            var u = (currentUsername || 'default_user').toLowerCase().trim();
+            var r = (currentRoleCode || 'default_role').toLowerCase().trim();
+            return 'arco_dashboard_user_' + u + '_rol_' + r + '_v2';
+        }
+
+        // Limpieza de clave global obsoleta para no heredar configuraciones contaminadas
+        try {
+            localStorage.removeItem('arco_dashboard_areas_visibles_v1');
+        } catch (e) { }
+
+        // Configuracion de las 9 areas del dashboard
         var areasDashboardConfig = {
             'kpis': { selector: '#row-kpis-metricas', visible: true },
             'evolucion-ventas': { selector: '#area-evolucion-ventas', visible: true },
             'diferencia-sedes': { selector: '#area-diferencia-sedes', visible: true },
+            'pedidos-vendedor': { selector: '#area-pedidos-vendedor', visible: true },
             'accesos-rapidos': { selector: '#area-accesos-rapidos', visible: true },
             'estado-produccion': { selector: '#area-estado-produccion', visible: true },
             'db-tiempo-real': { selector: '#area-db-tiempo-real', visible: true },
@@ -1604,14 +2254,78 @@
             'clientes-inactivos': { selector: '#area-clientes-inactivos', visible: true }
         };
 
+        // Presets predefinidos por Rol en ERP ARCO
+        var defaultRolePresets = {
+            // Administradores y TI: Acceso total a las 9 areas
+            'S0001': { 'kpis': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true },
+            'S0002': { 'kpis': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true },
+            '00020': { 'kpis': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true },
+            // Ventas Jefatura: Foco comercial, ventas, pedidos por vendedor y clientes
+            '00003': { 'kpis': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': true },
+            // Ventas Operador
+            '00004': { 'kpis': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false },
+            // Produccion Operador / Jefatura
+            '00009': { 'kpis': true, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false },
+            '00010': { 'kpis': true, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false },
+            // Compras y Logistica
+            '00005': { 'kpis': true, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': false, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false },
+            // Por defecto
+            'DEFAULT': { 'kpis': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true }
+        };
+
+        function obtenerConfigRolesGuardada() {
+            try {
+                var raw = localStorage.getItem(STORAGE_ROLES_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {
+                console.warn('Error leyendo roles config:', e);
+            }
+            return {};
+        }
+
+        function guardarConfigRolesCompleta(rolesObj) {
+            try {
+                localStorage.setItem(STORAGE_ROLES_KEY, JSON.stringify(rolesObj));
+            } catch (e) {
+                console.warn('Error guardando roles config:', e);
+            }
+        }
+
+        function obtenerConfiguracionParaRol(rolCod) {
+            var rolesObj = obtenerConfigRolesGuardada();
+            if (rolesObj[rolCod]) {
+                return $.extend({}, defaultRolePresets['DEFAULT'], rolesObj[rolCod]);
+            }
+            if (defaultRolePresets[rolCod]) {
+                return $.extend({}, defaultRolePresets[rolCod]);
+            }
+            return $.extend({}, defaultRolePresets['DEFAULT']);
+        }
+
         function cargarConfiguracionAreas() {
             try {
-                var guardado = localStorage.getItem(STORAGE_AREAS_KEY);
-                if (guardado) {
-                    var parsed = JSON.parse(guardado);
-                    for (var key in parsed) {
-                        if (areasDashboardConfig.hasOwnProperty(key)) {
-                            areasDashboardConfig[key].visible = Boolean(parsed[key]);
+                // 1. Obtener los permisos del Rol activo del usuario (o el que este simulando)
+                var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
+
+                // 2. Preferencias personales guardadas estrictamente para este usuario y rol
+                var personalRaw = localStorage.getItem(getStorageAreasKey());
+                var personal = personalRaw ? JSON.parse(personalRaw) : null;
+
+                for (var key in areasDashboardConfig) {
+                    if (areasDashboardConfig.hasOwnProperty(key)) {
+                        var permitidoPorRol = (rolPermisos[key] !== undefined) ? Boolean(rolPermisos[key]) : true;
+
+                        if (!permitidoPorRol) {
+                            // Si el admin desactivo esta area para este rol, queda forzadamente inactiva
+                            areasDashboardConfig[key].visible = false;
+                        } else {
+                            // Si esta permitida para el rol, respeta la preferencia personalizada del usuario si existe
+                            if (personal && personal.hasOwnProperty(key)) {
+                                areasDashboardConfig[key].visible = Boolean(personal[key]);
+                            } else {
+                                // Por defecto, si el rol la autoriza y el usuario no la desactivo, es visible
+                                areasDashboardConfig[key].visible = true;
+                            }
                         }
                     }
                 }
@@ -1622,40 +2336,79 @@
 
         function guardarConfiguracionAreas() {
             try {
+                var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
                 var obj = {};
                 for (var key in areasDashboardConfig) {
-                    obj[key] = areasDashboardConfig[key].visible;
+                    var permitidoPorRol = (rolPermisos[key] !== undefined) ? Boolean(rolPermisos[key]) : true;
+                    // Solo guardamos preferencia personal para areas que estan autorizadas por el rol
+                    if (permitidoPorRol) {
+                        obj[key] = areasDashboardConfig[key].visible;
+                    }
                 }
-                localStorage.setItem(STORAGE_AREAS_KEY, JSON.stringify(obj));
+                localStorage.setItem(getStorageAreasKey(), JSON.stringify(obj));
             } catch (e) {
                 console.warn('Error guardando configuracion de areas en localStorage:', e);
             }
         }
 
         function aplicarVisibilidadAreas() {
+            var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
             var activasCount = 0;
-            var totalCount = 0;
+            var permitidasCount = 0;
 
             for (var key in areasDashboardConfig) {
-                totalCount++;
                 var item = areasDashboardConfig[key];
                 var $el = $(item.selector);
                 var $chk = $('#chk-area-' + key);
+                var $card = $chk.closest('.dashboard-area-card');
 
-                if (item.visible) {
-                    activasCount++;
-                    $el.removeClass('d-none');
-                    if ($chk.length) $chk.prop('checked', true);
-                } else {
+                var permitidoPorRol = (rolPermisos[key] !== undefined) ? Boolean(rolPermisos[key]) : true;
+
+                if (!permitidoPorRol) {
+                    // DESACTIVADO POR ADMIN PARA ESTE ROL:
+                    // 1. Ocultar completamente el control en el Dashboard
+                    item.visible = false;
                     $el.addClass('d-none');
-                    if ($chk.length) $chk.prop('checked', false);
+
+                    // 2. Ocultar la opcion en el modal del usuario (debe estar invisible, no disponible como opcion a habilitar)
+                    if ($card.length) {
+                        $card.addClass('d-none');
+                    }
+                    if ($chk.length) {
+                        $chk.prop('checked', false);
+                    }
+                } else {
+                    // HABILITADO POR ADMIN PARA ESTE ROL:
+                    permitidasCount++;
+
+                    // 1. Mostrar como opcion disponible en el modal del usuario
+                    if ($card.length) {
+                        $card.removeClass('d-none');
+                    }
+
+                    // 2. Mostrar u ocultar en el Dashboard segun la preferencia del usuario
+                    if (item.visible) {
+                        activasCount++;
+                        $el.removeClass('d-none');
+                        if ($chk.length) $chk.prop('checked', true);
+                    } else {
+                        $el.addClass('d-none');
+                        if ($chk.length) $chk.prop('checked', false);
+                    }
                 }
             }
 
             $('#modal-conteo-areas-activas').text(activasCount);
+            $('#modal-conteo-areas-permitidas').text(permitidasCount);
 
-            // Ajuste responsivo de columnas de la seccion principal
-            var leftVisible = areasDashboardConfig['evolucion-ventas'].visible || areasDashboardConfig['diferencia-sedes'].visible;
+            if (permitidasCount === 0) {
+                $('#modal-areas-ninguna-permitida').removeClass('d-none');
+            } else {
+                $('#modal-areas-ninguna-permitida').addClass('d-none');
+            }
+
+            // Ajuste responsivo de columnas de la seccion principal (Izquierda: Evolucion, Diferencia, Pedidos Vendedor)
+            var leftVisible = areasDashboardConfig['evolucion-ventas'].visible || areasDashboardConfig['diferencia-sedes'].visible || areasDashboardConfig['pedidos-vendedor'].visible;
             var rightVisible = areasDashboardConfig['accesos-rapidos'].visible || areasDashboardConfig['estado-produccion'].visible || areasDashboardConfig['db-tiempo-real'].visible;
 
             var $colLeft = $('#col-main-left');
@@ -1706,6 +2459,7 @@
                 if (salesChartInstance) salesChartInstance.resize();
                 if (stackedBarChartInstance) stackedBarChartInstance.resize();
                 if (productionChartInstance) productionChartInstance.resize();
+                if (vendedorChartInstance) vendedorChartInstance.resize();
             }, 60);
         }
 
@@ -1713,17 +2467,32 @@
         $(document).off('change', '.chk-dashboard-area').on('change', '.chk-dashboard-area', function () {
             var areaKey = $(this).data('area');
             var isChecked = $(this).is(':checked');
-            if (areasDashboardConfig.hasOwnProperty(areaKey)) {
-                areasDashboardConfig[areaKey].visible = isChecked;
-                guardarConfiguracionAreas();
-                aplicarVisibilidadAreas();
+            var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
+            var permitidoPorRol = (rolPermisos[areaKey] !== undefined) ? Boolean(rolPermisos[areaKey]) : true;
+
+            if (!permitidoPorRol) {
+                // Si el rol no lo permite, no se puede activar
+                $(this).prop('checked', false);
+                if (areasDashboardConfig[areaKey]) {
+                    areasDashboardConfig[areaKey].visible = false;
+                }
+            } else {
+                if (areasDashboardConfig.hasOwnProperty(areaKey)) {
+                    areasDashboardConfig[areaKey].visible = isChecked;
+                }
             }
+            guardarConfiguracionAreas();
+            aplicarVisibilidadAreas();
         });
 
         // Botones auxiliares del modal
         $('#btn-modal-marcar-todos').on('click', function () {
+            var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
             for (var k in areasDashboardConfig) {
-                areasDashboardConfig[k].visible = true;
+                var permitidoPorRol = (rolPermisos[k] !== undefined) ? Boolean(rolPermisos[k]) : true;
+                if (permitidoPorRol) {
+                    areasDashboardConfig[k].visible = true;
+                }
             }
             guardarConfiguracionAreas();
             aplicarVisibilidadAreas();
@@ -1738,14 +2507,131 @@
         });
 
         $('#btn-modal-restablecer').on('click', function () {
-            for (var k in areasDashboardConfig) {
-                areasDashboardConfig[k].visible = true;
-            }
-            guardarConfiguracionAreas();
+            try {
+                localStorage.removeItem(getStorageAreasKey());
+            } catch (e) { }
+            cargarConfiguracionAreas();
             aplicarVisibilidadAreas();
         });
 
-        // Inicializar visibilidad guardada
+        // ========================================================
+        // LOGICA DEL MODAL: Gestionar Dashboard por Rol (Admin)
+        // ========================================================
+        function sincronizarModalRolUI(rolCod) {
+            var configRol = obtenerConfiguracionParaRol(rolCod);
+            var activasCount = 0;
+
+            $('.chk-dashboard-rol-area').each(function () {
+                var areaKey = $(this).data('area');
+                var isChecked = (configRol[areaKey] !== undefined) ? Boolean(configRol[areaKey]) : true;
+                $(this).prop('checked', isChecked);
+                if (isChecked) activasCount++;
+            });
+
+            $('#modal-rol-conteo-areas-activas').text(activasCount);
+        }
+
+        function guardarConfiguracionRolActualEnModal() {
+            var rolCod = $('#select-rol-dashboard').val();
+            if (!rolCod) return;
+
+            var rolesObj = obtenerConfigRolesGuardada();
+            var rolConfig = {};
+
+            $('.chk-dashboard-rol-area').each(function () {
+                var areaKey = $(this).data('area');
+                rolConfig[areaKey] = $(this).is(':checked');
+            });
+
+            rolesObj[rolCod] = rolConfig;
+            guardarConfigRolesCompleta(rolesObj);
+
+            // Si el rol modificado es el rol activo o visualizado actualmente, actualizar inmediatamente
+            if (rolCod === currentRoleCode) {
+                cargarConfiguracionAreas();
+                aplicarVisibilidadAreas();
+            }
+        }
+
+        // Cambio de rol en el select del modal
+        $(document).on('change', '#select-rol-dashboard', function () {
+            var rolCod = $(this).val();
+            sincronizarModalRolUI(rolCod);
+        });
+
+        // Boton para ver el Dashboard como el rol seleccionado en el selector
+        $(document).on('click', '#btn-aplicar-vista-rol', function () {
+            var selectedRol = $('#select-rol-dashboard').val();
+            if (selectedRol) {
+                currentRoleCode = selectedRol;
+                $('#badge-rol-usuario-indicador').remove();
+                $('#btn-gestionar-dashboard-rol').after('<span id="badge-rol-usuario-indicador" class="badge badge-info ml-2 font-weight-600 px-2 py-1 shadow-sm"><i class="fas fa-eye mr-1"></i>Vista Rol: ' + selectedRol + '</span>');
+                cargarConfiguracionAreas();
+                aplicarVisibilidadAreas();
+                $('#modal-gestionar-dashboard-rol').modal('hide');
+            }
+        });
+
+        // Cambio de switches en el modal por rol
+        $(document).on('change', '.chk-dashboard-rol-area', function () {
+            guardarConfiguracionRolActualEnModal();
+            var count = $('.chk-dashboard-rol-area:checked').length;
+            $('#modal-rol-conteo-areas-activas').text(count);
+        });
+
+        // Acciones rapidas en modal por rol
+        $('#btn-modal-rol-marcar-todos').on('click', function () {
+            $('.chk-dashboard-rol-area').prop('checked', true);
+            guardarConfiguracionRolActualEnModal();
+            $('#modal-rol-conteo-areas-activas').text(9);
+        });
+
+        $('#btn-modal-rol-desmarcar-todos').on('click', function () {
+            $('.chk-dashboard-rol-area').prop('checked', false);
+            guardarConfiguracionRolActualEnModal();
+            $('#modal-rol-conteo-areas-activas').text(0);
+        });
+
+        $('#btn-modal-rol-restablecer').on('click', function () {
+            var rolCod = $('#select-rol-dashboard').val();
+            var rolesObj = obtenerConfigRolesGuardada();
+            delete rolesObj[rolCod];
+            guardarConfigRolesCompleta(rolesObj);
+            sincronizarModalRolUI(rolCod);
+            if (rolCod === currentRoleCode) {
+                cargarConfiguracionAreas();
+                aplicarVisibilidadAreas();
+            }
+        });
+
+        // Inicializar UI de modal por rol si existe
+        // Sincronizacion dinamica al abrir los modales
+        $('#modal-gestionar-dashboard').on('show.bs.modal', function () {
+            cargarConfiguracionAreas();
+            aplicarVisibilidadAreas();
+        });
+
+        $('#modal-gestionar-dashboard-rol').on('show.bs.modal', function () {
+            var rolCod = $('#select-rol-dashboard').val();
+            if (!rolCod) {
+                rolCod = currentRoleCode;
+                $('#select-rol-dashboard').val(rolCod);
+            }
+            sincronizarModalRolUI(rolCod);
+        });
+
+        // Click en badge de rol simulado para restaurar rol original del administrador
+        $(document).on('click', '#badge-rol-usuario-indicador', function () {
+            currentRoleCode = '@rolActualCodigo';
+            $(this).remove();
+            cargarConfiguracionAreas();
+            aplicarVisibilidadAreas();
+        });
+
+        if ($('#select-rol-dashboard').length) {
+            sincronizarModalRolUI($('#select-rol-dashboard').val());
+        }
+
         cargarConfiguracionAreas();
         aplicarVisibilidadAreas();
 
@@ -1765,18 +2651,57 @@
         }
 
         // Soporte de rueda del raton sobre el grafico de Diferencia (6 a 12 dias progresivo)
+        var lastDiferenciaWheelTime = 0;
+        function handleDiferenciaWheel(e) {
+            e.preventDefault();
+            var now = Date.now();
+            if (now - lastDiferenciaWheelTime < 180) return;
+            lastDiferenciaWheelTime = now;
+
+            var delta = e.deltaY || e.detail || (-e.wheelDelta);
+            if (delta > 0) {
+                stepDiferenciaDias(-1);
+            } else if (delta < 0) {
+                stepDiferenciaDias(1);
+            }
+        }
+
         var canvasDiferencia = document.getElementById('stackedBarChart');
+        var containerDiferencia = document.getElementById('diferencia-chart-container') || (canvasDiferencia ? canvasDiferencia.parentElement : null);
         if (canvasDiferencia && !canvasDiferencia.__wheelAttached) {
             canvasDiferencia.__wheelAttached = true;
-            canvasDiferencia.addEventListener('wheel', function (e) {
-                e.preventDefault();
-                var delta = e.deltaY || e.detail || (-e.wheelDelta);
-                if (delta > 0) {
-                    stepDiferenciaDias(-1);
-                } else if (delta < 0) {
-                    stepDiferenciaDias(1);
-                }
-            }, { passive: false });
+            canvasDiferencia.addEventListener('wheel', handleDiferenciaWheel, { passive: false });
+        }
+        if (containerDiferencia && !containerDiferencia.__wheelAttached) {
+            containerDiferencia.__wheelAttached = true;
+            containerDiferencia.addEventListener('wheel', handleDiferenciaWheel, { passive: false });
+        }
+
+        // Soporte de rueda del raton sobre el grafico de Pedidos por Vendedor (6 a 12 dias progresivo)
+        var lastVendedorWheelTime = 0;
+        function handleVendedorWheel(e) {
+            e.preventDefault();
+            var now = Date.now();
+            if (now - lastVendedorWheelTime < 180) return;
+            lastVendedorWheelTime = now;
+
+            var delta = e.deltaY || e.detail || (-e.wheelDelta);
+            if (delta > 0) {
+                stepVendedorDias(-1);
+            } else if (delta < 0) {
+                stepVendedorDias(1);
+            }
+        }
+
+        var canvasVendedor = document.getElementById('vendedorBarChart');
+        var containerVendedor = document.getElementById('vendedor-chart-container') || (canvasVendedor ? canvasVendedor.parentElement : null);
+        if (canvasVendedor && !canvasVendedor.__wheelAttached) {
+            canvasVendedor.__wheelAttached = true;
+            canvasVendedor.addEventListener('wheel', handleVendedorWheel, { passive: false });
+        }
+        if (containerVendedor && !containerVendedor.__wheelAttached) {
+            containerVendedor.__wheelAttached = true;
+            containerVendedor.addEventListener('wheel', handleVendedorWheel, { passive: false });
         }
 
         $(document).off('themeChanged.dashboard').on('themeChanged.dashboard', function (e, isDark) {
@@ -1789,6 +2714,14 @@
                 }
                 if (lastDashboardData.graficoStackedBar) {
                     renderStackedBarChart(lastDashboardData.graficoStackedBar);
+                }
+                if (vendedorChartInstance) {
+                    var nVend = vendedorDiasActuales || 6;
+                    renderVendedorChart(
+                        (allVendedorLabels || []).slice(-nVend),
+                        (allVendedorCantidades || []).slice(-nVend),
+                        (allVendedorMontos || []).slice(-nVend)
+                    );
                 }
             }
         });

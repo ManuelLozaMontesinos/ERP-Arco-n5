@@ -1,0 +1,658 @@
+﻿@{
+    ViewData["Title"] = "Calendario de Eventos";
+}
+
+<style>
+    /* FullCalendar AdminLTE 3 / 4 styles */
+    .fc-event {
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .fc-event:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    .draggable-event {
+        cursor: grab;
+        user-select: none;
+        transition: all 0.2s ease;
+    }
+    .draggable-event:hover {
+        transform: scale(1.02);
+        filter: brightness(1.08);
+    }
+    .draggable-event:active {
+        cursor: grabbing;
+    }
+
+    /* Color picker radio pills */
+    .color-pill {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+        margin-bottom: 0;
+    }
+    .color-pill input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .color-pill i {
+        display: none;
+        font-size: 13px;
+    }
+    .color-pill.active i,
+    .color-pill input[type="radio"]:checked ~ i {
+        display: block;
+    }
+    .color-pill:hover {
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .color-pill.active,
+    .color-pill input[type="radio"]:checked + i,
+    .color-pill:has(input:checked) {
+        outline: 3px solid #007bff;
+        outline-offset: 2px;
+    }
+
+    /* Dark mode overrides for FullCalendar */
+    body.dark-mode .fc-theme-standard th,
+    body.dark-mode .fc-theme-standard td,
+    body.dark-mode .fc-theme-standard .fc-scrollgrid {
+        border-color: #3f474e !important;
+    }
+    body.dark-mode .fc-col-header-cell-cushion,
+    body.dark-mode .fc-daygrid-day-number,
+    body.dark-mode .fc-list-day-text,
+    body.dark-mode .fc-list-day-side-text,
+    body.dark-mode .fc-toolbar-title {
+        color: #e9ecef !important;
+    }
+    body.dark-mode .fc-day-today {
+        background-color: rgba(13, 110, 253, 0.12) !important;
+    }
+    body.dark-mode .fc-button {
+        background-color: #343a40 !important;
+        border-color: #4f5962 !important;
+        color: #e9ecef !important;
+    }
+    body.dark-mode .fc-button:hover {
+        background-color: #495057 !important;
+    }
+    body.dark-mode .fc-button-active {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #fff !important;
+    }
+    body.dark-mode .modal-content {
+        background-color: #343a40;
+        color: #fff;
+    }
+    body.dark-mode .modal-header {
+        border-bottom-color: #4b545c;
+    }
+    body.dark-mode .modal-footer {
+        background-color: #2b3035 !important;
+        border-top-color: #4b545c;
+    }
+    body.dark-mode .form-control {
+        background-color: #2b3035;
+        border-color: #4b545c;
+        color: #fff;
+    }
+    body.dark-mode .form-control:focus {
+        background-color: #343a40;
+        border-color: #0d6efd;
+        color: #fff;
+    }
+    body.dark-mode .modal-body .alert-light {
+        background-color: #2b3035 !important;
+        border-color: #4b545c !important;
+        color: #ced4da !important;
+    }
+</style>
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6 d-flex align-items-center">
+                <h1 class="m-0 text-dark font-weight-bold" style="font-size: 1.5rem;">
+                    <i class="far fa-calendar-alt text-primary mr-2"></i> Calendario de Eventos
+                </h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+                    <li class="breadcrumb-item active">Calendario</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar: Draggable events matching AdminLTE 4 -->
+            <div class="col-lg-3 col-md-4">
+                
+                <!-- Card Eventos Arrastrables -->
+                <div class="card card-outline card-primary shadow-sm mb-3">
+                    <div class="card-header py-2">
+                        <h3 class="card-title font-weight-bold" style="font-size: 0.95rem;">
+                            <i class="fas fa-grip-vertical mr-1 text-muted"></i> Eventos Arrastrables
+                        </h3>
+                    </div>
+                    <div class="card-body p-3">
+                        <p class="text-muted small mb-3">
+                            Arrastra una etiqueta al calendario para programarla directamente en cualquier dÃ­a.
+                        </p>
+                        
+                        <div id="external-events">
+                            <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#0d6efd" style="background-color: #0d6efd; color:#fff; font-size: 0.88rem; border-radius: 6px;">
+                                <i class="fas fa-users mr-1"></i> Team standup
+                            </div>
+                            <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#198754" style="background-color: #198754; color:#fff; font-size: 0.88rem; border-radius: 6px;">
+                                <i class="fas fa-phone-alt mr-1"></i> Customer call
+                            </div>
+                            <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#ffc107" style="background-color: #ffc107; color:#212529; font-size: 0.88rem; border-radius: 6px;">
+                                <i class="fas fa-clipboard-check mr-1"></i> Design review
+                            </div>
+                            <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#0dcaf0" style="background-color: #0dcaf0; color:#fff; font-size: 0.88rem; border-radius: 6px;">
+                                <i class="fas fa-user-friends mr-1"></i> 1:1 with manager
+                            </div>
+                            <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#dc3545" style="background-color: #dc3545; color:#fff; font-size: 0.88rem; border-radius: 6px;">
+                                <i class="fas fa-rocket mr-1"></i> Release window
+                            </div>
+                            <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#6f42c1" style="background-color: #6f42c1; color:#fff; font-size: 0.88rem; border-radius: 6px;">
+                                <i class="fas fa-bullhorn mr-1"></i> All-hands
+                            </div>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <div class="custom-control custom-switch mb-3">
+                            <input type="checkbox" class="custom-control-input" id="remove-after-drop">
+                            <label class="custom-control-label small text-muted" for="remove-after-drop" style="cursor: pointer;">
+                                Eliminar de la lista tras soltar
+                            </label>
+                        </div>
+
+                        <button type="button" class="btn btn-primary btn-block btn-sm font-weight-bold shadow-sm" id="btn-crear-evento-manual">
+                            <i class="fas fa-plus mr-1"></i> Registrar Nuevo Evento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card Instrucciones / Ayuda -->
+                <div class="card card-outline card-secondary shadow-sm mb-3">
+                    <div class="card-header py-2">
+                        <h3 class="card-title text-muted font-weight-bold" style="font-size: 0.9rem;">
+                            <i class="fas fa-lightbulb text-warning mr-1"></i> Â¿CÃ³mo funciona?
+                        </h3>
+                    </div>
+                    <div class="card-body p-3 small text-muted">
+                        <ul class="pl-3 mb-0" style="line-height: 1.6;">
+                            <li class="mb-2"><strong>Clic en un dÃ­a:</strong> Haz clic en cualquier casilla del calendario para registrar un evento con tÃ­tulo y contexto.</li>
+                            <li class="mb-2"><strong>Arrastrar etiqueta:</strong> Toma una etiqueta de arriba y suÃ©ltala en el dÃ­a que desees.</li>
+                            <li class="mb-2"><strong>Mover eventos:</strong> Puedes arrastrar cualquier evento a otro dÃ­a para reprogramarlo.</li>
+                            <li><strong>Clic en evento:</strong> Haz clic en un evento para editarlo o eliminarlo.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Calendar Container -->
+            <div class="col-lg-9 col-md-8">
+                <div class="card card-outline card-primary shadow-sm">
+                    <div class="card-body p-3">
+                        <div id="calendar" style="min-height: 680px;"></div>
+                    </div>
+                    <div class="card-footer py-2 text-muted small d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="far fa-check-circle text-success mr-1"></i> Sincronizado en tiempo real con la base de datos
+                        </span>
+                        <span class="text-secondary">
+                            AdminLTE 4 Calendar &bull; FullCalendar 6
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal Registrar / Editar Evento -->
+<div class="modal fade" id="modal-evento-calendario" tabindex="-1" role="dialog" aria-labelledby="modalEventoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title font-weight-bold" id="modalEventoLabel">
+                    <i class="far fa-calendar-plus mr-2" id="modal-icon"></i>
+                    <span id="modal-title-text">Registrar Evento</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Cerrar" style="opacity: 0.9;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-evento-calendario" onsubmit="return false;">
+                <input type="hidden" id="evento-id" value="0" />
+                <div class="modal-body p-4">
+
+                    <!-- Fecha seleccionada -->
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-muted small mb-1">
+                            <i class="far fa-calendar-alt mr-1 text-primary"></i> Fecha Seleccionada <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" class="form-control" id="evento-fecha-inicio" required />
+                    </div>
+
+                    <!-- TÃ­tulo del Evento -->
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-muted small mb-1">
+                            <i class="fas fa-heading mr-1 text-primary"></i> TÃ­tulo del Evento <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="evento-titulo" placeholder="Ej. ReuniÃ³n de equipo / RevisiÃ³n de avance" maxlength="150" required />
+                        <small class="form-text text-muted">Escribe un tÃ­tulo descriptivo para la actividad.</small>
+                    </div>
+
+                    <!-- Contexto de lo que harÃ­an -->
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-muted small mb-1">
+                            <i class="fas fa-align-left mr-1 text-primary"></i> Contexto / DescripciÃ³n de lo que se harÃ¡
+                        </label>
+                        <textarea class="form-control" id="evento-contexto" rows="4" placeholder="Escribe el contexto detallado, temas a tratar, objetivos o lo que se realizarÃ¡ en este dÃ­a..."></textarea>
+                        <small class="form-text text-muted">Detalla las actividades o contexto necesario.</small>
+                    </div>
+
+                    <!-- Selector de Color / CategorÃ­a -->
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-muted small mb-2 d-block">
+                            <i class="fas fa-palette mr-1 text-primary"></i> Color / CategorÃ­a
+                        </label>
+                        <div class="d-flex align-items-center" id="color-palette-group" style="gap: 12px;">
+                            <label class="color-pill" style="background:#0d6efd;" title="Azul (ReuniÃ³n)">
+                                <input type="radio" name="evento-color" value="#0d6efd" checked />
+                                <i class="fas fa-check"></i>
+                            </label>
+                            <label class="color-pill" style="background:#198754;" title="Verde (Cliente)">
+                                <input type="radio" name="evento-color" value="#198754" />
+                                <i class="fas fa-check"></i>
+                            </label>
+                            <label class="color-pill" style="background:#ffc107;" title="Amarillo (RevisiÃ³n)">
+                                <input type="radio" name="evento-color" value="#ffc107" />
+                                <i class="fas fa-check" style="color: #212529;"></i>
+                            </label>
+                            <label class="color-pill" style="background:#0dcaf0;" title="Celeste (1 a 1)">
+                                <input type="radio" name="evento-color" value="#0dcaf0" />
+                                <i class="fas fa-check"></i>
+                            </label>
+                            <label class="color-pill" style="background:#dc3545;" title="Rojo (Lanzamiento / CrÃ­tico)">
+                                <input type="radio" name="evento-color" value="#dc3545" />
+                                <i class="fas fa-check"></i>
+                            </label>
+                            <label class="color-pill" style="background:#6f42c1;" title="Morado (General / All-hands)">
+                                <input type="radio" name="evento-color" value="#6f42c1" />
+                                <i class="fas fa-check"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Meta info (cuando se edita un evento existente) -->
+                    <div id="evento-info-meta" class="alert alert-light border small text-muted mb-0" style="display: none;">
+                        <div class="d-flex justify-content-between">
+                            <span><i class="far fa-user mr-1"></i> Registrado por: <strong id="evento-meta-usuario">-</strong></span>
+                            <span><i class="far fa-clock mr-1"></i> <span id="evento-meta-fecha">-</span></span>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btn-eliminar-evento" style="display: none;">
+                        <i class="fas fa-trash-alt mr-1"></i> Eliminar Evento
+                    </button>
+                    <div class="ml-auto">
+                        <button type="button" class="btn btn-secondary btn-sm mr-2" data-dismiss="modal" data-bs-dismiss="modal">
+                            Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm font-weight-bold px-3 shadow-sm" id="btn-guardar-evento">
+                            <i class="fas fa-save mr-1"></i> Guardar Evento
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+    function initFullCalendarModule() {
+        var calendarEl = document.getElementById('calendar');
+        var externalEl = document.getElementById('external-events');
+        var removeAfterDrop = document.getElementById('remove-after-drop');
+
+        if (!calendarEl) return;
+
+        // Initialize Draggable External Events
+        if (externalEl && window.FullCalendar && FullCalendar.Draggable) {
+            new FullCalendar.Draggable(externalEl, {
+                itemSelector: '.draggable-event',
+                eventData: function(eventEl) {
+                    return {
+                        title: eventEl.textContent.trim(),
+                        backgroundColor: eventEl.dataset.color || '#0d6efd',
+                        borderColor: eventEl.dataset.color || '#0d6efd'
+                    };
+                }
+            });
+        }
+
+        // Initialize Calendar
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'es',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                start: 'prev,next today',
+                center: 'title',
+                end: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            buttonText: {
+                today: 'Hoy',
+                month: 'Mes',
+                week: 'Semana',
+                day: 'DÃ­a',
+                list: 'Agenda'
+            },
+            height: 'auto',
+            editable: true,
+            droppable: true,
+            dayMaxEvents: 3,
+            events: '@Url.Action("ObtenerEventos", "Calendario")',
+
+            // Drop from external draggable badges
+            drop: function(info) {
+                var title = info.draggedEl.textContent.trim();
+                var color = info.draggedEl.dataset.color || '#0d6efd';
+
+                if (removeAfterDrop && removeAfterDrop.checked) {
+                    info.draggedEl.remove();
+                }
+
+                // Persist new event in DB
+                $.ajax({
+                    url: '@Url.Action("GuardarEvento", "Calendario")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        id: 0,
+                        titulo: title,
+                        contexto: 'Registrado desde eventos arrastrables',
+                        fechaInicio: info.dateStr,
+                        todoElDia: true,
+                        color: color
+                    }),
+                    success: function(res) {
+                        if (res.success) {
+                            calendar.refetchEvents();
+                            if (window.alertify) alertify.success('Evento programado exitosamente');
+                        } else {
+                            if (window.alertify) alertify.error(res.message);
+                        }
+                    },
+                    error: function() {
+                        if (window.alertify) alertify.error('Error al guardar el evento arrastrado');
+                    }
+                });
+            },
+
+            // Click on day cell -> Open Registration Modal
+            dateClick: function(info) {
+                abrirModalNuevoEvento(info.dateStr);
+            },
+
+            // Click on existing event -> Open Edit/Delete Modal
+            eventClick: function(info) {
+                abrirModalEditarEvento(info.event);
+            },
+
+            // Event dragged to another day
+            eventDrop: function(info) {
+                actualizarFechaEvento(info.event);
+            },
+
+            // Event resized
+            eventResize: function(info) {
+                actualizarFechaEvento(info.event);
+            }
+        });
+
+        calendar.render();
+        window._activeCalendarInstance = calendar;
+
+        // Modal Helpers
+        function abrirModalNuevoEvento(fechaStr) {
+            $('#evento-id').value = '0';
+            $('#evento-id').val(0);
+            $('#evento-fecha-inicio').val(fechaStr || new Date().toISOString().slice(0, 10));
+            $('#evento-titulo').val('');
+            $('#evento-contexto').val('');
+            
+            // Default color azul
+            $('input[name="evento-color"][value="#0d6efd"]').prop('checked', true);
+            actualizarEstiloColorPills('#0d6efd');
+
+            $('#modalEventoLabel #modal-icon').attr('class', 'far fa-calendar-plus mr-2');
+            $('#modalEventoLabel #modal-title-text').text('Registrar Evento');
+            $('#btn-eliminar-evento').hide();
+            $('#evento-info-meta').hide();
+
+            $('#modal-evento-calendario').modal('show');
+            setTimeout(function() { $('#evento-titulo').focus(); }, 400);
+        }
+
+        function abrirModalEditarEvento(event) {
+            $('#evento-id').val(event.id);
+            var fInicio = event.startStr ? event.startStr.slice(0, 10) : '';
+            $('#evento-fecha-inicio').val(fInicio);
+            $('#evento-titulo').val(event.title);
+            
+            var ext = event.extendedProps || {};
+            $('#evento-contexto').val(ext.contexto || '');
+
+            var color = event.backgroundColor || '#0d6efd';
+            var $radio = $('input[name="evento-color"][value="' + color + '"]');
+            if ($radio.length > 0) {
+                $radio.prop('checked', true);
+                actualizarEstiloColorPills(color);
+            } else {
+                $('input[name="evento-color"][value="#0d6efd"]').prop('checked', true);
+                actualizarEstiloColorPills('#0d6efd');
+            }
+
+            $('#modalEventoLabel #modal-icon').attr('class', 'fas fa-edit mr-2');
+            $('#modalEventoLabel #modal-title-text').text('Editar Evento');
+
+            if (ext.usuario) {
+                $('#evento-meta-usuario').text(ext.usuario);
+                $('#evento-meta-fecha').text(ext.fechaCreacion || '');
+                $('#evento-info-meta').show();
+            } else {
+                $('#evento-info-meta').hide();
+            }
+
+            $('#btn-eliminar-evento').show();
+            $('#modal-evento-calendario').modal('show');
+        }
+
+        function actualizarEstiloColorPills(colorSeleccionado) {
+            $('.color-pill').each(function() {
+                var $radio = $(this).find('input[type="radio"]');
+                if ($radio.val() === colorSeleccionado) {
+                    $(this).addClass('active');
+                } else {
+                    $(this).removeClass('active');
+                }
+            });
+        }
+
+        $('input[name="evento-color"]').on('change', function() {
+            actualizarEstiloColorPills($(this).val());
+        });
+
+        // Click on manual "Registrar Nuevo Evento" button
+        $('#btn-crear-evento-manual').off('click').on('click', function() {
+            abrirModalNuevoEvento(new Date().toISOString().slice(0, 10));
+        });
+
+        // Save Event (Create or Update)
+        $('#btn-guardar-evento').off('click').on('click', function() {
+            var id = parseInt($('#evento-id').val()) || 0;
+            var titulo = $('#evento-titulo').val().trim();
+            var contexto = $('#evento-contexto').val().trim();
+            var fechaInicio = $('#evento-fecha-inicio').val();
+            var color = $('input[name="evento-color"]:checked').val() || '#0d6efd';
+
+            if (!titulo) {
+                if (window.alertify) alertify.warning('Por favor ingresa el tÃ­tulo del evento.');
+                $('#evento-titulo').focus();
+                return;
+            }
+
+            if (!fechaInicio) {
+                if (window.alertify) alertify.warning('Por favor selecciona una fecha vÃ¡lida.');
+                $('#evento-fecha-inicio').focus();
+                return;
+            }
+
+            var payload = {
+                id: id,
+                titulo: titulo,
+                contexto: contexto,
+                fechaInicio: fechaInicio,
+                todoElDia: true,
+                color: color
+            };
+
+            var $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...');
+
+            $.ajax({
+                url: '@Url.Action("GuardarEvento", "Calendario")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function(res) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar Evento');
+                    if (res.success) {
+                        $('#modal-evento-calendario').modal('hide');
+                        calendar.refetchEvents();
+                        if (window.alertify) alertify.success(res.message || 'Evento guardado exitosamente');
+                    } else {
+                        if (window.alertify) alertify.error(res.message || 'Error al guardar el evento');
+                    }
+                },
+                error: function(xhr) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar Evento');
+                    if (window.alertify) alertify.error('Error al comunicarse con el servidor.');
+                }
+            });
+        });
+
+        // Delete Event
+        $('#btn-eliminar-evento').off('click').on('click', function() {
+            var id = parseInt($('#evento-id').val()) || 0;
+            if (id <= 0) return;
+
+            if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar este evento?')) {
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: '@Url.Action("EliminarEvento", "Calendario")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function(res) {
+                        $btn.prop('disabled', false);
+                        if (res.success) {
+                            $('#modal-evento-calendario').modal('hide');
+                            calendar.refetchEvents();
+                            if (window.alertify) alertify.success('Evento eliminado correctamente');
+                        } else {
+                            if (window.alertify) alertify.error(res.message || 'Error al eliminar el evento');
+                        }
+                    },
+                    error: function() {
+                        $btn.prop('disabled', false);
+                        if (window.alertify) alertify.error('Error al comunicarse con el servidor.');
+                    }
+                });
+            }
+        });
+
+        // Update Event Date on Drag/Resize
+        function actualizarFechaEvento(event) {
+            var payload = {
+                id: parseInt(event.id),
+                titulo: event.title,
+                contexto: event.extendedProps ? (event.extendedProps.contexto || '') : '',
+                fechaInicio: event.startStr,
+                fechaFin: event.endStr || null,
+                todoElDia: event.allDay,
+                color: event.backgroundColor || '#0d6efd'
+            };
+
+            $.ajax({
+                url: '@Url.Action("GuardarEvento", "Calendario")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function(res) {
+                    if (res.success) {
+                        if (window.alertify) alertify.success('Fecha actualizada');
+                    } else {
+                        if (window.alertify) alertify.error(res.message);
+                        calendar.refetchEvents();
+                    }
+                },
+                error: function() {
+                    if (window.alertify) alertify.error('Error al actualizar fecha del evento');
+                    calendar.refetchEvents();
+                }
+            });
+        }
+    }
+
+    // Ensure FullCalendar is loaded before initializing
+    if (window.FullCalendar) {
+        initFullCalendarModule();
+    } else {
+        var scriptIndex = document.createElement('script');
+        scriptIndex.src = '@Url.Content("~/plugins/fullcalendar/index.global.min.js")';
+        scriptIndex.onload = function() {
+            var scriptEs = document.createElement('script');
+            scriptEs.src = '@Url.Content("~/plugins/fullcalendar/es.global.min.js")';
+            scriptEs.onload = function() {
+                initFullCalendarModule();
+            };
+            document.head.appendChild(scriptEs);
+        };
+        document.head.appendChild(scriptIndex);
+    }
+})();
+</script>

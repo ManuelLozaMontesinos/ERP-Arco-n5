@@ -54,6 +54,18 @@ namespace ESD.ERP.Web.Controllers
 
          List<MenuTreeNode> menuNodeList = obtenerArbol(menuDTOList.Distinct().OrderBy(x => x.MenuId).ToList(), null);
 
+         if (menuNodeList != null && !menuNodeList.Any(m => m.Text != null && m.Text.Trim().Equals("Calendario", System.StringComparison.OrdinalIgnoreCase)))
+         {
+            menuNodeList.Add(new MenuTreeNode
+            {
+               Text = "Calendario",
+               Icon = "far fa-calendar-alt ",
+               Selectable = true,
+               Url = Url.Action("Index", "Calendario"),
+               Nodes = null
+            });
+         }
+
          return Json(menuNodeList);
       }
       private List<MenuTreeNode> obtenerArbol(List<MenuDTO> menuDTOList, int? parent)
