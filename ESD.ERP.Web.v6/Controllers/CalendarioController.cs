@@ -4,46 +4,25 @@ using ESD.ERP.Common;
 using ESD.ERP.DTO;
 using ESD.ERP.Web.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 
 namespace ESD.ERP.Web.Controllers
 {
    public class CalendarioController : AuthorizedController
    {
-      private static string _cachedConnectionString;
+      private readonly IConfiguration configuration;
 
-      public static string GetDbConnectionString()
+      public CalendarioController(IConfiguration configuration)
       {
-         if (!string.IsNullOrEmpty(_cachedConnectionString))
-         {
-            return _cachedConnectionString;
-         }
-
-         string[] candidates = new[]
-         {
-            "Server=localhost;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=3;",
-            "Server=localhost;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=3;",
-            "Server=.;Database=esderp_v6;User Id=sa;Password=admin123*;TrustServerCertificate=True;Connect Timeout=3;"
-         };
-
-         foreach (var cs in candidates)
-         {
-            try
-            {
-               using (var testConn = new SqlConnection(cs))
-               {
-                  testConn.Open();
-                  _cachedConnectionString = cs;
-                  return cs;
-               }
-            }
-            catch { }
-         }
-         return candidates[0];
+         this.configuration = configuration;
       }
+
+      private string GetDbConnectionString() => CalendarDatabase.GetConnectionString(configuration);
 
       [HttpGet]
       [HttpPost]
@@ -51,9 +30,10 @@ namespace ESD.ERP.Web.Controllers
       {
          ViewBag.cid = cid;
          UsuarioDTO usuarioDTO = ObtenerUsuarioDTO();
-         ViewBag.Usuario = usuarioDTO?.UsuarioLogon ?? "administrador";
-         ViewBag.UsuarioId = usuarioDTO?.UsuarioId ?? 1;
-         ViewBag.EsAdmin = EsAdministrador();
+         int usuarioId = ObtenerUsuarioId();
+         ViewBag.Usuario = usuarioDTO?.UsuarioLogon ?? string.Empty;
+         ViewBag.UsuarioId = usuarioId;
+         ViewBag.EsAdmin = usuarioId > 0 && usuarioDTO != null && EsAdministrador();
 
          if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
          {
@@ -67,17 +47,24 @@ namespace ESD.ERP.Web.Controllers
       public JsonResult ObtenerEventos()
       {
          var eventos = new List<object>();
+         int usuarioActualId = ObtenerUsuarioId();
+         if (usuarioActualId <= 0)
+         {
+            return Json(new { success = false, message = "No se pudo identificar al usuario de la sesión.", data = eventos });
+         }
+
          try
          {
+            bool esAdmin = EsAdministrador();
             using (var conn = new SqlConnection(GetDbConnectionString()))
             {
                conn.Open();
                using (var cmd = conn.CreateCommand())
                {
                   cmd.CommandText = @"
-                     SELECT evento_id, usuario_id, usuario_logon, titulo, contexto, 
+                      SELECT evento_id, usuario_id, usuario_logon, titulo, contexto,
                             fecha_inicio, fecha_fin, todo_el_dia, color, fecha_creacion
-                     FROM calendario_evento
+                      FROM dbo.calendario_evento
                      WHERE estado = 'A'
                      ORDER BY fecha_inicio ASC";
 
@@ -86,6 +73,7 @@ namespace ESD.ERP.Web.Controllers
                      while (reader.Read())
                      {
                         int id = Convert.ToInt32(reader["evento_id"]);
+                        int propietarioId = Convert.ToInt32(reader["usuario_id"]);
                         string titulo = reader["titulo"].ToString();
                         string contexto = reader["contexto"] != DBNull.Value ? reader["contexto"].ToString() : "";
                         DateTime fInicio = Convert.ToDateTime(reader["fecha_inicio"]);
@@ -102,12 +90,15 @@ namespace ESD.ERP.Web.Controllers
                            start = todoElDia ? fInicio.ToString("yyyy-MM-dd") : fInicio.ToString("yyyy-MM-ddTHH:mm:ss"),
                            end = fFin.HasValue ? (todoElDia ? fFin.Value.ToString("yyyy-MM-dd") : fFin.Value.ToString("yyyy-MM-ddTHH:mm:ss")) : null,
                            allDay = todoElDia,
+                           editable = esAdmin || propietarioId == usuarioActualId,
                            backgroundColor = color,
                            borderColor = color,
                            extendedProps = new
                            {
                               contexto = contexto,
                               usuario = usuario,
+                              usuarioId = propietarioId,
+                              puedeEditar = esAdmin || propietarioId == usuarioActualId,
                               fechaCreacion = fCreacion.ToString("dd/MM/yyyy HH:mm")
                            }
                         });
@@ -131,7 +122,7 @@ namespace ESD.ERP.Web.Controllers
          public string contexto { get; set; }
          public string fechaInicio { get; set; }
          public string fechaFin { get; set; }
-         public bool todoElDia { get; set; } = true;
+         public bool todoElDia { get; set; }
          public string color { get; set; } = "#0d6efd";
       }
 
@@ -143,20 +134,46 @@ namespace ESD.ERP.Web.Controllers
             return Json(new { success = false, message = "El título y la fecha son obligatorios." });
          }
 
+         if (model.titulo.Trim().Length > 150)
+         {
+            return Json(new { success = false, message = "El título no puede superar los 150 caracteres." });
+         }
+
+         string color = string.IsNullOrWhiteSpace(model.color) ? "#0d6efd" : model.color.Trim();
+         if (!EsColorHexValido(color))
+         {
+            return Json(new { success = false, message = "El color del evento no es válido." });
+         }
+
          UsuarioDTO usuarioDTO = ObtenerUsuarioDTO();
-         int usuarioId = usuarioDTO?.UsuarioId ?? 1;
-         string usuarioLogon = usuarioDTO?.UsuarioLogon ?? "administrador";
+         int usuarioId = ObtenerUsuarioId();
+         if (usuarioId <= 0 || usuarioDTO == null)
+         {
+            return Json(new { success = false, message = "No se pudo identificar al usuario de la sesión." });
+         }
+
+         string usuarioLogon = usuarioDTO.UsuarioLogon;
 
          DateTime fInicio;
-         if (!DateTime.TryParse(model.fechaInicio, out fInicio))
+         if (!DateTime.TryParse(model.fechaInicio, CultureInfo.InvariantCulture, DateTimeStyles.None, out fInicio)
+            || (!model.todoElDia && model.fechaInicio.IndexOf('T') <= 0))
          {
-            return Json(new { success = false, message = "Formato de fecha de inicio inválido." });
+            return Json(new { success = false, message = "Selecciona una fecha y hora de inicio válidas." });
          }
 
          DateTime? fFin = null;
-         if (!string.IsNullOrWhiteSpace(model.fechaFin) && DateTime.TryParse(model.fechaFin, out DateTime parsedFin))
+         if (!string.IsNullOrWhiteSpace(model.fechaFin))
          {
+            if (!DateTime.TryParse(model.fechaFin, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedFin))
+            {
+               return Json(new { success = false, message = "Formato de fecha y hora de fin inválido." });
+            }
+
             fFin = parsedFin;
+            if (fFin <= fInicio)
+            {
+               return Json(new { success = false, message = "La fecha y hora de fin debe ser posterior al inicio." });
+            }
          }
 
          int eventoIdGuardado = 0;
@@ -171,22 +188,28 @@ namespace ESD.ERP.Web.Controllers
                   if (model.id.HasValue && model.id.Value > 0)
                   {
                      cmd.CommandText = @"
-                        UPDATE calendario_evento
+                         UPDATE dbo.calendario_evento
                         SET titulo = @titulo,
                             contexto = @contexto,
                             fecha_inicio = @fInicio,
                             fecha_fin = @fFin,
                             todo_el_dia = @todoElDia,
                             color = @color,
+                             recordatorio_estado = CASE WHEN fecha_inicio <> @fInicio OR todo_el_dia <> @todoElDia THEN 'P' ELSE recordatorio_estado END,
+                             recordatorio_reclamado_hasta = CASE WHEN fecha_inicio <> @fInicio OR todo_el_dia <> @todoElDia THEN NULL ELSE recordatorio_reclamado_hasta END,
+                             recordatorio_enviado_en = CASE WHEN fecha_inicio <> @fInicio OR todo_el_dia <> @todoElDia THEN NULL ELSE recordatorio_enviado_en END,
                             fecha_modifica = GETDATE()
-                        WHERE evento_id = @id AND estado = 'A'";
+                         WHERE evento_id = @id AND estado = 'A'
+                           AND (usuario_id = @usuarioId OR @esAdmin = 1)";
                      cmd.Parameters.AddWithValue("@id", model.id.Value);
+                     cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
+                     cmd.Parameters.AddWithValue("@esAdmin", EsAdministrador());
                      eventoIdGuardado = model.id.Value;
                   }
                   else
                   {
                      cmd.CommandText = @"
-                        INSERT INTO calendario_evento (usuario_id, usuario_logon, titulo, contexto, fecha_inicio, fecha_fin, todo_el_dia, color, estado, fecha_creacion)
+                         INSERT INTO dbo.calendario_evento (usuario_id, usuario_logon, titulo, contexto, fecha_inicio, fecha_fin, todo_el_dia, color, estado, fecha_creacion)
                         OUTPUT INSERTED.evento_id
                         VALUES (@usuarioId, @usuarioLogon, @titulo, @contexto, @fInicio, @fFin, @todoElDia, @color, 'A', GETDATE())";
                      cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
@@ -198,11 +221,14 @@ namespace ESD.ERP.Web.Controllers
                   cmd.Parameters.AddWithValue("@fInicio", fInicio);
                   cmd.Parameters.AddWithValue("@fFin", (object)fFin ?? DBNull.Value);
                   cmd.Parameters.AddWithValue("@todoElDia", model.todoElDia);
-                  cmd.Parameters.AddWithValue("@color", string.IsNullOrWhiteSpace(model.color) ? "#0d6efd" : model.color);
+                  cmd.Parameters.AddWithValue("@color", color);
 
                   if (model.id.HasValue && model.id.Value > 0)
                   {
-                     cmd.ExecuteNonQuery();
+                     if (cmd.ExecuteNonQuery() == 0)
+                     {
+                        return Json(new { success = false, message = "No tienes permiso para modificar este evento o ya no está disponible." });
+                     }
                   }
                   else
                   {
@@ -229,18 +255,31 @@ namespace ESD.ERP.Web.Controllers
 
          try
          {
+            int usuarioId = ObtenerUsuarioId();
+            if (usuarioId <= 0)
+            {
+               return Json(new { success = false, message = "No se pudo identificar al usuario de la sesión." });
+            }
+
+            bool esAdmin = EsAdministrador();
             using (var conn = new SqlConnection(GetDbConnectionString()))
             {
                conn.Open();
                using (var cmd = conn.CreateCommand())
                {
                   cmd.CommandText = @"
-                     UPDATE calendario_evento
+                      UPDATE dbo.calendario_evento
                      SET estado = 'I',
                          fecha_modifica = GETDATE()
-                     WHERE evento_id = @id";
+                      WHERE evento_id = @id AND estado = 'A'
+                        AND (usuario_id = @usuarioId OR @esAdmin = 1)";
                   cmd.Parameters.AddWithValue("@id", id);
-                  cmd.ExecuteNonQuery();
+                   cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
+                   cmd.Parameters.AddWithValue("@esAdmin", esAdmin);
+                   if (cmd.ExecuteNonQuery() == 0)
+                   {
+                      return Json(new { success = false, message = "No tienes permiso para eliminar este evento o ya no está disponible." });
+                   }
                }
             }
          }
@@ -250,6 +289,24 @@ namespace ESD.ERP.Web.Controllers
          }
 
          return Json(new { success = true, message = "Evento eliminado exitosamente." });
+      }
+
+      private static bool EsColorHexValido(string color)
+      {
+         if (color == null || color.Length != 7 || color[0] != '#')
+         {
+            return false;
+         }
+
+         for (int i = 1; i < color.Length; i++)
+         {
+            if (!Uri.IsHexDigit(color[i]))
+            {
+               return false;
+            }
+         }
+
+         return true;
       }
    }
 }

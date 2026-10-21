@@ -23,6 +23,7 @@
    <link rel="stylesheet" href="~/css/alertifyjs/themes/bootstrap.min.css" asp-append-version="true">
    @*<link rel="stylesheet" href="~/css/bootstrap-datetimepicker.css" asp-append-version="true">*@
    <link rel="stylesheet" href="~/css/app.main.css" asp-append-version="true">
+   <link rel="stylesheet" href="~/css/app.notifications.css" asp-append-version="true">
       <script type="text/javascript">
       (function () {
          try {
@@ -92,13 +93,30 @@
             </li>
             <!-- Messages Dropdown Menu -->
             <li class="nav-item dropdown">
-               <a class="nav-link" data-toggle="dropdown" href="#">
+               <a class="nav-link app-notification-trigger" id="app-notification-trigger" data-toggle="dropdown" href="#" aria-label="Abrir notificaciones" aria-haspopup="true" aria-expanded="false">
                   <i class="far fa-bell"></i>
-                  <span id="app-notification-icon" class="badge badge-warning navbar-badge font-weight-bold"></span>
+                  <span id="app-notification-icon" class="badge navbar-badge app-notification-badge font-weight-bold"></span>
                </a>
-               <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                  <span id="app-notification-total" class="dropdown-item dropdown-header">Sin Notificaciones</span>
-                  <div id="app-notification-dropdown">
+               <div class="dropdown-menu dropdown-menu-right app-notification-panel" aria-labelledby="app-notification-trigger">
+                  <div class="app-notification-heading">
+                     <div>
+                        <span class="app-notification-eyebrow">Centro de avisos</span>
+                        <div class="app-notification-title-row">
+                           <h2>Notificaciones</h2>
+                           <span id="app-notification-total" class="app-notification-count">0</span>
+                        </div>
+                        <p>Los avisos de hoy</p>
+                     </div>
+                     <button type="button" id="app-notification-clear-all" class="app-notification-clear-all" disabled>
+                        <i class="far fa-trash-alt" aria-hidden="true"></i>
+                        <span>Vaciar</span>
+                     </button>
+                  </div>
+                  <div id="app-notification-dropdown" class="app-notification-list" role="list"></div>
+                  <div id="app-notification-empty" class="app-notification-empty" hidden>
+                     <span class="app-notification-empty-icon"><i class="far fa-bell-slash" aria-hidden="true"></i></span>
+                     <strong>Todo al día</strong>
+                     <span>Cuando recibas un aviso, aparecerá aquí.</span>
                   </div>
                </div>
             </li>

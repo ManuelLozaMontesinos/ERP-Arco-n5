@@ -82,7 +82,7 @@ namespace ESD.ERP.Repository.Impl
 			parameters.AddParameter("numeroDocumentoIdentidad", entity.Proveedor?.NumeroDocumentoIdentidad);
 			parameters.AddParameter("containsVendedor", entity.Vendedor?.Proveedor?.RazonSocial);
 			parameters.AddParameter("fechaDesde", entity.FechaDesde);
-			parameters.AddParameter("fechaHasta", entity.FechaDesde);
+			parameters.AddParameter("fechaHasta", entity.FechaHasta);
 			parameters.AddParameter("esPedido", entity.EsPedido);
 			parameters.AddParameter("estadoCotizacionId", entity.EstadoCotizacionId);
 			parameters.AddParameter("estadoCotizacionList", entity.EstadoCotizacionList);

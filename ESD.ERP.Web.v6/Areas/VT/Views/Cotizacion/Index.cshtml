@@ -146,19 +146,15 @@
              $('#bandejaGrid').appGrid('reloadJSON');
           }
        });
-       $("#FechaDesde").keydown(function (e) {
-          if (event.which == 13) {
-             $("#FechaHasta").val($("#FechaDesde").val());
-             event.preventDefault();
-             $('#bandejaGrid').appGrid('reloadJSON');
-          }
-       });
-       $("#FechaHasta").keydown(function (e) {
-          if (event.which == 13) {
-             event.preventDefault();
-             $('#bandejaGrid').appGrid('reloadJSON');
-          }
-       });
+        $("#FechaDesde-ddiv, #FechaHasta-ddiv").on('change.datetimepicker', function () {
+           $('#bandejaGrid').appGrid('reloadJSON');
+        });
+        $("#FechaDesde, #FechaHasta").keydown(function (e) {
+           if (e.which == 13) {
+              e.preventDefault();
+              $('#bandejaGrid').appGrid('reloadJSON');
+           }
+        });
     });
     function menuBarOnClick(key) {
 

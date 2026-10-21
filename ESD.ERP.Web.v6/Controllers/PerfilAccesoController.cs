@@ -6,8 +6,11 @@ using ESD.ERP.Web.Infrastructure;
 using ESD.ERP.Web.Model;
 using ESD.ERP.WebApiProxy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Text.Json;
 using System.Linq;
 using ESD.Core;
@@ -20,18 +23,21 @@ namespace ESD.ERP.Web.Controllers
       private readonly IPeriodoEmpresaSedeProxy periodoEmpresaSedeProxy;
       private readonly IDirectivaUsuarioProxy directivaUsuarioProxy;
       private readonly INotificacionPushProxy notificacionPushProxy;
+      private readonly IConfiguration configuration;
 
       public PerfilAccesoController(
          IPeriodoProxy periodoProxy,
          IPeriodoEmpresaSedeProxy periodoEmpresaSedeProxy,
          IDirectivaUsuarioProxy directivaUsuarioProxy,
-         INotificacionPushProxy notificacionPushProxy
+         INotificacionPushProxy notificacionPushProxy,
+         IConfiguration configuration
          )
       {
          this.periodoProxy = periodoProxy;
          this.periodoEmpresaSedeProxy = periodoEmpresaSedeProxy;
          this.directivaUsuarioProxy = directivaUsuarioProxy;
          this.notificacionPushProxy = notificacionPushProxy;
+         this.configuration = configuration;
       }
       public IActionResult Index()
       {
@@ -186,12 +192,7 @@ namespace ESD.ERP.Web.Controllers
 
          try
          {
-            List<NotificacionPushDTO> notificacionPushDTOList = notificacionPushProxy.Search(new NotificacionPushDTO()
-            {
-               OrderBy = "fecha_reg desc",
-               Fecha = DateTime.Today,
-               UsuarioId = ObtenerUsuarioId()
-            });
+            List<NotificacionPushDTO> notificacionPushDTOList = BuscarNotificacionesDeHoy(ObtenerUsuarioId());
 
             resultResponse.Data = new
             {
@@ -199,7 +200,7 @@ namespace ESD.ERP.Web.Controllers
                List = from f in notificacionPushDTOList.AsEnumerable()
                       select new
                       {
-                         f.NotificacionPushId,
+                         Id = f.NotificacionPushId,
                          f.Titulo,
                          f.Descripcion,
                          Fecha = string.Format(StringFormatConstant.DATE_TIME,f.FechaRegistro)
@@ -216,6 +217,113 @@ namespace ESD.ERP.Web.Controllers
          Logger.InfoFinish();
 
          return Json(resultResponse);
+      }
+
+      [HttpPost("EliminarNotificacion")]
+      public IActionResult EliminarNotificacion(int id)
+      {
+         Logger.InfoStart();
+         try
+         {
+            int usuarioId = ObtenerUsuarioId();
+            if (usuarioId <= 0 || id <= 0)
+            {
+               return Json(new { success = false, message = "La notificación no es válida." });
+            }
+
+            bool perteneceAlUsuario = BuscarNotificacionesDeHoy(usuarioId)
+               .Any(x => x.NotificacionPushId == id);
+            if (!perteneceAlUsuario)
+            {
+               return Json(new { success = false, message = "La notificación ya no está disponible." });
+            }
+
+            int eliminadas = EliminarNotificacionesDeUsuario(new[] { id }, usuarioId);
+            if (eliminadas == 0)
+            {
+               return Json(new { success = false, message = "La notificación ya no está disponible." });
+            }
+
+            return Json(new { success = true, message = "Notificación eliminada." });
+         }
+         catch (Exception e)
+         {
+            Logger.Error(e);
+            return Json(new { success = false, message = e.Message });
+         }
+         finally
+         {
+            Logger.InfoFinish();
+         }
+      }
+
+      [HttpPost("VaciarNotificaciones")]
+      public IActionResult VaciarNotificaciones()
+      {
+         Logger.InfoStart();
+         try
+         {
+            int usuarioId = ObtenerUsuarioId();
+            if (usuarioId <= 0)
+            {
+               return Json(new { success = false, message = "No se pudo identificar al usuario." });
+            }
+
+            List<NotificacionPushDTO> notificaciones = BuscarNotificacionesDeHoy(usuarioId);
+            int eliminadas = EliminarNotificacionesDeUsuario(
+               notificaciones.Select(x => x.NotificacionPushId), usuarioId);
+
+            return Json(new { success = true, message = "Bandeja vaciada.", eliminadas });
+         }
+         catch (Exception e)
+         {
+            Logger.Error(e);
+            return Json(new { success = false, message = e.Message });
+         }
+         finally
+         {
+            Logger.InfoFinish();
+         }
+      }
+
+      private List<NotificacionPushDTO> BuscarNotificacionesDeHoy(int usuarioId)
+      {
+         return notificacionPushProxy.Search(new NotificacionPushDTO
+         {
+            OrderBy = "fecha_reg desc",
+            Fecha = DateTime.Today,
+            UsuarioId = usuarioId
+         });
+      }
+
+      private int EliminarNotificacionesDeUsuario(IEnumerable<int> notificacionIds, int usuarioId)
+      {
+         List<int> ids = notificacionIds?.Where(x => x > 0).Distinct().ToList() ?? new List<int>();
+         if (usuarioId <= 0 || ids.Count == 0)
+         {
+            return 0;
+         }
+
+         int eliminadas = 0;
+         using (SqlConnection connection = new SqlConnection(CalendarDatabase.GetConnectionString(configuration)))
+         {
+            connection.Open();
+            using (SqlCommand command = connection.CreateCommand())
+            {
+               command.CommandText = @"DELETE FROM dbo.notifi_push
+WHERE notifi_push_id = @notificacionId AND usuario_id = @usuarioId";
+               SqlParameter notificacionIdParameter = command.Parameters.Add("@notificacionId", SqlDbType.Int);
+               command.Parameters.Add("@usuarioId", SqlDbType.Int).Value = usuarioId;
+
+               foreach (int id in ids)
+               {
+                  notificacionIdParameter.Value = id;
+                  eliminadas += command.ExecuteNonQuery();
+               }
+            }
+         }
+
+         return eliminadas;
       }
    }
 }

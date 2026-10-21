@@ -1378,3 +1378,12 @@ body.dark-mode #app-navbar-breadcrumb .breadcrumb-item + .breadcrumb-item::befor
     justify-content: flex-end !important;
     flex-shrink: 0 !important;
 }
+
+.dashboard-drilldown-row {
+    cursor: pointer;
+}
+
+.dashboard-drilldown-row:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: -2px;
+}

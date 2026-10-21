@@ -424,6 +424,15 @@ function padLeadingZeros(num, size) {
 
                if (typeof settings.onSuccess === 'function')
                   settings.onSuccess(response);
+
+                if (settings.container === 'workspace') {
+                   window.requestAnimationFrame(function () {
+                      var workspace = document.getElementById('workspace');
+                      if (workspace) workspace.scrollTop = 0;
+                      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+                      window.scrollTo(0, 0);
+                   });
+                }
             },
             error: function (xhr, status, error) {
 
@@ -1108,6 +1117,35 @@ class msgAlertTypeConstant {
 };
 
 var SwalToast = null;
+var SwalToastOutsideClickHandler = null;
+var SwalToastOutsideClickElement = null;
+
+function clearSwalToastOutsideClickHandler() {
+   if (SwalToastOutsideClickHandler && typeof document !== 'undefined') {
+      document.removeEventListener('pointerdown', SwalToastOutsideClickHandler, true);
+   }
+   SwalToastOutsideClickHandler = null;
+   SwalToastOutsideClickElement = null;
+}
+
+function bindSwalToastOutsideClick(toast) {
+   clearSwalToastOutsideClickHandler();
+   SwalToastOutsideClickElement = toast;
+   SwalToastOutsideClickHandler = function (event) {
+      if (!toast || !toast.isConnected) {
+         clearSwalToastOutsideClickHandler();
+         return;
+      }
+
+      if (toast.contains(event.target)) return;
+
+      clearSwalToastOutsideClickHandler();
+      if (SwalToast && typeof SwalToast.close === 'function') {
+         SwalToast.close();
+      }
+   };
+   document.addEventListener('pointerdown', SwalToastOutsideClickHandler, true);
+}
 
 function getSwalToast() {
    if (!SwalToast && typeof Swal !== 'undefined') {
@@ -1116,16 +1154,16 @@ function getSwalToast() {
          position: 'top-end',
          showConfirmButton: false,
          showCloseButton: true,
-         timer: 4000,
+         timer: 3000,
          timerProgressBar: true,
-         didOpen: function (toast) {
-            toast.style.cursor = 'pointer';
-            toast.title = 'Click para cerrar';
-            toast.addEventListener('mouseenter', Swal.stopTimer);
-            toast.addEventListener('mouseleave', Swal.resumeTimer);
-            toast.addEventListener('click', function () {
-               Swal.close();
-            });
+         customClass: {
+            container: 'app-toast-container',
+            popup: 'app-toast'
+         },
+         willClose: function (toast) {
+            if (toast === SwalToastOutsideClickElement) {
+               clearSwalToastOutsideClickHandler();
+            }
          }
       });
    }
@@ -1136,20 +1174,29 @@ function msgAlert(type, message) {
    if (typeof Swal !== 'undefined') {
       var toastInstance = getSwalToast();
       var icon = 'info';
+      var iconHtml = '<i class="far fa-bell" aria-hidden="true"></i>';
       switch (type) {
          case 1:
             icon = 'success';
+            iconHtml = '<i class="fas fa-check" aria-hidden="true"></i>';
             break;
          case 2:
             icon = 'warning';
+            iconHtml = '<i class="fas fa-exclamation-triangle" aria-hidden="true"></i>';
             break;
          case 3:
             icon = 'error';
+            iconHtml = '<i class="fas fa-times" aria-hidden="true"></i>';
             break;
       }
       toastInstance.fire({
          icon: icon,
-         title: message
+         iconHtml: iconHtml,
+         title: message,
+         didOpen: function (toast) {
+            toast.classList.add('app-toast--' + icon);
+            bindSwalToastOutsideClick(toast);
+         }
       });
       return;
    }

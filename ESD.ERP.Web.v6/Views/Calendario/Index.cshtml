@@ -16,6 +16,24 @@
         transform: translateY(-1px);
         box-shadow: 0 3px 8px rgba(0,0,0,0.2);
     }
+    .fc .fc-button-primary {
+        background-color: #e8f1ff !important;
+        border-color: #c6dcff !important;
+        color: #245a9b !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    .fc .fc-button-primary:hover {
+        background-color: #d7e8ff !important;
+        border-color: #b3d1ff !important;
+        color: #184b88 !important;
+    }
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #fff !important;
+    }
     .draggable-event {
         cursor: grab;
         user-select: none;
@@ -73,11 +91,19 @@
     body.dark-mode .fc-theme-standard .fc-scrollgrid {
         border-color: #3f474e !important;
     }
+    body.dark-mode .fc .fc-scrollgrid-section-header > *,
+    body.dark-mode .fc .fc-col-header-cell,
+    body.dark-mode .fc .fc-list-day-cushion,
+    body.dark-mode .fc .fc-timegrid-axis {
+        background-color: #343a40 !important;
+    }
     body.dark-mode .fc-col-header-cell-cushion,
     body.dark-mode .fc-daygrid-day-number,
     body.dark-mode .fc-list-day-text,
     body.dark-mode .fc-list-day-side-text,
-    body.dark-mode .fc-toolbar-title {
+    body.dark-mode .fc-toolbar-title,
+    body.dark-mode .fc-timegrid-axis-cushion,
+    body.dark-mode .fc-timegrid-slot-label-cushion {
         color: #e9ecef !important;
     }
     body.dark-mode .fc-day-today {
@@ -159,27 +185,27 @@
                     </div>
                     <div class="card-body p-3">
                         <p class="text-muted small mb-3">
-                            Arrastra una etiqueta al calendario para programarla directamente en cualquier dÃ­a.
+                            Arrastra una etiqueta al calendario para programarla directamente en cualquier día.
                         </p>
                         
                         <div id="external-events">
                             <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#0d6efd" style="background-color: #0d6efd; color:#fff; font-size: 0.88rem; border-radius: 6px;">
-                                <i class="fas fa-users mr-1"></i> Team standup
+                                <i class="fas fa-users mr-1"></i> Reunión diaria del equipo
                             </div>
                             <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#198754" style="background-color: #198754; color:#fff; font-size: 0.88rem; border-radius: 6px;">
-                                <i class="fas fa-phone-alt mr-1"></i> Customer call
+                                <i class="fas fa-phone-alt mr-1"></i> Llamada con cliente
                             </div>
                             <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#ffc107" style="background-color: #ffc107; color:#212529; font-size: 0.88rem; border-radius: 6px;">
-                                <i class="fas fa-clipboard-check mr-1"></i> Design review
+                                <i class="fas fa-clipboard-check mr-1"></i> Revisión de diseño
                             </div>
                             <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#0dcaf0" style="background-color: #0dcaf0; color:#fff; font-size: 0.88rem; border-radius: 6px;">
-                                <i class="fas fa-user-friends mr-1"></i> 1:1 with manager
+                                <i class="fas fa-user-friends mr-1"></i> Reunión individual con el responsable
                             </div>
                             <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#dc3545" style="background-color: #dc3545; color:#fff; font-size: 0.88rem; border-radius: 6px;">
-                                <i class="fas fa-rocket mr-1"></i> Release window
+                                <i class="fas fa-rocket mr-1"></i> Ventana de despliegue
                             </div>
                             <div class="draggable-event badge p-2 mb-2 d-block text-left" data-color="#6f42c1" style="background-color: #6f42c1; color:#fff; font-size: 0.88rem; border-radius: 6px;">
-                                <i class="fas fa-bullhorn mr-1"></i> All-hands
+                                <i class="fas fa-bullhorn mr-1"></i> Reunión general
                             </div>
                         </div>
 
@@ -202,16 +228,17 @@
                 <div class="card card-outline card-secondary shadow-sm mb-3">
                     <div class="card-header py-2">
                         <h3 class="card-title text-muted font-weight-bold" style="font-size: 0.9rem;">
-                            <i class="fas fa-lightbulb text-warning mr-1"></i> Â¿CÃ³mo funciona?
+                            <i class="fas fa-lightbulb text-warning mr-1"></i> ¿Cómo funciona?
                         </h3>
                     </div>
                     <div class="card-body p-3 small text-muted">
                         <ul class="pl-3 mb-0" style="line-height: 1.6;">
-                            <li class="mb-2"><strong>Clic en un dÃ­a:</strong> Haz clic en cualquier casilla del calendario para registrar un evento con tÃ­tulo y contexto.</li>
-                            <li class="mb-2"><strong>Arrastrar etiqueta:</strong> Toma una etiqueta de arriba y suÃ©ltala en el dÃ­a que desees.</li>
-                            <li class="mb-2"><strong>Mover eventos:</strong> Puedes arrastrar cualquier evento a otro dÃ­a para reprogramarlo.</li>
+                            <li class="mb-2"><strong>Clic en un día:</strong> Haz clic en cualquier casilla del calendario para registrar un evento con título y contexto.</li>
+                            <li class="mb-2"><strong>Arrastrar etiqueta:</strong> Toma una etiqueta de arriba y suéltala en el día que desees.</li>
+                            <li class="mb-2"><strong>Mover eventos:</strong> Puedes arrastrar cualquier evento a otro día para reprogramarlo.</li>
                             <li><strong>Clic en evento:</strong> Haz clic en un evento para editarlo o eliminarlo.</li>
                         </ul>
+                        <p class="mb-0 mt-2"><i class="far fa-bell mr-1"></i> Los eventos con hora envían un recordatorio a quien los registró 15 minutos antes.</p>
                     </div>
                 </div>
 
@@ -225,10 +252,10 @@
                     </div>
                     <div class="card-footer py-2 text-muted small d-flex justify-content-between align-items-center">
                         <span>
-                            <i class="far fa-check-circle text-success mr-1"></i> Sincronizado en tiempo real con la base de datos
+                            <i class="far fa-bell text-success mr-1"></i> Recordatorio al creador 15 minutos antes de los eventos con hora
                         </span>
                         <span class="text-secondary">
-                            AdminLTE 4 Calendar &bull; FullCalendar 6
+                            Calendario con AdminLTE 4 &bull; FullCalendar 6
                         </span>
                     </div>
                 </div>
@@ -262,31 +289,52 @@
                         <input type="date" class="form-control" id="evento-fecha-inicio" required />
                     </div>
 
-                    <!-- TÃ­tulo del Evento -->
-                    <div class="form-group mb-3">
-                        <label class="font-weight-bold text-muted small mb-1">
-                            <i class="fas fa-heading mr-1 text-primary"></i> TÃ­tulo del Evento <span class="text-danger">*</span>
-                        </label>
-                        <input type="text" class="form-control" id="evento-titulo" placeholder="Ej. ReuniÃ³n de equipo / RevisiÃ³n de avance" maxlength="150" required />
-                        <small class="form-text text-muted">Escribe un tÃ­tulo descriptivo para la actividad.</small>
+                    <div class="custom-control custom-switch mb-3">
+                        <input type="checkbox" class="custom-control-input" id="evento-todo-el-dia">
+                        <label class="custom-control-label" for="evento-todo-el-dia">Evento de todo el día</label>
                     </div>
 
-                    <!-- Contexto de lo que harÃ­an -->
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-3">
+                            <label class="font-weight-bold text-muted small mb-1" for="evento-hora-inicio">
+                                <i class="far fa-clock mr-1 text-primary"></i> Hora de inicio <span class="text-danger">*</span>
+                            </label>
+                            <input type="time" class="form-control" id="evento-hora-inicio" required />
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label class="font-weight-bold text-muted small mb-1" for="evento-fecha-fin">
+                                <i class="far fa-clock mr-1 text-primary"></i> Fecha y hora de fin
+                            </label>
+                            <input type="datetime-local" class="form-control" id="evento-fecha-fin" />
+                        </div>
+                    </div>
+                    <small class="form-text text-muted mb-3">El recordatorio se enviará a quien registró el evento, 15 minutos antes. Los eventos de todo el día no generan recordatorio.</small>
+
+                    <!-- Título del Evento -->
                     <div class="form-group mb-3">
                         <label class="font-weight-bold text-muted small mb-1">
-                            <i class="fas fa-align-left mr-1 text-primary"></i> Contexto / DescripciÃ³n de lo que se harÃ¡
+                            <i class="fas fa-heading mr-1 text-primary"></i> Título del Evento <span class="text-danger">*</span>
                         </label>
-                        <textarea class="form-control" id="evento-contexto" rows="4" placeholder="Escribe el contexto detallado, temas a tratar, objetivos o lo que se realizarÃ¡ en este dÃ­a..."></textarea>
+                        <input type="text" class="form-control" id="evento-titulo" placeholder="Ej. Reunión de equipo / Revisión de avance" maxlength="150" required />
+                        <small class="form-text text-muted">Escribe un título descriptivo para la actividad.</small>
+                    </div>
+
+                    <!-- Contexto de la actividad -->
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-muted small mb-1">
+                            <i class="fas fa-align-left mr-1 text-primary"></i> Contexto / Descripción de la actividad
+                        </label>
+                        <textarea class="form-control" id="evento-contexto" rows="4" placeholder="Escribe el contexto detallado, los temas a tratar, los objetivos o las actividades del día..."></textarea>
                         <small class="form-text text-muted">Detalla las actividades o contexto necesario.</small>
                     </div>
 
-                    <!-- Selector de Color / CategorÃ­a -->
+                    <!-- Selector de color o categoría -->
                     <div class="form-group mb-3">
                         <label class="font-weight-bold text-muted small mb-2 d-block">
-                            <i class="fas fa-palette mr-1 text-primary"></i> Color / CategorÃ­a
+                            <i class="fas fa-palette mr-1 text-primary"></i> Color / Categoría
                         </label>
                         <div class="d-flex align-items-center" id="color-palette-group" style="gap: 12px;">
-                            <label class="color-pill" style="background:#0d6efd;" title="Azul (ReuniÃ³n)">
+                            <label class="color-pill" style="background:#0d6efd;" title="Azul (Reunión)">
                                 <input type="radio" name="evento-color" value="#0d6efd" checked />
                                 <i class="fas fa-check"></i>
                             </label>
@@ -294,7 +342,7 @@
                                 <input type="radio" name="evento-color" value="#198754" />
                                 <i class="fas fa-check"></i>
                             </label>
-                            <label class="color-pill" style="background:#ffc107;" title="Amarillo (RevisiÃ³n)">
+                            <label class="color-pill" style="background:#ffc107;" title="Amarillo (Revisión)">
                                 <input type="radio" name="evento-color" value="#ffc107" />
                                 <i class="fas fa-check" style="color: #212529;"></i>
                             </label>
@@ -302,11 +350,11 @@
                                 <input type="radio" name="evento-color" value="#0dcaf0" />
                                 <i class="fas fa-check"></i>
                             </label>
-                            <label class="color-pill" style="background:#dc3545;" title="Rojo (Lanzamiento / CrÃ­tico)">
+                            <label class="color-pill" style="background:#dc3545;" title="Rojo (Lanzamiento / Crítico)">
                                 <input type="radio" name="evento-color" value="#dc3545" />
                                 <i class="fas fa-check"></i>
                             </label>
-                            <label class="color-pill" style="background:#6f42c1;" title="Morado (General / All-hands)">
+                            <label class="color-pill" style="background:#6f42c1;" title="Morado (General)">
                                 <input type="radio" name="evento-color" value="#6f42c1" />
                                 <i class="fas fa-check"></i>
                             </label>
@@ -346,6 +394,7 @@
         var calendarEl = document.getElementById('calendar');
         var externalEl = document.getElementById('external-events');
         var removeAfterDrop = document.getElementById('remove-after-drop');
+        var eventoPuedeEditar = true;
 
         if (!calendarEl) return;
 
@@ -376,7 +425,7 @@
                 today: 'Hoy',
                 month: 'Mes',
                 week: 'Semana',
-                day: 'DÃ­a',
+                day: 'Día',
                 list: 'Agenda'
             },
             height: 'auto',
@@ -385,37 +434,40 @@
             dayMaxEvents: 3,
             events: '@Url.Action("ObtenerEventos", "Calendario")',
 
-            // Drop from external draggable badges
+            // Remove the source badge when requested. FullCalendar creates the dropped event itself.
             drop: function(info) {
-                var title = info.draggedEl.textContent.trim();
-                var color = info.draggedEl.dataset.color || '#0d6efd';
-
                 if (removeAfterDrop && removeAfterDrop.checked) {
                     info.draggedEl.remove();
                 }
+            },
 
-                // Persist new event in DB
+            // Persist the event created by FullCalendar when an external badge is dropped.
+            eventReceive: function(info) {
+                var droppedEvent = info.event;
                 $.ajax({
                     url: '@Url.Action("GuardarEvento", "Calendario")',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
                         id: 0,
-                        titulo: title,
+                        titulo: droppedEvent.title,
                         contexto: 'Registrado desde eventos arrastrables',
-                        fechaInicio: info.dateStr,
-                        todoElDia: true,
-                        color: color
+                        fechaInicio: droppedEvent.startStr,
+                        todoElDia: droppedEvent.allDay,
+                        color: droppedEvent.backgroundColor || '#0d6efd'
                     }),
                     success: function(res) {
                         if (res.success) {
+                            info.revert();
                             calendar.refetchEvents();
                             if (window.alertify) alertify.success('Evento programado exitosamente');
                         } else {
+                            info.revert();
                             if (window.alertify) alertify.error(res.message);
                         }
                     },
                     error: function() {
+                        info.revert();
                         if (window.alertify) alertify.error('Error al guardar el evento arrastrado');
                     }
                 });
@@ -445,11 +497,46 @@
         calendar.render();
         window._activeCalendarInstance = calendar;
 
+        function fechaLocalActual() {
+            var now = new Date();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            return now.getFullYear() + '-' + month + '-' + day;
+        }
+
+        function horaLocalActual() {
+            var now = new Date();
+            return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        }
+
+        function actualizarControlesHorario() {
+            var todoElDia = $('#evento-todo-el-dia').is(':checked');
+            $('#evento-todo-el-dia').prop('disabled', !eventoPuedeEditar);
+            $('#evento-hora-inicio').prop('disabled', !eventoPuedeEditar || todoElDia).prop('required', !todoElDia);
+            $('#evento-fecha-fin').prop('disabled', !eventoPuedeEditar || todoElDia);
+        }
+
+        function actualizarPermisosEdicion(puedeEditar) {
+            eventoPuedeEditar = puedeEditar;
+            $('#evento-titulo, #evento-contexto').prop('readonly', !puedeEditar);
+            $('#evento-fecha-inicio').prop('disabled', !puedeEditar);
+            $('input[name="evento-color"]').prop('disabled', !puedeEditar);
+            $('#btn-guardar-evento').toggle(puedeEditar);
+            $('#btn-eliminar-evento').toggle(puedeEditar && (parseInt($('#evento-id').val()) || 0) > 0);
+            actualizarControlesHorario();
+        }
+
+        $('#evento-todo-el-dia').off('change').on('change', actualizarControlesHorario);
+
         // Modal Helpers
         function abrirModalNuevoEvento(fechaStr) {
-            $('#evento-id').value = '0';
             $('#evento-id').val(0);
-            $('#evento-fecha-inicio').val(fechaStr || new Date().toISOString().slice(0, 10));
+            var fechaSeleccionada = fechaStr || fechaLocalActual();
+            $('#evento-fecha-inicio').val(fechaSeleccionada.slice(0, 10));
+            $('#evento-hora-inicio').val(fechaSeleccionada.length > 10 ? fechaSeleccionada.slice(11, 16) : horaLocalActual());
+            $('#evento-fecha-fin').val('');
+            $('#evento-todo-el-dia').prop('checked', false);
+            actualizarPermisosEdicion(true);
             $('#evento-titulo').val('');
             $('#evento-contexto').val('');
             
@@ -470,10 +557,15 @@
             $('#evento-id').val(event.id);
             var fInicio = event.startStr ? event.startStr.slice(0, 10) : '';
             $('#evento-fecha-inicio').val(fInicio);
+            $('#evento-hora-inicio').val(!event.allDay && event.startStr.length > 10 ? event.startStr.slice(11, 16) : '');
+            $('#evento-fecha-fin').val(!event.allDay && event.endStr && event.endStr.length > 10 ? event.endStr.slice(0, 16) : '');
+            $('#evento-todo-el-dia').prop('checked', event.allDay);
+            actualizarControlesHorario();
             $('#evento-titulo').val(event.title);
             
             var ext = event.extendedProps || {};
             $('#evento-contexto').val(ext.contexto || '');
+            actualizarPermisosEdicion(ext.puedeEditar === true);
 
             var color = event.backgroundColor || '#0d6efd';
             var $radio = $('input[name="evento-color"][value="' + color + '"]');
@@ -496,7 +588,7 @@
                 $('#evento-info-meta').hide();
             }
 
-            $('#btn-eliminar-evento').show();
+            $('#btn-eliminar-evento').toggle(ext.puedeEditar === true);
             $('#modal-evento-calendario').modal('show');
         }
 
@@ -517,7 +609,7 @@
 
         // Click on manual "Registrar Nuevo Evento" button
         $('#btn-crear-evento-manual').off('click').on('click', function() {
-            abrirModalNuevoEvento(new Date().toISOString().slice(0, 10));
+            abrirModalNuevoEvento(fechaLocalActual());
         });
 
         // Save Event (Create or Update)
@@ -525,18 +617,28 @@
             var id = parseInt($('#evento-id').val()) || 0;
             var titulo = $('#evento-titulo').val().trim();
             var contexto = $('#evento-contexto').val().trim();
-            var fechaInicio = $('#evento-fecha-inicio').val();
+            var fecha = $('#evento-fecha-inicio').val();
+            var horaInicio = $('#evento-hora-inicio').val();
+            var todoElDia = $('#evento-todo-el-dia').is(':checked');
+            var fechaInicio = todoElDia ? fecha : fecha + 'T' + horaInicio;
+            var fechaFin = !todoElDia ? $('#evento-fecha-fin').val() : '';
             var color = $('input[name="evento-color"]:checked').val() || '#0d6efd';
 
             if (!titulo) {
-                if (window.alertify) alertify.warning('Por favor ingresa el tÃ­tulo del evento.');
+                if (window.alertify) alertify.warning('Por favor ingresa el título del evento.');
                 $('#evento-titulo').focus();
                 return;
             }
 
-            if (!fechaInicio) {
-                if (window.alertify) alertify.warning('Por favor selecciona una fecha vÃ¡lida.');
+            if (!fecha || (!todoElDia && !horaInicio)) {
+                if (window.alertify) alertify.warning('Selecciona una fecha y una hora de inicio válida.');
                 $('#evento-fecha-inicio').focus();
+                return;
+            }
+
+            if (fechaFin && fechaFin <= fechaInicio) {
+                if (window.alertify) alertify.warning('La fecha y hora de fin debe ser posterior al inicio.');
+                $('#evento-fecha-fin').focus();
                 return;
             }
 
@@ -545,7 +647,8 @@
                 titulo: titulo,
                 contexto: contexto,
                 fechaInicio: fechaInicio,
-                todoElDia: true,
+                fechaFin: fechaFin || null,
+                todoElDia: todoElDia,
                 color: color
             };
 
@@ -579,7 +682,26 @@
             var id = parseInt($('#evento-id').val()) || 0;
             if (id <= 0) return;
 
-            if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar este evento?')) {
+            var darkMode = document.body.classList.contains('dark-mode');
+            var dialog = window.Swal
+                ? Swal.fire({
+                    title: '¿Eliminar este evento?',
+                    text: '"' + ($('#evento-titulo').val() || 'Evento') + '" se eliminará del calendario.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Conservar',
+                    reverseButtons: true,
+                    background: darkMode ? '#202833' : '#ffffff',
+                    color: darkMode ? '#edf2f7' : '#1e293b',
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: darkMode ? '#556273' : '#64748b'
+                })
+                : Promise.resolve({ isConfirmed: window.confirm('¿Estás seguro de que deseas eliminar este evento?') });
+
+            dialog.then(function(result) {
+                if (!result.isConfirmed) return;
+
                 var $btn = $(this);
                 $btn.prop('disabled', true);
 
@@ -602,7 +724,7 @@
                         if (window.alertify) alertify.error('Error al comunicarse con el servidor.');
                     }
                 });
-            }
+            }.bind(this));
         });
 
         // Update Event Date on Drag/Resize

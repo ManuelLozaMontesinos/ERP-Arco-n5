@@ -129,7 +129,11 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          this.appHelper = appHelper;
       }
       [Route("[action]")]
-      public IActionResult Index()
+      public IActionResult Index(
+         int? cotizacionId = null,
+         string pedidoCodigo = null,
+         string clienteDocumento = null,
+         string clienteNombre = null)
       {
          ComprobanteViewModel comprobanteViewModel = new();
 
@@ -159,6 +163,11 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
             if (vendedorDTO != null)
                comprobanteViewModel.Vendedor = vendedorDTO.ProveedorDTO.RazonSocial;
          }
+
+         ViewBag.DashboardCotizacionId = cotizacionId.GetValueOrDefault() > 0 ? cotizacionId.Value : 0;
+         ViewBag.DashboardPedidoCodigo = pedidoCodigo ?? string.Empty;
+         ViewBag.DashboardClienteDocumento = clienteDocumento ?? string.Empty;
+         ViewBag.DashboardClienteNombre = clienteNombre ?? string.Empty;
 
          return PartialView(comprobanteViewModel);
       }

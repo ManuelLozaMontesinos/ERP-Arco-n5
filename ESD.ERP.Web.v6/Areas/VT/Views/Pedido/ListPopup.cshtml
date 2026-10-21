@@ -113,16 +113,12 @@
             $('#bandejaPopupGrid').appGrid('reloadJSON');
          }
       });
-      $("#mp-FechaDesde").keydown(function (e) {
-         if (event.which == 13) {
-            $("#mp-FechaHasta").val($("#mp-FechaDesde").val());
-            event.preventDefault();
-            $('#bandejaPopupGrid').appGrid('reloadJSON');
-         }
+      $("#mp-FechaDesde-ddiv, #mp-FechaHasta-ddiv").on('change.datetimepicker', function () {
+         $('#bandejaPopupGrid').appGrid('reloadJSON');
       });
-      $("#mp-FechaHasta").keydown(function (e) {
-         if (event.which == 13) {
-            event.preventDefault();
+      $("#mp-FechaDesde, #mp-FechaHasta").keydown(function (e) {
+         if (e.which == 13) {
+            e.preventDefault();
             $('#bandejaPopupGrid').appGrid('reloadJSON');
          }
       });

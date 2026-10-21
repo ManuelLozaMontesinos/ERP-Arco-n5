@@ -141,19 +141,21 @@ namespace ESD.ERP.Web.Areas.VT.Controllers
          else
             parameters.Add("mes", null);
 
-         if (!string.IsNullOrEmpty(fechaHasta))
+         string fechaDesdeIso = string.Empty;
+         if (!string.IsNullOrEmpty(fechaDesde))
          {
             DateTime date = Convert.ToDateTime(fechaDesde);
-            parameters.Add("fechaDesde", string.Format(StringFormatConstant.DATE_ISO, date));
+            fechaDesdeIso = string.Format(StringFormatConstant.DATE_ISO, date);
+         }
+         parameters.Add("fechaDesde", fechaDesdeIso);
 
-            date = Convert.ToDateTime(fechaHasta);
-            parameters.Add("fechaHasta", string.Format(StringFormatConstant.DATE_ISO, date));
-         }
-         else
+         string fechaHastaIso = string.Empty;
+         if (!string.IsNullOrEmpty(fechaHasta))
          {
-            parameters.Add("fechaDesde", string.Empty);
-            parameters.Add("fechaHasta", string.Empty);
+            DateTime date = Convert.ToDateTime(fechaHasta);
+            fechaHastaIso = string.Format(StringFormatConstant.DATE_ISO, date);
          }
+         parameters.Add("fechaHasta", fechaHastaIso);
 
          parameters.Add("incluirInterno", SiNoConstante.S);
 

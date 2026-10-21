@@ -52,13 +52,30 @@
 <script type="text/javascript">
    $(document).ready(function () {
 
+      var dashboardComprobanteFiltro = {
+         cotizacionId: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DashboardCotizacionId ?? 0)),
+         pedidoCodigo: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DashboardPedidoCodigo ?? string.Empty)),
+         clienteDocumento: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DashboardClienteDocumento ?? string.Empty)),
+         clienteNombre: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.DashboardClienteNombre ?? string.Empty))
+      };
+      window.dashboardComprobanteCotizacionId = Number(dashboardComprobanteFiltro.cotizacionId) || null;
+      if (dashboardComprobanteFiltro.pedidoCodigo) {
+         $('#Cotizacion').val(dashboardComprobanteFiltro.pedidoCodigo);
+      }
+      if (dashboardComprobanteFiltro.clienteDocumento) {
+         $('#NumeroDocumentoIdentidad').val(dashboardComprobanteFiltro.clienteDocumento);
+      }
+      if (dashboardComprobanteFiltro.clienteNombre) {
+          $('#Numero, #Cotizacion, #NumeroDocumentoIdentidad, #Vendedor, #EstadoComprobanteId, #FechaDesde, #FechaHasta').val('');
+         $('#RazonSocial').val(dashboardComprobanteFiltro.clienteNombre);
+      }
+
       $("#bandejaGrid").jqGrid({
          @GridHelper.DefaultProperties()
          url: "@Url.Action("ListarBandeja", "Comprobante")",
          postData: {
             jsonModel: function () {
-               return JSON.stringify(modelToObject(
-                  [
+               var filtros = [
                      { name: "ComprobanteDTO.Numero", value: $('#Numero').val() },
                      { name: "ComprobanteDTO.CotizacionDTO.Codigo", value: $('#Cotizacion').val() },
                      { name: "ComprobanteDTO.ProveedorDTO.NumeroDocumentoIdentidad", value: $('#NumeroDocumentoIdentidad').val() },
@@ -67,8 +84,15 @@
                      { name: "ComprobanteDTO.EstadoComprobanteId", value: $('#EstadoComprobanteId').val() ||0, type:'int' },
                      { name: "ComprobanteDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
                      { name: "ComprobanteDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' }
-                  ]
-               ));
+               ];
+               if (window.dashboardComprobanteCotizacionId) {
+                  filtros.push({
+                     name: "ComprobanteDTO.CotizacionId",
+                     value: window.dashboardComprobanteCotizacionId,
+                     type: 'int'
+                  });
+               }
+               return JSON.stringify(modelToObject(filtros));
             }
          },
          colNames: ['', '', 'T/D', 'Serie-Numero', 'Fecha', 'Cliente', '#Doc', '', '#Pedido', 'Vendedor', 'Mon.', 'Total', '','', 'Estado',
@@ -187,10 +211,18 @@
    });
    function clearButtonOnClick() {
       $('#app-search-input-group').find('input:text').val('');
-      $('#Vendedor').val('@Model.Vendedor');
+      if (!dashboardComprobanteFiltro.clienteNombre) {
+         $('#Vendedor').val('@Model.Vendedor');
+      } else {
+         $('#Vendedor').val('');
+      }
+      window.dashboardComprobanteCotizacionId = null;
       $('#bandejaGrid').appGrid('reloadJSON');
    }
    $(function () {
+      $('#Cotizacion').on('input', function () {
+         window.dashboardComprobanteCotizacionId = null;
+      });
       $("#Numero,#Cotizacion, #NumeroDocumentoIdentidad, #RazonSocial,#Vendedor,#EstadoComprobanteId").change(function () {
          $('#bandejaGrid').appGrid('reloadJSON');
       });
@@ -214,19 +246,15 @@
             $('#bandejaGrid').appGrid('reloadJSON');
          }
       });
-      $("#FechaDesde").keydown(function (e) {
-         if (event.which == 13) {
-            $("#FechaHasta").val($("#FechaDesde").val());
-            event.preventDefault();
-            $('#bandejaGrid').appGrid('reloadJSON');
-         }
-      });
-      $("#FechaHasta").keydown(function (e) {
-         if (event.which == 13) {
-            event.preventDefault();
-            $('#bandejaGrid').appGrid('reloadJSON');
-         }
-      });
+       $("#FechaDesde-ddiv, #FechaHasta-ddiv").on('change.datetimepicker', function () {
+          $('#bandejaGrid').appGrid('reloadJSON');
+       });
+       $("#FechaDesde, #FechaHasta").keydown(function (e) {
+          if (e.which == 13) {
+             e.preventDefault();
+             $('#bandejaGrid').appGrid('reloadJSON');
+          }
+       });
    });
    function menuBarOnClick(key) {
 

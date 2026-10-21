@@ -65,7 +65,7 @@ namespace ESD.ERP.Repository.Impl
 			Dictionary<string, object> parameters = RepositoryHelper.CreateParameterListForDynamicQuery(entity.PageSize, entity.OrderBy);
 
 			parameters.AddParameter("fechaDesde", entity.FechaDesde);
-			parameters.AddParameter("fechaHasta", entity.FechaDesde);
+			parameters.AddParameter("fechaHasta", entity.FechaHasta);
 			parameters.AddParameter("usuarioId", entity?.Personal?.Proveedor?.UsuarioId);
 			parameters.AddParameter("estadoAprobacionId", entity.EstadoAprobacionId);
 			parameters.AddParameter("estadoAprobacion", entity?.EstadoAprobacion?.Codigo);

@@ -25,6 +25,8 @@ namespace ESD.ERP.Web.Controllers
       public int Id { get; set; }
       public string Codigo { get; set; }
       public string Cliente { get; set; }
+      public string Vendedor { get; set; }
+      public string NumeroDocumentoIdentidad { get; set; }
       public DateTime FechaUltimaCompra { get; set; }
       public string FechaFormateada { get; set; }
       public int MesesSinComprar { get; set; }
@@ -45,6 +47,42 @@ namespace ESD.ERP.Web.Controllers
 
    public class HomeController : AuthorizedController
    {
+      private static readonly DateTime TopPedidosFecha = new DateTime(2026, 10, 19);
+
+      private const string ClientesInactivosSql = @"
+         ;WITH Movimientos AS (
+            SELECT proveedor_id, fecha, vendedor_id, 1 AS origen, comprobante_id AS registro_id
+            FROM comprobante
+            WHERE estado = 'A'
+            UNION ALL
+            SELECT proveedor_id, fecha, vendedor_id, 0 AS origen, cotiza_id AS registro_id
+            FROM cotiza
+            WHERE es_pedido = 'S' AND estado = 'A'
+         ),
+         UltimaCompra AS (
+            SELECT proveedor_id, fecha, vendedor_id,
+                   ROW_NUMBER() OVER (PARTITION BY proveedor_id ORDER BY fecha DESC, origen DESC, registro_id DESC) AS rn
+            FROM Movimientos
+         )
+         SELECT TOP 10
+            p.proveedor_id AS ClienteId,
+            p.proveedor AS CodigoCliente,
+            p.num_doc_iden AS NumeroDocumentoIdentidad,
+            ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres + ' ' + ISNULL(p.apellido_pat, ''))), 'Sin Nombre')) AS ClienteNombre,
+            COALESCE(NULLIF(RTRIM(LTRIM(vp.razon_social)), ''),
+                     NULLIF(RTRIM(LTRIM(ISNULL(vp.nombres, '') + ' ' + ISNULL(vp.apellido_pat, ''))), ''),
+                     NULLIF(RTRIM(LTRIM(v.abrev)), ''), 'Sin vendedor') AS VendedorNombre,
+            u.fecha AS FechaUltimaCompra,
+            DATEDIFF(month, u.fecha, GETDATE()) AS MesesSinComprar
+         FROM UltimaCompra u
+         INNER JOIN proveedor p ON u.proveedor_id = p.proveedor_id
+         LEFT JOIN vendedor v ON u.vendedor_id = v.vendedor_id
+         LEFT JOIN proveedor vp ON v.proveedor_id = vp.proveedor_id
+         WHERE u.rn = 1
+           AND (@vid IS NULL OR u.vendedor_id = @vid)
+           AND u.fecha <= DATEADD(month, -@meses, GETDATE())
+         ORDER BY u.fecha DESC";
+
       private readonly IComprobanteProxy comprobanteProxy;
       private readonly ICotizacionProxy cotizacionProxy;
       private readonly IOrdenProduccionProxy ordenProduccionProxy;
@@ -97,11 +135,83 @@ namespace ESD.ERP.Web.Controllers
          return _cachedConnectionString;
       }
 
-      private dynamic ObtenerMetricasDesdeBD(int mesesInactivos = 5)
+      private bool EsAdminOGerencia()
+      {
+         try
+         {
+            if (EsAdministrador()) return true;
+            var roles = ObtenerRoles();
+            if (roles != null && (roles.Contains("S0001") || roles.Contains("00003") || roles.Any(r => r.Equals("ADMIN", StringComparison.OrdinalIgnoreCase))))
+            {
+               return true;
+            }
+         }
+         catch { }
+         return false;
+      }
+
+      private (int? vendedorId, string vendedorNombre) ObtenerVendedorUsuarioActual()
+      {
+         try
+         {
+            var usuarioDTO = ObtenerUsuarioDTO();
+            if (usuarioDTO != null)
+            {
+               using (var conn = new SqlConnection(GetDbConnectionString()))
+               {
+                  conn.Open();
+                  // 1. Busqueda directa por p.usuario_id
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT TOP 1 v.vendedor_id, v.abrev
+                        FROM vendedor v
+                        INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
+                        WHERE v.estado = 'A' AND p.usuario_id = @uid";
+                     cmd.Parameters.AddWithValue("@uid", usuarioDTO.UsuarioId);
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        if (reader.Read())
+                        {
+                           return (Convert.ToInt32(reader["vendedor_id"]), reader["abrev"]?.ToString()?.Trim());
+                        }
+                     }
+                  }
+
+                  // 2. Busqueda de respaldo por usuario_logon o nombres
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"
+                        SELECT TOP 1 v.vendedor_id, v.abrev
+                        FROM vendedor v
+                        INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
+                        WHERE v.estado = 'A' AND (
+                           UPPER(v.abrev) = UPPER(@logon)
+                           OR UPPER(p.razon_social) LIKE '%' + UPPER(@logon) + '%'
+                           OR UPPER(p.nombres) LIKE '%' + UPPER(@logon) + '%'
+                        )";
+                     cmd.Parameters.AddWithValue("@logon", usuarioDTO.UsuarioLogon);
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        if (reader.Read())
+                        {
+                           return (Convert.ToInt32(reader["vendedor_id"]), reader["abrev"]?.ToString()?.Trim());
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         catch { }
+
+         return (null, null);
+      }
+
+      private dynamic ObtenerMetricasDesdeBD(int? vendedorIdFiltro = null, int mesesInactivos = 5, int? vendedorClientesFiltro = null)
       {
          decimal facturacionMes = 0m;
-         int pedidosActivos = 169;
-         int cotizacionesActivas = 7637;
+         int pedidosActivos = 0;
+         int cotizacionesActivas = 0;
          int ordenesProduccionMes = 0;
          int ordenesCompraMes = 0;
          var topPedidos = new List<TopPedidoDTO>();
@@ -109,7 +219,7 @@ namespace ESD.ERP.Web.Controllers
          double sumatoriaPedidosMes = 0;
          int cantidadPedidosMes = 0;
          var listaVendedores = new List<VendedorDTO>();
-         int primerVendedorId = 50;
+         int primerVendedorId = vendedorIdFiltro ?? 50;
          string primerVendedorNombre = "CRISTIAN";
          var vendedorCantidades = new List<int>();
          var vendedorMontos = new List<double>();
@@ -118,10 +228,17 @@ namespace ESD.ERP.Web.Controllers
          string[] nombresMeses = { "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
          DateTime hoy = DateTime.Today;
 
-         // 12 meses: Noviembre 2025 a Octubre 2026
-         var mesesVentas = new string[] { "Noviembre", "Diciembre", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre" };
-         var ventas2026 = new double[12]; // Barra Azul: solo Ene y Feb 2026
-         var ventas2025 = new double[] { 2924.0, 2963.7, 2695.5, 2472.1, 2814.4, 2630.9, 2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1 }; // Barra Gris: todo 2025
+         // Compara los últimos 12 meses con los mismos 12 meses del año anterior.
+         DateTime inicioMesActual = new DateTime(hoy.Year, hoy.Month, 1);
+         DateTime inicioPeriodoActual = inicioMesActual.AddMonths(-11);
+         DateTime inicioConsultaVentas = new DateTime(hoy.Year - 1, 1, 1);
+         DateTime finPeriodoActual = inicioMesActual.AddMonths(1);
+         var mesesVentas = Enumerable.Range(0, 12)
+            .Select(i => nombresMeses[inicioPeriodoActual.AddMonths(i).Month])
+            .ToArray();
+         var ventasPeriodoActual = new double[12];
+         var ventasPeriodoAnterior = new double[12];
+         var ventasBarraActual = new double?[12];
 
          string[] mesesCortos = { "", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic" };
          var fechasLista = new List<DateTime>();
@@ -147,7 +264,7 @@ namespace ESD.ERP.Web.Controllers
             {
                conn.Open();
 
-               // 1. Facturacion del mes actual (sumatoria solo de comprobantes con estado EMITIDA)
+               // 1. Facturacion del mes actual (filtrado por vendedor si aplica)
                try
                {
                   using (var cmd = conn.CreateCommand())
@@ -159,7 +276,9 @@ namespace ESD.ERP.Web.Controllers
                         WHERE YEAR(c.fecha) = YEAR(GETDATE()) 
                           AND MONTH(c.fecha) = MONTH(GETDATE()) 
                           AND c.estado = 'A'
-                          AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)";
+                          AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
+                          AND (@vid IS NULL OR c.vendedor_id = @vid)";
+                      cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
                      var val = cmd.ExecuteScalar();
                      if (val != null && val != DBNull.Value)
                      {
@@ -169,7 +288,7 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 2. Pedidos Activos
+               // 2. Pedidos Activos (filtrado por vendedor si aplica)
                try
                {
                   using (var cmd = conn.CreateCommand())
@@ -177,7 +296,9 @@ namespace ESD.ERP.Web.Controllers
                      cmd.CommandText = @"
                         SELECT COUNT(*) 
                         FROM cotiza 
-                        WHERE es_pedido = 'S' AND estado_cotiza_id IN (2, 4) AND estado = 'A'";
+                        WHERE es_pedido = 'S' AND estado_cotiza_id IN (2, 4) AND estado = 'A'
+                          AND (@vid IS NULL OR vendedor_id = @vid)";
+                      cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
                      var val = cmd.ExecuteScalar();
                      if (val != null && val != DBNull.Value)
                      {
@@ -187,7 +308,7 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 3. Cotizaciones Activas (ano actual / activas)
+               // 3. Cotizaciones Activas (filtrado por vendedor si aplica)
                try
                {
                   using (var cmd = conn.CreateCommand())
@@ -195,7 +316,10 @@ namespace ESD.ERP.Web.Controllers
                      cmd.CommandText = @"
                         SELECT COUNT(*) 
                         FROM cotiza 
-                        WHERE es_pedido = 'N' AND estado_cotiza_id = 1 AND estado = 'A' AND (YEAR(fecha) = 2026 OR fecha >= DATEADD(year, -1, GETDATE()))";
+                        WHERE es_pedido = 'N' AND estado_cotiza_id = 1 AND estado = 'A' 
+                          AND (YEAR(fecha) = 2026 OR fecha >= DATEADD(year, -1, GETDATE()))
+                          AND (@vid IS NULL OR vendedor_id = @vid)";
+                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
                      var val = cmd.ExecuteScalar();
                      if (val != null && val != DBNull.Value)
                      {
@@ -205,167 +329,169 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 4. Ordenes de Produccion del mes actual
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*) 
-                        FROM orden_pro
-                        WHERE YEAR(fecha) = YEAR(GETDATE()) 
-                          AND MONTH(fecha) = MONTH(GETDATE()) 
-                          AND estado = 'A'";
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value)
-                     {
-                        ordenesProduccionMes = Convert.ToInt32(val);
-                     }
-                  }
-               }
-               catch { }
-
-                // 4b. Estado de Produccion del mes actual en tiempo real (Doughnut Chart)
+                // 4. Ordenes de Produccion del mes actual (filtradas por vendedor cuando aplica)
                 try
                 {
                    using (var cmd = conn.CreateCommand())
                    {
                       cmd.CommandText = @"
-                         SELECT 
-                             CASE 
-                                 WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
-                                 WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
-                                 WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
-                                 WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
-                                 ELSE 'En Proceso'
-                             END AS Estado,
-                             COUNT(*) AS Cantidad
+                         SELECT COUNT(*)
                          FROM orden_pro o
-                         WHERE YEAR(o.fecha) = YEAR(GETDATE()) 
+                         LEFT JOIN cotiza c ON c.cotiza_id = o.cotiza_id
+                         WHERE YEAR(o.fecha) = YEAR(GETDATE())
                            AND MONTH(o.fecha) = MONTH(GETDATE())
-                         GROUP BY 
-                             CASE 
-                                 WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
-                                 WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
-                                 WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
-                                 WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
-                                 ELSE 'En Proceso'
-                             END";
+                           AND ISNULL(o.estado, 'A') <> 'I'
+                           AND ISNULL(o.estado_orden_p_id, 0) <> 4
+                           AND (@vid IS NULL OR c.vendedor_id = @vid)";
+                      cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
+                      var val = cmd.ExecuteScalar();
+                      if (val != null && val != DBNull.Value)
+                      {
+                         ordenesProduccionMes = Convert.ToInt32(val);
+                      }
+                   }
+                }
+                catch { }
+
+                // La distribucion de produccion y compras es un indicador general de gestion.
+               if (!vendedorIdFiltro.HasValue)
+               {
+                  // 4b. Estado de Produccion del mes actual (Doughnut Chart)
+                  try
+                  {
+                     using (var cmd = conn.CreateCommand())
+                     {
+                        cmd.CommandText = @"
+                           SELECT 
+                               CASE 
+                                   WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
+                                   WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
+                                   WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
+                                   WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
+                                   ELSE 'En Proceso'
+                               END AS Estado,
+                               COUNT(*) AS Cantidad
+                           FROM orden_pro o
+                           WHERE YEAR(o.fecha) = YEAR(GETDATE()) 
+                             AND MONTH(o.fecha) = MONTH(GETDATE())
+                           GROUP BY 
+                               CASE 
+                                   WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
+                                   WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
+                                   WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
+                                   WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
+                                   ELSE 'En Proceso'
+                               END";
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                           while (reader.Read())
+                           {
+                              string est = reader["Estado"]?.ToString();
+                              int cnt = Convert.ToInt32(reader["Cantidad"]);
+                              if (est == "En Proceso") prodEnProceso = cnt;
+                              else if (est == "Culminadas") prodCulminadas = cnt;
+                              else if (est == "Pendientes") prodPendientes = cnt;
+                              else if (est == "Anuladas") prodAnuladas = cnt;
+                           }
+                        }
+                     }
+                  }
+                  catch { }
+
+                  // 5. Ordenes de Compra del mes actual
+                  try
+                  {
+                     using (var cmd = conn.CreateCommand())
+                     {
+                        cmd.CommandText = @"
+                           SELECT COUNT(*) 
+                           FROM orden_co
+                           WHERE YEAR(fecha) = YEAR(GETDATE()) 
+                             AND MONTH(fecha) = MONTH(GETDATE()) 
+                             AND estado = 'A'";
+                        var val = cmd.ExecuteScalar();
+                        if (val != null && val != DBNull.Value)
+                        {
+                           ordenesCompraMes = Convert.ToInt32(val);
+                        }
+                     }
+                  }
+                  catch { }
+
+               }
+
+                // 6. Evolucion de Ventas: linea movil, barras por año calendario, sin filtro por vendedor.
+                try
+                {
+                   using (var cmd = conn.CreateCommand())
+                   {
+                      cmd.CommandText = @"
+                         SELECT YEAR(fecha) AS anio, MONTH(fecha) AS mes, ROUND(SUM(monto_total) / 1000.0, 1) AS miles
+                         FROM comprobante
+                         WHERE fecha >= @inicioConsultaVentas AND fecha < @finPeriodoActual
+                           AND estado = 'A'
+                         GROUP BY YEAR(fecha), MONTH(fecha)
+                         ORDER BY anio, mes";
+                      cmd.Parameters.Add("@inicioConsultaVentas", SqlDbType.Date).Value = inicioConsultaVentas.Date;
+                      cmd.Parameters.Add("@finPeriodoActual", SqlDbType.Date).Value = finPeriodoActual.Date;
                       using (var reader = cmd.ExecuteReader())
                       {
                          while (reader.Read())
                          {
-                            string est = reader["Estado"]?.ToString();
-                            int cnt = Convert.ToInt32(reader["Cantidad"]);
-                            if (est == "En Proceso") prodEnProceso = cnt;
-                            else if (est == "Culminadas") prodCulminadas = cnt;
-                            else if (est == "Pendientes") prodPendientes = cnt;
-                            else if (est == "Anuladas") prodAnuladas = cnt;
+                            int anio = Convert.ToInt32(reader["anio"]);
+                            int mes = Convert.ToInt32(reader["mes"]);
+                            double miles = Convert.ToDouble(reader["miles"]);
+                            DateTime mesLeido = new DateTime(anio, mes, 1);
+                            int k = (mesLeido.Month - inicioPeriodoActual.Month + 12) % 12;
+                            if (k >= 0 && k < 12)
+                            {
+                               if (anio == hoy.Year - 1) ventasPeriodoAnterior[k] = miles;
+                               if (anio == hoy.Year) ventasBarraActual[k] = miles;
+                               if (mesLeido >= inicioPeriodoActual && mesLeido < finPeriodoActual)
+                                  ventasPeriodoActual[k] = miles;
+                            }
                          }
                       }
                    }
                 }
                 catch { }
 
-               // 5. Ordenes de Compra del mes actual
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*) 
-                        FROM orden_co
-                        WHERE YEAR(fecha) = YEAR(GETDATE()) 
-                          AND MONTH(fecha) = MONTH(GETDATE()) 
-                          AND estado = 'A'";
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value)
-                     {
-                        ordenesCompraMes = Convert.ToInt32(val);
-                     }
-                  }
-               }
-               catch { }
+                // 7. Diferencia diaria: compara las ventas de ambas sedes para todos los usuarios con el widget.
+                try
+                {
+                   using (var cmd = conn.CreateCommand())
+                   {
+                      cmd.CommandText = @"
+                         SELECT
+                             CAST(c.fecha AS DATE) AS fecha_dia,
+                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 1 THEN c.monto_total ELSE 0 END), 2) AS central,
+                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 2 THEN c.monto_total ELSE 0 END), 2) AS ilo
+                         FROM comprobante c
+                         INNER JOIN periodo_emp_sede p ON c.periodo_emp_sede_id = p.periodo_emp_sede_id
+                         INNER JOIN empresa_sede s ON p.empresa_sede_id = s.empresa_sede_id
+                         WHERE c.fecha >= CAST(DATEADD(day, -11, GETDATE()) AS DATE)
+                           AND c.fecha < CAST(DATEADD(day, 1, GETDATE()) AS DATE)
+                           AND c.estado = 'A'
+                         GROUP BY CAST(c.fecha AS DATE)
+                         ORDER BY fecha_dia";
+                      using (var reader = cmd.ExecuteReader())
+                      {
+                         while (reader.Read())
+                         {
+                            DateTime fDia = Convert.ToDateTime(reader["fecha_dia"]).Date;
+                            int idx = fechasLista.IndexOf(fDia);
+                            if (idx >= 0 && idx < 12)
+                            {
+                               dsCentral[idx] = Convert.ToDouble(reader["central"]);
+                               dsIlo[idx] = Convert.ToDouble(reader["ilo"]);
+                            }
+                         }
+                      }
+                   }
+                }
+                catch { }
 
-               // 6. Evolucion de Ventas (Simulacion al 28 de Febrero de 2026: Ene y Feb 2026)
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT YEAR(fecha) AS anio, MONTH(fecha) AS mes, ROUND(SUM(monto_total) / 1000.0, 1) AS miles
-                        FROM comprobante
-                        WHERE (YEAR(fecha) = 2025 OR (YEAR(fecha) = 2026 AND MONTH(fecha) <= 2))
-                          AND estado = 'A'
-                        GROUP BY YEAR(fecha), MONTH(fecha)
-                        ORDER BY anio, mes";
-                     using (var reader = cmd.ExecuteReader())
-                     {
-                        while (reader.Read())
-                        {
-                           int anio = Convert.ToInt32(reader["anio"]);
-                           int mes = Convert.ToInt32(reader["mes"]);
-                           double miles = Convert.ToDouble(reader["miles"]);
-
-                           if (anio == 2025)
-                           {
-                              int k = (mes >= 11) ? (mes - 11) : (mes + 1);
-                              if (k >= 0 && k < 12)
-                              {
-                                 ventas2025[k] = miles;
-                              }
-                           }
-                           else if (anio == 2026 && mes <= 2)
-                           {
-                              // Simulacion al 28 de Febrero de 2026: Ene (k=2) y Feb (k=3)
-                              int k = mes + 1;
-                              if (k >= 0 && k < 12)
-                              {
-                                 ventas2026[k] = miles;
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-               catch { }
-
-               // 7. Stacked Bar Chart: Diferencia de Ventas dia a dia (ultimos 5 dias hasta hoy)
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT 
-                            CAST(c.fecha AS DATE) AS fecha_dia,
-                            ROUND(SUM(CASE WHEN s.empresa_sede_id = 1 THEN c.monto_total ELSE 0 END), 2) AS central,
-                            ROUND(SUM(CASE WHEN s.empresa_sede_id = 2 THEN c.monto_total ELSE 0 END), 2) AS ilo
-                        FROM comprobante c
-                        INNER JOIN periodo_emp_sede p ON c.periodo_emp_sede_id = p.periodo_emp_sede_id
-                        INNER JOIN empresa_sede s ON p.empresa_sede_id = s.empresa_sede_id
-                        WHERE c.fecha >= CAST(DATEADD(day, -11, GETDATE()) AS DATE) 
-                          AND c.fecha < CAST(DATEADD(day, 1, GETDATE()) AS DATE)
-                          AND c.estado = 'A'
-                        GROUP BY CAST(c.fecha AS DATE)
-                        ORDER BY fecha_dia";
-                     using (var reader = cmd.ExecuteReader())
-                     {
-                        while (reader.Read())
-                        {
-                           DateTime fDia = Convert.ToDateTime(reader["fecha_dia"]).Date;
-                           int idx = fechasLista.IndexOf(fDia);
-                           if (idx >= 0 && idx < 12)
-                           {
-                              dsCentral[idx] = Convert.ToDouble(reader["central"]);
-                              dsIlo[idx] = Convert.ToDouble(reader["ilo"]);
-                           }
-                        }
-                     }
-                  }
-               }
-               catch { }
-
-               // 8. Top 10 pedidos del dia
+                // 8. Top 10 pedidos globales del dia de la copia restaurada
                try
                {
                   using (var cmd = conn.CreateCommand())
@@ -380,9 +506,10 @@ namespace ESD.ERP.Web.Controllers
                         LEFT JOIN proveedor p ON c.proveedor_id = p.proveedor_id
                         WHERE c.es_pedido = 'S' 
                           AND c.estado = 'A' 
-                          AND c.fecha >= CAST(GETDATE() AS DATE) 
-                          AND c.fecha < DATEADD(day, 1, CAST(GETDATE() AS DATE))
+                           AND c.fecha >= @fecha
+                           AND c.fecha < DATEADD(day, 1, @fecha)
                         ORDER BY c.monto_total DESC";
+                      cmd.Parameters.AddWithValue("@fecha", TopPedidosFecha.Date);
                      using (var reader = cmd.ExecuteReader())
                      {
                         while (reader.Read())
@@ -400,74 +527,32 @@ namespace ESD.ERP.Web.Controllers
                      }
                   }
 
-                  // Si el dia de hoy no tuviera pedidos (ej. backup restaurado), usar los mas recientes de respaldo
-                  if (topPedidos.Count == 0)
-                  {
-                     using (var cmd = conn.CreateCommand())
-                     {
-                        cmd.CommandText = @"
-                           SELECT TOP 10 
-                               c.cotiza_id, 
-                               c.cotiza, 
-                               ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres)), 'Sin Cliente')) AS cliente, 
-                               c.monto_total
-                           FROM cotiza c
-                           LEFT JOIN proveedor p ON c.proveedor_id = p.proveedor_id
-                           WHERE c.es_pedido = 'S' 
-                             AND c.estado = 'A' 
-                           ORDER BY c.fecha DESC, c.monto_total DESC";
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                           while (reader.Read())
-                           {
-                              decimal monto = Convert.ToDecimal(reader["monto_total"]);
-                              topPedidos.Add(new TopPedidoDTO
-                              {
-                                 Id = Convert.ToInt32(reader["cotiza_id"]),
-                                 Codigo = reader["cotiza"]?.ToString()?.Trim(),
-                                 Cliente = reader["cliente"]?.ToString()?.Trim(),
-                                 Monto = monto,
-                                 MontoFormateado = "S/ " + monto.ToString("N2")
-                              });
-                           }
-                        }
-                     }
-                  }
+                  // Ordenar estrictamente descendente por Monto (el de mayor total es el #1)
+                  topPedidos = topPedidos.OrderByDescending(p => p.Monto).ToList();
                }
                catch { }
 
-               // 9. Clientes sin compras desde hace 5 meses (Listado breve - Top 10)
+               // 9. Clientes sin compras (filtrado por vendedor si aplica)
                try
                {
                   using (var cmd = conn.CreateCommand())
                   {
-                     cmd.CommandText = @"
-                        SELECT TOP 10
-                            p.proveedor_id AS ClienteId,
-                            p.proveedor AS CodigoCliente,
-                            ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres + ' ' + ISNULL(p.apellido_pat, ''))), 'Sin Nombre')) AS ClienteNombre,
-                            MAX(v.fecha) AS FechaUltimaCompra,
-                            DATEDIFF(month, MAX(v.fecha), GETDATE()) AS MesesSinComprar
-                        FROM (
-                            SELECT proveedor_id, fecha FROM comprobante WHERE estado = 'A'
-                            UNION ALL
-                            SELECT proveedor_id, fecha FROM cotiza WHERE es_pedido = 'S' AND estado = 'A'
-                        ) v
-                        INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
-                        GROUP BY p.proveedor_id, p.proveedor, p.razon_social, p.nombres, p.apellido_pat
-                        HAVING MAX(v.fecha) <= DATEADD(month, -5, GETDATE())
-                        ORDER BY FechaUltimaCompra DESC";
+                     cmd.CommandText = ClientesInactivosSql;
+                     cmd.Parameters.AddWithValue("@meses", mesesInactivos);
+                      cmd.Parameters.AddWithValue("@vid", (object)(vendedorClientesFiltro ?? vendedorIdFiltro) ?? DBNull.Value);
                      using (var reader = cmd.ExecuteReader())
                      {
                         while (reader.Read())
                         {
                            DateTime fUltima = Convert.ToDateTime(reader["FechaUltimaCompra"]);
-                           int meses = reader["MesesSinComprar"] != DBNull.Value ? Convert.ToInt32(reader["MesesSinComprar"]) : 5;
+                           int meses = reader["MesesSinComprar"] != DBNull.Value ? Convert.ToInt32(reader["MesesSinComprar"]) : mesesInactivos;
                            clientesInactivos.Add(new ClienteInactivoDTO
                            {
                               Id = Convert.ToInt32(reader["ClienteId"]),
                               Codigo = reader["CodigoCliente"]?.ToString()?.Trim(),
                               Cliente = reader["ClienteNombre"]?.ToString()?.Trim(),
+                              Vendedor = reader["VendedorNombre"]?.ToString()?.Trim(),
+                              NumeroDocumentoIdentidad = reader["NumeroDocumentoIdentidad"]?.ToString()?.Trim(),
                               FechaUltimaCompra = fUltima,
                               FechaFormateada = fUltima.ToString("dd/MM/yyyy"),
                               MesesSinComprar = meses
@@ -478,7 +563,7 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 5b. Sumatoria de Pedidos del Mes Actual (Pedido=2, Facturado=3, Factura Parcial=4)
+               // 5b. Sumatoria de Pedidos del Mes Actual (filtrado por vendedor si aplica)
                try
                {
                   using (var cmd = conn.CreateCommand())
@@ -492,7 +577,9 @@ namespace ESD.ERP.Web.Controllers
                           AND estado = 'A'
                           AND estado_cotiza_id IN (2, 3, 4)
                           AND YEAR(fecha) = YEAR(GETDATE()) 
-                          AND MONTH(fecha) = MONTH(GETDATE())";
+                          AND MONTH(fecha) = MONTH(GETDATE())
+                          AND (@vid IS NULL OR vendedor_id = @vid)";
+                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
                      using (var reader = cmd.ExecuteReader())
                      {
                         if (reader.Read())
@@ -505,40 +592,69 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 9. Vendedores activos y pedidos diarios recientes
-               try
+               // 9b. Lista de Vendedores y Vendedor Inicial
+               if (vendedorIdFiltro.HasValue)
                {
-                  using (var cmd = conn.CreateCommand())
+                  primerVendedorId = vendedorIdFiltro.Value;
+                  try
                   {
-                     cmd.CommandText = @"
-                        SELECT v.vendedor_id, v.abrev AS nombre, COUNT(*) AS total_pedidos
-                        FROM cotiza c
-                        INNER JOIN vendedor v ON c.vendedor_id = v.vendedor_id
-                        WHERE c.es_pedido = 'S' AND c.estado = 'A' AND v.estado = 'A'
-                          AND c.fecha >= DATEADD(month, -2, GETDATE())
-                        GROUP BY v.vendedor_id, v.abrev
-                        ORDER BY total_pedidos DESC";
-                     using (var reader = cmd.ExecuteReader())
+                     using (var cmd = conn.CreateCommand())
                      {
-                        bool isFirst = true;
-                        while (reader.Read())
+                        cmd.CommandText = "SELECT abrev FROM vendedor WHERE vendedor_id = @vid";
+                        cmd.Parameters.AddWithValue("@vid", primerVendedorId);
+                        var val = cmd.ExecuteScalar();
+                        if (val != null && val != DBNull.Value)
                         {
-                           int vid = Convert.ToInt32(reader["vendedor_id"]);
-                           string vnom = reader["nombre"].ToString().Trim();
-                           if (isFirst)
-                           {
-                              primerVendedorId = vid;
-                              primerVendedorNombre = vnom;
-                              isFirst = false;
-                           }
-                           listaVendedores.Add(new VendedorDTO { id = vid, nombre = vnom });
+                           primerVendedorNombre = val.ToString().Trim();
                         }
                      }
                   }
-               }
-               catch { }
+                  catch { }
 
-               // Pedidos diarios del primer vendedor (ultimos 12 dias)
+                  listaVendedores.Add(new VendedorDTO { id = primerVendedorId, nombre = primerVendedorNombre });
+               }
+               else
+               {
+                  try
+                  {
+                     using (var cmd = conn.CreateCommand())
+                     {
+                        cmd.CommandText = @"
+                           SELECT DISTINCT v.vendedor_id, v.abrev AS nombre
+                           FROM vendedor v
+                           INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
+                           INNER JOIN usuario u ON p.usuario_id = u.usuario_id
+                           INNER JOIN rol_usuario ru ON ru.usuario_id = u.usuario_id
+                           INNER JOIN rol r ON ru.rol_id = r.rol_id
+                           LEFT JOIN personal per ON per.proveedor_id = p.proveedor_id
+                           WHERE v.estado = 'A'
+                             AND (r.rol IN ('00003', '00004', '00010') OR r.nombre LIKE '%Venta%')
+                             AND LEN(LTRIM(RTRIM(v.abrev))) > 0
+                             AND (per.fecha_cese IS NULL OR per.fecha_cese > GETDATE())
+                             AND (per.estado IS NULL OR per.estado = 'A')
+                           ORDER BY v.abrev ASC";
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                           while (reader.Read())
+                           {
+                              int vid = Convert.ToInt32(reader["vendedor_id"]);
+                              string vnom = reader["nombre"].ToString().Trim();
+                              listaVendedores.Add(new VendedorDTO { id = vid, nombre = vnom });
+                           }
+                        }
+                     }
+
+                     if (listaVendedores.Count > 0)
+                     {
+                        var defaultVendedor = listaVendedores.FirstOrDefault(x => x.id == primerVendedorId) ?? listaVendedores[0];
+                        primerVendedorId = defaultVendedor.id;
+                        primerVendedorNombre = defaultVendedor.nombre;
+                     }
+                  }
+                  catch { }
+               }
+
+               // Pedidos diarios del vendedor seleccionado/inicial (ultimos 12 dias)
                try
                {
                   var mapaVendedor = new Dictionary<string, (int cantidad, double monto)>();
@@ -632,14 +748,16 @@ namespace ESD.ERP.Web.Controllers
             ordenesProduccionMes = ordenesProduccionMes.ToString("N0"),
             ordenesCompraMes = ordenesCompraMes.ToString("N0"),
             mesesVentas = mesesVentas,
-            ventas2025 = ventas2025,
-            ventas2026 = ventas2026,
+            ventasAnterior = ventasPeriodoAnterior,
+            ventasActual = ventasPeriodoActual,
+            ventasBarraActual = ventasBarraActual,
             stackedLabels = stackedDias,
             dsCentral = dsCentral,
             dsIlo = dsIlo,
             prodLabels = new[] { "En Proceso", "Culminadas", "Pendientes", "Anuladas" },
             prodValores = new[] { prodEnProceso, prodCulminadas, prodPendientes, prodAnuladas },
             topPedidos = topPedidos,
+            topPedidosFecha = TopPedidosFecha.ToString("dd/MM/yyyy"),
             clientesInactivos = clientesInactivos
          };
       }
@@ -649,7 +767,15 @@ namespace ESD.ERP.Web.Controllers
          string cid = Request.Query["cid"];
          if (string.IsNullOrEmpty(cid)) { cid = Request.Headers["x-app-cid"]; }
 
-         PeriodoEmpresaSedeDTO periodoEmpresaSedeDTO = ObtenerPeriodoEmpresaSedeDTO(cid);
+         PeriodoEmpresaSedeDTO periodoEmpresaSedeDTO = null;
+         try
+         {
+            if (!string.IsNullOrEmpty(cid))
+            {
+               periodoEmpresaSedeDTO = ObtenerPeriodoEmpresaSedeDTO(cid);
+            }
+         }
+         catch { }
          UsuarioDTO usuarioDTO = ObtenerUsuarioDTO();
 
          ViewBag.Empresa = periodoEmpresaSedeDTO?.EmpresaSedeDTO?.EmpresaDTO?.NombreComercial ?? "ARCO";
@@ -658,10 +784,29 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.Sede = periodoEmpresaSedeDTO?.EmpresaSedeDTO?.Nombre ?? "Sede Principal";
          ViewBag.cid = cid;
 
-         var metricas = ObtenerMetricasDesdeBD();
-         bool esAdmin = false;
-         try { esAdmin = EsAdministrador(); } catch { esAdmin = true; }
-         ViewBag.EsAdmin = esAdmin;
+         bool esAdminOGerencia = EsAdminOGerencia();
+         ViewBag.EsAdminOGerencia = esAdminOGerencia;
+         ViewBag.EsAdmin = esAdminOGerencia;
+         ViewBag.PuedeFiltrarVendedorClientes = EsAdministrador();
+
+         int? vendedorIdFiltro = null;
+         if (!esAdminOGerencia)
+         {
+            var (vid, _) = ObtenerVendedorUsuarioActual();
+            vendedorIdFiltro = vid;
+         }
+
+         int? vendedorClientesInicial;
+         if (EsAdministrador())
+         {
+            vendedorClientesInicial = -1;
+         }
+         else
+         {
+            var (vendedorClienteId, _) = ObtenerVendedorUsuarioActual();
+            vendedorClientesInicial = vendedorClienteId;
+         }
+         var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, 5, vendedorClientesInicial);
 
          List<string> userRoles = new List<string>();
          try { userRoles = ObtenerRoles(); } catch { }
@@ -682,9 +827,11 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.OrdenesProduccionMes = metricas.ordenesProduccionMes;
          ViewBag.OrdenesCompraMes = metricas.ordenesCompraMes;
          ViewBag.MesesVentas = metricas.mesesVentas;
-         ViewBag.Ventas2025 = metricas.ventas2025;
-         ViewBag.Ventas2026 = metricas.ventas2026;
+         ViewBag.VentasAnterior = metricas.ventasAnterior;
+         ViewBag.VentasActual = metricas.ventasActual;
+         ViewBag.VentasBarraActual = metricas.ventasBarraActual;
          ViewBag.TopPedidos = metricas.topPedidos;
+         ViewBag.TopPedidosFecha = metricas.topPedidosFecha;
          ViewBag.ClientesInactivos = metricas.clientesInactivos;
          ViewBag.StackedLabels = metricas.stackedLabels;
          ViewBag.DsCentral = metricas.dsCentral;
@@ -705,7 +852,7 @@ namespace ESD.ERP.Web.Controllers
       }
 
       [HttpGet]
-      public JsonResult ObtenerDatosDashboard(string cid)
+      public JsonResult ObtenerDatosDashboard(string cid, int mesesInactivos = 5, int? vendedorClientesId = null)
       {
          try
          {
@@ -715,11 +862,31 @@ namespace ESD.ERP.Web.Controllers
                if (string.IsNullOrEmpty(cid)) { cid = Request.Headers["x-app-cid"]; }
             }
 
-            var metricas = ObtenerMetricasDesdeBD();
+            bool esAdminOGerencia = EsAdminOGerencia();
+            int? vendedorIdFiltro = null;
+            if (!esAdminOGerencia)
+            {
+               var (vid, _) = ObtenerVendedorUsuarioActual();
+               vendedorIdFiltro = vid;
+            }
+
+            int mesesFiltro = new[] { 3, 4, 5, 6 }.Contains(mesesInactivos) ? mesesInactivos : 5;
+            int? vendedorInactivosFiltro;
+            if (EsAdministrador())
+            {
+               vendedorInactivosFiltro = vendedorClientesId.GetValueOrDefault() > 0 ? vendedorClientesId.Value : -1;
+            }
+            else
+            {
+               var (vendedorClienteId, _) = ObtenerVendedorUsuarioActual();
+               vendedorInactivosFiltro = vendedorClienteId;
+            }
+            var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, mesesFiltro, vendedorInactivosFiltro);
 
             var response = new
             {
                success = true,
+               esAdmin = esAdminOGerencia,
                kpis = new
                {
                   facturacionMes = metricas.facturacionMes,
@@ -739,12 +906,14 @@ namespace ESD.ERP.Web.Controllers
                   montos = metricas.vendedorMontos
                },
                topPedidos = metricas.topPedidos,
+               topPedidosFecha = metricas.topPedidosFecha,
                clientesInactivos = metricas.clientesInactivos,
                graficoVentas = new
                {
                   meses = metricas.mesesVentas,
-                  ventas2025 = metricas.ventas2025,
-                  ventas2026 = metricas.ventas2026
+                  ventasAnterior = metricas.ventasAnterior,
+                  ventasActual = metricas.ventasActual,
+                  ventasBarraActual = metricas.ventasBarraActual
                },
                graficoStackedBar = new
                {
@@ -776,40 +945,8 @@ namespace ESD.ERP.Web.Controllers
          {
             return Json(new
             {
-               success = true,
-               message = ex.Message,
-               kpis = new
-               {
-                  facturacionMes = "S/ 0.00",
-                  pedidosActivos = "169",
-                  cotizacionesActivas = "7,637",
-                  ordenesProduccionMes = "0",
-                  ordenesCompraMes = "0"
-               },
-               topPedidos = new object[]
-               {
-                  new { id = 396855, codigo = "0052110", cliente = "A&L GENERAL SERVICES S.A.C.", monto = 203.60, montoFormateado = "S/ 203.60" }
-               },
-               graficoVentas = new
-               {
-                  meses = new[] { "Noviembre", "Diciembre", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre" },
-                  ventas2025 = new[] { 2924.0, 2963.7, 2695.5, 2472.1, 2814.4, 2630.9, 2759.3, 2545.2, 2644.6, 2979.2, 2872.9, 3071.1 },
-                  ventas2026 = new[] { 0.0, 0.0, 2860.8, 2989.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-               },
-               graficoStackedBar = new
-               {
-                  labels = new[] { "12 Oct", "13 Oct", "14 Oct", "15 Oct", "16 Oct", "17 Oct" },
-                  datasets = new object[]
-                  {
-                     new { label = "Ilo", data = new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 } },
-                     new { label = "Central", data = new[] { 0.0, 0.0, 0.0, 0.0, 0.0, 203.6 } }
-                  }
-               },
-               graficoProduccion = new
-               {
-                  labels = new[] { "En Proceso", "Culminadas", "Pendientes", "Anuladas" },
-                   valores = new[] { 0, 0, 0, 0 }
-               }
+               success = false,
+               message = ex.Message
             });
          }
       }
@@ -819,6 +956,16 @@ namespace ESD.ERP.Web.Controllers
       {
          try
          {
+            bool esAdminOGerencia = EsAdminOGerencia();
+            if (!esAdminOGerencia)
+            {
+               var (vid, _) = ObtenerVendedorUsuarioActual();
+               if (vid.HasValue)
+               {
+                  vendedorId = vid.Value;
+               }
+            }
+
             if (dias < 4 || dias > 30) dias = 12;
             DateTime hoy = DateTime.Today;
             string[] mesesCortos = { "", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic" };
@@ -906,34 +1053,31 @@ namespace ESD.ERP.Web.Controllers
       }
 
       [HttpGet]
-      public JsonResult ObtenerClientesInactivos(int meses = 5, string cid = "")
+      public JsonResult ObtenerClientesInactivos(int meses = 5, string cid = "", int? vendedorId = null)
       {
          try
          {
-            int mesesFiltro = (meses >= 1 && meses <= 12) ? meses : 5;
+            int? vendedorIdFiltro = null;
+            if (EsAdministrador())
+            {
+               vendedorIdFiltro = vendedorId.GetValueOrDefault() > 0 ? vendedorId.Value : -1;
+            }
+            else
+            {
+               var (vid, _) = ObtenerVendedorUsuarioActual();
+               vendedorIdFiltro = vid;
+            }
+
+            int mesesFiltro = new[] { 3, 4, 5, 6 }.Contains(meses) ? meses : 5;
             var lista = new List<ClienteInactivoDTO>();
             using (var conn = new SqlConnection(GetDbConnectionString()))
             {
                conn.Open();
                using (var cmd = conn.CreateCommand())
                {
-                  cmd.CommandText = @"
-                     SELECT TOP 10
-                         p.proveedor_id AS ClienteId,
-                         p.proveedor AS CodigoCliente,
-                         ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres + ' ' + ISNULL(p.apellido_pat, ''))), 'Sin Nombre')) AS ClienteNombre,
-                         MAX(v.fecha) AS FechaUltimaCompra,
-                         DATEDIFF(month, MAX(v.fecha), GETDATE()) AS MesesSinComprar
-                     FROM (
-                         SELECT proveedor_id, fecha FROM comprobante WHERE estado = 'A'
-                         UNION ALL
-                         SELECT proveedor_id, fecha FROM cotiza WHERE es_pedido = 'S' AND estado = 'A'
-                     ) v
-                     INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
-                     GROUP BY p.proveedor_id, p.proveedor, p.razon_social, p.nombres, p.apellido_pat
-                     HAVING MAX(v.fecha) <= DATEADD(month, -@meses, GETDATE())
-                     ORDER BY FechaUltimaCompra DESC";
+                  cmd.CommandText = ClientesInactivosSql;
                   cmd.Parameters.AddWithValue("@meses", mesesFiltro);
+                  cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
                   using (var reader = cmd.ExecuteReader())
                   {
                      while (reader.Read())
@@ -945,6 +1089,8 @@ namespace ESD.ERP.Web.Controllers
                            Id = Convert.ToInt32(reader["ClienteId"]),
                            Codigo = reader["CodigoCliente"]?.ToString()?.Trim(),
                            Cliente = reader["ClienteNombre"]?.ToString()?.Trim(),
+                           Vendedor = reader["VendedorNombre"]?.ToString()?.Trim(),
+                           NumeroDocumentoIdentidad = reader["NumeroDocumentoIdentidad"]?.ToString()?.Trim(),
                            FechaUltimaCompra = fUltima,
                            FechaFormateada = fUltima.ToString("dd/MM/yyyy"),
                            MesesSinComprar = diffMeses

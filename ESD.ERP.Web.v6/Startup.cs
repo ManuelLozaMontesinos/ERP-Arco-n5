@@ -51,6 +51,7 @@ namespace ESD.ERP.Web
          });
 
          services.AddSignalR();
+         services.AddHostedService<CalendarEventReminderBackgroundService>();
 
       }
       public void ConfigureContainer(IUnityContainer container)

@@ -50,7 +50,7 @@ namespace ESD.ERP.Repository.Impl
 			parameters.AddParameter("numeroDocumentoIdentidad", entity.Comprobante?.Proveedor?.NumeroDocumentoIdentidad);
 			parameters.AddParameter("containsVendedor", entity.Comprobante?.Vendedor?.Proveedor?.RazonSocial);
 			parameters.AddParameter("fechaDesde", entity.Comprobante?.FechaDesde);
-			parameters.AddParameter("fechaHasta", entity.Comprobante?.FechaDesde);
+			parameters.AddParameter("fechaHasta", entity.Comprobante?.FechaHasta);
 			parameters.AddParameter("estadoAprobacionId", entity.EstadoAprobacionId);
 			parameters.AddParameter("estadoAprobacion", entity?.EstadoAprobacion?.Codigo);
 			parameters.AddParameter("estado", entity.Estado);

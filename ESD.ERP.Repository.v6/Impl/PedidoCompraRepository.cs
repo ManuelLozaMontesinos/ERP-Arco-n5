@@ -58,7 +58,7 @@ namespace ESD.ERP.Repository.Impl
 			parameters.AddParameter("periodoEmpresaSedeId", entity.PeriodoEmpresaSedeId);
 			parameters.AddParameter("pedidoCompra", entity.Codigo);
 			parameters.AddParameter("fechaDesde", entity.FechaDesde);
-			parameters.AddParameter("fechaHasta", entity.FechaDesde);
+			parameters.AddParameter("fechaHasta", entity.FechaHasta);
 			parameters.AddParameter("tipoProductoId", entity?.TipoProductoId);
 			parameters.AddParameter("tipoProducto", entity?.TipoProducto?.Codigo);
 			parameters.AddParameter("containsRazonSocial", entity.Proveedor?.RazonSocial);
