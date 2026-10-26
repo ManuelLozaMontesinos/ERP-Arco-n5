@@ -1,4 +1,4 @@
-﻿using ESD.Core.Logging;
+using ESD.Core.Logging;
 using ESD.Core.Web;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
@@ -56,17 +56,25 @@ namespace ESD.ERP.Web.Controllers
          });
 
          model.PeriodoList = WebHelper.ToSelectListItem(periodoDTOList,
-            x => x.Id.ToString(), x => x.Codigo.ToString(),SelectListFirstOptionType.Empty);
+            x => x.Id.ToString(), x => x.Codigo.ToString(), SelectListFirstOptionType.Empty);
 
-         List<EmpresaDTO> empresaDTOList = obtenerListaEmpresa(periodoDTOList[0].PeriodoId);
-         model.EmpresaList = WebHelper.ToSelectListItem(empresaDTOList, x => x.Id.ToString(),
-            x => x.Nombre, SelectListFirstOptionType.Select, empresaDTOList[0].EmpresaId.ToString());
+         if (periodoDTOList != null && periodoDTOList.Count > 0)
+         {
+            List<EmpresaDTO> empresaDTOList = obtenerListaEmpresa(periodoDTOList[0].PeriodoId);
+            if (empresaDTOList != null && empresaDTOList.Count > 0)
+            {
+               model.EmpresaList = WebHelper.ToSelectListItem(empresaDTOList, x => x.Id.ToString(),
+                  x => x.Nombre, SelectListFirstOptionType.Select, empresaDTOList[0].EmpresaId.ToString());
 
-         List<PeriodoEmpresaSedeDTO> periodoEmpresaSedeDTOList = obtenerListaPeriodoEmpresaSede(periodoDTOList[0].Id,
-            empresaDTOList[0].Id);
-         model.PeriodoEmpresaSedeList = WebHelper.ToSelectListItem(periodoEmpresaSedeDTOList, x => x.Id.ToString(),
-            x => x.EmpresaSedeDTO.Nombre, SelectListFirstOptionType.Select, periodoEmpresaSedeDTOList[0].Id.ToString());
-
+               List<PeriodoEmpresaSedeDTO> periodoEmpresaSedeDTOList = obtenerListaPeriodoEmpresaSede(periodoDTOList[0].Id,
+                  empresaDTOList[0].Id);
+               if (periodoEmpresaSedeDTOList != null && periodoEmpresaSedeDTOList.Count > 0)
+               {
+                  model.PeriodoEmpresaSedeList = WebHelper.ToSelectListItem(periodoEmpresaSedeDTOList, x => x.Id.ToString(),
+                     x => x.EmpresaSedeDTO.Nombre, SelectListFirstOptionType.Select, periodoEmpresaSedeDTOList[0].Id.ToString());
+               }
+            }
+         }
       }
       [HttpGet("ListarEmpresa")]
       public JsonResult ListarEmpresa(int id)

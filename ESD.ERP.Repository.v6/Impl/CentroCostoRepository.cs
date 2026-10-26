@@ -83,7 +83,7 @@ namespace ESD.ERP.Repository.Impl
 
 			try
 			{
-				parameters.AddParameter("empresaIdId", entity.EmpresaId);
+				parameters.AddParameter("empresaId", entity.EmpresaId);
 				parameters.AddParameter("centroCostoPadreId", entity.CentroCostoPadreId);
 				parameters.AddParameter("nombre", entity.Nombre);
 				parameters.AddParameter("sigla", entity.Sigla);

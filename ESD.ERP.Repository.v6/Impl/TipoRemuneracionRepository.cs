@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ESD.Core.Data;
@@ -133,7 +133,7 @@ namespace ESD.ERP.Repository.Impl
 
 			try
 			{
-				parameters.AddParameter("tipoRemuneraId", entity.TipoRemuneracionId);
+				parameters.AddParameter("tipoRemuneracionId", entity.TipoRemuneracionId);
 				parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
 
 				DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, StoredProcActionConstant.DELETE), parameters);

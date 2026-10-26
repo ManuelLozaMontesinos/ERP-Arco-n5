@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Cryptography;
 using ESD.Core.Web;
 using ESD.Core.Service.DTO;
@@ -237,7 +237,8 @@ namespace ESD.ERP.Web.Infrastructure
          if (controllerName.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
-             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase))
+             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Calendario", StringComparison.OrdinalIgnoreCase))
          {
             return true;
          }
@@ -275,7 +276,8 @@ namespace ESD.ERP.Web.Infrastructure
          if (controllerName.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
-             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase))
+             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase) ||
+             controllerName.Equals("Calendario", StringComparison.OrdinalIgnoreCase))
          {
             return true;
          }
@@ -297,7 +299,8 @@ namespace ESD.ERP.Web.Infrastructure
          if (currentController.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
              currentController.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
              currentController.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
-             currentController.Equals("Login", StringComparison.OrdinalIgnoreCase))
+             currentController.Equals("Login", StringComparison.OrdinalIgnoreCase) ||
+             currentController.Equals("Calendario", StringComparison.OrdinalIgnoreCase))
          {
             return;
          }
@@ -397,6 +400,38 @@ namespace ESD.ERP.Web.Infrastructure
          {
             ViewBag.TienePermisoEscritura = tieneEscritura;
             ViewBag.EsSoloLectura = !tieneEscritura;
+            if (ViewBag.UsuarioId == null)
+            {
+               int uid = ObtenerUsuarioId();
+               if (uid > 0)
+               {
+                  ViewBag.UsuarioId = uid;
+               }
+            }
+
+            try
+            {
+               if (string.IsNullOrEmpty((string)ViewBag.Periodo))
+               {
+                  string cidVal = Request.Query["cid"];
+                  if (string.IsNullOrEmpty(cidVal)) { cidVal = Request.Headers["x-app-cid"]; }
+                  if (!string.IsNullOrEmpty(cidVal))
+                  {
+                     ViewBag.cid = cidVal;
+                     var pesDTO = ObtenerPeriodoEmpresaSedeDTO(cidVal);
+                     if (pesDTO != null)
+                     {
+                        if (pesDTO.PeriodoDTO != null && pesDTO.PeriodoDTO.Codigo > 0)
+                           ViewBag.Periodo = pesDTO.PeriodoDTO.Codigo.ToString();
+                        if (pesDTO.EmpresaSedeDTO != null && !string.IsNullOrEmpty(pesDTO.EmpresaSedeDTO.Nombre))
+                           ViewBag.Sede = pesDTO.EmpresaSedeDTO.Nombre;
+                        if (pesDTO.EmpresaSedeDTO?.EmpresaDTO != null && !string.IsNullOrEmpty(pesDTO.EmpresaSedeDTO.EmpresaDTO.NombreComercial))
+                           ViewBag.Empresa = pesDTO.EmpresaSedeDTO.EmpresaDTO.NombreComercial;
+                     }
+                  }
+               }
+            }
+            catch { }
          }
          if (context.HttpContext != null)
          {
@@ -550,20 +585,57 @@ namespace ESD.ERP.Web.Infrastructure
       }
       private int obtenerValorVariable(string variableString, int index) {
 
-         if (string.IsNullOrEmpty(variableString)) {
+         if (string.IsNullOrEmpty(variableString) && Request != null) {
             variableString = Request.Headers["x-app-cid"];
-            if (string.IsNullOrEmpty(variableString))
-               variableString = string.Empty;
+
+            if (string.IsNullOrEmpty(variableString) && Request.Query.ContainsKey("cid")) {
+               variableString = Request.Query["cid"];
+            }
+
+            if (string.IsNullOrEmpty(variableString) && Request.Cookies.ContainsKey("cid")) {
+               variableString = Request.Cookies["cid"];
+            }
+
+            if (string.IsNullOrEmpty(variableString) && Request.Headers.ContainsKey("Referer")) {
+               string referer = Request.Headers["Referer"].ToString();
+               if (!string.IsNullOrEmpty(referer) && referer.Contains("cid=")) {
+                  try {
+                     int idx = referer.IndexOf("cid=");
+                     string cidSub = referer.Substring(idx + 4);
+                     int ampIdx = cidSub.IndexOf('&');
+                     if (ampIdx >= 0) {
+                        cidSub = cidSub.Substring(0, ampIdx);
+                     }
+                     variableString = System.Net.WebUtility.UrlDecode(cidSub);
+                  } catch { }
+               }
+            }
          }
 
-         string value = Base64UrlEncoder.Decode(variableString);
+         if (string.IsNullOrEmpty(variableString)) {
+            return 0;
+         }
+    
+         try {
+            string value = Base64UrlEncoder.Decode(variableString);
 
-         Cryptor cryptor = new Cryptor();
-         string decryptString = cryptor.Decrypt(value, cryptor.GetEncodeBytes("User"));
+            Cryptor cryptor = new Cryptor();
+            string decryptString = cryptor.Decrypt(value, cryptor.GetEncodeBytes("User"));
 
-         string[] variableList = decryptString.Split(',');
+            if (string.IsNullOrEmpty(decryptString))
+               return 0;
 
-         return Convert.ToInt32(variableList[index]);
+            string[] variableList = decryptString.Split(',');
+
+            if (variableList.Length > index && int.TryParse(variableList[index], out int resultVal)) {
+               return resultVal;
+            }
+         }
+         catch (Exception ex) {
+            ESD.Core.Logging.Logger.Error(ex);
+         }
+
+         return 0;
       }
       public PeriodoEmpresaSedeDTO ObtenerPeriodoEmpresaSedeDTO()
       {

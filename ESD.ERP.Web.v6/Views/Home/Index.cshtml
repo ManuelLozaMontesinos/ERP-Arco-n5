@@ -17,6 +17,10 @@
     string cotizacionesActivas = ViewBag.CotizacionesActivas ?? "7,637";
     string ordenesProduccionMes = ViewBag.OrdenesProduccionMes ?? "0";
     string ordenesCompraMes = ViewBag.OrdenesCompraMes ?? "0";
+    string consumoInternoMes = ViewBag.ConsumoInternoMes ?? "0";
+    string ingresosMermaMes = ViewBag.IngresosMermaMes ?? "0";
+    string salidasMermaMes = ViewBag.SalidasMermaMes ?? "0";
+    string guiasRemisionMes = ViewBag.GuiasRemisionMes ?? "0";
     var topPedidos = ViewBag.TopPedidos as List<ESD.ERP.Web.Controllers.TopPedidoDTO> ?? new List<ESD.ERP.Web.Controllers.TopPedidoDTO>();
     string topPedidosFecha = ViewBag.TopPedidosFecha ?? "19/10/2026";
     var clientesInactivos = ViewBag.ClientesInactivos as List<ESD.ERP.Web.Controllers.ClienteInactivoDTO> ?? new List<ESD.ERP.Web.Controllers.ClienteInactivoDTO>();
@@ -31,6 +35,20 @@
     var prodValoresDefault = ViewBag.ProdValores as int[] ?? new int[] { 0, 0, 0, 0 };
     var listaVendedores = ViewBag.ListaVendedores as List<ESD.ERP.Web.Controllers.VendedorDTO> ?? new List<ESD.ERP.Web.Controllers.VendedorDTO>();
     var listaRoles = ViewBag.ListaRoles as List<ESD.ERP.Web.Controllers.RolDTO> ?? new List<ESD.ERP.Web.Controllers.RolDTO>();
+    var listaStockInsumos = ViewBag.ListaStockInsumos as List<ESD.ERP.Web.Controllers.ProductoStockDTO> ?? new List<ESD.ERP.Web.Controllers.ProductoStockDTO>();
+    var listaAlmacenesStock = ViewBag.ListaAlmacenesStock as List<ESD.ERP.Web.Controllers.AlmacenItemDTO> ?? new List<ESD.ERP.Web.Controllers.AlmacenItemDTO>();
+    string mesActualStock = ViewBag.MesActualStock ?? "Octubre 2026";
+    var listaGruposProducto = ViewBag.ListaGruposProducto as List<ESD.ERP.Web.Controllers.CategoriaFiltroItemDTO> ?? new List<ESD.ERP.Web.Controllers.CategoriaFiltroItemDTO>();
+    var listaTopMenorStock = ViewBag.ListaTopMenorStock as List<ESD.ERP.Web.Controllers.TopMenorStockDTO> ?? new List<ESD.ERP.Web.Controllers.TopMenorStockDTO>();
+    var areasAgenda = ViewBag.AreasAgenda as List<ESD.ERP.Web.Controllers.CalendarioAreaDTO> ?? new List<ESD.ERP.Web.Controllers.CalendarioAreaDTO>();
+    bool tieneMultiplesAreasAgenda = ViewBag.TieneMultiplesAreasAgenda != null ? (bool)ViewBag.TieneMultiplesAreasAgenda : false;
+    bool esAdminAgenda = ViewBag.EsAdminAgenda != null ? (bool)ViewBag.EsAdminAgenda : esAdmin;
+    int areaAgendaInicialId = ViewBag.AreaAgendaInicialId != null ? Convert.ToInt32(ViewBag.AreaAgendaInicialId) : (esAdminAgenda ? 1 : 2);
+    string areaAgendaInicialNombre = ViewBag.AreaAgendaInicialNombre ?? (esAdminAgenda ? "Administración" : "Ventas");
+    int sedeDashboardInicial = ViewBag.SedeDashboardInicial != null ? Convert.ToInt32(ViewBag.SedeDashboardInicial) : 0;
+    int anioSesion = ViewBag.AnioSesion != null ? Convert.ToInt32(ViewBag.AnioSesion) : 2026;
+    int sedeSesionId = ViewBag.SedeSesionId != null ? Convert.ToInt32(ViewBag.SedeSesionId) : 1;
+    string sedeSesionNombre = ViewBag.SedeSesionNombre ?? (sedeSesionId == 2 ? "SEDE ILO" : "SEDE CENTRAL");
 }
 <script type="text/javascript">
     if (window.resetNavbarBreadcrumb) {
@@ -47,6 +65,18 @@
                     <i class="fas fa-tachometer-alt text-primary mr-2"></i>Tablero de Control
                 </h1>
                 <small class="text-muted" style="font-size: 0.825rem;">SIGANET ERP &mdash; M&eacute;tricas en Tiempo Real (Sincronizado con BD <code>esderp_v6</code>)</small>
+            </div>
+            <!-- RECUADRO ROJO: SELECT DE SEDE (GLOBAL / CENTRAL / ILO) -->
+            <div class="d-inline-flex align-items-center my-1" id="box-filtro-sede-dashboard">
+                <div class="dashboard-sede-chip d-inline-flex align-items-center shadow-sm">
+                    <i class="fas fa-building text-primary mr-2" style="font-size: 0.95rem;"></i>
+                    <label for="select-filtro-sede-dashboard" class="mb-0 font-weight-bold mr-2 label-sede-dash">SEDE:</label>
+                    <select id="select-filtro-sede-dashboard" class="form-control form-control-sm select-sede-dash font-weight-bold">
+                        <option value="0" selected="@(sedeDashboardInicial == 0 ? "selected" : null)">Global (ambas)</option>
+                        <option value="1" selected="@(sedeDashboardInicial == 1 ? "selected" : null)">Sede Central</option>
+                        <option value="2" selected="@(sedeDashboardInicial == 2 ? "selected" : null)">Sede Ilo</option>
+                    </select>
+                </div>
             </div>
             <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
                 @if (esAdmin)
@@ -161,9 +191,72 @@
                     <div class="icon" style="color: rgba(255, 255, 255, 0.25) !important;">
                         <i class="fas fa-clipboard-check"></i>
                     </div>
-                    <a href="javascript:void(0);" class="small-box-footer font-weight-600 d-flex justify-content-between align-items-center px-3" style="background-color: rgba(0, 0, 0, 0.12) !important; color: #ffffff !important; text-decoration: none;">
-                        <span id="kpi-pedidos-monto-footer">Total: @pedidosMesMonto</span>
-                        <span><i class="fas fa-arrow-circle-right"></i></span>
+                    <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'pedido/index' });" class="small-box-footer font-weight-500" style="color: #ffffff !important; background-color: rgba(0, 0, 0, 0.12) !important;">
+                        Ver Pedidos <i class="fas fa-arrow-circle-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 7. Cantidad de Salidas por Consumo Interno -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-consumo-interno">
+                <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #0d9488 0%, #115e59 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
+                    <div class="inner">
+                        <h3 id="kpi-consumo-interno" style="color: #ffffff !important; font-weight: 700;">@consumoInternoMes</h3>
+                        <p class="font-weight-500" style="color: rgba(255, 255, 255, 0.95) !important;">Salidas Consumo Interno</p>
+                    </div>
+                    <div class="icon" style="color: rgba(255, 255, 255, 0.25) !important;">
+                        <i class="fas fa-dolly-flatbed"></i>
+                    </div>
+                    <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'consumoInt/index' });" class="small-box-footer font-weight-500" style="color: #ffffff !important; background-color: rgba(0, 0, 0, 0.12) !important;">
+                        Ver Consumo Interno <i class="fas fa-arrow-circle-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 8. Control de Mermas (Ingresos y Salidas) -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-mermas">
+                <div class="small-box shadow-sm h-100 mb-0 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, #334155 0%, #1e293b 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
+                    <div class="inner pb-1">
+                        <div class="d-flex align-items-center mb-1" style="max-width: 80%;">
+                            <div class="mr-3">
+                                <span class="badge px-2 py-0" style="font-size: 0.68rem; font-weight: 600; background-color: #10b981; color: #ffffff; letter-spacing: 0.02em;">
+                                    <i class="fas fa-arrow-down mr-1"></i>INGRESOS
+                                </span>
+                                <h3 id="kpi-merma-ingresos" class="mb-0 mt-1" style="color: #ffffff !important; font-weight: 700; font-size: 1.6rem; line-height: 1.1;">@ingresosMermaMes</h3>
+                            </div>
+                            <div style="width: 1px; height: 36px; background: rgba(255, 255, 255, 0.25); margin-right: 14px;"></div>
+                            <div>
+                                <span class="badge px-2 py-0" style="font-size: 0.68rem; font-weight: 600; background-color: #ef4444; color: #ffffff; letter-spacing: 0.02em;">
+                                    <i class="fas fa-arrow-up mr-1"></i>SALIDAS
+                                </span>
+                                <h3 id="kpi-merma-salidas" class="mb-0 mt-1" style="color: #ffffff !important; font-weight: 700; font-size: 1.6rem; line-height: 1.1;">@salidasMermaMes</h3>
+                            </div>
+                        </div>
+                        <p class="font-weight-500 mb-0" style="color: rgba(255, 255, 255, 0.9) !important; font-size: 0.88rem; margin-top: 4px;">
+                            Control de Mermas del Mes
+                        </p>
+                    </div>
+                    <div class="icon" style="color: rgba(255, 255, 255, 0.2) !important;">
+                        <i class="fas fa-recycle"></i>
+                    </div>
+                    <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'controlMerma/index' });" class="small-box-footer font-weight-500" style="color: #ffffff !important; background-color: rgba(0, 0, 0, 0.15) !important;">
+                        Ver Control de Mermas <i class="fas fa-arrow-circle-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 9. Guías de Remisión Emitidas -->
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-guias-remision">
+                <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
+                    <div class="inner">
+                        <h3 id="kpi-guias-remision" style="color: #ffffff !important; font-weight: 700;">@guiasRemisionMes</h3>
+                        <p class="font-weight-500" style="color: rgba(255, 255, 255, 0.95) !important;">Gu&iacute;as de Remisi&oacute;n Emitidas</p>
+                    </div>
+                    <div class="icon" style="color: rgba(255, 255, 255, 0.25) !important;">
+                        <i class="fas fa-shipping-fast"></i>
+                    </div>
+                    <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'guiaremi/index' });" class="small-box-footer font-weight-500" style="color: #ffffff !important; background-color: rgba(0, 0, 0, 0.12) !important;">
+                        Ver Gu&iacute;as de Remisi&oacute;n <i class="fas fa-arrow-circle-right ml-1"></i>
                     </a>
                 </div>
             </div>
@@ -188,7 +281,7 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-ventas-10" onclick="setVentasMeses(10);">10m</button>
                                 <button type="button" class="btn btn-primary active btn-sm px-2" id="btn-ventas-12" onclick="setVentasMeses(12);">12m</button>
                             </div>
-                            <span class="badge badge-success px-2 py-1 mr-2" id="badge-meses-ventas"><i class="fas fa-calendar-alt mr-1"></i>12 Meses (&Uacute;ltimos 12 meses)</span>
+                            <span class="badge badge-success px-2 py-1 mr-2" id="badge-meses-ventas"><i class="fas fa-calendar-alt mr-1"></i>@(mesesVentasDefault != null && mesesVentasDefault.Length > 0 && mesesVentasDefault[0].StartsWith("Ene", StringComparison.OrdinalIgnoreCase) ? "12 Meses (Año " + anioSesion + ")" : "12 Meses (Últimos 12 meses)")</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -199,7 +292,7 @@
                             <canvas id="salesChart" height="240"></canvas>
                         </div>
                         <div class="d-flex flex-wrap justify-content-end align-items-center text-sm" style="gap: 12px;">
-                            <span class="font-weight-500 text-muted">
+                            <span class="font-weight-500 text-muted" id="legend-puente-dic-ene">
                                 <i class="fas fa-chart-line mr-1" style="color: #fd7e14;"></i> Puente Dic &rarr; Ene
                             </span>
                             <span class="font-weight-500 text-muted">
@@ -543,6 +636,86 @@
                         color: #94a3b8 !important;
                         border-color: #475569 !important;
                     }
+
+                    /* Estilos para el Widget de Agenda de Calendario en Dashboard */
+                    #area-agenda-calendario .fc .fc-toolbar-title {
+                        font-size: 0.95rem;
+                        font-weight: 700;
+                        text-transform: capitalize;
+                    }
+                    #area-agenda-calendario .fc-header-toolbar {
+                        margin-bottom: 0.5rem !important;
+                        padding: 0 4px;
+                    }
+                    #area-agenda-calendario .fc .fc-button {
+                        padding: 0.2rem 0.55rem;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        border-radius: 4px;
+                    }
+                    #area-agenda-calendario .fc-list-day-cushion {
+                        padding: 4px 10px !important;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                    }
+                    #area-agenda-calendario .fc-list-event {
+                        cursor: pointer;
+                        transition: background-color 0.15s ease;
+                    }
+                    #area-agenda-calendario .fc-list-event td {
+                        padding: 6px 10px !important;
+                        font-size: 0.82rem;
+                    }
+                    #area-agenda-calendario .fc-list-event-title {
+                        font-weight: 600;
+                    }
+                    #area-agenda-calendario .fc-list-event-time {
+                        font-size: 0.75rem;
+                        font-weight: 500;
+                        white-space: nowrap;
+                    }
+                    #area-agenda-calendario .fc-list-empty {
+                        padding: 30px 15px !important;
+                        font-size: 0.85rem;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc-theme-standard th,
+                    body.dark-mode #area-agenda-calendario .fc-theme-standard td,
+                    body.dark-mode #area-agenda-calendario .fc-theme-standard .fc-scrollgrid {
+                        border-color: #3f474e !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc .fc-list-day-cushion {
+                        background-color: #343a40 !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc-list-day-text,
+                    body.dark-mode #area-agenda-calendario .fc-list-day-side-text,
+                    body.dark-mode #area-agenda-calendario .fc-toolbar-title {
+                        color: #e9ecef !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc-list-event td {
+                        color: #f8f9fa !important;
+                        background-color: transparent !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc-list-event:hover td {
+                        background-color: #3f474e !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc-list-empty {
+                        background-color: #2b3035 !important;
+                        color: #ced4da !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc-button {
+                        background-color: #343a40 !important;
+                        border-color: #4f5962 !important;
+                        color: #e9ecef !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .fc-button-primary:not(:disabled).fc-button-active,
+                    body.dark-mode #area-agenda-calendario .fc-button-primary:not(:disabled):active {
+                        background-color: #0d6efd !important;
+                        border-color: #0d6efd !important;
+                    }
+                    body.dark-mode #area-agenda-calendario .card-footer {
+                        background-color: #2b3035 !important;
+                        border-top-color: #3f474e !important;
+                    }
                 </style>
 
                 <!-- 2. CONTROL: DIFERENCIA (Central vs. Ilo) -->
@@ -609,6 +782,14 @@
                                                 }
                                             }
                                         }
+                                    </select>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="d-inline-flex align-items-center">
+                                    <select id="select-vendedor-chart" class="form-control form-control-sm font-weight-600 shadow-sm bg-light" disabled="disabled" style="width: 200px; height: 31px; font-size: 0.85rem; border-radius: 6px; cursor: not-allowed;" title="Vista exclusiva de sus propias ventas">
+                                        <option value="@vendedorIdInicial" selected="selected">@vendedorNombreInicial</option>
                                     </select>
                                 </div>
                             }
@@ -687,6 +868,7 @@
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-chart-pie text-warning mr-2"></i>Estado de Producci&oacute;n
+                            <span class="badge badge-light border text-warning ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre (@anioSesion)</span>
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
                             <span class="badge badge-warning px-2 py-1 mr-2" id="badge-prod-mes"><i class="fas fa-calendar-alt mr-1"></i>Mes Actual</span>
@@ -702,6 +884,66 @@
                             <div class="font-weight-500">Sin &oacute;rdenes de producci&oacute;n registradas</div>
                             <small class="text-muted">en el mes actual</small>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 4. Widget: Agenda del Calendario -->
+                <div class="card card-primary card-outline shadow-sm mb-4" id="area-agenda-calendario" style="border-radius: 8px;">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 8px;">
+                        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                            <h3 class="card-title font-weight-bold m-0" style="font-size: 1rem;">
+                                <i class="fas fa-calendar-check text-primary mr-1"></i> Agenda de Eventos
+                            </h3>
+                            @if (!esAdminAgenda && !tieneMultiplesAreasAgenda)
+                            {
+                                <span class="badge badge-primary px-2 py-1 font-weight-600 shadow-none" id="badge-agenda-area-fija" title="Área asignada">
+                                    <i class="fas fa-layer-group mr-1"></i>@areaAgendaInicialNombre
+                                </span>
+                                <input type="hidden" id="select-agenda-area" value="@areaAgendaInicialId" />
+                            }
+                        </div>
+                        <div class="card-tools d-inline-flex flex-wrap align-items-center ml-auto m-0" style="gap: 6px;">
+                            @if (esAdminAgenda || tieneMultiplesAreasAgenda)
+                            {
+                                <div class="d-inline-flex align-items-center">
+                                    <label for="select-agenda-area" class="text-xs text-muted mb-0 mr-1 d-none d-sm-inline font-weight-normal">&Aacute;rea:</label>
+                                    <select id="select-agenda-area" class="form-control form-control-sm font-weight-600 shadow-none border-primary text-primary" style="width: auto; min-width: 145px; height: 30px; font-size: 0.82rem; padding: 2px 8px;" title="Seleccionar &Aacute;rea">
+                                        @foreach (var area in areasAgenda)
+                                        {
+                                            if (area.AreaId == areaAgendaInicialId)
+                                            {
+                                                <option value="@area.AreaId" selected="selected">@area.Nombre</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@area.AreaId">@area.Nombre</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            }
+                            <a href="javascript:void(0);" onclick="if (window.updateNavbarBreadcrumb) { window.updateNavbarBreadcrumb(['Inicio', 'Calendario']); } $(this).getView({ urlAction: 'calendario/index' });" class="btn btn-xs btn-outline-primary px-2 py-1 font-weight-600" title="Abrir Calendario completo" style="height: 28px; display: inline-flex; align-items: center;">
+                                <i class="fas fa-calendar-alt mr-1"></i> Ir al Calendario
+                            </a>
+                            <button type="button" class="btn btn-tool" id="btn-recargar-agenda" title="Actualizar Agenda" style="height: 28px; width: 28px; display: inline-flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-2" style="position: relative;">
+                        <!-- Contenedor FullCalendar de Agenda -->
+                        <div id="calendar-agenda-widget" style="min-height: 260px; max-height: 380px; overflow-y: auto;"></div>
+                        <div id="agenda-loading-spinner" class="d-none text-center py-4 text-muted">
+                            <i class="fas fa-circle-notch fa-spin fa-2x text-primary mb-2"></i>
+                            <div class="font-weight-500 text-sm">Cargando agenda...</div>
+                        </div>
+                    </div>
+                    <div class="card-footer py-1 px-3 bg-light border-top-0 d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                        <span class="text-muted"><i class="fas fa-info-circle text-info mr-1"></i> Vista de agenda semanal continua</span>
+                        <span class="text-muted font-weight-bold" id="agenda-area-info-footer">@areaAgendaInicialNombre</span>
                     </div>
                 </div>
 
@@ -745,6 +987,7 @@
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-crown text-warning mr-2"></i>Top Pedidos del D&iacute;a
+                            <span class="badge badge-light border text-primary ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre (@anioSesion)</span>
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
                             <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Cantidad pedidos">
@@ -817,6 +1060,7 @@
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-user-clock text-warning mr-2"></i>Clientes sin Compras (<span id="label-meses-inactivos">&ge; 5 Meses</span>)
+                            <span class="badge badge-light border text-warning ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre</span>
                         </h3>
                         <div class="card-tools d-inline-flex flex-wrap align-items-center ml-auto m-0" style="gap: 5px;">
                             <div class="d-inline-flex align-items-center mr-2">
@@ -829,8 +1073,8 @@
                             </div>
                             @if (puedeFiltrarVendedorClientes)
                             {
-                                <select id="select-vendedor-inactivos" class="form-control form-control-sm" aria-label="Filtrar clientes por vendedor" style="width: 160px; height: 28px; padding: 2px 8px; font-size: 0.8rem;">
-                                    <option value="" selected>Seleccionar Vendedor</option>
+                                <select id="select-vendedor-inactivos" class="form-control form-control-sm" aria-label="Filtrar clientes por vendedor" style="width: 165px; height: 28px; padding: 2px 8px; font-size: 0.8rem;">
+                                    <option value="" selected>Todos los Vendedores</option>
                                     @foreach (var vendedor in listaVendedores.OrderBy(v => v.nombre))
                                     {
                                         <option value="@vendedor.id">@vendedor.nombre</option>
@@ -850,20 +1094,21 @@
                         <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-clientes-inactivos">
                             <thead class="thead-light">
                                 <tr>
-                                    <th style="width: 68%;">Cliente</th>
-                                    <th style="width: 32%; text-align: right;">&Uacute;ltima Compra</th>
+                                    @if (esAdmin)
+                                    {
+                                        <th style="width: 44%;">Cliente</th>
+                                        <th style="width: 32%;">Vendedor</th>
+                                        <th style="width: 24%; text-align: right;">&Uacute;ltima Compra</th>
+                                    }
+                                    else
+                                    {
+                                        <th style="width: 68%;">Cliente</th>
+                                        <th style="width: 32%; text-align: right;">&Uacute;ltima Compra</th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (puedeFiltrarVendedorClientes)
-                                {
-                                    <tr>
-                                        <td colspan="2" class="text-center text-muted py-3">
-                                            <i class="fas fa-hand-pointer mr-1"></i> Selecciona un vendedor para consultar sus clientes
-                                        </td>
-                                    </tr>
-                                }
-                                else if (clientesInactivos != null && clientesInactivos.Count > 0)
+                                @if (clientesInactivos != null && clientesInactivos.Count > 0)
                                 {
                                     foreach (var c in clientesInactivos.Take(5))
                                     {
@@ -871,6 +1116,12 @@
                                             <td class="py-2">
                                                 <span class="font-weight-600">@c.Cliente</span>
                                             </td>
+                                            @if (esAdmin)
+                                            {
+                                                <td class="py-2 text-truncate" style="max-width: 150px;">
+                                                    <span class="text-muted"><i class="fas fa-user-tie text-secondary mr-1"></i>@(string.IsNullOrWhiteSpace(c.Vendedor) ? "Sin vendedor" : c.Vendedor)</span>
+                                                </td>
+                                            }
                                             <td class="text-right py-2" style="white-space: nowrap;">
                                                 <span class="badge badge-warning text-dark font-weight-bold px-2 py-1">
                                                     <i class="far fa-calendar-alt mr-1"></i>@c.FechaFormateada
@@ -882,7 +1133,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="2" class="text-center text-muted py-3">
+                                        <td colspan="@(esAdmin ? 3 : 2)" class="text-center text-muted py-3">
                                             <i class="fas fa-check-circle text-success mr-1"></i> No se encontraron clientes con inactividad superior a 5 meses
                                         </td>
                                     </tr>
@@ -892,6 +1143,283 @@
                     </div>
                     <div class="card-footer clearfix border-top-0 py-2">
                         <small class="text-muted"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Listado ordenado por mayor tiempo de inactividad</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. SECCION: STOCK Y CONSUMO DE INSUMOS CRITICOS EN TIEMPO REAL -->
+        <div class="row" id="row-stock-insumos">
+            <div class="col-12 mb-4">
+                <div class="card card-info card-outline shadow-sm mb-4">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2">
+                        <div class="d-flex align-items-center flex-wrap">
+                            <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
+                                <i class="fas fa-boxes text-info mr-2"></i>Stock y Consumo de Insumos Cr&iacute;ticos
+                                <span class="badge badge-light border text-info ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre</span>
+                            </h3>
+                            <span class="badge badge-info px-2 py-1 ml-2 font-weight-600 shadow-none" id="badge-stock-insumos" style="font-size: 0.75rem;">
+                                <i class="fas fa-satellite-dish mr-1"></i>En Vivo
+                            </span>
+                        </div>
+                        <div class="card-tools d-inline-flex flex-wrap align-items-center ml-auto m-0" style="gap: 8px;">
+                            <!-- Buscador rapido -->
+                            <div class="input-group input-group-sm" style="width: 220px;">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-light border-right-0 py-0"><i class="fas fa-search text-muted" style="font-size: 0.85rem;"></i></span>
+                                </div>
+                                <input type="text" id="filtro-stock-insumos" class="form-control form-control-sm border-left-0" placeholder="Filtrar por c&oacute;digo/nombre..." title="Filtrar insumos en tiempo real" style="height: 31px;">
+                            </div>
+
+                            <!-- Selector de Almacen -->
+                            <div class="d-inline-flex align-items-center">
+                                <select id="select-almacen-stock" class="form-control form-control-sm font-weight-600 shadow-sm" style="width: auto; min-width: 220px; height: 31px; font-size: 0.825rem;">
+                                    <option value="0" selected>Todos los Almacenes (Consolidado)</option>
+                                    @if (listaAlmacenesStock != null)
+                                    {
+                                        foreach (var alm in listaAlmacenesStock)
+                                        {
+                                            <option value="@alm.AlmacenId">@alm.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Boton Recargar -->
+                            <button type="button" class="btn btn-outline-info btn-sm shadow-none px-2" id="btn-recargar-stock-insumos" title="Actualizar Stock en tiempo real" style="height: 31px;">
+                                <i class="fas fa-sync-alt" id="icon-recargar-stock"></i>
+                            </button>
+
+                            <!-- Minimizar -->
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-stock-insumos">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 5%; text-align: center;">#</th>
+                                    <th style="width: 15%; text-align: center;">C&oacute;digo</th>
+                                    <th style="width: 32%;">Descripci&oacute;n del Producto</th>
+                                    <th style="width: 18%; text-align: right;">Consumo Mes</th>
+                                    <th style="width: 30%; text-align: right;">Stock / Saldo Actual</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-stock-insumos">
+                                @if (listaStockInsumos != null && listaStockInsumos.Count > 0)
+                                {
+                                    foreach (var prod in listaStockInsumos)
+                                    {
+                                        <tr class="fila-producto-stock" data-codigo="@prod.Codigo" data-desc="@prod.Descripcion.ToLowerInvariant()">
+                                            <td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">
+                                                @prod.Orden
+                                            </td>
+                                            <td class="text-center py-2" style="white-space: nowrap;">
+                                                <span class="badge badge-secondary font-weight-bold px-2 py-1" style="font-family: monospace; font-size: 0.85rem; letter-spacing: 0.03em;">
+                                                    @prod.Codigo
+                                                </span>
+                                            </td>
+                                            <td class="py-2" style="max-width: 380px;">
+                                                <span class="font-weight-600">@prod.Descripcion</span>
+                                            </td>
+                                            <td class="text-right py-2 font-weight-bold" style="white-space: nowrap; font-size: 0.95rem;">
+                                                @prod.ConsumoMesFormateado <small class="font-weight-normal text-muted">@prod.UnidadMedida</small>
+                                            </td>
+                                            <td class="text-right py-2" style="white-space: nowrap;">
+                                                <div class="d-inline-flex align-items-center justify-content-end" style="gap: 8px;">
+                                                    @if (prod.BadgeColor == "success")
+                                                    {
+                                                        <span class="badge badge-success px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-check-circle mr-1"></i>@prod.EstadoStock</span>
+                                                    }
+                                                    else if (prod.BadgeColor == "warning")
+                                                    {
+                                                        <span class="badge badge-warning text-dark px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-exclamation-triangle mr-1"></i>@prod.EstadoStock</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-danger px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-times-circle mr-1"></i>@prod.EstadoStock</span>
+                                                    }
+                                                    <span class="font-weight-bold @(prod.StockActual <= 0 ? "text-danger" : "text-primary")" style="font-size: 0.95rem;">
+                                                        @prod.StockActualFormateado <small class="font-weight-normal text-muted">@prod.UnidadMedida</small>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            <i class="fas fa-info-circle mr-1"></i> No se encontraron registros de stock para los insumos.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer clearfix border-top-0 py-2 d-flex flex-wrap justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle text-info mr-1"></i>Saldo en tiempo real de <code>mov_alm_saldo</code> y consumo acumulado en el mes actual (<span id="span-mes-stock-insumos">@mesActualStock</span>).
+                        </small>
+                        <span class="badge badge-light border text-muted px-2 py-1 font-weight-600" id="badge-stock-insumos-total">
+                            <i class="fas fa-clipboard-list mr-1"></i><span id="span-cant-insumos-monitoreados">@(listaStockInsumos != null ? listaStockInsumos.Count : 0)</span> Insumos Monitoreados
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. SECCION: TOP 10 PRODUCTOS CON MENOR STOCK -->
+        <div class="row" id="row-top-menor-stock">
+            <div class="col-12 mb-4">
+                <div class="card card-danger card-outline shadow-sm mb-4">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2">
+                        <div class="d-flex align-items-center flex-wrap">
+                            <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
+                                <i class="fas fa-boxes text-danger mr-2"></i>Top 10 Productos con Menor Stock
+                                <span id="badge-menor-stock-sede" class="badge badge-light border text-danger ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre</span>
+                            </h3>
+                            <span class="badge badge-danger px-2 py-1 ml-2 font-weight-600 shadow-none" style="font-size: 0.75rem;">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>Inventario Cr&iacute;tico
+                            </span>
+                        </div>
+                        <div class="card-tools d-inline-flex flex-wrap align-items-center ml-auto m-0" style="gap: 8px;">
+                            <!-- Filtro Sede -->
+                            <div class="d-inline-flex align-items-center">
+                                <select id="filtro-menor-stock-sede" class="form-control form-control-sm font-weight-600 shadow-sm" style="width: auto; min-width: 135px; height: 31px; font-size: 0.825rem;" title="Filtrar por Sede">
+                                    @if (sedeSesionId == 2)
+                                    {
+                                        <option value="1">Sede Central</option>
+                                        <option value="2" selected="selected">Sede Ilo</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="1" selected="selected">Sede Central</option>
+                                        <option value="2">Sede Ilo</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Filtro Grupo -->
+                            <div class="d-inline-flex align-items-center">
+                                <select id="filtro-menor-stock-grupo" class="form-control form-control-sm font-weight-600 shadow-sm" style="width: auto; min-width: 170px; height: 31px; font-size: 0.825rem;" title="Filtrar por Grupo">
+                                    <option value="">-- Todos los Grupos --</option>
+                                    @if (listaGruposProducto != null)
+                                    {
+                                        foreach (var grp in listaGruposProducto)
+                                        {
+                                            <option value="@grp.Id">@grp.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Filtro Clase -->
+                            <div class="d-inline-flex align-items-center">
+                                <select id="filtro-menor-stock-clase" class="form-control form-control-sm font-weight-600 shadow-sm" style="width: auto; min-width: 170px; height: 31px; font-size: 0.825rem;" title="Filtrar por Clase">
+                                    <option value="">-- Todas las Clases --</option>
+                                </select>
+                            </div>
+
+                            <!-- Filtro Familia -->
+                            <div class="d-inline-flex align-items-center">
+                                <select id="filtro-menor-stock-familia" class="form-control form-control-sm font-weight-600 shadow-sm" style="width: auto; min-width: 170px; height: 31px; font-size: 0.825rem;" title="Filtrar por Familia">
+                                    <option value="">-- Todas las Familias --</option>
+                                </select>
+                            </div>
+
+                            <!-- Boton Limpiar Filtros -->
+                            <button type="button" class="btn btn-outline-secondary btn-sm shadow-none px-2" id="btn-limpiar-filtro-menor-stock" title="Limpiar todos los filtros" style="height: 31px;">
+                                <i class="fas fa-undo"></i>
+                            </button>
+
+                            <!-- Boton Recargar -->
+                            <button type="button" class="btn btn-outline-danger btn-sm shadow-none px-2" id="btn-recargar-menor-stock" title="Actualizar en tiempo real" style="height: 31px;">
+                                <i class="fas fa-sync-alt" id="icon-recargar-menor-stock"></i>
+                            </button>
+
+                            <!-- Minimizar -->
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-top-menor-stock">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th style="width: 5%; text-align: center;">#</th>
+                                    <th style="width: 14%; text-align: center;">C&oacute;digo</th>
+                                    <th style="width: 33%;">Nombre del Producto</th>
+                                    <th style="width: 28%;">Categor&iacute;a</th>
+                                    <th style="width: 20%; text-align: right;">Cantidad (Stock)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-top-menor-stock">
+                                @if (listaTopMenorStock != null && listaTopMenorStock.Count > 0)
+                                {
+                                    foreach (var prod in listaTopMenorStock)
+                                    {
+                                        <tr>
+                                            <td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">
+                                                <span class="badge @(prod.Orden <= 3 ? "badge-danger" : "badge-secondary") font-weight-bold" style="font-size: 0.8rem; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;">
+                                                    @prod.Orden
+                                                </span>
+                                            </td>
+                                            <td class="text-center py-2" style="white-space: nowrap;">
+                                                <span class="badge badge-light border font-weight-bold px-2 py-1 text-dark" style="font-family: monospace; font-size: 0.85rem; letter-spacing: 0.03em;">
+                                                    @prod.Codigo
+                                                </span>
+                                            </td>
+                                            <td class="py-2" style="max-width: 350px;">
+                                                <div class="font-weight-600 text-dark">@prod.Nombre</div>
+                                            </td>
+                                            <td class="py-2" style="font-size: 0.85rem;">
+                                                <span class="text-muted font-weight-500">@prod.CategoriaCompleta</span>
+                                            </td>
+                                            <td class="text-right py-2" style="white-space: nowrap;">
+                                                <div class="d-inline-flex align-items-center justify-content-end" style="gap: 8px;">
+                                                    @if (prod.BadgeColor == "danger")
+                                                    {
+                                                        <span class="badge badge-danger px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-times-circle mr-1"></i>@prod.EstadoStock</span>
+                                                    }
+                                                    else if (prod.BadgeColor == "warning")
+                                                    {
+                                                        <span class="badge badge-warning text-dark px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-exclamation-triangle mr-1"></i>@prod.EstadoStock</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge badge-info px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-info-circle mr-1"></i>@prod.EstadoStock</span>
+                                                    }
+                                                    <span class="font-weight-bold text-danger" style="font-size: 1rem;">
+                                                        @prod.CantidadFormateada <small class="font-weight-bold text-secondary">@prod.UnidadMedida</small>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            <i class="fas fa-info-circle mr-1"></i> No se encontraron productos con menor stock para el filtro seleccionado.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer clearfix border-top-0 py-2 d-flex flex-wrap justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle text-danger mr-1"></i>Top 10 productos con menor stock vinculados al m&oacute;dulo Volumen de Existencias en tiempo real.
+                        </small>
+                        <span class="badge badge-light border text-muted px-2 py-1 font-weight-600" id="badge-filtro-menor-stock-info">
+                            <i class="fas fa-filter mr-1"></i>Filtro: Todos los Grupos
+                        </span>
                     </div>
                 </div>
             </div>
@@ -929,7 +1457,7 @@
             <div class="modal-body p-4" style="background-color: #f8fafc; max-height: 70vh; overflow-y: auto;">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom">
                     <span class="text-xs font-weight-600 text-uppercase text-muted" style="letter-spacing: 0.05em;">
-                        &Aacute;reas del Dashboard (<span id="modal-conteo-areas-activas" class="font-weight-bold text-primary">9</span> de <span id="modal-conteo-areas-permitidas" class="font-weight-bold text-dark">9</span> disponibles)
+                        &Aacute;reas del Dashboard (<span id="modal-conteo-areas-activas" class="font-weight-bold text-primary">12</span> de <span id="modal-conteo-areas-permitidas" class="font-weight-bold text-dark">12</span> disponibles)
                     </span>
                     <div class="btn-group btn-group-sm" role="group">
                         <button type="button" class="btn btn-outline-primary btn-xs px-2" id="btn-modal-marcar-todos" title="Mostrar todas las Ã¡reas">
@@ -972,7 +1500,7 @@
                             <small class="font-weight-700 text-uppercase text-secondary" style="letter-spacing: 0.05em; font-size: 0.72rem;">
                                 <i class="fas fa-layer-group text-info mr-1"></i> Controles de Tarjetas Individuales:
                             </small>
-                            <span class="badge badge-light border text-muted px-2 py-0" style="font-size: 0.7rem;" id="badge-conteo-kpis-activos">6 activas</span>
+                            <span class="badge badge-light border text-muted px-2 py-0" style="font-size: 0.7rem;" id="badge-conteo-kpis-activos">9 activas</span>
                         </div>
                         <div class="sub-kpis-grid-2">
                             <div class="sub-kpi-card d-flex align-items-center justify-content-between px-3 py-2 rounded bg-white border" data-kpi="kpi-facturacion" style="transition: all 0.2s ease;">
@@ -1033,6 +1561,36 @@
                                 <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
                                     <input type="checkbox" class="custom-control-input chk-sub-kpi" id="chk-sub-kpi-pedidos-mes" data-kpi="kpi-pedidos-mes" checked>
                                     <label class="custom-control-label" for="chk-sub-kpi-pedidos-mes"></label>
+                                </div>
+                            </div>
+                            <div class="sub-kpi-card d-flex align-items-center justify-content-between px-3 py-2 rounded bg-white border" data-kpi="kpi-consumo-interno" style="transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center text-truncate mr-2">
+                                    <span class="badge mr-2 px-2 py-1" style="background-color: rgba(13, 148, 136, 0.15); color: #0d9488;"><i class="fas fa-dolly-flatbed"></i></span>
+                                    <span class="font-weight-600 text-dark text-truncate" style="font-size: 0.88rem;">Consumo Interno</span>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
+                                    <input type="checkbox" class="custom-control-input chk-sub-kpi" id="chk-sub-kpi-consumo-interno" data-kpi="kpi-consumo-interno" checked>
+                                    <label class="custom-control-label" for="chk-sub-kpi-consumo-interno"></label>
+                                </div>
+                            </div>
+                            <div class="sub-kpi-card d-flex align-items-center justify-content-between px-3 py-2 rounded bg-white border" data-kpi="kpi-mermas" style="transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center text-truncate mr-2">
+                                    <span class="badge mr-2 px-2 py-1" style="background-color: rgba(51, 65, 85, 0.15); color: #334155;"><i class="fas fa-recycle"></i></span>
+                                    <span class="font-weight-600 text-dark text-truncate" style="font-size: 0.88rem;">Control de Mermas</span>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
+                                    <input type="checkbox" class="custom-control-input chk-sub-kpi" id="chk-sub-kpi-mermas" data-kpi="kpi-mermas" checked>
+                                    <label class="custom-control-label" for="chk-sub-kpi-mermas"></label>
+                                </div>
+                            </div>
+                            <div class="sub-kpi-card d-flex align-items-center justify-content-between px-3 py-2 rounded bg-white border" data-kpi="kpi-guias-remision" style="transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center text-truncate mr-2">
+                                    <span class="badge mr-2 px-2 py-1" style="background-color: rgba(99, 102, 241, 0.15); color: #6366f1;"><i class="fas fa-shipping-fast"></i></span>
+                                    <span class="font-weight-600 text-dark text-truncate" style="font-size: 0.88rem;">Gu&iacute;as de Remisi&oacute;n</span>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
+                                    <input type="checkbox" class="custom-control-input chk-sub-kpi" id="chk-sub-kpi-guias-remision" data-kpi="kpi-guias-remision" checked>
+                                    <label class="custom-control-label" for="chk-sub-kpi-guias-remision"></label>
                                 </div>
                             </div>
                         </div>
@@ -1173,6 +1731,57 @@
                             <label class="custom-control-label" for="chk-area-clientes-inactivos"></label>
                         </div>
                     </label>
+
+                    <!-- 10. Stock y Consumo de Insumos -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-stock-insumos" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(23, 162, 184, 0.12); color: #17a2b8; flex-shrink: 0;">
+                                <i class="fas fa-boxes fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Stock y Consumo de Insumos Cr&iacute;ticos</div>
+                                <small class="text-muted">Listado de insumos con saldo en tiempo real y consumo acumulado en el mes</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-stock-insumos" data-area="stock-insumos" checked>
+                            <label class="custom-control-label" for="chk-area-stock-insumos"></label>
+                        </div>
+                    </label>
+
+                    <!-- 11. Top 10 Productos con Menor Stock -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-top-menor-stock" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(220, 53, 69, 0.12); color: #dc3545; flex-shrink: 0;">
+                                <i class="fas fa-boxes fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Top 10 Productos con Menor Stock</div>
+                                <small class="text-muted">Ranking de productos cr&iacute;ticos con menor stock filtrables por Grupo, Clase y Familia</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-top-menor-stock" data-area="top-menor-stock" checked>
+                            <label class="custom-control-label" for="chk-area-top-menor-stock"></label>
+                        </div>
+                    </label>
+
+                    <!-- 12. Agenda del Calendario -->
+                    <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-agenda-calendario" style="cursor: pointer; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-center mr-3">
+                            <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(13, 110, 253, 0.12); color: #0d6efd; flex-shrink: 0;">
+                                <i class="fas fa-calendar-check fa-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Agenda del Calendario</div>
+                                <small class="text-muted">Eventos y reuniones por &aacute;rea en formato de lista semanal continua</small>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
+                            <input type="checkbox" class="custom-control-input chk-dashboard-area" id="chk-area-agenda-calendario" data-area="agenda-calendario" checked>
+                            <label class="custom-control-label" for="chk-area-agenda-calendario"></label>
+                        </div>
+                    </label>
                 </div>
             </div>
             <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between align-items-center">
@@ -1239,7 +1848,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-xs text-uppercase font-weight-bold text-muted" style="letter-spacing: 0.05em;">
-                        &Aacute;reas Visibles para este Rol (<span id="modal-rol-conteo-areas-activas" class="text-primary font-weight-bold">9</span> de 9)
+                        &Aacute;reas Visibles para este Rol (<span id="modal-rol-conteo-areas-activas" class="text-primary font-weight-bold">10</span> de 10)
                     </span>
                     <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-outline-primary btn-xs font-weight-600 px-2" id="btn-modal-rol-marcar-todos">Marcar Todos</button>
@@ -1340,6 +1949,36 @@
                                     <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
                                         <input type="checkbox" class="custom-control-input chk-rol-sub-kpi" id="chk-rol-kpi-pedidos-mes" data-kpi="kpi-pedidos-mes" checked>
                                         <label class="custom-control-label" for="chk-rol-kpi-pedidos-mes"></label>
+                                    </div>
+                                </div>
+                                <div class="sub-kpi-card d-flex align-items-center justify-content-between p-2 rounded bg-white border">
+                                    <div class="d-flex align-items-center mr-2 text-truncate">
+                                        <i class="fas fa-dolly-flatbed text-teal mr-2" style="color: #0d9488 !important;"></i>
+                                        <span class="text-xs font-weight-600 text-dark text-truncate">Consumo Interno</span>
+                                    </div>
+                                    <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
+                                        <input type="checkbox" class="custom-control-input chk-rol-sub-kpi" id="chk-rol-kpi-consumo-interno" data-kpi="kpi-consumo-interno" checked>
+                                        <label class="custom-control-label" for="chk-rol-kpi-consumo-interno"></label>
+                                    </div>
+                                </div>
+                                <div class="sub-kpi-card d-flex align-items-center justify-content-between p-2 rounded bg-white border">
+                                    <div class="d-flex align-items-center mr-2 text-truncate">
+                                        <i class="fas fa-recycle text-secondary mr-2" style="color: #64748b !important;"></i>
+                                        <span class="text-xs font-weight-600 text-dark text-truncate">Mermas (Ing/Sal)</span>
+                                    </div>
+                                    <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
+                                        <input type="checkbox" class="custom-control-input chk-rol-sub-kpi" id="chk-rol-kpi-mermas" data-kpi="kpi-mermas" checked>
+                                        <label class="custom-control-label" for="chk-rol-kpi-mermas"></label>
+                                    </div>
+                                </div>
+                                <div class="sub-kpi-card d-flex align-items-center justify-content-between p-2 rounded bg-white border">
+                                    <div class="d-flex align-items-center mr-2 text-truncate">
+                                        <i class="fas fa-shipping-fast text-indigo mr-2" style="color: #6366f1 !important;"></i>
+                                        <span class="text-xs font-weight-600 text-dark text-truncate">Gu&iacute;as Remisi&oacute;n</span>
+                                    </div>
+                                    <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
+                                        <input type="checkbox" class="custom-control-input chk-rol-sub-kpi" id="chk-rol-kpi-guias-remision" data-kpi="kpi-guias-remision" checked>
+                                        <label class="custom-control-label" for="chk-rol-kpi-guias-remision"></label>
                                     </div>
                                 </div>
                             </div>
@@ -1497,6 +2136,63 @@
                             </div>
                         </label>
                     </div>
+
+                    <!-- 10. Stock y Consumo de Insumos -->
+                    <div class="col-md-6 mb-3">
+                        <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm h-100" for="chk-rol-area-stock-insumos" style="cursor: pointer; transition: all 0.2s ease;">
+                            <div class="d-flex align-items-center mr-3">
+                                <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(23, 162, 184, 0.1); color: #17a2b8; flex-shrink: 0;">
+                                    <i class="fas fa-boxes"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Stock y Consumo de Insumos</span>
+                                    <small class="text-muted">Insumos cr&iacute;ticos en tiempo real y consumo</small>
+                                </div>
+                            </div>
+                            <div class="custom-control custom-switch custom-switch-lg m-0" style="flex-shrink: 0;">
+                                <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-stock-insumos" data-area="stock-insumos" checked>
+                                <label class="custom-control-label" for="chk-rol-area-stock-insumos"></label>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 11. Top 10 Productos con Menor Stock -->
+                    <div class="col-md-6 mb-3">
+                        <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm h-100" for="chk-rol-area-top-menor-stock" style="cursor: pointer; transition: all 0.2s ease;">
+                            <div class="d-flex align-items-center mr-3">
+                                <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.1); color: #dc3545; flex-shrink: 0;">
+                                    <i class="fas fa-boxes"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Top 10 Menor Stock</span>
+                                    <small class="text-muted">Filtros por Grupo, Clase y Familia</small>
+                                </div>
+                            </div>
+                            <div class="custom-control custom-switch custom-switch-lg m-0" style="flex-shrink: 0;">
+                                <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-top-menor-stock" data-area="top-menor-stock" checked>
+                                <label class="custom-control-label" for="chk-rol-area-top-menor-stock"></label>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 12. Agenda del Calendario -->
+                    <div class="col-md-6 mb-3">
+                        <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm h-100" for="chk-rol-area-agenda-calendario" style="cursor: pointer; transition: all 0.2s ease;">
+                            <div class="d-flex align-items-center mr-3">
+                                <div class="area-icon-box mr-3 d-flex align-items-center justify-content-center rounded" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; flex-shrink: 0;">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Agenda de Calendario</span>
+                                    <small class="text-muted">Agenda de eventos y reuniones por &aacute;rea</small>
+                                </div>
+                            </div>
+                            <div class="custom-control custom-switch custom-switch-lg m-0" style="flex-shrink: 0;">
+                                <input type="checkbox" class="custom-control-input chk-dashboard-rol-area" id="chk-rol-area-agenda-calendario" data-area="agenda-calendario" checked>
+                                <label class="custom-control-label" for="chk-rol-area-agenda-calendario"></label>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between align-items-center">
@@ -1641,8 +2337,14 @@
 
             var $badge = $('#badge-meses-ventas');
             if ($badge.length) {
+                var anioSel = parseInt($('#header-select-periodo').val()) || @anioSesion;
+                var eneroIndex = (allSalesMeses || []).findIndex(function (l) { return (l || '').toLowerCase().indexOf('ene') === 0; });
                 if (meses === 12) {
-                    $badge.html('<i class="fas fa-calendar-alt mr-1"></i>12 Meses (\u00DAltimos 12 meses)');
+                    if (eneroIndex === 0) {
+                        $badge.html('<i class="fas fa-calendar-alt mr-1"></i>12 Meses (A\u00F1o ' + anioSel + ')');
+                    } else {
+                        $badge.html('<i class="fas fa-calendar-alt mr-1"></i>12 Meses (\u00DAltimos 12 meses)');
+                    }
                 } else {
                     $badge.html('<i class="fas fa-calendar-alt mr-1"></i>\u00DAltimos ' + meses + ' meses');
                 }
@@ -1656,6 +2358,8 @@
             if (!salesChartInstance) return;
 
             var series = generarSeriesVentas(mesesVentasActuales || 12);
+            var eneIdx = (allSalesMeses || []).findIndex(function (l) { return (l || '').toLowerCase().indexOf('ene') === 0; });
+            if (eneIdx > 0) { $('#legend-puente-dic-ene').show(); } else { $('#legend-puente-dic-ene').hide(); }
             salesChartInstance.data.labels = series.meses;
             if (salesChartInstance.data.datasets[0]) salesChartInstance.data.datasets[0].data = series.lineaActual;
             if (salesChartInstance.data.datasets[1]) salesChartInstance.data.datasets[1].data = series.lineaAnterior;
@@ -1988,8 +2692,18 @@
                             borderColor: '#ffc107',
                             backgroundColor: 'rgba(255, 193, 7, 0.08)',
                             borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
+                            pointRadius: function(context) {
+                                var labels = context.chart.data.labels || [];
+                                var eneroIndex = labels.findIndex(function(l) { return (l || '').toLowerCase().indexOf('ene') === 0; });
+                                if (eneroIndex > 0 && context.dataIndex < eneroIndex) return 0;
+                                return 4;
+                            },
+                            pointHoverRadius: function(context) {
+                                var labels = context.chart.data.labels || [];
+                                var eneroIndex = labels.findIndex(function(l) { return (l || '').toLowerCase().indexOf('ene') === 0; });
+                                if (eneroIndex > 0 && context.dataIndex < eneroIndex) return 0;
+                                return 6;
+                            },
                             pointBackgroundColor: '#ffc107',
                             pointBorderColor: '#ffc107',
                             segment: {
@@ -1997,7 +2711,8 @@
                                     var labels = ctx.chart.data.labels || [];
                                     var mesInicio = (labels[ctx.p0DataIndex] || '').toLowerCase();
                                     var mesFin = (labels[ctx.p1DataIndex] || '').toLowerCase();
-                                    if (mesInicio.indexOf('dic') === 0 && mesFin.indexOf('ene') === 0) return 'transparent';
+                                    var eneroIndex = labels.findIndex(function(l) { return (l || '').toLowerCase().indexOf('ene') === 0; });
+                                    if (eneroIndex > 0 && ctx.p1DataIndex <= eneroIndex) return 'transparent';
                                     return '#ffc107';
                                 }
                             },
@@ -2036,14 +2751,17 @@
                                 if (tooltipItem.parsed.y === null || tooltipItem.parsed.y === undefined || isNaN(tooltipItem.parsed.y)) return false;
                                 if (tooltipItem.datasetIndex === 0) {
                                     var lbl = (tooltipItem.label || '').toLowerCase();
-                                    if (lbl.indexOf('dic') >= 0 || lbl.indexOf('nov') >= 0) return false;
+                                    var labels = tooltipItem.chart.data.labels || [];
+                                    var eneroIndex = labels.findIndex(function(l) { return (l || '').toLowerCase().indexOf('ene') === 0; });
+                                    if (eneroIndex > 0 && tooltipItem.dataIndex < eneroIndex) return false;
                                 }
                                 return tooltipItem.datasetIndex === 0 || tooltipItem.datasetIndex === 1;
                             },
                             callbacks: {
                                 label: function(context) {
                                     if (context.parsed.y === null || context.parsed.y === undefined) return '';
-                                    var anio = (context.datasetIndex === 0 || context.datasetIndex === 2) ? 'A\u00F1o Actual (2026)' : 'A\u00F1o 2025';
+                                    var anioSel = parseInt($('#header-select-periodo').val()) || @anioSesion;
+                                    var anio = (context.datasetIndex === 0 || context.datasetIndex === 2) ? ('A\u00F1o ' + anioSel) : ('A\u00F1o ' + (anioSel - 1));
                                     var montoEnSoles = (Number(context.parsed.y) || 0) * 1000;
                                     return anio + ': ' + formatMonedaPeruana(montoEnSoles);
                                 }
@@ -2473,10 +3191,11 @@
             if (currentVendedorAjax && currentVendedorAjax.readyState !== 4) {
                 currentVendedorAjax.abort();
             }
+            var anioSel = parseInt($('#header-select-periodo').val()) || @anioSesion;
             currentVendedorAjax = $.ajax({
                 url: '/Home/ObtenerPedidosVendedor',
                 type: 'GET',
-                data: { vendedorId: vendedorId, dias: 12, cid: cid },
+                data: { vendedorId: vendedorId, dias: 12, cid: cid, anio: anioSel },
                 headers: { 'x-app-cid': cid },
                 success: function(res) {
                     if (res && res.success) {
@@ -2524,7 +3243,7 @@
             localStorage.removeItem('arco_dashboard_areas_visibles_v1');
         } catch (e) { }
 
-        // Configuracion de las 9 areas principales del dashboard
+        // Configuracion de las 12 areas principales del dashboard
         var areasDashboardConfig = {
             'kpis': { selector: '#row-kpis-metricas', visible: true },
             'evolucion-ventas': { selector: '#area-evolucion-ventas', visible: true },
@@ -2532,38 +3251,44 @@
             'pedidos-vendedor': { selector: '#area-pedidos-vendedor', visible: true },
             'accesos-rapidos': { selector: '#area-accesos-rapidos', visible: true },
             'estado-produccion': { selector: '#area-estado-produccion', visible: true },
+            'agenda-calendario': { selector: '#area-agenda-calendario', visible: true },
             'db-tiempo-real': { selector: '#area-db-tiempo-real', visible: true },
             'top-pedidos': { selector: '#area-top-pedidos', visible: true },
-            'clientes-inactivos': { selector: '#area-clientes-inactivos', visible: true }
+            'clientes-inactivos': { selector: '#area-clientes-inactivos', visible: true },
+            'stock-insumos': { selector: '#row-stock-insumos', visible: true },
+            'top-menor-stock': { selector: '#row-top-menor-stock', visible: true }
         };
 
-        // Configuracion de los 6 controles de tarjetas individuales de KPIs
+        // Configuracion de los 9 controles de tarjetas individuales de KPIs
         var kpiCardsConfig = {
             'kpi-facturacion': { selector: '#card-kpi-facturacion', name: 'Facturacion del Mes', visible: true },
             'kpi-pedidos-activos': { selector: '#card-kpi-pedidos-activos', name: 'Pedidos Activos', visible: true },
             'kpi-cotizaciones': { selector: '#card-kpi-cotizaciones', name: 'Cotizaciones Activas', visible: true },
             'kpi-produccion': { selector: '#card-kpi-produccion', name: 'Ordenes de Produccion del Mes', visible: true },
             'kpi-compras': { selector: '#card-kpi-compras', name: 'Ordenes de Compra del Mes', visible: true },
-            'kpi-pedidos-mes': { selector: '#card-kpi-pedidos-mes', name: 'Pedidos del Mes', visible: true }
+            'kpi-pedidos-mes': { selector: '#card-kpi-pedidos-mes', name: 'Pedidos del Mes', visible: true },
+            'kpi-consumo-interno': { selector: '#card-kpi-consumo-interno', name: 'Salidas Consumo Interno', visible: true },
+            'kpi-mermas': { selector: '#card-kpi-mermas', name: 'Control de Mermas', visible: true },
+            'kpi-guias-remision': { selector: '#card-kpi-guias-remision', name: 'Guias de Remision Emitidas', visible: true }
         };
 
         // Presets predefinidos por Rol en ERP ARCO (Incluyendo sub-controles de KPIs)
         var defaultRolePresets = {
             // Administradores y TI: Acceso total a todas las areas y todos los KPIs
-            'S0001': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true },
-            'S0002': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true },
-            '00020': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true },
-            // Ventas Jefatura: Foco comercial, ventas, pedidos por vendedor y clientes
-            '00003': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': false, 'kpi-compras': false, 'kpi-pedidos-mes': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': true },
+            'S0001': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
+            'S0002': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
+            '00020': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
+            // Ventas Jefatura: Foco comercial, ventas, pedidos por vendedor, clientes y guias
+            '00003': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': false, 'kpi-compras': false, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': false, 'kpi-mermas': false, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
             // Ventas Operador
-            '00004': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': false, 'kpi-compras': false, 'kpi-pedidos-mes': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false },
+            '00004': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': false, 'kpi-compras': false, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': false, 'kpi-mermas': false, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
             // Produccion Operador / Jefatura
-            '00009': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': true, 'kpi-compras': false, 'kpi-pedidos-mes': false, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false },
-            '00010': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': true, 'kpi-compras': false, 'kpi-pedidos-mes': false, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false },
+            '00009': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': true, 'kpi-compras': false, 'kpi-pedidos-mes': false, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': false, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
+            '00010': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': true, 'kpi-compras': false, 'kpi-pedidos-mes': false, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': false, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
             // Compras y Logistica
-            '00005': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': false, 'kpi-compras': true, 'kpi-pedidos-mes': false, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': false, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false },
+            '00005': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': false, 'kpi-compras': true, 'kpi-pedidos-mes': false, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': false, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
             // Por defecto
-            'DEFAULT': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true }
+            'DEFAULT': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true }
         };
 
         function obtenerConfigRolesGuardada() {
@@ -2772,7 +3497,7 @@
 
             // Ajuste responsivo de columnas
             var leftVisible = areasDashboardConfig['evolucion-ventas'].visible || areasDashboardConfig['diferencia-sedes'].visible || areasDashboardConfig['pedidos-vendedor'].visible;
-            var rightVisible = areasDashboardConfig['accesos-rapidos'].visible || areasDashboardConfig['estado-produccion'].visible || areasDashboardConfig['db-tiempo-real'].visible;
+            var rightVisible = areasDashboardConfig['accesos-rapidos'].visible || areasDashboardConfig['estado-produccion'].visible || (areasDashboardConfig['agenda-calendario'] && areasDashboardConfig['agenda-calendario'].visible) || areasDashboardConfig['db-tiempo-real'].visible;
 
             var $colLeft = $('#col-main-left');
             var $colRight = $('#col-main-right');
@@ -2816,6 +3541,8 @@
                     $areaCli.removeClass('d-none col-lg-12').addClass('col-lg-6');
                 }
             }
+
+
 
             // Redimensionar graficos Chart.js
             setTimeout(function () {
@@ -3022,7 +3749,7 @@
             $('.chk-rol-sub-kpi').prop('checked', true);
             $('#rol-sub-kpis-container').slideDown(250);
             guardarConfiguracionRolActualEnModal();
-            $('#modal-rol-conteo-areas-activas').text(9);
+            $('#modal-rol-conteo-areas-activas').text(10);
         });
 
         $('#btn-modal-rol-desmarcar-todos').on('click', function () {
@@ -3278,12 +4005,11 @@
         function renderClientesInactivos(lista, meses, limit) {
             var $tbody = $('#tabla-clientes-inactivos tbody');
             if (!$tbody.length) return;
-            if ($('#select-vendedor-inactivos').length && !$('#select-vendedor-inactivos').val()) {
-                $tbody.html('<tr><td colspan="2" class="text-center text-muted py-3"><i class="fas fa-hand-pointer mr-1"></i> Selecciona un vendedor para consultar sus clientes</td></tr>');
-                return;
-            }
+            var esAdminTable = esUsuarioAdmin;
+            var colspan = esAdminTable ? 3 : 2;
+
             if (!lista || !lista.length) {
-                $tbody.html('<tr><td colspan="2" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> No se encontraron clientes con inactividad superior a ' + meses + ' meses</td></tr>');
+                $tbody.html('<tr><td colspan="' + colspan + '" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> No se encontraron clientes con inactividad superior a ' + meses + ' meses</td></tr>');
                 return;
             }
             var maxItems = limit || currentClientesInactivosLimit || 5;
@@ -3292,12 +4018,18 @@
             for (var i = 0; i < subLista.length; i++) {
                 var c = subLista[i];
                 var cliente = c.cliente || c.Cliente || 'Sin Nombre';
+                var vendedor = c.vendedor || c.Vendedor || 'Sin vendedor';
                 var fStr = c.fechaFormateada || c.FechaFormateada || '';
                 var encodedCliente = encodeURIComponent(cliente);
 
                 html += '<tr class="dashboard-drilldown-row" role="link" tabindex="0" data-cliente-nombre="' + encodedCliente + '">' +
-                    '<td class="py-2"><span class="font-weight-600">' + escapeDashboardHtml(cliente) + '</span></td>' +
-                    '<td class="text-right py-2" style="white-space: nowrap;">' +
+                    '<td class="py-2"><span class="font-weight-600">' + escapeDashboardHtml(cliente) + '</span></td>';
+
+                if (esAdminTable) {
+                    html += '<td class="py-2 text-truncate" style="max-width: 150px;"><span class="text-muted"><i class="fas fa-user-tie text-secondary mr-1"></i>' + escapeDashboardHtml(vendedor) + '</span></td>';
+                }
+
+                html += '<td class="text-right py-2" style="white-space: nowrap;">' +
                         '<span class="badge badge-warning text-dark font-weight-bold px-2 py-1">' +
                             '<i class="far fa-calendar-alt mr-1"></i>' + escapeDashboardHtml(fStr) +
                         '</span>' +
@@ -3310,13 +4042,14 @@
         $(document).off('change', '#select-meses-inactivos').on('change', '#select-meses-inactivos', function () {
             var meses = $(this).val();
             var vendedorId = $('#select-vendedor-inactivos').val() || null;
+            var colspan = esUsuarioAdmin ? 3 : 2;
             $('#label-meses-inactivos').text('\u2265 ' + meses + ' Meses');
             var $badge = $('#badge-clientes-inactivos');
             if ($badge.length) {
                 $badge.html('<i class="fas fa-history mr-1"></i>Inactivos (&ge; ' + meses + 'm)');
             }
             var $tbody = $('#tabla-clientes-inactivos tbody');
-            $tbody.html('<tr><td colspan="2" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin mr-1"></i> Consultando clientes...</td></tr>');
+            $tbody.html('<tr><td colspan="' + colspan + '" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin mr-1"></i> Consultando clientes...</td></tr>');
 
             $.ajax({
                 url: '@Url.Action("ObtenerClientesInactivos", "Home")',
@@ -3328,11 +4061,11 @@
                         currentClientesInactivosData = res.data;
                         renderClientesInactivos(res.data, meses, currentClientesInactivosLimit);
                     } else {
-                        $tbody.html('<tr><td colspan="2" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> Sin clientes inactivos para este rango</td></tr>');
+                        $tbody.html('<tr><td colspan="' + colspan + '" class="text-center text-muted py-3"><i class="fas fa-check-circle text-success mr-1"></i> Sin clientes inactivos para este rango</td></tr>');
                     }
                 },
                 error: function () {
-                    $tbody.html('<tr><td colspan="2" class="text-center text-danger py-3"><i class="fas fa-exclamation-circle mr-1"></i> Error al consultar datos</td></tr>');
+                    $tbody.html('<tr><td colspan="' + colspan + '" class="text-center text-danger py-3"><i class="fas fa-exclamation-circle mr-1"></i> Error al consultar datos</td></tr>');
                 }
             });
         });
@@ -3363,12 +4096,51 @@
                 }
             });
 
+        $(document).off('change', '#select-filtro-sede-dashboard').on('change', '#select-filtro-sede-dashboard', function () {
+            var sedeId = parseInt($(this).val()) || 0;
+            actualizarSoloKpis(sedeId);
+        });
+
+        function actualizarSoloKpis(sedeId) {
+            $('#row-kpis-metricas').css({ 'opacity': '0.5', 'transition': 'opacity 0.2s ease' });
+            $.ajax({
+                url: '@Url.Action("ObtenerKpisPorSede", "Home")',
+                type: 'GET',
+                data: { sedeId: sedeId, anio: parseInt($('#header-select-periodo').val()) || @anioSesion, cid: cid },
+                headers: { 'x-app-cid': cid },
+                success: function (res) {
+                    if (res && res.success && res.kpis) {
+                        if (res.kpis.facturacionMes) $('#kpi-ventas').text(res.kpis.facturacionMes);
+                        if (res.kpis.pedidosActivos) $('#kpi-pedidos').text(res.kpis.pedidosActivos);
+                        if (res.kpis.cotizacionesActivas) $('#kpi-cotizaciones').text(res.kpis.cotizacionesActivas);
+                        if (res.kpis.ordenesProduccionMes) $('#kpi-produccion').text(res.kpis.ordenesProduccionMes);
+                        if (res.kpis.ordenesCompraMes) $('#kpi-compras').text(res.kpis.ordenesCompraMes);
+                        if (res.kpis.pedidosMesCantidad) $('#kpi-pedidos-cantidad').text(res.kpis.pedidosMesCantidad);
+                        if (res.kpis.consumoInternoMes !== undefined) $('#kpi-consumo-interno').text(res.kpis.consumoInternoMes);
+                        if (res.kpis.ingresosMermaMes !== undefined) $('#kpi-merma-ingresos').text(res.kpis.ingresosMermaMes);
+                        if (res.kpis.salidasMermaMes !== undefined) $('#kpi-merma-salidas').text(res.kpis.salidasMermaMes);
+                        if (res.kpis.guiasRemisionMes !== undefined) $('#kpi-guias-remision').text(res.kpis.guiasRemisionMes);
+                    }
+                },
+                complete: function () {
+                    $('#row-kpis-metricas').css('opacity', '1');
+                }
+            });
+        }
+
         function sincronizarDashboard() {
             var mesesAct = parseInt($('#select-meses-inactivos').val()) || 5;
+            var vendChartId = parseInt($('#select-vendedor-chart').val()) || null;
             $.ajax({
                 url: '@Url.Action("ObtenerDatosDashboard", "Home")',
                 type: 'GET',
-                data: { cid: cid, mesesInactivos: mesesAct, vendedorClientesId: $('#select-vendedor-inactivos').val() || null },
+                data: {
+                    cid: cid,
+                    mesesInactivos: mesesAct,
+                    vendedorClientesId: $('#select-vendedor-inactivos').val() || null,
+                    vendedorId: vendChartId,
+                    anio: parseInt($('#header-select-periodo').val()) || @anioSesion
+                },
                 headers: { 'x-app-cid': cid },
                 success: function (res) {
                     if (res && res.success) {
@@ -3381,7 +4153,10 @@
                             if (res.kpis.ordenesProduccionMes) $('#kpi-produccion').text(res.kpis.ordenesProduccionMes);
                             if (res.kpis.ordenesCompraMes) $('#kpi-compras').text(res.kpis.ordenesCompraMes);
                             if (res.kpis.pedidosMesCantidad) $('#kpi-pedidos-cantidad').text(res.kpis.pedidosMesCantidad);
-                            if (res.kpis.pedidosMesMonto) $('#kpi-pedidos-monto-footer').text('Total: ' + res.kpis.pedidosMesMonto);
+                            if (res.kpis.consumoInternoMes !== undefined) $('#kpi-consumo-interno').text(res.kpis.consumoInternoMes);
+                            if (res.kpis.ingresosMermaMes !== undefined) $('#kpi-merma-ingresos').text(res.kpis.ingresosMermaMes);
+                            if (res.kpis.salidasMermaMes !== undefined) $('#kpi-merma-salidas').text(res.kpis.salidasMermaMes);
+                            if (res.kpis.guiasRemisionMes !== undefined) $('#kpi-guias-remision').text(res.kpis.guiasRemisionMes);
                         }
 
                         if (res.graficoVentas) {
@@ -3392,6 +4167,14 @@
                         }
                         if (res.graficoStackedBar) {
                             renderStackedBarChart(res.graficoStackedBar);
+                        }
+                        if (res.vendedorData) {
+                            if (res.graficoStackedBar && res.graficoStackedBar.labels) {
+                                allVendedorLabels = res.graficoStackedBar.labels;
+                            }
+                            allVendedorCantidades = res.vendedorData.cantidades;
+                            allVendedorMontos = res.vendedorData.montos;
+                            actualizarChartVendedorDias();
                         }
                         if (res.topPedidos) {
                             currentTopPedidosData = res.topPedidos;
@@ -3412,9 +4195,491 @@
                         renderProductionChart(lastDashboardData.graficoProduccion);
                         renderStackedBarChart(lastDashboardData.graficoStackedBar);
                     }
+                },
+                complete: function () {
+                    $('#row-kpis-metricas').css('opacity', '1');
                 }
             });
         }
+
+        // ========================================================
+        // LOGICA DE STOCK Y CONSUMO DE INSUMOS CRITICOS
+        // ========================================================
+        function recargarStockInsumos(almacenId) {
+            var $icon = $('#icon-recargar-stock');
+            $icon.addClass('fa-spin');
+            $('#btn-recargar-stock-insumos').prop('disabled', true);
+
+            var queryAlm = (almacenId && parseInt(almacenId, 10) > 0) ? parseInt(almacenId, 10) : 0;
+
+            $.ajax({
+                url: '@Url.Action("ObtenerStockInsumos", "Home")',
+                type: 'GET',
+                data: { almacenId: queryAlm, cid: cid },
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        renderTablaStockInsumos(res.data);
+                        if (res.mes) {
+                            $('#span-mes-stock-insumos').text(res.mes);
+                        }
+                    }
+                },
+                error: function (err) {
+                    console.error('Error cargando stock de insumos:', err);
+                },
+                complete: function () {
+                    $icon.removeClass('fa-spin');
+                    $('#btn-recargar-stock-insumos').prop('disabled', false);
+                }
+            });
+        }
+
+        function renderTablaStockInsumos(items) {
+            var $tbody = $('#tbody-stock-insumos');
+            $tbody.empty();
+
+            if (!items || items.length === 0) {
+                $tbody.html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-info-circle mr-1"></i> No se encontraron registros de stock para los insumos.</td></tr>');
+                return;
+            }
+
+            $('#span-cant-insumos-monitoreados').text(items ? items.length : 0);
+            items.forEach(function (prod) {
+                var badgeHtml = '';
+                if (prod.badgeColor === 'success') {
+                    badgeHtml = '<span class="badge badge-success px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-check-circle mr-1"></i>' + escapeDashboardHtml(prod.estadoStock) + '</span>';
+                } else if (prod.badgeColor === 'warning') {
+                    badgeHtml = '<span class="badge badge-warning text-dark px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-exclamation-triangle mr-1"></i>' + escapeDashboardHtml(prod.estadoStock) + '</span>';
+                } else {
+                    badgeHtml = '<span class="badge badge-danger px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-times-circle mr-1"></i>' + escapeDashboardHtml(prod.estadoStock) + '</span>';
+                }
+
+                var stockColorClass = (prod.stockActual <= 0) ? 'text-danger' : 'text-primary';
+
+                var tr = '<tr class="fila-producto-stock" data-codigo="' + (prod.codigo || '') + '" data-desc="' + ((prod.descripcion || '').toLowerCase()) + '">' +
+                    '<td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">' + prod.orden + '</td>' +
+                    '<td class="text-center py-2" style="white-space: nowrap;">' +
+                        '<span class="badge badge-secondary font-weight-bold px-2 py-1" style="font-family: monospace; font-size: 0.85rem; letter-spacing: 0.03em;">' +
+                            escapeDashboardHtml(prod.codigo) +
+                        '</span>' +
+                    '</td>' +
+                    '<td class="py-2" style="max-width: 380px;"><span class="font-weight-600">' + escapeDashboardHtml(prod.descripcion) + '</span></td>' +
+                    '<td class="text-right py-2 font-weight-bold" style="white-space: nowrap; font-size: 0.95rem;">' +
+                        escapeDashboardHtml(prod.consumoMesFormateado) + ' <small class="font-weight-normal text-muted">' + escapeDashboardHtml(prod.unidadMedida) + '</small>' +
+                    '</td>' +
+                    '<td class="text-right py-2" style="white-space: nowrap;">' +
+                        '<div class="d-inline-flex align-items-center justify-content-end" style="gap: 8px;">' +
+                            badgeHtml +
+                            '<span class="font-weight-bold ' + stockColorClass + '" style="font-size: 0.95rem;">' +
+                                escapeDashboardHtml(prod.stockActualFormateado) + ' <small class="font-weight-normal text-muted">' + escapeDashboardHtml(prod.unidadMedida) + '</small>' +
+                            '</span>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
+
+                $tbody.append(tr);
+            });
+
+            aplicarFiltroTextoStock();
+        }
+
+        function aplicarFiltroTextoStock() {
+            var q = ($('#filtro-stock-insumos').val() || '').toLowerCase().trim();
+            if (!q) {
+                $('.fila-producto-stock').show();
+                return;
+            }
+            $('.fila-producto-stock').each(function () {
+                var cod = ($(this).data('codigo') || '').toLowerCase();
+                var desc = ($(this).data('desc') || '').toLowerCase();
+                if (cod.indexOf(q) !== -1 || desc.indexOf(q) !== -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        $(document).on('input', '#filtro-stock-insumos', function () {
+            aplicarFiltroTextoStock();
+        });
+
+        $(document).on('change', '#select-almacen-stock', function () {
+            var almId = $(this).val();
+            recargarStockInsumos(almId);
+        });
+
+        $(document).on('click', '#btn-recargar-stock-insumos', function () {
+            var almId = $('#select-almacen-stock').val();
+            recargarStockInsumos(almId);
+        });
+
+        // ========================================================
+        // LOGICA DE TOP 10 PRODUCTOS CON MENOR STOCK (CON FILTROS)
+        // ========================================================
+        function cargarClasesPorGrupo(grupoId, callback) {
+            var $selectClase = $('#filtro-menor-stock-clase');
+            $selectClase.empty().append('<option value="">-- Todas las Clases --</option>');
+
+            if (!grupoId || parseInt(grupoId, 10) <= 0) {
+                if (callback) callback();
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("ObtenerClasesPorGrupo", "Home")',
+                type: 'GET',
+                data: { grupoId: grupoId },
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        res.data.forEach(function (c) {
+                            $selectClase.append('<option value="' + c.id + '">' + escapeDashboardHtml(c.nombre) + '</option>');
+                        });
+                    }
+                },
+                complete: function () {
+                    if (callback) callback();
+                }
+            });
+        }
+
+        function cargarFamiliasPorClase(claseId, callback) {
+            var $selectFamilia = $('#filtro-menor-stock-familia');
+            $selectFamilia.empty().append('<option value="">-- Todas las Familias --</option>');
+
+            if (!claseId || parseInt(claseId, 10) <= 0) {
+                if (callback) callback();
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("ObtenerFamiliasPorClase", "Home")',
+                type: 'GET',
+                data: { claseId: claseId },
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        res.data.forEach(function (f) {
+                            $selectFamilia.append('<option value="' + f.id + '">' + escapeDashboardHtml(f.nombre) + '</option>');
+                        });
+                    }
+                },
+                complete: function () {
+                    if (callback) callback();
+                }
+            });
+        }
+
+        function recargarTopMenorStock() {
+            var $icon = $('#icon-recargar-menor-stock');
+            $icon.addClass('fa-spin');
+            $('#btn-recargar-menor-stock').prop('disabled', true);
+
+            var sedeId = $('#filtro-menor-stock-sede').val() || '@sedeSesionId';
+            var grupoId = $('#filtro-menor-stock-grupo').val();
+            var claseId = $('#filtro-menor-stock-clase').val();
+            var familiaId = $('#filtro-menor-stock-familia').val();
+
+            var gText = $('#filtro-menor-stock-grupo option:selected').text();
+            var cText = $('#filtro-menor-stock-clase option:selected').text();
+            var fText = $('#filtro-menor-stock-familia option:selected').text();
+
+            var infoFiltro = 'Todos los Grupos';
+            if (grupoId) {
+                infoFiltro = gText;
+                if (claseId) {
+                    infoFiltro += ' > ' + cText;
+                    if (familiaId) {
+                        infoFiltro += ' > ' + fText;
+                    }
+                }
+            }
+            $('#badge-filtro-menor-stock-info').html('<i class="fas fa-filter mr-1"></i>Filtro: ' + escapeDashboardHtml(infoFiltro));
+
+            $.ajax({
+                url: '@Url.Action("ObtenerTopMenorStock", "Home")',
+                type: 'GET',
+                data: {
+                    sedeId: parseInt(sedeId, 10),
+                    grupoId: grupoId ? parseInt(grupoId, 10) : null,
+                    claseId: claseId ? parseInt(claseId, 10) : null,
+                    familiaId: familiaId ? parseInt(familiaId, 10) : null,
+                    cid: cid
+                },
+                success: function (res) {
+                    if (res && res.success && res.data) {
+                        renderTablaTopMenorStock(res.data);
+                    }
+                },
+                error: function (err) {
+                    console.error('Error cargando top menor stock:', err);
+                },
+                complete: function () {
+                    $icon.removeClass('fa-spin');
+                    $('#btn-recargar-menor-stock').prop('disabled', false);
+                }
+            });
+        }
+
+        function renderTablaTopMenorStock(items) {
+            var $tbody = $('#tbody-top-menor-stock');
+            $tbody.empty();
+
+            if (!items || items.length === 0) {
+                $tbody.html('<tr><td colspan="5" class="text-center text-muted py-4"><i class="fas fa-info-circle mr-1"></i> No se encontraron productos con menor stock para el filtro seleccionado.</td></tr>');
+                return;
+            }
+
+            items.forEach(function (prod) {
+                var badgeHtml = '';
+                if (prod.badgeColor === 'danger') {
+                    badgeHtml = '<span class="badge badge-danger px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-times-circle mr-1"></i>' + escapeDashboardHtml(prod.estadoStock) + '</span>';
+                } else if (prod.badgeColor === 'warning') {
+                    badgeHtml = '<span class="badge badge-warning text-dark px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-exclamation-triangle mr-1"></i>' + escapeDashboardHtml(prod.estadoStock) + '</span>';
+                } else {
+                    badgeHtml = '<span class="badge badge-info px-2 py-1 font-weight-600" style="font-size: 0.75rem;"><i class="fas fa-info-circle mr-1"></i>' + escapeDashboardHtml(prod.estadoStock) + '</span>';
+                }
+
+                var rankBadgeClass = prod.orden <= 3 ? 'badge-danger' : 'badge-secondary';
+
+                var catText = prod.categoriaCompleta || prod.CategoriaCompleta;
+                if (!catText) {
+                    var partes = [];
+                    if (prod.grupoNombre) partes.push(prod.grupoNombre);
+                    if (prod.claseNombre) partes.push(prod.claseNombre);
+                    if (prod.familiaNombre) partes.push(prod.familiaNombre);
+                    catText = partes.length > 0 ? partes.join(' / ') : '-';
+                }
+
+                var tr = '<tr>' +
+                    '<td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">' +
+                        '<span class="badge ' + rankBadgeClass + ' font-weight-bold" style="font-size: 0.8rem; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;">' +
+                            prod.orden +
+                        '</span>' +
+                    '</td>' +
+                    '<td class="text-center py-2" style="white-space: nowrap;">' +
+                        '<span class="badge badge-light border font-weight-bold px-2 py-1 text-dark" style="font-family: monospace; font-size: 0.85rem; letter-spacing: 0.03em;">' +
+                            escapeDashboardHtml(prod.codigo) +
+                        '</span>' +
+                    '</td>' +
+                    '<td class="py-2" style="max-width: 350px;">' +
+                        '<div class="font-weight-600 text-dark">' + escapeDashboardHtml(prod.nombre) + '</div>' +
+                    '</td>' +
+                    '<td class="py-2" style="font-size: 0.85rem;">' +
+                        '<span class="text-muted font-weight-500">' + escapeDashboardHtml(catText) + '</span>' +
+                    '</td>' +
+                    '<td class="text-right py-2" style="white-space: nowrap;">' +
+                        '<div class="d-inline-flex align-items-center justify-content-end" style="gap: 8px;">' +
+                            badgeHtml +
+                            '<span class="font-weight-bold text-danger" style="font-size: 1rem;">' +
+                                escapeDashboardHtml(prod.cantidadFormateada) + ' <small class="font-weight-bold text-secondary">' + escapeDashboardHtml(prod.unidadMedida) + '</small>' +
+                            '</span>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
+
+                $tbody.append(tr);
+            });
+        }
+
+        $(document).on('change', '#filtro-menor-stock-sede', function () {
+            var sVal = $(this).val();
+            var sText = parseInt(sVal, 10) === 2 ? 'SEDE ILO' : 'SEDE CENTRAL';
+            $('#badge-menor-stock-sede').html('<i class="fas fa-filter mr-1"></i>' + sText);
+            recargarTopMenorStock();
+        });
+
+        $(document).on('change', '#filtro-menor-stock-grupo', function () {
+            var gId = $(this).val();
+            $('#filtro-menor-stock-familia').empty().append('<option value="">-- Todas las Familias --</option>');
+            cargarClasesPorGrupo(gId, function () {
+                recargarTopMenorStock();
+            });
+        });
+
+        $(document).on('change', '#filtro-menor-stock-clase', function () {
+            var cId = $(this).val();
+            cargarFamiliasPorClase(cId, function () {
+                recargarTopMenorStock();
+            });
+        });
+
+        $(document).on('change', '#filtro-menor-stock-familia', function () {
+            recargarTopMenorStock();
+        });
+
+        $(document).on('click', '#btn-limpiar-filtro-menor-stock', function () {
+            $('#filtro-menor-stock-grupo').val('');
+            $('#filtro-menor-stock-clase').empty().append('<option value="">-- Todas las Clases --</option>');
+            $('#filtro-menor-stock-familia').empty().append('<option value="">-- Todas las Familias --</option>');
+            recargarTopMenorStock();
+        });
+
+        $(document).on('click', '#btn-recargar-menor-stock', function () {
+            recargarTopMenorStock();
+        });
+
+        // -------------------------------------------------------------
+        // INICIALIZACIÓN DEL WIDGET DE AGENDA DEL CALENDARIO
+        // -------------------------------------------------------------
+        var calendarAgendaWidget = null;
+
+        function initAgendaCalendarioWidget() {
+            var calendarEl = document.getElementById('calendar-agenda-widget');
+            if (!calendarEl) return;
+
+            if (!window.FullCalendar) {
+                var scriptFC = document.createElement('script');
+                scriptFC.src = '@Url.Content("~/plugins/fullcalendar/index.global.min.js")';
+                scriptFC.onload = function () {
+                    var scriptEs = document.createElement('script');
+                    scriptEs.src = '@Url.Content("~/plugins/fullcalendar/es.global.min.js")';
+                    scriptEs.onload = function () {
+                        initAgendaCalendarioWidget();
+                    };
+                    document.head.appendChild(scriptEs);
+                };
+                document.head.appendChild(scriptFC);
+                return;
+            }
+
+            if (calendarAgendaWidget) {
+                calendarAgendaWidget.destroy();
+                calendarAgendaWidget = null;
+            }
+
+            calendarAgendaWidget = new FullCalendar.Calendar(calendarEl, {
+                locale: 'es',
+                initialView: 'listWeek',
+                headerToolbar: {
+                    start: 'prev,next today',
+                    center: 'title',
+                    end: 'listWeek,listMonth'
+                },
+                buttonText: {
+                    today: 'Hoy',
+                    listWeek: 'Semana',
+                    listMonth: 'Mes'
+                },
+                height: 350,
+                contentHeight: 330,
+                noEventsContent: 'No hay eventos programados para esta área',
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
+                events: function (info, successCallback, failureCallback) {
+                    var areaIdVal = $('#select-agenda-area').val();
+                    if (!areaIdVal) {
+                        areaIdVal = '@areaAgendaInicialId';
+                    }
+
+                    $('#agenda-loading-spinner').removeClass('d-none');
+
+                    $.ajax({
+                        url: '@Url.Action("ObtenerEventosAgenda", "Home")',
+                        type: 'GET',
+                        data: { areaId: areaIdVal },
+                        success: function (data) {
+                            $('#agenda-loading-spinner').addClass('d-none');
+                            if (Array.isArray(data)) {
+                                successCallback(data);
+                            } else {
+                                successCallback([]);
+                            }
+                        },
+                        error: function (err) {
+                            $('#agenda-loading-spinner').addClass('d-none');
+                            console.error('Error al cargar eventos de agenda:', err);
+                            failureCallback(err);
+                        }
+                    });
+                },
+                eventDidMount: function (info) {
+                    var color = info.event.backgroundColor || info.event.borderColor;
+                    if (color) {
+                        var dotEl = info.el.querySelector('.fc-list-event-dot');
+                        if (dotEl) {
+                            dotEl.style.borderColor = color;
+                            dotEl.style.backgroundColor = color;
+                        }
+                    }
+                    if (info.event.extendedProps && info.event.extendedProps.contexto) {
+                        info.el.setAttribute('title', info.event.title + ' - ' + info.event.extendedProps.contexto);
+                    }
+                },
+                eventClick: function (info) {
+                    if (window.Swal) {
+                        var startStr = info.event.start ? info.event.start.toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' }) : '';
+                        var endStr = info.event.end ? info.event.end.toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' }) : '';
+                        var horario = info.event.allDay ? 'Todo el día' : (startStr + (endStr ? ' - ' + endStr : ''));
+                        var area = (info.event.extendedProps && info.event.extendedProps.areaNombre) ? info.event.extendedProps.areaNombre : 'General';
+                        var usuario = (info.event.extendedProps && info.event.extendedProps.usuario) ? info.event.extendedProps.usuario : 'Sistema';
+                        var contexto = (info.event.extendedProps && info.event.extendedProps.contexto) ? info.event.extendedProps.contexto : 'Sin notas adicionales';
+
+                        Swal.fire({
+                            title: info.event.title,
+                            html: '<div class="text-left" style="font-size: 0.88rem; line-height: 1.6;">' +
+                                  '<p class="mb-1"><strong><i class="fas fa-layer-group text-primary mr-1"></i> Área:</strong> ' + escapeDashboardHtml(area) + '</p>' +
+                                  '<p class="mb-1"><strong><i class="far fa-clock text-info mr-1"></i> Horario:</strong> ' + escapeDashboardHtml(horario) + '</p>' +
+                                  '<p class="mb-1"><strong><i class="far fa-user text-secondary mr-1"></i> Creado por:</strong> ' + escapeDashboardHtml(usuario) + '</p>' +
+                                  '<hr class="my-2">' +
+                                  '<p class="mb-0 text-muted"><strong>Notas:</strong> ' + escapeDashboardHtml(contexto) + '</p>' +
+                                  '</div>',
+                            icon: 'info',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-calendar-alt mr-1"></i> Ir al Calendario',
+                            cancelButtonText: 'Cerrar',
+                            confirmButtonColor: '#0d6efd',
+                            cancelButtonColor: '#6c757d'
+                        }).then(function (result) {
+                            if (result.isConfirmed) {
+                                if (window.updateNavbarBreadcrumb) {
+                                    window.updateNavbarBreadcrumb(['Inicio', 'Calendario']);
+                                }
+                                $(document.body).getView({ urlAction: 'calendario/index' });
+                            }
+                        });
+                    }
+                }
+            });
+
+            calendarAgendaWidget.render();
+        }
+
+        // Cambio de área en el select de la agenda
+        $(document).on('change', '#select-agenda-area', function () {
+            var selectedText = $(this).find('option:selected').text();
+            if (selectedText) {
+                $('#agenda-area-info-footer').text(selectedText);
+            }
+            if (calendarAgendaWidget) {
+                calendarAgendaWidget.refetchEvents();
+            }
+        });
+
+        // Botón de recarga manual de la agenda
+        $(document).on('click', '#btn-recargar-agenda', function () {
+            var $icon = $(this).find('i');
+            $icon.addClass('fa-spin');
+            if (calendarAgendaWidget) {
+                calendarAgendaWidget.refetchEvents();
+            }
+            setTimeout(function () {
+                $icon.removeClass('fa-spin');
+            }, 600);
+        });
+
+        // Ajustar tamaño de FullCalendar cuando el dashboard se redimensiona o el modal se cierra
+        $('#modal-gestionar-dashboard, #modal-gestionar-dashboard-rol').on('hidden.bs.modal', function () {
+            if (calendarAgendaWidget) {
+                setTimeout(function () {
+                    calendarAgendaWidget.updateSize();
+                }, 200);
+            }
+        });
+
+        initAgendaCalendarioWidget();
 
         sincronizarDashboard();
 

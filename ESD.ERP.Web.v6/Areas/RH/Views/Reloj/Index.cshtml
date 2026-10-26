@@ -41,11 +41,12 @@
                ));
             }
          },
-         colNames: ['', 'Nombre', 'Ubicación',''],
+         colNames: ['', 'Nombre', 'Ubicación', 'Es Central', ''],
          colModel: [
             { name: 'RelojId', hidden: true },
             { name: "Nombre", width: 300 },
             { name: "RutaArchivo", width: 300 },
+            { name: "EsCentral", width: 100, align: 'center' },
             { name: 'Estado', hidden: true },
          ],
          pager: "#bandejaPager",

@@ -1,4 +1,4 @@
-﻿@using ESD.Core;
+@using ESD.Core;
 @using ESD.Core.Web;
 @using ESD.Core.Web.JS;
 @using ESD.Core.Service.DTO;
@@ -153,6 +153,7 @@
       $(this).saveView({
          viewModel: [
             { name: "TipoCambioDTO.TipoCambioId", value: $('#TipoCambioId').val(), type: 'int' },
+            { name: "TipoCambioDTO.Codigo", value: $("#Codigo").val() },
             { name: "TipoCambioDTO.Nombre", value: $('#Nombre').val() }
          ],
          buttonId: '@MenuItemKey.SAVE',
@@ -162,7 +163,11 @@
             if (response.success) {
                msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
 
-               $("#TipoCambioId").val(response.data.Id);
+               var data = response.data || {};
+               var newId = data.Id !== undefined ? data.Id : data.id;
+               var newCode = data.Codigo !== undefined ? data.Codigo : data.codigo;
+               if (newId) $("#TipoCambioId").val(newId);
+               if (newCode) $("#Codigo").val(newCode);
                ViewModelState.setValue('EditAction', @((int)ViewModelEditAction.Edit))
 
             } else {

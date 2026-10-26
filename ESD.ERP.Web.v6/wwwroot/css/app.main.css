@@ -1,4 +1,4 @@
-﻿html,
+html,
 body {
    /*height: 100%;
    margin: 0;
@@ -238,6 +238,16 @@ tr.jqgrid-deletedrow td,
    overflow: hidden;
    margin-bottom: 0 !important;
    height: 28px;
+   transition: all 0.2s ease;
+}
+
+.session-chip.session-chip-clickable {
+   cursor: pointer !important;
+}
+
+.session-chip.session-chip-clickable:hover {
+   border-color: #0b5ed7 !important;
+   box-shadow: 0 1px 4px rgba(11, 94, 215, 0.2) !important;
 }
 
 .session-chip .chip-label {
@@ -250,6 +260,7 @@ tr.jqgrid-deletedrow td,
    background: #e9ecef !important;
    border-right: 1px solid #dee2e6 !important;
    height: 100%;
+   user-select: none !important;
 }
 
 .session-chip .chip-val {
@@ -261,6 +272,57 @@ tr.jqgrid-deletedrow td,
    color: #343a40 !important;
    background: #ffffff !important;
    height: 100%;
+}
+
+.session-chip .chip-select {
+   display: inline-flex !important;
+   align-items: center !important;
+   height: 100% !important;
+   border: none !important;
+   outline: none !important;
+   background: #ffffff !important;
+   color: #0b5ed7 !important;
+   font-size: 0.8rem !important;
+   font-weight: 700 !important;
+   padding: 0 1.25rem 0 0.55rem !important;
+   margin: 0 !important;
+   cursor: pointer !important;
+   appearance: none !important;
+   -webkit-appearance: none !important;
+   -moz-appearance: none !important;
+   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230b5ed7'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") !important;
+   background-repeat: no-repeat !important;
+   background-position: right 0.25rem center !important;
+   background-size: 14px 14px !important;
+   transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.session-chip .chip-select:hover {
+   background-color: #f1f5f9 !important;
+   color: #0284c7 !important;
+}
+
+.session-chip .chip-select:focus {
+   outline: none !important;
+   box-shadow: none !important;
+}
+
+.session-chip-disabled {
+   cursor: not-allowed !important;
+   opacity: 0.9 !important;
+}
+
+.session-chip-disabled .chip-val-locked {
+   cursor: not-allowed !important;
+   user-select: none !important;
+   color: #495057 !important;
+   background-color: #f8fafc !important;
+   padding: 0 0.6rem !important;
+   font-size: 0.8rem !important;
+   font-weight: 700 !important;
+   height: 100% !important;
+   display: inline-flex !important;
+   align-items: center !important;
 }
 
 .btn-theme-toggle {
@@ -485,6 +547,11 @@ body.dark-mode .session-chip {
    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
 }
 
+body.dark-mode .session-chip.session-chip-clickable:hover {
+   border-color: #38bdf8 !important;
+   box-shadow: 0 1px 4px rgba(56, 189, 248, 0.25) !important;
+}
+
 body.dark-mode .session-chip .chip-label {
    background: #1e2227 !important;
    color: #94a3b8 !important;
@@ -494,6 +561,27 @@ body.dark-mode .session-chip .chip-label {
 body.dark-mode .session-chip .chip-val {
    background: #2b3035 !important;
    color: #38bdf8 !important;
+}
+
+body.dark-mode .session-chip .chip-select {
+   background-color: #2b3035 !important;
+   color: #38bdf8 !important;
+   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") !important;
+}
+
+body.dark-mode .session-chip .chip-select:hover {
+   background-color: #333a42 !important;
+   color: #7dd3fc !important;
+}
+
+body.dark-mode .session-chip .chip-select option {
+   background-color: #2b3035 !important;
+   color: #f8f9fa !important;
+}
+
+body.dark-mode .session-chip-disabled .chip-val-locked {
+   background-color: #2b3035 !important;
+   color: #94a3b8 !important;
 }
 
 /* ----------------------------------------------------------------------------
@@ -629,35 +717,93 @@ body.dark-mode .tab-pane {
    background: transparent !important;
 }
 
-/* Form Controls & Inputs in Dark Mode */
-body.dark-mode .form-control:not(.form-control-navbar):not(.form-control-sidebar) {
-   background-color: #2b3035 !important;
-   color: #f1f5f9 !important;
-   border-color: #4b545c !important;
+/* Form Controls & Inputs in Dark Mode (Base - Editable) */
+body.dark-mode .form-control:not(.form-control-navbar):not(.form-control-sidebar),
+body.dark-mode select.form-control,
+body.dark-mode .custom-select,
+body.dark-mode textarea.form-control {
+   background-color: #2b3035;
+   color: #f1f5f9;
+   border-color: #4b545c;
 }
 
-body.dark-mode .form-control:not(.form-control-navbar):not(.form-control-sidebar):focus {
+body.dark-mode .form-control:not(.form-control-navbar):not(.form-control-sidebar):focus,
+body.dark-mode select.form-control:focus,
+body.dark-mode .custom-select:focus,
+body.dark-mode textarea.form-control:focus {
    border-color: #3b82f6 !important;
    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
    color: #ffffff !important;
 }
 
+body.dark-mode select.form-control option,
+body.dark-mode .custom-select option {
+   background-color: #2b3035 !important;
+   color: #f1f5f9 !important;
+}
+
+/* Disabled & Readonly form controls in Dark Mode (Sombreado gris caracteristico 1:1 con modo claro #e9ecef) */
+/* NOTA: Para <select> se usa EXCLUSIVAMENTE :disabled / [disabled] ya que los selects no son editables de texto y nunca deben llevar :read-only */
 body.dark-mode .form-control:disabled,
-body.dark-mode .form-control[readonly] {
-   background-color: #212529 !important;
-   border-color: #343a40 !important;
-   color: #94a3b8 !important;
+body.dark-mode .form-control[disabled],
+body.dark-mode .form-control[readonly],
+body.dark-mode .form-control:not(.form-control-navbar):not(.form-control-sidebar):disabled,
+body.dark-mode .form-control:not(.form-control-navbar):not(.form-control-sidebar)[disabled],
+body.dark-mode .form-control:not(.form-control-navbar):not(.form-control-sidebar)[readonly],
+body.dark-mode input.form-control:disabled,
+body.dark-mode input.form-control[disabled],
+body.dark-mode input.form-control[readonly],
+body.dark-mode input.form-control:read-only,
+body.dark-mode input.form-control:not(.form-control-navbar):not(.form-control-sidebar):read-only,
+body.dark-mode input:not([type="checkbox"]):not([type="radio"]):disabled,
+body.dark-mode input:not([type="checkbox"]):not([type="radio"])[disabled],
+body.dark-mode input:not([type="checkbox"]):not([type="radio"])[readonly],
+body.dark-mode input:not([type="checkbox"]):not([type="radio"]):read-only,
+body.dark-mode textarea.form-control:disabled,
+body.dark-mode textarea.form-control[disabled],
+body.dark-mode textarea.form-control[readonly],
+body.dark-mode textarea.form-control:read-only,
+body.dark-mode textarea.form-control:not(.form-control-navbar):not(.form-control-sidebar):read-only,
+body.dark-mode textarea:disabled,
+body.dark-mode textarea[disabled],
+body.dark-mode textarea[readonly],
+body.dark-mode textarea:read-only,
+body.dark-mode select.form-control:disabled,
+body.dark-mode select.form-control[disabled],
+body.dark-mode select:disabled,
+body.dark-mode select[disabled],
+body.dark-mode .custom-select:disabled,
+body.dark-mode .custom-select[disabled] {
+   background-color: #5a636c !important;
+   border-color: #747f8a !important;
+   color: #f8fafc !important;
+   -webkit-text-fill-color: #f8fafc !important;
+   cursor: not-allowed !important;
+   opacity: 1 !important;
+   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25) !important;
 }
 
-body.dark-mode select.form-control {
-   background-color: #2b3035 !important;
-   color: #f1f5f9 !important;
-   border-color: #4b545c !important;
+body.dark-mode .form-control:disabled::placeholder,
+body.dark-mode .form-control[disabled]::placeholder,
+body.dark-mode .form-control[readonly]::placeholder,
+body.dark-mode input.form-control:disabled::placeholder,
+body.dark-mode input.form-control[disabled]::placeholder,
+body.dark-mode input.form-control[readonly]::placeholder,
+body.dark-mode input.form-control:read-only::placeholder,
+body.dark-mode input:not([type="checkbox"]):not([type="radio"]):disabled::placeholder,
+body.dark-mode input:not([type="checkbox"]):not([type="radio"])[readonly]::placeholder,
+body.dark-mode textarea.form-control:disabled::placeholder,
+body.dark-mode textarea.form-control[readonly]::placeholder {
+   color: #cbd5e1 !important;
+   -webkit-text-fill-color: #cbd5e1 !important;
 }
 
-body.dark-mode select.form-control option {
-   background-color: #2b3035 !important;
-   color: #f1f5f9 !important;
+body.dark-mode select.form-control:disabled option,
+body.dark-mode select.form-control[disabled] option,
+body.dark-mode select:disabled option,
+body.dark-mode .custom-select:disabled option {
+   background-color: #5a636c !important;
+   color: #f8fafc !important;
 }
 
 body.dark-mode .input-group-text {
@@ -674,9 +820,68 @@ body.dark-mode .input-group-append:hover > .btn {
 
 body.dark-mode label,
 body.dark-mode .col-form-label,
-body.dark-mode [class*="icheck-"] > label,
 body.dark-mode .custom-control-label {
    color: #cbd5e1 !important;
+}
+
+/* iCheck Checkboxes & Radios in Dark Mode */
+body.dark-mode [class*="icheck-"] > input:first-child {
+   opacity: 0 !important;
+   position: absolute !important;
+   pointer-events: none !important;
+   width: 0 !important;
+   height: 0 !important;
+   margin: 0 !important;
+}
+
+body.dark-mode [class*="icheck-"] > input:first-child + label::before,
+body.dark-mode [class*="icheck-"] > input:first-child + input[type="hidden"] + label::before {
+   background-color: #2b3035 !important;
+   border: 1px solid #6c757d !important;
+   border-radius: 3px !important;
+}
+
+body.dark-mode [class*="icheck-"] > input:first-child:not(:checked):not(:disabled):hover + label::before,
+body.dark-mode [class*="icheck-"] > input:first-child:not(:checked):not(:disabled):hover + input[type="hidden"] + label::before {
+   border-color: #3b82f6 !important;
+   background-color: #343a40 !important;
+}
+
+body.dark-mode [class*="icheck-"] > input:first-child:checked + label::before,
+body.dark-mode [class*="icheck-"] > input:first-child:checked + input[type="hidden"] + label::before {
+   background-color: #3b82f6 !important;
+   border-color: #3b82f6 !important;
+}
+
+body.dark-mode [class*="icheck-"] > input:first-child:checked + label::after,
+body.dark-mode [class*="icheck-"] > input:first-child:checked + input[type="hidden"] + label::after {
+   border-color: #ffffff !important;
+   border-left: none !important;
+   border-top: none !important;
+}
+
+body.dark-mode [class*="icheck-"] > input:first-child:disabled + label::before,
+body.dark-mode [class*="icheck-"] > input:first-child:disabled + input[type="hidden"] + label::before {
+   background-color: #5a636c !important;
+   border-color: #747f8a !important;
+   opacity: 0.65 !important;
+   cursor: not-allowed !important;
+}
+
+body.dark-mode [class*="icheck-"] > input:first-child:disabled + label,
+body.dark-mode [class*="icheck-"] > input:first-child:disabled + input[type="hidden"] + label {
+   color: #94a3b8 !important;
+   cursor: not-allowed !important;
+}
+
+body.dark-mode [class*="icheck-"] > label {
+   color: #f1f5f9 !important;
+}
+
+/* Native & Bootstrap check inputs fallback */
+body.dark-mode input[type="checkbox"],
+body.dark-mode input[type="radio"] {
+   accent-color: #3b82f6;
 }
 
 /* jqGrid & Tables in Dark Mode */
@@ -1387,3 +1592,66 @@ body.dark-mode #app-navbar-breadcrumb .breadcrumb-item + .breadcrumb-item::befor
     outline: 2px solid #007bff;
     outline-offset: -2px;
 }
+
+/* Selector de Sede en Cabecera de Dashboard */
+.dashboard-sede-chip {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 3px 10px 3px 12px;
+    transition: all 0.2s ease;
+}
+
+.dashboard-sede-chip:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15) !important;
+}
+
+.label-sede-dash {
+    color: #475569;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.select-sede-dash {
+    width: auto;
+    min-width: 160px;
+    height: 32px;
+    font-size: 0.875rem;
+    color: #0f172a;
+    background: transparent;
+    border: none !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    padding-right: 22px;
+}
+
+.select-sede-dash:focus {
+    box-shadow: none !important;
+}
+
+body.dark-mode .dashboard-sede-chip {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-mode .dashboard-sede-chip:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 2px 8px rgba(96, 165, 250, 0.2) !important;
+}
+
+body.dark-mode .label-sede-dash {
+    color: #94a3b8;
+}
+
+body.dark-mode .select-sede-dash {
+    color: #f1f5f9;
+    background: #1e293b;
+}
+
+body.dark-mode .select-sede-dash option {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+

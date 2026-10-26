@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service;
 using ESD.Core.Web;
@@ -73,6 +73,7 @@ namespace ESD.ERP.Web.Controllers
 
                ClaimsIdentity claimsIdentity = new(new[] {
                   new Claim(ClaimTypes.NameIdentifier, usuarioDTO.Id.ToString()),
+                  new Claim(ClaimTypes.Name, usuarioDTO.UsuarioLogon ?? usuarioDTO.Id.ToString()),
                   new Claim("jwt", serviceResponse.Token)
                }, CookieAuthenticationDefaults.AuthenticationScheme);
 

@@ -16,6 +16,7 @@
       $("#bandejaGrid").jqGrid({
          @GridHelper.DefaultProperties()
          url: "@Url.Action("ListarBandeja", "CentroCosto")",
+         ajaxGridOptions: { headers: { "x-app-cid": $("#__cid").val() || "" } },
          colNames: ['', 'Nombre', 'Sigla',''],
          colModel: [
             { name: 'CentroCostoId', hidden: true },

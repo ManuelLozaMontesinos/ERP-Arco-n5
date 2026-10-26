@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ESD.Core.Data;
@@ -82,7 +82,7 @@ namespace ESD.ERP.Repository.Impl
 
 			try
 			{
-				parameters.AddParameter("tipoCambio", entity.Codigo);
+				parameters.AddParameter("tipoCambio", entity.Codigo ?? string.Empty);
 				parameters.AddParameter("nombre", entity.Nombre);
 				parameters.AddParameter("origenRegistroId", entity.OrigenRegistroId);
 				parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);

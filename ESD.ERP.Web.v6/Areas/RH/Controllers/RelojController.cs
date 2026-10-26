@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Web;
 using ESD.ERP.Common;
@@ -64,6 +64,7 @@ namespace ESD.ERP.Web.Areas.RH.Controllers
                             f.RelojId,
                             f.Nombre,
                             f.RutaArchivo,
+                            EsCentral = f.EsCentral == SiNoConstante.S ? SiNoTextoConstante.S : SiNoTextoConstante.N,
                             f.Estado
                          }
                       }
@@ -134,11 +135,12 @@ namespace ESD.ERP.Web.Areas.RH.Controllers
          RelojDTO relojDTO = null;
          if (model.EditAction == ViewModelEditAction.New)
          {
-            relojDTO = new RelojDTO();
+            relojDTO = new RelojDTO() { EsCentral = EstadoConstante.INACTIVO };
          }
          else
          {
             relojDTO = relojProxy.GetById(new RelojDTO() { RelojId = id });
+            relojDTO.EsCentral = relojDTO.EsCentral == SiNoConstante.S ? EstadoConstante.ACTIVO : EstadoConstante.INACTIVO;
          }
 
          model.RelojDTO = relojDTO;
@@ -202,11 +204,14 @@ namespace ESD.ERP.Web.Areas.RH.Controllers
             }
             else
             {
-               relojDTO = relojProxy.GetById(new RelojDTO()
-               { RelojId = model.RelojDTO.Id });
+               RelojDTO currentReloj = relojProxy.GetById(new RelojDTO() { RelojId = model.RelojDTO.Id });
 
                relojDTO = model.RelojDTO;
+               relojDTO.EmpresaId = currentReloj.EmpresaId;
             }
+
+            if (string.IsNullOrEmpty(relojDTO.EsCentral))
+               relojDTO.EsCentral = SiNoConstante.N;
 
             relojDTO.Estado = EstadoConstante.ACTIVO;
 

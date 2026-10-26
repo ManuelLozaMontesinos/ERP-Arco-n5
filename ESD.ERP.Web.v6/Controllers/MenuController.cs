@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
 using ESD.ERP.Web.Infrastructure;
@@ -93,8 +93,10 @@ namespace ESD.ERP.Web.Controllers
             url = string.Empty;
          else
          {
-            string actionName = menuDTO.Url.Split('/')[1];
-            string controllerName = menuDTO.Url.Split('/')[0];
+            var parts = menuDTO.Url.Split('/');
+            string controllerName = parts[0];
+            string actionName = parts.Length > 1 ? parts[1] : "Index";
+
             if (actionName.IndexOf('?') > 0)
             {
                parameters = string.Concat("?", actionName.Split('?')[1]);

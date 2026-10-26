@@ -1,6 +1,25 @@
-﻿@using ESD.ERP.Web.Infrastructure;
+@using ESD.ERP.Web.Infrastructure;
+@{
+   int currentUserId = 0;
+   string userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+   if (!string.IsNullOrEmpty(userIdStr))
+   {
+      int.TryParse(userIdStr, out currentUserId);
+   }
+   if (currentUserId == 0 && ViewBag.UsuarioId != null)
+   {
+      int.TryParse(ViewBag.UsuarioId.ToString(), out currentUserId);
+   }
+
+   string userTheme = "light";
+   if (currentUserId > 0)
+   {
+      userTheme = UserPreferenceHelper.ObtenerTemaUsuario(currentUserId, Context);
+   }
+   bool isUserDarkMode = (userTheme == "dark");
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="@(isUserDarkMode ? "dark-mode" : "")">
 <head>
    <meta charset="utf-8">
    <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,12 +43,21 @@
    @*<link rel="stylesheet" href="~/css/bootstrap-datetimepicker.css" asp-append-version="true">*@
    <link rel="stylesheet" href="~/css/app.main.css" asp-append-version="true">
    <link rel="stylesheet" href="~/css/app.notifications.css" asp-append-version="true">
-      <script type="text/javascript">
+   <script type="text/javascript">
       (function () {
          try {
-            if (localStorage.getItem('adminlte_dark_mode') === 'true') {
-               document.documentElement.classList.add('dark-mode');
+            var uid = '@currentUserId';
+            if (uid && uid !== '0') {
+               var savedTheme = localStorage.getItem('adminlte_dark_mode_user_' + uid);
+               if (savedTheme === 'dark') {
+                  document.documentElement.classList.add('dark-mode');
+               } else if (savedTheme === 'light') {
+                  document.documentElement.classList.remove('dark-mode');
+               }
+            } else {
+               document.documentElement.classList.remove('dark-mode');
             }
+            localStorage.removeItem('adminlte_dark_mode');
          } catch (e) { }
       })();
    </script>
@@ -38,38 +66,87 @@
    <script src="~/plugins/bootstrap/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
    <script src="~/plugins/chart.js/chart.min.js" asp-append-version="true"></script>
 </head>
-<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed @(isUserDarkMode ? "dark-mode" : "")">
    <script type="text/javascript">
       (function () {
          try {
-            if (localStorage.getItem('adminlte_dark_mode') === 'true') {
-               document.body.classList.add('dark-mode');
+            var uid = '@currentUserId';
+            if (uid && uid !== '0') {
+               var savedTheme = localStorage.getItem('adminlte_dark_mode_user_' + uid);
+               if (savedTheme === 'dark') {
+                  document.body.classList.add('dark-mode');
+               } else if (savedTheme === 'light') {
+                  document.body.classList.remove('dark-mode');
+               }
+            } else {
+               document.body.classList.remove('dark-mode');
             }
          } catch (e) { }
       })();
    </script>
    <div class="wrapper">
       <!-- Navbar -->
-      <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+      <nav class="main-header navbar navbar-expand @(isUserDarkMode ? "navbar-dark" : "navbar-white navbar-light")">
          <!-- Left navbar links -->
          <ul class="navbar-nav">
             <li class="nav-item">
                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
             </li>
          </ul>
-         <ul class="navbar-nav ml-auto align-items-center">
-            <li class="nav-item session-chip mr-2" title="Periodo">
-               <span class="chip-label">A&Ntilde;O</span>
-               <span class="chip-val">@ViewBag.Periodo</span>
+         <ul class="navbar-nav ml-auto align-items-center" id="navbar-session-chips">
+            <!-- 1. Control AÑO -->
+            <li class="nav-item session-chip session-chip-clickable mr-2" title="Haga clic para cambiar de a&ntilde;o">
+               <label for="header-select-periodo" class="chip-label mb-0" style="cursor: pointer;">A&Ntilde;O</label>
+               <select id="header-select-periodo" class="chip-select" title="Seleccionar A&ntilde;o">
+                  @{
+                     string anioActualStr = ViewBag.Periodo != null ? ViewBag.Periodo.ToString() : "2026";
+                     int anioActualInt = 2026;
+                     int.TryParse(anioActualStr, out anioActualInt);
+                  }
+                  @for (int y = 2026; y >= 2021; y--)
+                  {
+                     if (y == anioActualInt)
+                     {
+                        <option value="@y" selected="selected">@y</option>
+                     }
+                     else
+                     {
+                        <option value="@y">@y</option>
+                     }
+                  }
+               </select>
             </li>
-            <li class="nav-item session-chip mr-2" title="Empresa">
+
+            <!-- 2. Control EMPRESA (Bloqueado) -->
+            <li class="nav-item session-chip session-chip-disabled mr-2" style="cursor: pointer;" onclick="abrirModalPerfilSesion();" title="Haga clic para abrir el selector de perfil (A&ntilde;o, Empresa, Sede)">
                <span class="chip-label">EMPRESA</span>
-               <span class="chip-val">@ViewBag.Empresa</span>
+               <span class="chip-val chip-val-locked">
+                  @(ViewBag.Empresa ?? "PRUEBA")
+                  <i class="fas fa-lock ml-1 text-muted" style="font-size: 0.65rem;" title="Bloqueado"></i>
+               </span>
             </li>
-            <li class="nav-item session-chip mr-2" title="Sede">
-               <span class="chip-label">SEDE</span>
-               <span class="chip-val">@ViewBag.Sede</span>
+
+            <!-- 3. Control SEDE (Central vs Ilo) -->
+            <li class="nav-item session-chip session-chip-clickable mr-2" title="Haga clic para cambiar de sede (Central / Ilo)">
+               <label for="header-select-sede" class="chip-label mb-0" style="cursor: pointer;">SEDE</label>
+               <select id="header-select-sede" class="chip-select" title="Seleccionar Sede">
+                  @{
+                     string sedeActualStr = ViewBag.Sede != null ? ViewBag.Sede.ToString().ToUpper() : "SEDE CENTRAL";
+                     bool esSedeIlo = sedeActualStr.Contains("ILO");
+                  }
+                  @if (esSedeIlo)
+                  {
+                     <option value="1">SEDE CENTRAL</option>
+                     <option value="2" selected="selected">SEDE ILO</option>
+                  }
+                  else
+                  {
+                     <option value="1" selected="selected">SEDE CENTRAL</option>
+                     <option value="2">SEDE ILO</option>
+                  }
+               </select>
             </li>
+
          </ul>
          <!-- SEARCH FORM -->
          <!-- Right navbar links -->
@@ -87,8 +164,8 @@
             </li>
             <!-- AdminLTE 3 Dark Mode Toggle -->
             <li class="nav-item mr-1">
-               <a class="nav-link btn-theme-toggle" id="app-dark-mode-toggle" href="javascript:void(0);" role="button" title="Modo Oscuro / Claro" style="cursor: pointer;">
-                  <i id="app-dark-mode-icon" class="far fa-moon"></i>
+               <a class="nav-link btn-theme-toggle" id="app-dark-mode-toggle" href="javascript:void(0);" role="button" title="@(isUserDarkMode ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro")" style="cursor: pointer;">
+                  <i id="app-dark-mode-icon" class="@(isUserDarkMode ? "fas fa-sun text-warning" : "far fa-moon")"></i>
                </a>
             </li>
             <!-- Messages Dropdown Menu -->
@@ -132,7 +209,7 @@
                      <i class="fas fa-lock mr-2"></i> Cambiar Contraseña
                   </a>
                   <div class="dropdown-divider"></div>
-                  <a href="#" class="dropdown-item" onclick="window.location.href = '@Url.Action("Index", "pf")';">
+                  <a href="#" class="dropdown-item" onclick="abrirModalPerfilSesion(); return false;">
                      <i class="fas fa-exchange-alt mr-2"></i> Cambiar Año y Empresa
                   </a>
                   <div class="dropdown-divider"></div>
@@ -378,22 +455,36 @@
          });
       };
             function initThemeMode() {
-         var isDark = localStorage.getItem('adminlte_dark_mode') === 'true';
-         applyThemeMode(isDark, false);
+         var uid = '@currentUserId';
+         var isDark = false;
+         if (uid && uid !== '0') {
+            var saved = localStorage.getItem('adminlte_dark_mode_user_' + uid);
+            if (saved !== null) {
+               isDark = (saved === 'dark');
+            } else {
+               isDark = @(isUserDarkMode ? "true" : "false");
+            }
+         } else {
+            isDark = false;
+         }
+
+         applyThemeMode(isDark, false, false);
 
          $('#app-dark-mode-toggle').off('click').on('click', function (e) {
             e.preventDefault();
             var isCurrentDark = $('body').hasClass('dark-mode');
-            applyThemeMode(!isCurrentDark, true);
+            applyThemeMode(!isCurrentDark, true, true);
          });
       }
 
-      function applyThemeMode(dark, animate) {
+      function applyThemeMode(dark, animate, shouldPersist) {
          var $body = $('body');
          var $html = $('html');
          var $nav = $('.main-header.navbar');
          var $icon = $('#app-dark-mode-icon');
          var $btn = $('#app-dark-mode-toggle');
+         var uid = '@currentUserId';
+         var themeVal = dark ? 'dark' : 'light';
 
          // Eliminar cualquier preload style remanente
          var preload = document.getElementById('theme-preload-style');
@@ -405,14 +496,33 @@
             $nav.removeClass('navbar-white navbar-light').addClass('navbar-dark');
             $icon.removeClass('far fa-moon').addClass('fas fa-sun text-warning');
             $btn.attr('title', 'Cambiar a Modo Claro');
-            try { localStorage.setItem('adminlte_dark_mode', 'true'); } catch (e) { }
          } else {
             $body.removeClass('dark-mode');
             $html.removeClass('dark-mode');
             $nav.removeClass('navbar-dark').addClass('navbar-white navbar-light');
             $icon.removeClass('fas fa-sun text-warning').addClass('far fa-moon');
             $btn.attr('title', 'Cambiar a Modo Oscuro');
-            try { localStorage.setItem('adminlte_dark_mode', 'false'); } catch (e) { }
+         }
+
+         if (shouldPersist && uid && uid !== '0') {
+            // 1. Guardar en localStorage exclusivo del usuario actual
+            try {
+               localStorage.setItem('adminlte_dark_mode_user_' + uid, themeVal);
+            } catch (e) { }
+
+            // 2. Guardar en cookie para que las siguientes cargas de página en el servidor la lean directo
+            try {
+               document.cookie = 'app_theme_user_' + uid + '=' + themeVal + '; path=/; max-age=31536000; SameSite=Lax';
+            } catch (e) { }
+
+            // 3. Persistir en la base de datos de forma asíncrona
+            try {
+               $.ajax({
+                  url: '@Url.Action("GuardarTemaUsuario", "Home", new { area = "" })',
+                  type: 'POST',
+                  data: { tema: themeVal }
+               });
+            } catch (e) { }
          }
 
          if (animate && $icon.length) {
@@ -451,6 +561,85 @@
                });
             }
          });
+
+         // Interaccion y cambio de sesion en cabecera (ANO y SEDE)
+         $('.session-chip-clickable').on('click', function (e) {
+            if (e.target && e.target.tagName !== 'SELECT') {
+               var $sel = $(this).find('select');
+               if ($sel.length) {
+                  $sel.focus();
+                  if (typeof $sel[0].showPicker === 'function') {
+                     try { $sel[0].showPicker(); } catch (err) { }
+                  }
+               }
+            }
+         });
+
+
+         window.abrirModalPerfilSesion = function () {
+            var anioActual = $('#header-select-periodo').val() || '@ViewBag.Periodo' || '2026';
+            var sedeActual = $('#header-select-sede').val() || '1';
+            $('#modal-perfil-periodo').val(anioActual);
+            $('#modal-perfil-sede').val(sedeActual);
+            $('#modal-seleccionar-perfil-sesion').modal('show');
+         };
+
+         window.guardarPerfilModal = function () {
+            var anio = $('#modal-perfil-periodo').val();
+            var sedeId = $('#modal-perfil-sede').val();
+            $('#modal-seleccionar-perfil-sesion').modal('hide');
+            ejecutarCambioSesion(anio, sedeId);
+         };
+
+         function ejecutarCambioSesion(anio, sedeId) {
+            var cidActual = $('#__cid').val() || '@ViewBag.cid';
+
+            if (typeof $.LoadingOverlay === 'function') {
+               $.LoadingOverlay('show', {
+                  text: 'Cambiando sesión de trabajo a ' + anio + ' · ' + (parseInt(sedeId) === 2 ? 'SEDE ILO' : 'SEDE CENTRAL') + '...',
+                  background: 'rgba(0, 0, 0, 0.45)'
+               });
+            }
+            $('#navbar-session-chips').css('opacity', '0.5').css('pointer-events', 'none');
+
+            $.ajax({
+               url: '@Url.Action("CambiarSesionCabecera", "Home", new { area = "" })',
+               type: 'POST',
+               data: {
+                  nuevoAnio: anio,
+                  nuevaSedeId: sedeId,
+                  cidActual: cidActual
+               },
+               success: function (res) {
+                  if (res && res.success && res.redirectUrl) {
+                     window.location.href = res.redirectUrl;
+                  } else {
+                     if (typeof $.LoadingOverlay === 'function') { $.LoadingOverlay('hide'); }
+                     $('#navbar-session-chips').css('opacity', '1').css('pointer-events', 'auto');
+                     if (window.msgAlert) {
+                        msgAlert(msgAlertTypeConstant.INFORMATION, res && res.message ? res.message : 'No se pudo cambiar la sesión.');
+                     } else {
+                        alert(res && res.message ? res.message : 'No se pudo cambiar la sesión.');
+                     }
+                  }
+               },
+               error: function () {
+                  if (typeof $.LoadingOverlay === 'function') { $.LoadingOverlay('hide'); }
+                  $('#navbar-session-chips').css('opacity', '1').css('pointer-events', 'auto');
+                  if (window.msgAlert) {
+                     msgAlert(msgAlertTypeConstant.ERROR, 'Error al comunicarse con el servidor para cambiar la sesión.');
+                  } else {
+                     alert('Error al comunicarse con el servidor para cambiar la sesión.');
+                  }
+               }
+            });
+         }
+
+         $('#header-select-periodo, #header-select-sede').on('change', function () {
+            var anio = $('#header-select-periodo').val();
+            var sedeId = $('#header-select-sede').val();
+            ejecutarCambioSesion(anio, sedeId);
+         });
       });
       function cambiarContrasena() {
          $('#passwordEditPopup').showDialog();
@@ -488,6 +677,91 @@
          });
    };
    </script>
+
+   <!-- Modal Seleccionar Perfil de Acceso (Año, Empresa, Sede) similar al login -->
+   <div class="modal fade" id="modal-seleccionar-perfil-sesion" tabindex="-1" role="dialog" aria-labelledby="modalPerfilSesionLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 440px;">
+         <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-primary text-white py-3 px-4">
+               <h5 class="modal-title font-weight-bold d-flex align-items-center" id="modalPerfilSesionLabel" style="font-size: 1.1rem;">
+                  <i class="fas fa-id-badge mr-2"></i> Seleccionar Perfil de Acceso
+               </h5>
+               <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar" style="opacity: 0.9;">
+                  <span aria-hidden="true">&times;</span>
+               </button>
+            </div>
+            <div class="modal-body p-4 bg-white">
+               <div class="text-center mb-3">
+                  <img src="@Url.Content("~/img/erp-lg-logo.png")" alt="SIGANET" style="max-height: 44px; object-fit: contain;">
+                  <p class="text-muted small mt-1 mb-0 font-weight-500">Sistema Integrado de Gesti&oacute;n Administrativa</p>
+               </div>
+               
+               <div class="form-group mb-3">
+                  <label for="modal-perfil-periodo" class="font-weight-bold text-dark small text-uppercase mb-1">
+                     <i class="fas fa-calendar-alt text-primary mr-1"></i> A&ntilde;o de Trabajo
+                  </label>
+                  <select id="modal-perfil-periodo" class="form-control form-control-lg font-weight-bold shadow-sm" style="font-size: 0.95rem; border-radius: 6px;">
+                     @for (int y = 2026; y >= 2021; y--)
+                     {
+                        if (y == anioActualInt)
+                        {
+                           <option value="@y" selected="selected">@y</option>
+                        }
+                        else
+                        {
+                           <option value="@y">@y</option>
+                        }
+                     }
+                  </select>
+               </div>
+
+               <div class="form-group mb-3">
+                  <label class="font-weight-bold text-dark small text-uppercase mb-1">
+                     <i class="fas fa-building text-secondary mr-1"></i> Empresa
+                  </label>
+                  <div class="input-group">
+                     <input type="text" class="form-control form-control-lg bg-light text-muted font-weight-bold" value="@(ViewBag.Empresa ?? "EMP. DE PRUEBA")" readonly style="font-size: 0.95rem; border-radius: 6px 0 0 6px;" />
+                     <div class="input-group-append">
+                        <span class="input-group-text bg-light text-muted" style="border-radius: 0 6px 6px 0;"><i class="fas fa-lock" title="Empresa fija"></i></span>
+                     </div>
+                  </div>
+               </div>
+
+               <div class="form-group mb-4">
+                  <label for="modal-perfil-sede" class="font-weight-bold text-dark small text-uppercase mb-1">
+                     <i class="fas fa-map-marker-alt text-danger mr-1"></i> Sede / Sucursal
+                  </label>
+                  <select id="modal-perfil-sede" class="form-control form-control-lg font-weight-bold shadow-sm" style="font-size: 0.95rem; border-radius: 6px;">
+                     @if (esSedeIlo)
+                     {
+                        <option value="1">SEDE CENTRAL</option>
+                        <option value="2" selected="selected">SEDE ILO</option>
+                     }
+                     else
+                     {
+                        <option value="1" selected="selected">SEDE CENTRAL</option>
+                        <option value="2">SEDE ILO</option>
+                     }
+                  </select>
+               </div>
+
+               <div class="alert alert-info py-2 px-3 small mb-0 d-flex align-items-center" style="border-radius: 6px;">
+                  <i class="fas fa-info-circle mr-2 fa-lg"></i>
+                  <span>Al aceptar se cambiar&aacute; la sesi&oacute;n y contexto del ERP para el a&ntilde;o y la sede seleccionados.</span>
+               </div>
+            </div>
+            <div class="modal-footer bg-light px-4 py-3 d-flex justify-content-between">
+               <button type="button" class="btn btn-secondary px-3" data-dismiss="modal">
+                  <i class="fas fa-times mr-1"></i> Cancelar
+               </button>
+               <button type="button" class="btn btn-primary px-4 font-weight-bold" id="btn-modal-perfil-aceptar" onclick="guardarPerfilModal();">
+                  <i class="fas fa-check mr-1"></i> Aceptar
+               </button>
+            </div>
+         </div>
+      </div>
+   </div>
+
 </body>
 </html>
 

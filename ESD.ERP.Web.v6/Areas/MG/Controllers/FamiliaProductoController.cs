@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service.DTO;
 using ESD.Core.Web;
@@ -272,6 +272,13 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
                 }
 
                 grupoProductoDTO = model.GrupoProductoDTO;
+
+                if (grupoProductoDTO.TipoProductoId == 2)
+                {
+                    grupoProductoDTO.EsCombo = SiNoConstante.N;
+                    grupoProductoDTO.EsInsumo = SiNoConstante.N;
+                    grupoProductoDTO.UsarIncrementoFraccion = SiNoConstante.N;
+                }
 
                 grupoProductoDTO.Estado = EstadoConstante.ACTIVO;
 

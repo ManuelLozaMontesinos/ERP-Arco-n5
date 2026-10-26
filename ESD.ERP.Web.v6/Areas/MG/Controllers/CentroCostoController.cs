@@ -43,6 +43,14 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
             CentroCostoDTO = new CentroCostoDTO()
          };
 
+         int empresaId = ObtenerEmpresaId();
+         if (empresaId <= 0)
+         {
+            empresaId = 1;
+         }
+
+         model.CentroCostoDTO.EmpresaId = empresaId;
+         model.CentroCostoDTO.Estado = EstadoConstante.ACTIVO;
          model.CentroCostoDTO.PageSize = ObtenerMaximoRegistrosBusqueda();
          model.CentroCostoDTO.OrderBy = "nombre";
 
@@ -199,13 +207,16 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
             if (model.EditAction == ViewModelEditAction.New)
             {
                centroCostoDTO = model.CentroCostoDTO;
+               int empId = ObtenerEmpresaId();
+               centroCostoDTO.EmpresaId = empId > 0 ? empId : 1;
             }
             else
             {
                centroCostoDTO = centroCostoProxy.GetById(new CentroCostoDTO() 
                   { CentroCostoId = model.CentroCostoDTO.Id });
 
-               centroCostoDTO = model.CentroCostoDTO;
+               centroCostoDTO.Nombre = model.CentroCostoDTO.Nombre;
+               centroCostoDTO.Sigla = model.CentroCostoDTO.Sigla;
             }
 
             if (string.IsNullOrEmpty(model.CentroCostoDTO.Sigla))

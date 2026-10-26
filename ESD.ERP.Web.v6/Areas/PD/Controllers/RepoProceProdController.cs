@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Web;
 using ESD.ERP.Common;
@@ -31,6 +31,7 @@ namespace ESD.ERP.Web.Areas.PD.Controllers
 
         {
             this.procesoProduccionProxy = procesoProduccionProxy;
+            this.subProcesoProduccionProxy = subProcesoProduccionProxy;
             this.mesProxy = mesProxy;
             this.appHelper = appHelper;
         }

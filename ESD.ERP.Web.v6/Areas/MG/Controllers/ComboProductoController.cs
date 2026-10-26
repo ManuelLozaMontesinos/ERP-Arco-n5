@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service.DTO;
 using ESD.Core.Web;
@@ -338,7 +338,8 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
                {
                   GrupoProductoDTO = new GrupoProductoDTO
                   {
-                     TipoProductoDTO = new TipoProductoDTO()
+                     TipoProductoId = 1,
+                     TipoProductoDTO = new TipoProductoDTO { TipoProductoId = 1 }
                   }
                }
             };
@@ -407,12 +408,23 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
       }
       private void cargarListasCompartidas(ComboProductoViewModel model)
       {
+         List<GrupoProductoDTO> grupoComboList = grupoProductoProxy.Search(new GrupoProductoDTO
+         {
+            EsCombo = SiNoConstante.S,
+            Estado = EstadoConstante.ACTIVO
+         });
+         List<int> tipoIdsConCombos = grupoComboList?.Select(g => g.TipoProductoId).Distinct().ToList() ?? new List<int>();
          List<TipoProductoDTO> tipoProductoDTOList = tipoProductoProxy.
             Search(new TipoProductoDTO()
             {
                EmpresaId = ObtenerEmpresaId(),
                Estado = EstadoConstante.ACTIVO,
             });
+         if (tipoIdsConCombos.Count > 0)
+         {
+            tipoProductoDTOList = tipoProductoDTOList.Where(tp => tipoIdsConCombos.Contains(tp.Id)).ToList();
+         }
+
          model.TipoProductoList = WebHelper.ToSelectListItem(tipoProductoDTOList, x => x.Id.ToString(), x => x.Nombre, SelectListFirstOptionType.Select);
 
          if (model.ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.TipoProductoId == 0)
@@ -422,6 +434,7 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
                         Search(new GrupoProductoDTO()
                         {
                            TipoProductoId = model.ProductoDTO.FamiliaProductoDTO.ClaseProductoDTO.GrupoProductoDTO.TipoProductoId,
+                           EsCombo = SiNoConstante.S,
                            Estado = EstadoConstante.ACTIVO,
                         });
             model.GrupoProductoList = WebHelper.ToSelectListItem(grupoProductoDTOList, x => x.Id.ToString(), x => x.Nombre, SelectListFirstOptionType.Select);

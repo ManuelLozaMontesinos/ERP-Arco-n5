@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
@@ -92,8 +92,11 @@ namespace ESD.ERP.Web.Infrastructure
             return;
 
          List<ParametroSistemaDTO> parametroSistemaDTOList = ObtenerGrupoParametroSistema(GrupoParametroSistemaConstante.EMAIL_CONFIGURATION);
+         if (parametroSistemaDTOList == null || parametroSistemaDTOList.Count == 0)
+            return;
 
-         ParametroSistemaDTO parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.HABILITAR_ENVIO_EMAIL);
+         ParametroSistemaDTO parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.HABILITAR_ENVIO_EMAIL);
+         if (parametroSistemaDTO == null) return;
          bool envioCorreoHabilitado = Convert.ToBoolean(ObtenerParametroSistemaValor(parametroSistemaDTO));
 
          if (!envioCorreoHabilitado)
@@ -101,20 +104,21 @@ namespace ESD.ERP.Web.Infrastructure
             return;
          }
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.SERVIDOR_EMAIL);
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.SERVIDOR_EMAIL);
+         if (parametroSistemaDTO == null) return;
          string host = parametroSistemaDTO.ValorCadena;
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.PUERTO_SMTP);
-         int port = Convert.ToInt32(parametroSistemaDTO.ValorNumerico);
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.PUERTO_SMTP);
+         int port = parametroSistemaDTO != null ? Convert.ToInt32(parametroSistemaDTO.ValorNumerico) : 25;
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.USUARIO_EMAIL);
-         string emailUserName = parametroSistemaDTO.ValorCadena;
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.USUARIO_EMAIL);
+         string emailUserName = parametroSistemaDTO?.ValorCadena ?? string.Empty;
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.CONTRASENA_EMAIL);
-         string emailPassword = parametroSistemaDTO.ValorCadena;
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.CONTRASENA_EMAIL);
+         string emailPassword = parametroSistemaDTO?.ValorCadena ?? string.Empty;
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.USAR_SSL);
-         bool usarSSL = Convert.ToBoolean(ObtenerParametroSistemaValor(parametroSistemaDTO));
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.USAR_SSL);
+         bool usarSSL = parametroSistemaDTO != null && Convert.ToBoolean(ObtenerParametroSistemaValor(parametroSistemaDTO));
 
          try
          {
@@ -210,18 +214,20 @@ namespace ESD.ERP.Web.Infrastructure
          string password = string.Empty;
 
          List<ParametroSistemaDTO> parametroSistemaDTOList = ObtenerGrupoParametroSistema(GrupoParametroSistemaConstante.SSRS_CONFIGURATION);
+         if (parametroSistemaDTOList == null || parametroSistemaDTOList.Count == 0)
+            throw new Exception("No se encontró la configuración de Reporting Services (SSRS).");
 
-         ParametroSistemaDTO parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.SSRS_BASE_PATH);
-         baseURL = parametroSistemaDTO.ValorCadena;
+         ParametroSistemaDTO parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.SSRS_BASE_PATH);
+         baseURL = parametroSistemaDTO?.ValorCadena ?? string.Empty;
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.SSRS_USE_CREDENTIAL);
-         useWebAppCredential = Convert.ToBoolean(ObtenerParametroSistemaValor(parametroSistemaDTO));
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.SSRS_USE_CREDENTIAL);
+         useWebAppCredential = parametroSistemaDTO != null && Convert.ToBoolean(ObtenerParametroSistemaValor(parametroSistemaDTO));
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.SSRS_USER);
-         userName = Convert.ToString(ObtenerParametroSistemaValor(parametroSistemaDTO));
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.SSRS_USER);
+         userName = parametroSistemaDTO != null ? Convert.ToString(ObtenerParametroSistemaValor(parametroSistemaDTO)) : string.Empty;
 
-         parametroSistemaDTO = parametroSistemaDTOList.Single(i => i.Codigo == ParametroSistemaConstante.SSRS_PASSWORD);
-         password = Convert.ToString(ObtenerParametroSistemaValor(parametroSistemaDTO));
+         parametroSistemaDTO = parametroSistemaDTOList.FirstOrDefault(i => i.Codigo == ParametroSistemaConstante.SSRS_PASSWORD);
+         password = parametroSistemaDTO != null ? Convert.ToString(ObtenerParametroSistemaValor(parametroSistemaDTO)) : string.Empty;
 
          try
          {

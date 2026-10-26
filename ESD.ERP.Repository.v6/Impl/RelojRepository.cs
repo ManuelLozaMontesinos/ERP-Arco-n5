@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ESD.Core.Data;
@@ -87,7 +87,7 @@ namespace ESD.ERP.Repository.Impl
 				parameters.AddParameter("empresaId", entity.EmpresaId);
 				parameters.AddParameter("nombre", entity.Nombre);
 				parameters.AddParameter("rutaArchivo", entity.RutaArchivo);
-				parameters.AddParameter("esCentral", entity.EsCentral);
+				parameters.AddParameter("esCentral", entity.EsCentral ?? "N");
 				parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
 				parameters.AddNewIdParameter();
 
@@ -110,7 +110,7 @@ namespace ESD.ERP.Repository.Impl
 				parameters.AddParameter("relojId", entity.RelojId);
 				parameters.AddParameter("nombre", entity.Nombre);
 				parameters.AddParameter("rutaArchivo", entity.RutaArchivo);
-				parameters.AddParameter("esCentral", entity.EsCentral);
+				parameters.AddParameter("esCentral", entity.EsCentral ?? "N");
 				parameters.AddParameter("usuarioAccionId", entity.UsuarioCreacionId);
 
 				DbFactory.ExecCommand(DbCommand.Create(SP_PRE_NAME, StoredProcActionConstant.UPDATE), parameters);

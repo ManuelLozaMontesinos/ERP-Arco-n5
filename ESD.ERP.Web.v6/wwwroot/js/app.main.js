@@ -1,4 +1,4 @@
-﻿function getBaseUrl() {
+function getBaseUrl() {
    var url = window.location.href;
    var lastIndex = url.lastIndexOf("/");
    var result = url.substring(0, lastIndex)
@@ -205,6 +205,10 @@ function padLeadingZeros(num, size) {
    var isBandejaView = hasBandejaMarkers && !isExplicitDetail;
 
    if (isSoloLectura) {
+      if (c.find('#calendar, #modal-evento-calendario, #external-events').length > 0) {
+         return;
+      }
+
       if (isBandejaView) {
          if (window.removeBreadcrumbSubAction) { window.removeBreadcrumbSubAction(); }
 
@@ -1110,7 +1114,7 @@ function createSelectedItemList(selModel) {
  * msgAlert.js (SweetAlert2 Modern Toast System)
  * --------------------------------------------
 */
-class msgAlertTypeConstant {
+var msgAlertTypeConstant = window.msgAlertTypeConstant || class {
    static get SUCCESS() { return 1; }
    static get INFORMATION() { return 2; }
    static get ERROR() { return 3; }
@@ -1224,7 +1228,7 @@ if (typeof window !== 'undefined') {
       success: function (msg) { msgAlert(1, msg); },
       warning: function (msg) { msgAlert(2, msg); },
       error: function (msg) { msgAlert(3, msg); },
-      message: function (msg) { msgAlert(2, msg); }
+      message: function (msg) { msgAlert(1, msg); }
    };
 }
 /*

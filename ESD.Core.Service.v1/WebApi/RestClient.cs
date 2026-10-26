@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using ESD.Core.Logging;
 using System;
 using System.Net;
@@ -91,7 +91,20 @@ namespace ESD.Core.Service.WebApi
 
             RestSharp.IRestResponse result = client.Execute(request);
 
+            if (result == null || result.StatusCode != HttpStatusCode.OK || string.IsNullOrWhiteSpace(result.Content))
+            {
+               Logger.Info(string.Format("El servicio [{0}] no respondió satisfactoriamente (StatusCode={1}, Error={2}).",
+                  apiNameKey, result != null ? result.StatusCode.ToString() : "N/A", result?.ErrorMessage ?? "Sin respuesta"));
+               return default(T);
+            }
+
             ServiceResponse serviceResponse = JsonConvert.DeserializeObject<ServiceResponse>(result.Content);
+
+            if (serviceResponse == null)
+            {
+               Logger.Info(string.Format("El servicio [{0}] devolvió una respuesta vacía o no válida.", apiNameKey));
+               return default(T);
+            }
 
             if (serviceResponse.Success)
             {
@@ -157,10 +170,22 @@ namespace ESD.Core.Service.WebApi
 
             RestSharp.IRestResponse result = client.Execute(request);
 
-            if (result.StatusCode != HttpStatusCode.OK)
-               throw new Exception(result.ErrorMessage);
+            if (result == null || result.StatusCode != HttpStatusCode.OK || string.IsNullOrWhiteSpace(result.Content))
+            {
+               string errMsg = !string.IsNullOrWhiteSpace(result?.ErrorMessage)
+                  ? result.ErrorMessage
+                  : (!string.IsNullOrWhiteSpace(result?.Content) ? result.Content : (result != null ? result.StatusDescription : "Sin respuesta"));
+
+               throw new Exception(string.Format("El servicio [{0}] no respondió correctamente (StatusCode={1}, Detalle={2}).",
+                  apiNameKey, result != null ? result.StatusCode.ToString() : "N/A", errMsg));
+            }
 
             ServiceResponse serviceResponse = JsonConvert.DeserializeObject<ServiceResponse>(result.Content);
+            if (serviceResponse == null)
+            {
+               throw new Exception(string.Format("El servicio [{0}] devolvió una respuesta vacía o no válida.", apiNameKey));
+            }
+
             if (serviceResponse.Success)
             {
                response = serviceResponse;
@@ -206,7 +231,13 @@ namespace ESD.Core.Service.WebApi
                   break;
 
                default:
+                  if (string.IsNullOrWhiteSpace(result.Content))
+                     throw new Exception(string.Format("El servicio [{0}] devolvió una respuesta vacía.", apiNameKey));
+
                   ServiceResponse serviceResponse = JsonConvert.DeserializeObject<ServiceResponse>(result.Content);
+
+                  if (serviceResponse == null)
+                     throw new Exception(string.Format("El servicio [{0}] devolvió una respuesta no válida.", apiNameKey));
 
                   if (serviceResponse.Success)
                   {

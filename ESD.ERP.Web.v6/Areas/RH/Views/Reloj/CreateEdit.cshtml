@@ -1,4 +1,5 @@
-﻿@using ESD.Core.Web;
+@using ESD.Core.Web;
+@using ESD.ERP.Common;
 @using ESD.ERP.Web.Infrastructure;
 @model ESD.ERP.Web.Areas.RH.Models.RelojViewModel
 <esd-menubar id="menuBar" Title="@Model.Title" menu-style="SaveExit" onclick="menuBarOnClick"></esd-menubar>
@@ -14,6 +15,9 @@
                <div class="form-group row">
                   <esd-textbox for="@Model.RelojDTO.RutaArchivo" col-position="col-lg-8" label="Ruta Archivo"
                                col-label-position="col-lg-2" max-length="100"></esd-textbox>
+               </div>
+               <div class="form-group row">
+                  <esd-checkbox for="@Model.RelojDTO.EsCentral" col-position="offset-lg-2 col-lg-4" label="Es Central"></esd-checkbox>
                </div>
             </div>
          </div>
@@ -53,7 +57,8 @@
          viewModel: [
             { name: "RelojDTO.RelojId", value: $('#RelojId').val(), type: 'int' },
             { name: "RelojDTO.Nombre", value: $('#Nombre').val() },
-            { name: "RelojDTO.RutaArchivo", value: $('#RutaArchivo').val() }
+            { name: "RelojDTO.RutaArchivo", value: $('#RutaArchivo').val() },
+            { name: "RelojDTO.EsCentral", value: $('#EsCentral').prop('checked') ? '@SiNoConstante.S' : '@SiNoConstante.N' }
          ],
          buttonId: '@MenuItemKey.SAVE',
          urlAction: '@Url.Action("Grabar", "Reloj")',

@@ -147,8 +147,9 @@ connection.on("refreshNotificationList", function () {
    listarNotificaciones();
 });
 
-connection.on("calendarReminder", function () {
-   msgAlert(msgAlertTypeConstant.INFORMATION, 'Tienes un evento próximo que inicia en 15 minutos o menos. Revisa tus notificaciones.');
+connection.on("calendarReminder", function (customMsg) {
+   var msg = customMsg || 'Tienes un evento próximo que inicia en 15 minutos o menos. Revisa tus notificaciones.';
+   msgAlert(msgAlertTypeConstant.INFORMATION, msg);
    listarNotificaciones();
 });
 

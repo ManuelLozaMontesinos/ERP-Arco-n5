@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service.DTO;
 using ESD.Core.Web;
@@ -146,7 +146,10 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
          TipoCambioDTO tipoCambioDTO = null;
          if (model.EditAction == ViewModelEditAction.New)
          {
-            tipoCambioDTO = new TipoCambioDTO();
+            tipoCambioDTO = new TipoCambioDTO
+            {
+               Codigo = obtenerSiguienteCodigoTipoCambio()
+            };
          }
          else
          {
@@ -199,7 +202,8 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
             resultResponse.Message = SR.GetString(messageResourceKey, tipoCambioDTO.Nombre);
             resultResponse.Data = new
             {
-               tipoCambioDTO.Id
+               tipoCambioDTO.Id,
+               tipoCambioDTO.Codigo
             };
          }
          catch (Exception e)
@@ -227,6 +231,11 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
                OrigenRegistroDTO origenRegistroDTO = origenRegistroProxy.ObtenerPorCodigo(new OrigenRegistroDTO() { Codigo = OrigenRegistroConstante.USUARIO });
 
                tipoCambioDTO.OrigenRegistroId = origenRegistroDTO.Id;
+
+               if (string.IsNullOrWhiteSpace(tipoCambioDTO.Codigo))
+               {
+                  tipoCambioDTO.Codigo = obtenerSiguienteCodigoTipoCambio();
+               }
             }
             else
             {
@@ -393,6 +402,34 @@ namespace ESD.ERP.Web.Areas.MG.Controllers
          }
 
          return tipoCambioDiaDTO;
+      }
+
+      private string obtenerSiguienteCodigoTipoCambio()
+      {
+         try
+         {
+            List<TipoCambioDTO> list = tipoCambioProxy.Search(new TipoCambioDTO
+            {
+               PageSize = 1000,
+               OrderBy = "tipo_cambio"
+            });
+            int max = 0;
+            if (list != null)
+            {
+               foreach (var item in list)
+               {
+                  if (!string.IsNullOrWhiteSpace(item.Codigo) && int.TryParse(item.Codigo.Trim(), out int val) && val > max)
+                  {
+                     max = val;
+                  }
+               }
+            }
+            return (max + 1).ToString("D2");
+         }
+         catch
+         {
+            return "01";
+         }
       }
    }
 }

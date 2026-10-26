@@ -216,6 +216,11 @@ namespace ESD.ERP.Web.Areas.RH.Controllers
             {
                model.PlanillaDTO.EmpresaId = ObtenerEmpresaId(model.ViewModelState.CID);
             }
+            else
+            {
+               PlanillaDTO currentPlanilla = planillaProxy.GetById(new PlanillaDTO() { PlanillaId = model.PlanillaDTO.Id });
+               model.PlanillaDTO.EmpresaId = currentPlanilla.EmpresaId;
+            }
 
             model.PlanillaDTO.Estado = EstadoConstante.ACTIVO;
 

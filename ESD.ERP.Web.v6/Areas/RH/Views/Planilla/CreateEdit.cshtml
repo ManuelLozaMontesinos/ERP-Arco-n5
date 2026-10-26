@@ -148,7 +148,7 @@
             { name: "PlanillaDTO.PlanillaId", value: $('#PlanillaId').val(), type: 'int' },
             { name: "PlanillaDTO.Nombre", value: $('#Nombre').val() },
             { name: "PlanillaDTO.ProcesoAnual", value: $('#ProcesoAnual').val(), type: 'int' },
-            { name: "PersonalDTO.TipoTrabajadorId", value: $('#TipoTrabajadorId').val(), type: 'int' },
+            { name: "PlanillaDTO.TipoTrabajadorId", value: $(\'#TipoTrabajadorId\').val(), type: \'int\' },
          ],
          buttonId: '@MenuItemKey.SAVE',
          urlAction: '@Url.Action("Grabar", "Planilla")',
