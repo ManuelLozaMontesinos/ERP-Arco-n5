@@ -1,4 +1,4 @@
--- ==============================================================================
+﻿-- ==============================================================================
 -- Migración: Actualización de procedimientos almacenados para Reloj Marcador
 -- Propósito: Soportar parámetro @esCentral con valor por defecto 'N' en
 --            sp_reloj_insertar y sp_reloj_actualizar, evitando el error

@@ -341,7 +341,7 @@ namespace ESD.ERP.Web.Infrastructure
                context.Result = new JsonResult(new ResultResponse
                {
                   Success = false,
-                  Message = "No cuenta con permisos de escritura para realizar modificaciones en este mÃ³dulo."
+                  Message = "No cuenta con permisos de escritura para realizar modificaciones en este módulo."
                });
                return;
             }

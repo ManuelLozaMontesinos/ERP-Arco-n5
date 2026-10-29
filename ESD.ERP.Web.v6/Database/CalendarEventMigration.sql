@@ -1,4 +1,4 @@
--- Run once against the application database before enabling the calendar.
+﻿-- Run once against the application database before enabling the calendar.
 IF OBJECT_ID(N'dbo.calendario_evento', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.calendario_evento

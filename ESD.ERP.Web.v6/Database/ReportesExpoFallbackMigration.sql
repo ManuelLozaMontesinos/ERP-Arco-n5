@@ -1,4 +1,4 @@
--- =========================================================================================
+﻿-- =========================================================================================
 -- Script: ReportesExpoFallbackMigration.sql
 -- Descripción: Registro de procedimientos de reporte en 'reporte_expo' para soporte
 --              de exportación de datos y generación PDF fallback en Vista Previa

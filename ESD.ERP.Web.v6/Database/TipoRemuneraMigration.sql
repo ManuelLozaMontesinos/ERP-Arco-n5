@@ -1,4 +1,4 @@
--- ==============================================================================
+﻿-- ==============================================================================
 -- Migración: Actualización de sp_tipo_remunera_eliminar
 -- Propósito: Aceptar tanto @tipoRemuneracionId como @tipoRemuneraId para evitar
 --            errores de parámetro no suministrado.

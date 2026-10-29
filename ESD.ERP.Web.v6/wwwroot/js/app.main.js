@@ -1554,13 +1554,13 @@ if (typeof window !== 'undefined') {
             col.index = colName;
          }
 
-         // Columnas vacÃ­as o sin nombre no deben permitir click de ordenamiento
+         // Columnas vacías o sin nombre no deben permitir click de ordenamiento
          if (!colName || colName === '') {
             col.sortable = false;
             continue;
          }
 
-         // Si el desarrollador ya proveyÃ³ un sortfunc propio, respetarlo
+         // Si el desarrollador ya proveyó un sortfunc propio, respetarlo
          if (col.sortfunc && typeof col.sortfunc === 'function') {
             continue;
          }
@@ -1667,7 +1667,7 @@ if (typeof window !== 'undefined') {
          }
       };
 
-      // 5. Interceptar la respuesta JSON para ordenar inicialmente por Fecha (desc) o CÃ³digo (asc) SIN sobreescribir clicks del usuario
+      // 5. Interceptar la respuesta JSON para ordenar inicialmente por Fecha (desc) o Código (asc) SIN sobreescribir clicks del usuario
       if (infoFecha || infoCodigo) {
          var originalBeforeProcessing = options.beforeProcessing;
          options.beforeProcessing = function (data) {
@@ -2116,7 +2116,7 @@ function isEmptyRecord(rowId) {
 (function ($) {
    $.fn.confirm = function (options) {
       var defaults = {
-         title: 'Â¿EstÃ¡ seguro?',
+         title: '¿Está seguro?',
          message: '',
          onConfirm: null,
          onCancel: null
@@ -2125,7 +2125,7 @@ function isEmptyRecord(rowId) {
 
       if (typeof Swal !== 'undefined') {
          Swal.fire({
-            title: settings.title || 'Â¿EstÃ¡ seguro?',
+            title: settings.title || '¿Está seguro?',
             html: settings.message,
             icon: 'question',
             showCancelButton: true,
