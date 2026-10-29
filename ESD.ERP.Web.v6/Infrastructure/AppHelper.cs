@@ -420,8 +420,7 @@ namespace ESD.ERP.Web.Infrastructure
 
       private byte[] GenerarExcelDesdeSql(string reportName, Dictionary<string, string> parameters)
       {
-         string connStr = configuration?.GetConnectionString("DefaultConnection")
-            ?? "Server=localhost;Database=esderp_v6;Trusted_Connection=True;MultipleActiveResultSets=true;";
+         string connStr = DatabaseConnectionHelper.GetConnectionString(configuration);
 
          ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
          using SqlConnection conn = new SqlConnection(connStr);

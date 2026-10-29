@@ -31,3 +31,4 @@ BEGIN
     PRINT 'VT_PedidoPorProducto ya existe en reporte_expo';
 END
 GO
+

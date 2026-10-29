@@ -9,42 +9,12 @@ namespace ESD.ERP.Web.Infrastructure
    public static class UserPreferenceHelper
    {
       private static readonly ConcurrentDictionary<int, string> _themeCache = new ConcurrentDictionary<int, string>();
-      private static string _cachedConnectionString = null;
-      private static readonly object _csLock = new object();
       private static bool _tableChecked = false;
       private static readonly object _tableLock = new object();
 
       private static string GetDbConnectionString()
       {
-         if (!string.IsNullOrEmpty(_cachedConnectionString))
-         {
-            return _cachedConnectionString;
-         }
-
-         string[] candidates = new[]
-         {
-            "Server=localhost;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=3;",
-            "Server=.;Database=esderp_v6;User Id=sa;Password=admin123*;TrustServerCertificate=True;Connect Timeout=3;"
-         };
-
-         foreach (var cs in candidates)
-         {
-            try
-            {
-               using (var c = new SqlConnection(cs))
-               {
-                  c.Open();
-                  lock (_csLock)
-                  {
-                     _cachedConnectionString = cs;
-                  }
-                  return cs;
-               }
-            }
-            catch { }
-         }
-
-         return candidates[0];
+         return DatabaseConnectionHelper.GetConnectionString();
       }
 
       private static void EnsureTableExists(SqlConnection conn)

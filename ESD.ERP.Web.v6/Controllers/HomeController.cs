@@ -166,38 +166,9 @@ namespace ESD.ERP.Web.Controllers
          this.productoProxy = productoProxy;
       }
 
-      private static string _cachedConnectionString;
-
       private static string GetDbConnectionString()
       {
-         if (!string.IsNullOrEmpty(_cachedConnectionString))
-         {
-            return _cachedConnectionString;
-         }
-
-         string[] candidates = new[]
-         {
-            "Server=localhost;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=3;",
-            "Server=localhost;Database=esderp_v6;Trusted_Connection=True;TrustServerCertificate=True;Connect Timeout=3;",
-            "Server=.;Database=esderp_v6;User Id=sa;Password=admin123*;TrustServerCertificate=True;Connect Timeout=3;"
-         };
-
-         foreach (var cs in candidates)
-         {
-            try
-            {
-               using (var c = new SqlConnection(cs))
-               {
-                  c.Open();
-                  _cachedConnectionString = cs;
-                  return cs;
-               }
-            }
-            catch { }
-         }
-
-         _cachedConnectionString = candidates[0];
-         return _cachedConnectionString;
+         return DatabaseConnectionHelper.GetConnectionString();
       }
 
       private bool EsAdminOGerencia()
