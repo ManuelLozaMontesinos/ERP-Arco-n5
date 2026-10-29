@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -2409,8 +2409,35 @@ namespace ESD.ERP.Web.Controllers
                }
             }
 
-            // Validar directivas de usuario para sedes (Directiva 2) si no es administrador o gerencia
+            // Si no se proporciono nuevoAnio o nuevaSedeId, intentar conservarlos del cidActual
+            if (!string.IsNullOrEmpty(cidActual))
+            {
+               try
+               {
+                  var pesActual = ObtenerPeriodoEmpresaSedeDTO(cidActual);
+                  if (pesActual != null)
+                  {
+                     if (!nuevoAnio.HasValue && pesActual.PeriodoDTO != null && pesActual.PeriodoDTO.Codigo > 0)
+                     {
+                        anioDestino = pesActual.PeriodoDTO.Codigo;
+                     }
+                     if (!nuevaSedeId.HasValue && pesActual.EmpresaSedeDTO != null && pesActual.EmpresaSedeDTO.EmpresaSedeId > 0)
+                     {
+                        sedeDestino = pesActual.EmpresaSedeDTO.EmpresaSedeId;
+                     }
+                  }
+               }
+               catch { }
+            }
+
+            // Validar directivas de usuario para sedes (Directiva 2 / "002" Asignacion de Sedes) si no es administrador o gerencia
             int usuarioId = ObtenerUsuarioId();
+            if (usuarioId <= 0)
+            {
+               var uDto = ObtenerUsuarioDTO();
+               if (uDto != null) usuarioId = uDto.UsuarioId;
+            }
+
             if (!EsAdminOGerencia() && usuarioId > 0)
             {
                using (var conn = new SqlConnection(GetDbConnectionString()))
@@ -2419,9 +2446,12 @@ namespace ESD.ERP.Web.Controllers
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = @"
-                        SELECT valor 
-                        FROM directiva_usuario 
-                        WHERE usuario_id = @uid AND directiva_id = 2 AND estado = 'A'";
+                        SELECT du.valor 
+                        FROM dbo.directiva_usuario du
+                        INNER JOIN dbo.directiva_regla dr ON du.directiva_regla_id = dr.directiva_regla_id
+                        WHERE du.usuario_id = @uid 
+                          AND (dr.directiva_regla = '002' OR dr.directiva_regla_id = 2)
+                          AND dr.estado = 'A'";
                      cmd.Parameters.AddWithValue("@uid", usuarioId);
                      var sedesPermitidas = new List<int>();
                      using (var r = cmd.ExecuteReader())
@@ -2435,9 +2465,19 @@ namespace ESD.ERP.Web.Controllers
                         }
                      }
 
-                     if (sedesPermitidas.Count > 0 && !sedesPermitidas.Contains(sedeDestino))
+                     if (sedesPermitidas.Count > 0)
                      {
-                        return Json(new { success = false, message = "No tiene permisos para acceder a la sede seleccionada." });
+                        if (!sedesPermitidas.Contains(sedeDestino))
+                        {
+                           if (sedesPermitidas.Count == 1)
+                           {
+                              sedeDestino = sedesPermitidas[0];
+                           }
+                           else
+                           {
+                              return Json(new { success = false, message = "No tiene permisos para acceder a la sede seleccionada." });
+                           }
+                        }
                      }
                   }
                }

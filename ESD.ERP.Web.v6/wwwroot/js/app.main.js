@@ -1,4 +1,4 @@
-function getBaseUrl() {
+﻿function getBaseUrl() {
    var url = window.location.href;
    var lastIndex = url.lastIndexOf("/");
    var result = url.substring(0, lastIndex)
@@ -42,30 +42,34 @@ function sleep(milliseconds) {
 function calculateGridHeight(container) {
 
    var gridContainer = $('#' + container);
-   var offset = gridContainer.offset();
-   var docHeight = $(document).height() - 20;
-
-   var tagHeight = 50;
-   var offsetTop = offset.top;
+   if (!gridContainer.length) {
+      return 250;
+   }
 
    var parent = gridContainer.parent();
-   var className = parent.prop('class');
-   var classNameList = className.split(' ');
+   var className = (parent && parent.prop('class')) ? parent.prop('class') : '';
+   var classNameList = className ? className.split(' ') : [];
 
    var indexClass = $.inArray("tab-pane", classNameList);
    if (indexClass >= 0) {
       if (className.indexOf('active') == -1) {
-
-         return (parent.height() + tagHeight - 5);
-         //var parentTab = parent.parent();
-         //var prevElement = parentTab.prev();
-         //offsetTop = prevElement.offset().top;
+         var ph = parent.height();
+         return (ph > 0 ? ph : 250);
       }
    }
 
+   var offset = gridContainer.offset();
+   var docHeight = $(window).height();
+   var tagHeight = 110;
+   var offsetTop = offset ? offset.top : 0;
+
    var finalHeight = docHeight - Math.abs(offsetTop + tagHeight);
 
-   return (finalHeight);
+   if (finalHeight < 150) {
+      finalHeight = 150;
+   }
+
+   return Math.round(finalHeight);
 };
 
 var ViewModelState = {
@@ -1233,6 +1237,514 @@ if (typeof window !== 'undefined') {
 }
 /*
  * --------------------------------------------
+ * Auto-ordenamiento inicial por Código (jqGrid)
+ * Aplica a todos los módulos y sus detalles (bandejas, popups y grids hijas)
+ * --------------------------------------------
+*/
+(function ($) {
+   if (!$.fn || !$.fn.jqGrid) return;
+
+   var _origJqGrid = $.fn.jqGrid;
+
+   function detectarColumnaCodigo(options) {
+      if (!options || !Array.isArray(options.colModel)) return null;
+
+      var colModel = options.colModel;
+      var colNames = Array.isArray(options.colNames) ? options.colNames : [];
+
+      // 1. Prioridad: Columna visible cuyo 'name' sea exactamente "Codigo" (case-insensitive)
+      for (var i = 0; i < colModel.length; i++) {
+         var col = colModel[i];
+         if (col && col.name && !col.hidden) {
+            var colNameLower = col.name.trim().toLowerCase();
+            if (colNameLower === 'codigo') {
+               return { name: col.name, index: i };
+            }
+         }
+      }
+
+      // 2. Prioridad: Columna visible cuyo encabezado en 'colNames' sea "Código" o "Codigo"
+      for (var j = 0; j < colNames.length; j++) {
+         var label = (colNames[j] || '').toString().trim().toLowerCase();
+         if (/^c[oó\u00f3\ufffd]digo$/i.test(label) || label === 'codigo' || label === 'código') {
+            if (j < colModel.length && colModel[j] && colModel[j].name && !colModel[j].hidden) {
+               return { name: colModel[j].name, index: j };
+            }
+         }
+      }
+
+      // 3. Prioridad: Columna visible cuyo 'name' empiece por "Codigo" específico (ej. CodigoProducto, CodigoReferencial)
+      for (var k = 0; k < colModel.length; k++) {
+         var colK = colModel[k];
+         if (colK && colK.name && !colK.hidden) {
+            var nLower = colK.name.trim().toLowerCase();
+            if (nLower === 'codigoproducto' || nLower === 'codigoreferencial' || nLower === 'codigoarticulo') {
+               return { name: colK.name, index: k };
+            }
+         }
+      }
+
+      return null;
+   }
+
+   function obtenerValorFila(row, colName, colIndex) {
+      if (!row) return '';
+      if (row.cell !== undefined) {
+         if (Array.isArray(row.cell) && colIndex !== undefined && colIndex >= 0 && colIndex < row.cell.length) {
+            return row.cell[colIndex];
+         }
+         if (typeof row.cell === 'object' && row.cell !== null) {
+            if (row.cell[colName] !== undefined) return row.cell[colName];
+            for (var k in row.cell) {
+               if (k.toLowerCase() === colName.toLowerCase()) return row.cell[k];
+            }
+         }
+         return row.cell;
+      }
+      if (row[colName] !== undefined) return row[colName];
+      for (var prop in row) {
+         if (prop.toLowerCase() === colName.toLowerCase()) return row[prop];
+      }
+      return '';
+   }
+
+   function resolverValorCelda(cellVal, rowData, colName, colIndex) {
+      if (cellVal !== undefined && cellVal !== null && cellVal !== '') {
+         return cellVal;
+      }
+      if (rowData && typeof rowData === 'object') {
+         if (rowData.cell !== undefined) {
+            if (Array.isArray(rowData.cell) && colIndex !== undefined && colIndex >= 0 && colIndex < rowData.cell.length) {
+               var cv = rowData.cell[colIndex];
+               if (cv !== undefined && cv !== null && cv !== '') return cv;
+            } else if (typeof rowData.cell === 'object' && rowData.cell !== null) {
+               if (rowData.cell[colName] !== undefined && rowData.cell[colName] !== null && rowData.cell[colName] !== '') {
+                  return rowData.cell[colName];
+               }
+               var colLowerCell = (colName || '').toLowerCase();
+               for (var kc in rowData.cell) {
+                  if (kc.toLowerCase() === colLowerCell) {
+                     var vc = rowData.cell[kc];
+                     if (vc !== undefined && vc !== null && vc !== '') return vc;
+                  }
+               }
+            }
+         }
+         if (rowData[colName] !== undefined && rowData[colName] !== null && rowData[colName] !== '') {
+            return rowData[colName];
+         }
+         var colLower = (colName || '').toLowerCase();
+         for (var k in rowData) {
+            if (k.toLowerCase() === colLower) {
+               var v = rowData[k];
+               if (v !== undefined && v !== null && v !== '') return v;
+            }
+         }
+      }
+      return cellVal;
+   }
+
+   function detectarColumnaFecha(options) {
+      if (!options || !Array.isArray(options.colModel)) return null;
+      var colModel = options.colModel;
+      var colNames = Array.isArray(options.colNames) ? options.colNames : [];
+
+      for (var i = 0; i < colModel.length; i++) {
+         var col = colModel[i];
+         if (col && col.name && !col.hidden) {
+            if (col.name.trim().toLowerCase() === 'fecha') {
+               return { name: col.name, index: i };
+            }
+         }
+      }
+
+      for (var j = 0; j < colModel.length; j++) {
+         var colJ = colModel[j];
+         if (colJ && colJ.name && !colJ.hidden) {
+            if (colJ.sorttype === 'date' || colJ.datefmt) {
+               return { name: colJ.name, index: j };
+            }
+         }
+      }
+
+      for (var k = 0; k < colNames.length; k++) {
+         var label = (colNames[k] || '').toString().trim().toLowerCase();
+         if (label === 'fecha' || label.indexOf('fecha') !== -1) {
+            if (k < colModel.length && colModel[k] && colModel[k].name && !colModel[k].hidden) {
+               return { name: colModel[k].name, index: k };
+            }
+         }
+      }
+
+      return null;
+   }
+
+   function detectarModuloOrdenFecha(options) {
+      if (!options) return false;
+      if (options.sortname && /^fecha/i.test(options.sortname.trim())) {
+         return true;
+      }
+      var url = (options.url || '').toLowerCase();
+      var pathname = (window.location && window.location.pathname ? window.location.pathname : '').toLowerCase();
+      var checkStr = url + ' ' + pathname;
+
+      var modulosFecha = [
+         'merchandising',
+         'canjeselectivo',
+         'cajacobranza',
+         'cobranza',
+         'comprobante',
+         'notacredito',
+         'guiaremi',
+         'guiaremvta',
+         'guiaremotro'
+      ];
+
+      for (var i = 0; i < modulosFecha.length; i++) {
+         if (checkStr.indexOf(modulosFecha[i]) !== -1) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   function parsearFechaUniversal(val) {
+      if (val === null || val === undefined || val === '') return null;
+      if (typeof val === 'number') return (!isNaN(val) && isFinite(val)) ? val : null;
+      if (val instanceof Date) return isNaN(val.getTime()) ? null : val.getTime();
+      var s = String(val).trim();
+      if (s.indexOf('<') !== -1 && s.indexOf('>') !== -1) {
+         s = s.replace(/<[^>]*>/g, '').trim();
+      }
+      s = s.replace(/&(?:nbsp|#160);/gi, '').trim();
+      if (!s) return null;
+
+      // Timestamp numérico como string (10 a 13 dígitos)
+      if (/^\d{10,13}$/.test(s)) {
+         var numTs = parseInt(s, 10);
+         if (!isNaN(numTs)) return numTs;
+      }
+
+      // /Date(1234567890)/
+      var dateMatch = s.match(/\/Date\((\d+)\)\//);
+      if (dateMatch) return parseInt(dateMatch[1], 10);
+
+      // dd/MM/yyyy o dd/MM/yyyy HH:mm:ss o dd-MM-yyyy
+      var dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (dmy) {
+         var d = parseInt(dmy[1], 10);
+         var m = parseInt(dmy[2], 10) - 1;
+         var y = parseInt(dmy[3], 10);
+         var hh = dmy[4] ? parseInt(dmy[4], 10) : 0;
+         var mm = dmy[5] ? parseInt(dmy[5], 10) : 0;
+         var ss = dmy[6] ? parseInt(dmy[6], 10) : 0;
+         var dt = new Date(y, m, d, hh, mm, ss);
+         return isNaN(dt.getTime()) ? null : dt.getTime();
+      }
+
+      // yyyy-MM-dd o yyyy-MM-ddTHH:mm:ss o yyyy/MM/dd
+      var ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (ymd) {
+         var y2 = parseInt(ymd[1], 10);
+         var m2 = parseInt(ymd[2], 10) - 1;
+         var d2 = parseInt(ymd[3], 10);
+         var hh2 = ymd[4] ? parseInt(ymd[4], 10) : 0;
+         var mm2 = ymd[5] ? parseInt(ymd[5], 10) : 0;
+         var ss2 = ymd[6] ? parseInt(ymd[6], 10) : 0;
+         var dt2 = new Date(y2, m2, d2, hh2, mm2, ss2);
+         return isNaN(dt2.getTime()) ? null : dt2.getTime();
+      }
+
+      var dtFallback = new Date(s);
+      return isNaN(dtFallback.getTime()) ? null : dtFallback.getTime();
+   }
+
+   function parsearNumeroUniversal(val) {
+      if (val === null || val === undefined || val === '') return null;
+      if (typeof val === 'number') {
+         if (isNaN(val) || !isFinite(val)) return null;
+         return val;
+      }
+      var s = String(val);
+      if (s.indexOf('<') !== -1 && s.indexOf('>') !== -1) {
+         s = s.replace(/<[^>]*>/g, '');
+      }
+      s = s.replace(/&(?:nbsp|#160);/gi, '');
+      s = s.replace(/S\/\.?|\$|\€/gi, '').replace(/[^\d\.\,\-]/g, '').trim();
+      if (!s || s === '-') return null;
+      if (s.indexOf(',') !== -1 && s.indexOf('.') !== -1) {
+         if (s.lastIndexOf('.') > s.lastIndexOf(',')) {
+            s = s.replace(/,/g, '');
+         } else {
+            s = s.replace(/\./g, '').replace(',', '.');
+         }
+      } else if (s.indexOf(',') !== -1 && s.indexOf('.') === -1) {
+         if (/,\d{1,2}$/.test(s)) {
+            s = s.replace(',', '.');
+         } else {
+            s = s.replace(/,/g, '');
+         }
+      }
+      var num = parseFloat(s);
+      return (isNaN(num) || !isFinite(num)) ? null : num;
+   }
+
+   function limpiarTextoParaComparar(val) {
+      if (val === null || val === undefined) return '';
+      if (typeof val === 'object') {
+         if (val.Nombre !== undefined) return limpiarTextoParaComparar(val.Nombre);
+         if (val.Codigo !== undefined) return limpiarTextoParaComparar(val.Codigo);
+         if (val.name !== undefined) return limpiarTextoParaComparar(val.name);
+         return '';
+      }
+      var s = String(val);
+      if (s.indexOf('<') !== -1 && s.indexOf('>') !== -1) {
+         s = s.replace(/<[^>]*>/g, '');
+      }
+      s = s.replace(/&(?:nbsp|#160);/gi, ' ');
+      s = s.trim();
+      s = s.replace(/^["'«»“”‘’\s\(\)\[\]\-]+/, '').replace(/["'«»“”‘’\s\(\)\[\]\-]+$/, '');
+      return s.trim();
+   }
+
+   function compararTextoNatural(a, b, direction) {
+      var dir = (direction === -1 || direction === 'desc' || direction === 'd') ? -1 : 1;
+      var sA = (typeof a === 'string') ? a : limpiarTextoParaComparar(a);
+      var sB = (typeof b === 'string') ? b : limpiarTextoParaComparar(b);
+      if (!sA && !sB) return 0;
+      if (!sA) return 1;
+      if (!sB) return -1;
+      return dir * sA.localeCompare(sB, 'es', { numeric: true, sensitivity: 'base' });
+   }
+
+   function configurarOrdenamientoInteligente(options) {
+      if (!options || typeof options !== 'object' || !Array.isArray(options.colModel)) {
+         return;
+      }
+
+      var colModel = options.colModel;
+      var esModuloFecha = detectarModuloOrdenFecha(options);
+      var infoFecha = esModuloFecha ? detectarColumnaFecha(options) : null;
+      var infoCodigo = (!infoFecha) ? detectarColumnaCodigo(options) : null;
+
+      // 1. Establecer sortname y sortorder iniciales
+      if (infoFecha) {
+         options.sortname = infoFecha.name;
+         if (!options.sortorder || options.sortorder === '') {
+            options.sortorder = 'desc';
+         }
+      } else if (infoCodigo) {
+         if (!options.sortname || options.sortname === '') {
+            options.sortname = infoCodigo.name;
+            if (!options.sortorder || options.sortorder === '') {
+               options.sortorder = 'asc';
+            }
+         }
+      }
+
+      // 2. Optimizar cada columna en colModel para que el ordenamiento sea consistente y preciso
+      for (var i = 0; i < colModel.length; i++) {
+         var col = colModel[i];
+         if (!col || typeof col !== 'object') continue;
+
+         var colName = (col.name || '').trim();
+
+         // Asegurar que index coincida con name para que getAccessor no retorne undefined
+         if (!col.index || col.index === '') {
+            col.index = colName;
+         }
+
+         // Columnas vacÃ­as o sin nombre no deben permitir click de ordenamiento
+         if (!colName || colName === '') {
+            col.sortable = false;
+            continue;
+         }
+
+         // Si el desarrollador ya proveyÃ³ un sortfunc propio, respetarlo
+         if (col.sortfunc && typeof col.sortfunc === 'function') {
+            continue;
+         }
+
+         var esColumnaCodigo = infoCodigo && (col.name === infoCodigo.name || i === infoCodigo.index);
+         var colNameLower = colName.toLowerCase();
+         var esFecha = col.sorttype === 'date' || !!col.datefmt || col.formatter === 'date' || /fecha|date/i.test(colNameLower);
+         var esNumero = col.sorttype === 'number' || col.sorttype === 'integer' || col.sorttype === 'float' ||
+                        col.formatter === 'number' || col.formatter === 'currency' || col.formatter === 'integer' ||
+                        /(monto|total|precio|cantidad|saldo|importe|subtotal|igv|neto|tasa|porcentaje|descuento|valorunitario|costo|pesoneto|pesobruto|volumen)/i.test(colNameLower);
+         var esDocumentoOCodigo = esColumnaCodigo || /^(codigo|#?documento|numerodocumento|ruc|serie|correlativo|numero|nro|guia|orden|cotizac|pedido)/i.test(colNameLower);
+
+         if (esFecha) {
+            col.sorttype = (function (cName, cIdx) {
+               return function (cellVal, rowData) {
+                  var val = resolverValorCelda(cellVal, rowData, cName, cIdx);
+                  return parsearFechaUniversal(val);
+               };
+            })(colName, i);
+            col.sortfunc = function (a, b, direction) {
+               var dir = (direction === -1 || direction === 'desc' || direction === 'd') ? -1 : 1;
+               var tA = (typeof a === 'number' && !isNaN(a)) ? a : parsearFechaUniversal(a);
+               var tB = (typeof b === 'number' && !isNaN(b)) ? b : parsearFechaUniversal(b);
+               if (tA === null && tB === null) return 0;
+               if (tA === null) return 1;
+               if (tB === null) return -1;
+               if (tA === tB) return 0;
+               return tA < tB ? -dir : dir;
+            };
+         } else if (esNumero) {
+            col.sorttype = (function (cName, cIdx) {
+               return function (cellVal, rowData) {
+                  var val = resolverValorCelda(cellVal, rowData, cName, cIdx);
+                  return parsearNumeroUniversal(val);
+               };
+            })(colName, i);
+            col.sortfunc = function (a, b, direction) {
+               var dir = (direction === -1 || direction === 'desc' || direction === 'd') ? -1 : 1;
+               var nA = (typeof a === 'number' && !isNaN(a)) ? a : parsearNumeroUniversal(a);
+               var nB = (typeof b === 'number' && !isNaN(b)) ? b : parsearNumeroUniversal(b);
+               if (nA === null && nB === null) return 0;
+               if (nA === null) return 1;
+               if (nB === null) return -1;
+               if (nA === nB) return 0;
+               return nA < nB ? -dir : dir;
+            };
+         } else if (esDocumentoOCodigo) {
+            col.sorttype = (function (cName, cIdx) {
+               return function (cellVal, rowData) {
+                  var val = resolverValorCelda(cellVal, rowData, cName, cIdx);
+                  return limpiarTextoParaComparar(val);
+               };
+            })(colName, i);
+            col.sortfunc = function (a, b, direction) {
+               return compararTextoNatural(a, b, direction);
+            };
+         } else {
+            col.sorttype = (function (cName, cIdx) {
+               return function (cellVal, rowData) {
+                  var val = resolverValorCelda(cellVal, rowData, cName, cIdx);
+                  return limpiarTextoParaComparar(val);
+               };
+            })(colName, i);
+            col.sortfunc = function (a, b, direction) {
+               return compararTextoNatural(a, b, direction);
+            };
+         }
+      }
+
+      // 3. Pre-ordenar datos locales al inicializar (ej. grids de subdetalles o arrays en memoria)
+      if (infoFecha && Array.isArray(options.data) && options.data.length > 1) {
+         var targetNameLocalF = infoFecha.name;
+         var targetIndexLocalF = infoFecha.index;
+         var isDescLocal = ((options.sortorder || '').toLowerCase() !== 'asc');
+         options.data.sort(function (itemA, itemB) {
+            var vA = resolverValorCelda('', itemA, targetNameLocalF, targetIndexLocalF);
+            var vB = resolverValorCelda('', itemB, targetNameLocalF, targetIndexLocalF);
+            var tA = parsearFechaUniversal(vA);
+            var tB = parsearFechaUniversal(vB);
+            if (tA === null && tB === null) return 0;
+            if (tA === null) return 1;
+            if (tB === null) return -1;
+            if (tA === tB) return 0;
+            return tA < tB ? (isDescLocal ? 1 : -1) : (isDescLocal ? -1 : 1);
+         });
+      } else if (infoCodigo && Array.isArray(options.data) && options.data.length > 1) {
+         var targetNameLocal = infoCodigo.name;
+         var targetIndexLocal = infoCodigo.index;
+         options.data.sort(function (itemA, itemB) {
+            var vA = obtenerValorFila(itemA, targetNameLocal, targetIndexLocal);
+            var vB = obtenerValorFila(itemB, targetNameLocal, targetIndexLocal);
+            return compararTextoNatural(vA, vB);
+         });
+      }
+
+      // 4. Interceptar onSortCol para registrar que el usuario hizo click en una columna
+      var origOnSortCol = options.onSortCol;
+      options.onSortCol = function (index, iCol, sortorder) {
+         if (this && this.p) {
+            this.p._userSorted = true;
+         }
+         if (typeof origOnSortCol === 'function') {
+            return origOnSortCol.apply(this, arguments);
+         }
+      };
+
+      // 5. Interceptar la respuesta JSON para ordenar inicialmente por Fecha (desc) o CÃ³digo (asc) SIN sobreescribir clicks del usuario
+      if (infoFecha || infoCodigo) {
+         var originalBeforeProcessing = options.beforeProcessing;
+         options.beforeProcessing = function (data) {
+            if (data) {
+               var currentSort = (this && this.p && this.p.sortname) ? this.p.sortname : (options.sortname || '');
+               var currentOrder = (this && this.p && this.p.sortorder) ? this.p.sortorder : (options.sortorder || '');
+               var userHasSorted = this && this.p && this.p._userSorted;
+
+               var rowsArray = null;
+               if (Array.isArray(data)) {
+                  rowsArray = data;
+               } else if (Array.isArray(data.rows)) {
+                  rowsArray = data.rows;
+               }
+
+               if (rowsArray && rowsArray.length > 1) {
+                  if (infoFecha && (!userHasSorted) && (currentSort === '' || currentSort === infoFecha.name)) {
+                     var targetNameF = infoFecha.name;
+                     var targetIndexF = infoFecha.index;
+                     var isDesc = (currentOrder.toLowerCase() !== 'asc');
+                     rowsArray.sort(function (itemA, itemB) {
+                        var vA = resolverValorCelda('', itemA, targetNameF, targetIndexF);
+                        var vB = resolverValorCelda('', itemB, targetNameF, targetIndexF);
+                        var tA = parsearFechaUniversal(vA);
+                        var tB = parsearFechaUniversal(vB);
+                        if (tA === null && tB === null) return 0;
+                        if (tA === null) return 1;
+                        if (tB === null) return -1;
+                        if (tA === tB) return 0;
+                        return tA < tB ? (isDesc ? 1 : -1) : (isDesc ? -1 : 1);
+                     });
+                  } else if (infoCodigo && (!userHasSorted) && (currentSort === '' || currentSort === infoCodigo.name)) {
+                     var targetNameC = infoCodigo.name;
+                     var targetIndexC = infoCodigo.index;
+                     rowsArray.sort(function (itemA, itemB) {
+                        var vA = obtenerValorFila(itemA, targetNameC, targetIndexC);
+                        var vB = obtenerValorFila(itemB, targetNameC, targetIndexC);
+                        return compararTextoNatural(vA, vB);
+                     });
+                  }
+               }
+            }
+            if (typeof originalBeforeProcessing === 'function') {
+               return originalBeforeProcessing.apply(this, arguments);
+            }
+         };
+      }
+   }
+
+   
+
+   // Usar Proxy para envolver $.fn.jqGrid preservando el 100% de métodos y propiedades internas (getStyleUI, getGridParam, etc.)
+   var customJqGrid;
+   if (typeof Proxy === 'function') {
+      customJqGrid = new Proxy(_origJqGrid, {
+         apply: function (target, thisArg, argArray) {
+            if (argArray && argArray.length > 0 && typeof argArray[0] === 'object' && argArray[0] !== null) {
+               configurarOrdenamientoInteligente(argArray[0]);
+            }
+            return Reflect.apply(target, thisArg, argArray);
+         }
+      });
+   } else {
+      customJqGrid = function (options) {
+         if (options && typeof options === 'object') {
+            configurarOrdenamientoInteligente(options);
+         }
+         return _origJqGrid.apply(this, arguments);
+      };
+      $.extend(customJqGrid, _origJqGrid);
+   }
+
+   $.fn.jqGrid = customJqGrid;
+})(jQuery);
+
+/*
+ * --------------------------------------------
  * appGrid.js
  * --------------------------------------------
 */
@@ -1324,13 +1836,25 @@ if (typeof window !== 'undefined') {
          return true;
       },
       resizeGrid: function (gridContainer) {
-         var width = $('#' + gridContainer).width();
+         if (!gridContainer) return true;
+         var $container = $('#' + gridContainer);
+         if (!$container.length) return true;
+
+         var width = $container.width();
          width = width - 2; // Fudge factor to prevent horizontal scrollbars
          if (width > 0 &&
             // Only resize if new width exceeds a minimal threshold
             // Fixes IE issue with in-place resizing when mousing-over frame bars
             Math.abs(width - $(this.element).width()) > 5) {
             $(this.element).jqGrid('setGridWidth', width);
+         }
+
+         var newH = calculateGridHeight(gridContainer);
+         if (newH >= 150) {
+            var curH = parseFloat($(this.element).jqGrid('getGridParam', 'height'));
+            if (isNaN(curH) || Math.abs(newH - curH) > 5) {
+               $(this.element).jqGrid('setGridHeight', newH);
+            }
          }
 
          return true;
@@ -1905,4 +2429,33 @@ function getPopupParam(elem) {
          uploader.init();
       });
    };
+})(jQuery);
+
+// Auto-redimensionamiento reactivo en cambio de tamano de ventana y tabs
+(function ($) {
+   var _gridResizeTimer = null;
+   $(window).on('resize', function () {
+      clearTimeout(_gridResizeTimer);
+      _gridResizeTimer = setTimeout(function () {
+         $('div[id*="Container"]').each(function () {
+            var containerId = this.id;
+            var grid = $(this).find('table.ui-jqgrid-btable');
+            if (grid.length > 0 && grid.is(':visible')) {
+               grid.appGrid('resizeGrid', containerId);
+            }
+         });
+      }, 150);
+   });
+
+   $(document).on('shown.bs.tab', 'a[data-toggle="tab"], button[data-toggle="tab"]', function () {
+      setTimeout(function () {
+         $('div[id*="Container"]:visible').each(function () {
+            var containerId = this.id;
+            var grid = $(this).find('table.ui-jqgrid-btable');
+            if (grid.length > 0) {
+               grid.appGrid('resizeGrid', containerId);
+            }
+         });
+      }, 50);
+   });
 })(jQuery);

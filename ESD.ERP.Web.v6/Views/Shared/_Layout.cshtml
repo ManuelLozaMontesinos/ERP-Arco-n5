@@ -184,10 +184,15 @@
                         </div>
                         <p>Los avisos de hoy</p>
                      </div>
-                     <button type="button" id="app-notification-clear-all" class="app-notification-clear-all" disabled>
-                        <i class="far fa-trash-alt" aria-hidden="true"></i>
-                        <span>Vaciar</span>
-                     </button>
+                     <div class="d-flex align-items-center" style="gap: 8px;">
+                        <button type="button" id="app-notification-sound-toggle" class="app-notification-sound-toggle" title="Sonido de notificaciones: Activado" aria-label="Alternar sonido de notificaciones">
+                           <i class="fas fa-volume-up" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" id="app-notification-clear-all" class="app-notification-clear-all" disabled>
+                           <i class="far fa-trash-alt" aria-hidden="true"></i>
+                           <span>Vaciar</span>
+                        </button>
+                     </div>
                   </div>
                   <div id="app-notification-dropdown" class="app-notification-list" role="list"></div>
                   <div id="app-notification-empty" class="app-notification-empty" hidden>
@@ -223,7 +228,7 @@
       <!-- /.navbar -->
       <!-- Main Sidebar Container -->
       <aside class="main-sidebar sidebar-dark-primary elevation-4">
-         <!-- Brand Logo: ARCO - Hazlo Realidad (29+ AÃ±os) -->
+         <!-- Brand Logo: ARCO - Hazlo Realidad (29+ Años) -->
          <a href="@Url.Action("Index", "Home", new { cid = ViewBag.cid })" onclick="if (window.resetNavbarBreadcrumb) { window.resetNavbarBreadcrumb(); } window.location.href = '@Url.Action("Index", "Home")?cid=' + encodeURIComponent($('#__cid').val() || '@ViewBag.cid'); return false;" class="brand-link brand-link-arco" style="cursor: pointer;" title="ARCO - Hazlo Realidad | Ir al Dashboard (29+ A&ntilde;os)">
             <!-- Collapsed Mini Sidebar Icon -->
             <img src="~/img/logo-arco-circle.png" alt="ARCO" class="brand-logo-collapsed img-circle elevation-2">
@@ -543,8 +548,10 @@
          $(this).getAction({
             urlAction: '@Url.Action("ObtenerMenuAsignado", "Menu")',
             onSuccess: function (response) {
+                window.erpMenuTree = response;
                var ul = $('#main-menu');
                buildMenu(ul, response);
+                $(document).trigger('erpMenuTreeLoaded', [response]);
             }
          });
          $('#passwordEditPopup').setDialog({

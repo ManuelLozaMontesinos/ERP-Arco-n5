@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
     string facturacionMes = ViewBag.FacturacionMes ?? "S/ 0.00";
@@ -152,7 +152,7 @@
                 <div class="small-box bg-warning shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-produccion" style="color: #ffffff !important;">@ordenesProduccionMes</h3>
-                        <p style="color: #ffffff !important;" class="font-weight-500">&Oacute;rdenes de Producci&oacute;n del Mes</p>
+                        <p style="color: #ffffff !important;" class="font-weight-500">&Oacute;rdenes de Producción del Mes</p>
                     </div>
                     <div class="icon">
                         <i class="fas fa-industry" style="color: rgba(255, 255, 255, 0.25) !important;"></i>
@@ -430,6 +430,55 @@
                     body.dark-mode .btn-sede-filter.btn-vs.active {
                         background-color: #0891b2;
                         color: #ffffff;
+                    }
+                    /* Estilos para Modal Gestionar Accesos Rápidos */
+                    .acceso-rapido-item-card {
+                        transition: all 0.18s ease;
+                        border-radius: 8px;
+                        background-color: #ffffff;
+                        user-select: none;
+                        border: 1px solid #e2e8f0;
+                    }
+                    .acceso-rapido-item-card:hover {
+                        border-color: #28a745 !important;
+                        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15) !important;
+                        transform: translateY(-1px);
+                    }
+                    .acceso-rapido-item-card.is-selected {
+                        border-color: #28a745 !important;
+                        background-color: rgba(40, 167, 69, 0.04);
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .modal-content {
+                        background-color: #1e293b;
+                        color: #e2e8f0;
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .modal-header,
+                    body.dark-mode #modal-gestionar-accesos-rapidos .modal-footer {
+                        background-color: #0f172a !important;
+                        border-color: #334155 !important;
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .modal-body {
+                        background-color: #1e293b !important;
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .acceso-rapido-item-card {
+                        background-color: #334155 !important;
+                        border-color: #475569 !important;
+                        color: #f8fafc !important;
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .acceso-rapido-item-card.is-selected {
+                        border-color: #22c55e !important;
+                        background-color: rgba(34, 197, 94, 0.12) !important;
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .acceso-rapido-item-card .text-muted {
+                        color: #94a3b8 !important;
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .acceso-rapido-item-card .badge-light {
+                        background-color: #1e293b !important;
+                        border-color: #475569 !important;
+                        color: #cbd5e1 !important;
+                    }
+                    body.dark-mode #modal-gestionar-accesos-rapidos .close {
+                        color: #cbd5e1 !important;
                     }
                     /* Estilos para Gestionar Dashboard */
                     #btn-gestionar-dashboard {
@@ -831,16 +880,17 @@
                 <div class="card card-success card-outline shadow-sm mb-4" id="area-accesos-rapidos">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
-                            <i class="fas fa-bolt text-success mr-2"></i>Accesos R&aacute;pidos
+                            <i class="fas fa-bolt text-success mr-2"></i>Accesos Rápidos
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <button type="button" class="btn btn-tool mr-1" id="btn-gestionar-accesos-rapidos" data-toggle="modal" data-target="#modal-gestionar-accesos-rapidos" title="Personalizar Accesos Rápidos" style="font-size: 0.85rem;"><i class="fas fa-sliders-h text-success"></i></button>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
                         </div>
                     </div>
                     <div class="card-body p-3">
-                        <div class="d-flex flex-wrap justify-content-center align-items-center" style="gap: 10px;">
+                        <div id="contenedor-accesos-rapidos" class="d-flex flex-wrap justify-content-center align-items-center" style="gap: 10px;">
                             <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'cotizacion/index' });">
                                 <i class="fas fa-file-signature text-success"></i> Cotizaciones
                             </a>
@@ -851,7 +901,7 @@
                                 <i class="fas fa-receipt text-info"></i> Facturar
                             </a>
                             <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'ordenProdu/index' });">
-                                <i class="fas fa-industry text-warning"></i> Producci&oacute;n
+                                <i class="fas fa-industry text-warning"></i> Producción
                             </a>
                             <a class="btn btn-app m-0" href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'ordenCompra/index' });">
                                 <i class="fas fa-truck-loading text-danger"></i> Compras
@@ -867,7 +917,7 @@
                 <div class="card card-warning card-outline shadow-sm mb-4" id="area-estado-produccion">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
                         <h3 class="card-title font-weight-bold m-0">
-                            <i class="fas fa-chart-pie text-warning mr-2"></i>Estado de Producci&oacute;n
+                            <i class="fas fa-chart-pie text-warning mr-2"></i>Estado de Producción
                             <span class="badge badge-light border text-warning ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre (@anioSesion)</span>
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
@@ -981,7 +1031,7 @@
 
         <!-- 3. SECCION: TOP 5/10 PEDIDOS DEL DIA Y CLIENTES INACTIVOS -->
         <div class="row" id="row-tablas-detalle">
-            <!-- 3.1. Top 5 / Top 10 Pedidos del DÃ­a (Izquierda) -->
+            <!-- 3.1. Top 5 / Top 10 Pedidos del Día (Izquierda) -->
             <div class="col-lg-6 mb-4" id="area-top-pedidos">
                 <div class="card card-primary card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
@@ -1084,7 +1134,6 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm mr-2" id="btn-ver-mas-clientes" onclick="alternarVerMasClientesInactivos();" style="height: 28px; padding: 2px 8px; font-size: 0.8rem;">
                                 <i class="fas fa-chevron-down mr-1"></i>Ver m&aacute;s (10)
                             </button>
-                            <span class="badge badge-warning text-dark px-2 py-1 mr-2" id="badge-clientes-inactivos"><i class="fas fa-history mr-1"></i>Inactivos</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -1460,10 +1509,10 @@
                         &Aacute;reas del Dashboard (<span id="modal-conteo-areas-activas" class="font-weight-bold text-primary">12</span> de <span id="modal-conteo-areas-permitidas" class="font-weight-bold text-dark">12</span> disponibles)
                     </span>
                     <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-primary btn-xs px-2" id="btn-modal-marcar-todos" title="Mostrar todas las Ã¡reas">
+                        <button type="button" class="btn btn-outline-primary btn-xs px-2" id="btn-modal-marcar-todos" title="Mostrar todas las áreas">
                             <i class="fas fa-check-double mr-1"></i>Marcar Todos
                         </button>
-                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-modal-desmarcar-todos" title="Ocultar todas las Ã¡reas">
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-modal-desmarcar-todos" title="Ocultar todas las áreas">
                             <i class="fas fa-times mr-1"></i>Desmarcar Todos
                         </button>
                         <button type="button" class="btn btn-outline-info btn-xs px-2" id="btn-modal-restablecer" title="Restablecer vista por defecto">
@@ -1477,7 +1526,7 @@
                 </div>
 
                 <div class="d-flex flex-column" style="gap: 10px;">
-                    <!-- 1. Tarjetas de MÃ©tricas -->
+                    <!-- 1. Tarjetas de Métricas -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-kpis" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(23, 162, 184, 0.12); color: #17a2b8; flex-shrink: 0;">
@@ -1485,7 +1534,7 @@
                             </div>
                             <div>
                                 <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Tarjetas de M&eacute;tricas (KPIs)</div>
-                                <small class="text-muted">Facturaci&oacute;n del Mes, Pedidos Activos, Cotizaciones, &Oacute;rdenes de Producci&oacute;n y Compras</small>
+                                <small class="text-muted">Facturaci&oacute;n del Mes, Pedidos Activos, Cotizaciones, &Oacute;rdenes de Producción y Compras</small>
                             </div>
                         </div>
                         <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
@@ -1536,7 +1585,7 @@
                             <div class="sub-kpi-card d-flex align-items-center justify-content-between px-3 py-2 rounded bg-white border" data-kpi="kpi-produccion" style="transition: all 0.2s ease;">
                                 <div class="d-flex align-items-center text-truncate mr-2">
                                     <span class="badge mr-2 px-2 py-1" style="background-color: rgba(255, 193, 7, 0.18); color: #d39e00;"><i class="fas fa-industry"></i></span>
-                                    <span class="font-weight-600 text-dark text-truncate" style="font-size: 0.88rem;">Producci&oacute;n del Mes</span>
+                                    <span class="font-weight-600 text-dark text-truncate" style="font-size: 0.88rem;">Producción del Mes</span>
                                 </div>
                                 <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
                                     <input type="checkbox" class="custom-control-input chk-sub-kpi" id="chk-sub-kpi-produccion" data-kpi="kpi-produccion" checked>
@@ -1596,7 +1645,7 @@
                         </div>
                     </div>
 
-                    <!-- 2. EvoluciÃ³n de Ventas -->
+                    <!-- 2. Evolución de Ventas -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-evolucion-ventas" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(0, 123, 255, 0.12); color: #007bff; flex-shrink: 0;">
@@ -1647,7 +1696,7 @@
                         </div>
                     </label>
 
-                    <!-- 5. Accesos RÃ¡pidos -->
+                    <!-- 5. Accesos Rápidos -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-accesos-rapidos" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(40, 167, 69, 0.12); color: #28a745; flex-shrink: 0;">
@@ -1655,7 +1704,7 @@
                             </div>
                             <div>
                                 <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Accesos R&aacute;pidos</div>
-                                <small class="text-muted">Botones de acceso directo a Cotizaciones, Pedidos, Facturar, Producci&oacute;n, Compras y Productos</small>
+                                <small class="text-muted">Botones de acceso directo a Cotizaciones, Pedidos, Facturar, Producción, Compras y Productos</small>
                             </div>
                         </div>
                         <div class="custom-control custom-switch custom-switch-md" style="flex-shrink: 0;">
@@ -1664,14 +1713,14 @@
                         </div>
                     </label>
 
-                    <!-- 6. Estado de ProducciÃ³n -->
+                    <!-- 6. Estado de Producción -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-estado-produccion" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(255, 193, 7, 0.15); color: #d39e00; flex-shrink: 0;">
                                 <i class="fas fa-chart-pie fa-lg"></i>
                             </div>
                             <div>
-                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Estado de Producci&oacute;n</div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Estado de Producción</div>
                                 <small class="text-muted">Gr&aacute;fico de anillo con distribuci&oacute;n porcentual de &oacute;rdenes de producci&oacute;n del mes</small>
                             </div>
                         </div>
@@ -1698,7 +1747,7 @@
                         </div>
                     </label>
 
-                    <!-- 8. Top Pedidos del DÃ­a -->
+                    <!-- 8. Top Pedidos del Día -->
                     <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-area-top-pedidos" style="cursor: pointer; transition: all 0.2s ease;">
                         <div class="d-flex align-items-center mr-3">
                             <div class="icon-box-area mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 8px; background-color: rgba(0, 123, 255, 0.12); color: #007bff; flex-shrink: 0;">
@@ -1795,6 +1844,96 @@
 </div>
 
 <!-- ======================================================== -->
+<!-- ======================================================== -->
+<!-- MODAL: GESTIONAR ACCESOS RAPIDOS                          -->
+<!-- ======================================================== -->
+<div class="modal fade" id="modal-gestionar-accesos-rapidos" tabindex="-1" role="dialog" aria-labelledby="modalGestionarAccesosRapidosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header bg-light py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="modal-header-icon mr-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px; border-radius: 10px; background-color: rgba(40, 167, 69, 0.15); color: #28a745; flex-shrink: 0;">
+                        <i class="fas fa-bolt fa-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title font-weight-bold mb-0 text-dark" id="modalGestionarAccesosRapidosLabel" style="font-size: 1.18rem;">
+                            Gestionar Accesos Rápidos
+                        </h5>
+                        <small class="text-muted">Personaliza los módulos a los que deseas acceder rápidamente desde tu tablero</small>
+                    </div>
+                </div>
+                <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close" style="opacity: 0.7; font-size: 1.5rem; outline: none;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Barra de B&uacute;squeda y Filtros de Categor&iacute;a -->
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-5 mb-2 mb-md-0">
+                        <div class="input-group input-group-sm shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
+                            </div>
+                            <input type="text" id="busqueda-modulo-accesos" class="form-control border-left-0" placeholder="Buscar módulo (ej. Cotizaciones, Pedidos, Reloj...)" autocomplete="off">
+                            <div class="input-group-append" id="btn-limpiar-busqueda-accesos" style="display: none; cursor: pointer;">
+                                <span class="input-group-text bg-white"><i class="fas fa-times text-muted"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7 text-md-right">
+                        <div class="btn-group btn-group-sm flex-wrap" role="group" id="filtros-categoria-accesos">
+                            <button type="button" class="btn btn-success btn-sm px-2 py-1 filter-cat-btn active mb-1 mr-1" data-cat="TODOS">Todos (<span id="cnt-cat-todos">0</span>)</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 filter-cat-btn mb-1 mr-1" data-cat="Ventas">Ventas</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 filter-cat-btn mb-1 mr-1" data-cat="Producción">Producción</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 filter-cat-btn mb-1 mr-1" data-cat="Compras">Compras</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 filter-cat-btn mb-1 mr-1" data-cat="Almacén">Almacén</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 filter-cat-btn mb-1 mr-1" data-cat="Maestros">Maestros</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 filter-cat-btn mb-1 mr-1" data-cat="RRHH">RRHH</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1 filter-cat-btn mb-1" data-cat="Otros">Otros</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Acciones R&aacute;pidas y Contador -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center pb-2 mb-3 border-bottom">
+                    <div class="d-flex align-items-center">
+                        <span class="badge badge-success px-2 py-1 font-weight-600 mr-2 shadow-sm" style="font-size: 0.85rem;">
+                            <i class="fas fa-check-circle mr-1"></i><span id="conteo-accesos-seleccionados">6</span> seleccionados
+                        </span>
+                        <small class="text-muted" id="info-modulos-visibles">Mostrando módulos disponibles</small>
+                    </div>
+                    <div class="btn-group btn-group-sm mt-2 mt-sm-0" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-accesos-marcar-visibles" title="Marcar los módulos visibles en la lista">
+                            <i class="fas fa-check-double mr-1 text-success"></i>Marcar Visibles
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-accesos-desmarcar-todos" title="Desmarcar todos los módulos">
+                            <i class="fas fa-times mr-1 text-danger"></i>Desmarcar Todos
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-accesos-restablecer" title="Volver a los 6 accesos iniciales de fábrica">
+                            <i class="fas fa-undo mr-1 text-info"></i>Predeterminados
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cuadrícula de Módulos Seleccionables -->
+                <div id="grid-modulos-accesos-rapidos" class="row" style="max-height: 420px; overflow-y: auto; padding: 4px;">
+                    <!-- Se llena dinámicamente con las tarjetas de módulos -->
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between align-items-center">
+                <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Tus accesos rápidos se guardan para tu usuario en este equipo.</small>
+                <div>
+                    <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-600 mr-2" data-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm px-4 font-weight-600 shadow-sm" id="btn-guardar-accesos-rapidos">
+                        <i class="fas fa-save mr-1"></i>Guardar Accesos R&aacute;pidos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- MODAL: GESTIONAR DASHBOARD POR ROL (Solo Administradores) -->
 <!-- ======================================================== -->
 <div class="modal fade" id="modal-gestionar-dashboard-rol" tabindex="-1" role="dialog" aria-labelledby="modalGestionarDashboardRolLabel" aria-hidden="true">
@@ -1859,7 +1998,7 @@
 
                 <!-- Contenedor Symmetrical de Areas (Bootstrap Row) -->
                 <div class="row">
-                    <!-- 1. Tarjetas de MÃ©tricas (Full width para destacar control principal) -->
+                    <!-- 1. Tarjetas de Métricas -->
                     <div class="col-12 mb-3">
                         <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm" for="chk-rol-area-kpis" style="cursor: pointer; transition: all 0.2s ease;">
                             <div class="d-flex align-items-center mr-3">
@@ -1924,7 +2063,7 @@
                                 <div class="sub-kpi-card d-flex align-items-center justify-content-between p-2 rounded bg-white border">
                                     <div class="d-flex align-items-center mr-2 text-truncate">
                                         <i class="fas fa-industry text-warning mr-2"></i>
-                                        <span class="text-xs font-weight-600 text-dark text-truncate">Producci&oacute;n</span>
+                                        <span class="text-xs font-weight-600 text-dark text-truncate">Producción</span>
                                     </div>
                                     <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
                                         <input type="checkbox" class="custom-control-input chk-rol-sub-kpi" id="chk-rol-kpi-produccion" data-kpi="kpi-produccion" checked>
@@ -2042,7 +2181,7 @@
                         </label>
                     </div>
 
-                    <!-- 5. Accesos Rapidos -->
+                    <!-- 5. Accesos Rápidos -->
                     <div class="col-md-6 mb-3">
                         <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm h-100" for="chk-rol-area-accesos-rapidos" style="cursor: pointer; transition: all 0.2s ease;">
                             <div class="d-flex align-items-center mr-3">
@@ -2069,7 +2208,7 @@
                                     <i class="fas fa-chart-pie"></i>
                                 </div>
                                 <div>
-                                    <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Estado de Producci&oacute;n</span>
+                                    <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Estado de Producción</span>
                                     <small class="text-muted">Distribuci&oacute;n de &oacute;rdenes de producci&oacute;n</small>
                                 </div>
                             </div>
@@ -2099,7 +2238,7 @@
                         </label>
                     </div>
 
-                    <!-- 8. Top Pedidos del Dia -->
+                    <!-- 8. Top Pedidos del Día -->
                     <div class="col-md-6 mb-3">
                         <label class="dashboard-area-card d-flex align-items-center justify-content-between p-3 m-0 rounded bg-white border shadow-sm h-100" for="chk-rol-area-top-pedidos" style="cursor: pointer; transition: all 0.2s ease;">
                             <div class="d-flex align-items-center mr-3">
@@ -4044,10 +4183,7 @@
             var vendedorId = $('#select-vendedor-inactivos').val() || null;
             var colspan = esUsuarioAdmin ? 3 : 2;
             $('#label-meses-inactivos').text('\u2265 ' + meses + ' Meses');
-            var $badge = $('#badge-clientes-inactivos');
-            if ($badge.length) {
-                $badge.html('<i class="fas fa-history mr-1"></i>Inactivos (&ge; ' + meses + 'm)');
-            }
+
             var $tbody = $('#tabla-clientes-inactivos tbody');
             $tbody.html('<tr><td colspan="' + colspan + '" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin mr-1"></i> Consultando clientes...</td></tr>');
 
@@ -4518,6 +4654,390 @@
             recargarTopMenorStock();
         });
 
+        // ========================================================
+        // GESTIÓN DE ACCESOS RÁPIDOS PERSONALIZADOS
+        // ========================================================
+        function getStorageAccesosKey() {
+            var u = (currentUsername || 'default_user').toLowerCase().trim();
+            return 'arco_dashboard_accesos_rapidos_user_' + u + '_v1';
+        }
+
+        var catalogoModulosBase = [
+            // Ventas
+            { url: 'cotizacion/index', title: 'Cotizaciones', icon: 'fas fa-file-signature', color: 'text-success', area: 'Ventas', isDefault: true },
+            { url: 'pedido/index', title: 'Pedidos', icon: 'fas fa-dolly', color: 'text-primary', area: 'Ventas', isDefault: true },
+            { url: 'comprobante/index', title: 'Facturar', icon: 'fas fa-receipt', color: 'text-info', area: 'Ventas', isDefault: true },
+            { url: 'notaCredito/index', title: 'Notas de Crédito', icon: 'fas fa-file-invoice-dollar', color: 'text-warning', area: 'Ventas' },
+            { url: 'anticipoCliente/index', title: 'Anticipos Cliente', icon: 'fas fa-hand-holding-usd', color: 'text-success', area: 'Ventas' },
+            { url: 'caja/index', title: 'Caja', icon: 'fas fa-cash-register', color: 'text-primary', area: 'Ventas' },
+            { url: 'cajacobranza/index', title: 'Cobranzas', icon: 'fas fa-money-check-alt', color: 'text-success', area: 'Ventas' },
+            { url: 'listaPrecio/index', title: 'Listas de Precio', icon: 'fas fa-list-alt', color: 'text-info', area: 'Ventas' },
+            { url: 'vendedor/index', title: 'Vendedores', icon: 'fas fa-user-tie', color: 'text-secondary', area: 'Ventas' },
+            { url: 'cotizaAutoriza/index', title: 'Aprob. Cotizaciones', icon: 'fas fa-check-double', color: 'text-success', area: 'Ventas' },
+            { url: 'repoRegVentas/index', title: 'Reg. de Ventas', icon: 'fas fa-book', color: 'text-info', area: 'Ventas' },
+
+            // Producción
+            { url: 'ordenProdu/index', title: 'Producción', icon: 'fas fa-industry', color: 'text-warning', area: 'Producción', isDefault: true },
+            { url: 'requeInsumo/index', title: 'Req. Insumos', icon: 'fas fa-boxes', color: 'text-warning', area: 'Producción' },
+            { url: 'proceProduccion/index', title: 'Procesos Prod.', icon: 'fas fa-cogs', color: 'text-warning', area: 'Producción' },
+            { url: 'despacho/index', title: 'Despacho', icon: 'fas fa-dolly-flatbed', color: 'text-orange', area: 'Producción' },
+            { url: 'rutaProduccion/index', title: 'Rutas Prod.', icon: 'fas fa-route', color: 'text-warning', area: 'Producción' },
+            { url: 'asigProd/index', title: 'Asig. Productos', icon: 'fas fa-tasks', color: 'text-warning', area: 'Producción' },
+
+            // Compras
+            { url: 'ordenCompra/index', title: 'Compras', icon: 'fas fa-truck-loading', color: 'text-danger', area: 'Compras', isDefault: true },
+            { url: 'pedidoCompra/index', title: 'Pedidos Compra', icon: 'fas fa-clipboard-list', color: 'text-danger', area: 'Compras' },
+            { url: 'proveCompra/index', title: 'Proveedores Compras', icon: 'fas fa-truck', color: 'text-danger', area: 'Compras' },
+            { url: 'ordenComAuto/index', title: 'Aprob. Compras', icon: 'fas fa-user-check', color: 'text-danger', area: 'Compras' },
+            { url: 'valorizaCompra/index', title: 'Valoriz. Compras', icon: 'fas fa-file-invoice-dollar', color: 'text-danger', area: 'Compras' },
+
+            // Almacén / Inventarios
+            { url: 'consultaSaldo/index', title: 'Consulta Saldo', icon: 'fas fa-warehouse', color: 'text-primary', area: 'Almacén' },
+            { url: 'guiaRemi/index', title: 'Guías Remisión', icon: 'fas fa-clipboard-check', color: 'text-info', area: 'Almacén' },
+            { url: 'movAlmacen/index', title: 'Mov. Almacén', icon: 'fas fa-exchange-alt', color: 'text-primary', area: 'Almacén' },
+            { url: 'repoKardexVal/index', title: 'Kardex Valoriz.', icon: 'fas fa-calculator', color: 'text-teal', area: 'Almacén' },
+            { url: 'consumoInt/index', title: 'Consumo Interno', icon: 'fas fa-box-open', color: 'text-orange', area: 'Almacén' },
+            { url: 'controlMerma/index', title: 'Control Mermas', icon: 'fas fa-trash-alt', color: 'text-danger', area: 'Almacén' },
+            { url: 'transfeSalida/index', title: 'Transf. Salida', icon: 'fas fa-sign-out-alt', color: 'text-info', area: 'Almacén' },
+            { url: 'transfeIngreso/index', title: 'Transf. Ingreso', icon: 'fas fa-sign-in-alt', color: 'text-info', area: 'Almacén' },
+            { url: 'almacen/index', title: 'Almacenes', icon: 'fas fa-cubes', color: 'text-primary', area: 'Almacén' },
+
+            // Maestros
+            { url: 'producto/index', title: 'Productos', icon: 'fas fa-tags', color: 'text-secondary', area: 'Maestros', isDefault: true },
+            { url: 'familiaProducto/index', title: 'Familias Prod.', icon: 'fas fa-th-list', color: 'text-secondary', area: 'Maestros' },
+            { url: 'comboProducto/index', title: 'Combos / Kits', icon: 'fas fa-layer-group', color: 'text-secondary', area: 'Maestros' },
+            { url: 'centroCosto/index', title: 'Centros Costo', icon: 'fas fa-sitemap', color: 'text-info', area: 'Maestros' },
+            { url: 'tipoCambio/index', title: 'Tipo de Cambio', icon: 'fas fa-dollar-sign', color: 'text-success', area: 'Maestros' },
+            { url: 'proveedor/index', title: 'Clientes / Proveed.', icon: 'fas fa-address-book', color: 'text-primary', area: 'Maestros' },
+            { url: 'transportista/index', title: 'Transportistas', icon: 'fas fa-shipping-fast', color: 'text-secondary', area: 'Maestros' },
+
+            // RRHH
+            { url: 'personal/index', title: 'Personal', icon: 'fas fa-id-card', color: 'text-cyan', area: 'RRHH' },
+            { url: 'reloj/index', title: 'Reloj Marcador', icon: 'fas fa-clock', color: 'text-cyan', area: 'RRHH' },
+            { url: 'marcacion/index', title: 'Marcaciones', icon: 'fas fa-fingerprint', color: 'text-cyan', area: 'RRHH' },
+            { url: 'planilla/index', title: 'Planillas', icon: 'fas fa-money-check', color: 'text-cyan', area: 'RRHH' },
+            { url: 'regVacacion/index', title: 'Vacaciones', icon: 'fas fa-umbrella-beach', color: 'text-cyan', area: 'RRHH' },
+            { url: 'prestamo/index', title: 'Préstamos', icon: 'fas fa-hand-holding-usd', color: 'text-cyan', area: 'RRHH' },
+
+            // Otros / Administración
+            { url: 'cuentaBanco/index', title: 'Cuentas Banco', icon: 'fas fa-university', color: 'text-indigo', area: 'Otros' },
+            { url: 'bancariza/index', title: 'Bancarización', icon: 'fas fa-landmark', color: 'text-indigo', area: 'Otros' },
+            { url: 'docEmitido/index', title: 'Docs. Emitidos', icon: 'fas fa-file-invoice', color: 'text-info', area: 'Otros' },
+            { url: 'resumenDiario/index', title: 'Resumen Diario', icon: 'fas fa-receipt', color: 'text-info', area: 'Otros' },
+            { url: 'usuario/index', title: 'Usuarios', icon: 'fas fa-users-cog', color: 'text-dark', area: 'Otros' },
+            { url: 'rol/index', title: 'Roles', icon: 'fas fa-user-shield', color: 'text-dark', area: 'Otros' },
+            { url: 'docucomserie/index', title: 'Series Docs.', icon: 'far fa-closed-captioning', color: 'text-dark', area: 'Otros' },
+            { url: 'empresa/index', title: 'Empresas', icon: 'fas fa-building', color: 'text-dark', area: 'Otros' },
+            { url: 'periodo/index', title: 'Periodos', icon: 'fas fa-calendar-alt', color: 'text-dark', area: 'Otros' },
+            { url: 'calendario/index', title: 'Calendario', icon: 'far fa-calendar-alt', color: 'text-primary', area: 'Otros' }
+        ];
+
+        var _modulosSeleccionadosTemp = {};
+
+        function obtenerModulosDisponiblesCompletos() {
+            var catalogo = [].concat(catalogoModulosBase);
+            var urlMap = {};
+            catalogo.forEach(function (m) {
+                var clean = (m.url || '').toLowerCase().replace(/^\/+/, '');
+                urlMap[clean] = true;
+            });
+
+            // Extraer módulos adicionales desde window.erpMenuTree si ya fue cargado
+            if (window.erpMenuTree && Array.isArray(window.erpMenuTree)) {
+                function extraerNodos(nodes, padreNombre) {
+                    nodes.forEach(function (node) {
+                        var areaActual = padreNombre || node.text;
+                        if (node.nodes && node.nodes.length > 0) {
+                            extraerNodos(node.nodes, areaActual);
+                        } else if (node.url && node.url.trim() !== '') {
+                            var cleanUrl = node.url.trim().toLowerCase().replace(/^\/+/, '').split('?')[0];
+                            if (!urlMap[cleanUrl]) {
+                                urlMap[cleanUrl] = true;
+                                var cat = 'Otros';
+                                var lowArea = (areaActual || '').toLowerCase();
+                                if (lowArea.indexOf('venta') >= 0) cat = 'Ventas';
+                                else if (lowArea.indexOf('produc') >= 0) cat = 'Producción';
+                                else if (lowArea.indexOf('compra') >= 0) cat = 'Compras';
+                                else if (lowArea.indexOf('alma') >= 0 || lowArea.indexOf('inven') >= 0) cat = 'Almacén';
+                                else if (lowArea.indexOf('maestr') >= 0) cat = 'Maestros';
+                                else if (lowArea.indexOf('recurso') >= 0 || lowArea.indexOf('rrhh') >= 0 || lowArea.indexOf('humano') >= 0) cat = 'RRHH';
+
+                                catalogo.push({
+                                    url: cleanUrl,
+                                    title: node.text,
+                                    icon: (node.icon || 'fas fa-external-link-alt').trim(),
+                                    color: 'text-secondary',
+                                    area: cat,
+                                    isDefault: false
+                                });
+                            }
+                        }
+                    });
+                }
+                extraerNodos(window.erpMenuTree, null);
+            }
+            return catalogo;
+        }
+
+        function obtenerAccesosRapidosGuardados() {
+            try {
+                var raw = localStorage.getItem(getStorageAccesosKey());
+                if (raw) {
+                    var parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn('Error leyendo accesos rápidos de localStorage:', e);
+            }
+            // Por defecto, retornar los 6 iniciales
+            return catalogoModulosBase.filter(function (m) { return m.isDefault; });
+        }
+
+        function guardarAccesosRapidosEnStorage(lista) {
+            try {
+                localStorage.setItem(getStorageAccesosKey(), JSON.stringify(lista));
+            } catch (e) {
+                console.warn('Error guardando accesos rápidos:', e);
+            }
+        }
+
+        function renderizarAccesosRapidos() {
+            var $container = $('#contenedor-accesos-rapidos');
+            if (!$container.length) return;
+
+            var items = obtenerAccesosRapidosGuardados();
+            $container.empty();
+
+            if (!items || items.length === 0) {
+                $container.html('<div class="text-muted text-center py-3 w-100"><i class="fas fa-info-circle mr-1 text-info"></i>No tienes accesos rápidos seleccionados. Haz clic en el botón de ajustes <i class="fas fa-sliders-h text-success mx-1"></i> en la cabecera para agregarlos.</div>');
+                return;
+            }
+
+            items.forEach(function (item) {
+                var $btn = $('<a>')
+                    .addClass('btn btn-app m-0 shadow-xs')
+                    .attr('href', 'javascript:void(0);')
+                    .attr('title', item.title)
+                    .attr('data-url', item.url)
+                    .on('click', function () {
+                        $(this).getView({ urlAction: item.url });
+                    });
+
+                var $icon = $('<i>').addClass(item.icon + ' ' + (item.color || 'text-primary'));
+                $btn.append($icon).append(document.createTextNode(' ' + item.title));
+                $container.append($btn);
+            });
+        }
+
+        function initGestionAccesosRapidos() {
+            renderizarAccesosRapidos();
+
+            // Al abrir el modal de personalización
+            $('#modal-gestionar-accesos-rapidos').on('show.bs.modal', function () {
+                var disponibles = obtenerModulosDisponiblesCompletos();
+                var activos = obtenerAccesosRapidosGuardados();
+
+                _modulosSeleccionadosTemp = {};
+                activos.forEach(function (a) {
+                    var cleanUrl = (a.url || '').toLowerCase().replace(/^\/+/, '');
+                    _modulosSeleccionadosTemp[cleanUrl] = a;
+                });
+
+                poblarGridModulosAccesos(disponibles);
+                actualizarConteoAccesosModal();
+                $('#busqueda-modulo-accesos').val('');
+                $('#btn-limpiar-busqueda-accesos').hide();
+                $('#filtros-categoria-accesos .filter-cat-btn').removeClass('btn-success active').addClass('btn-outline-secondary');
+                $('#filtros-categoria-accesos .filter-cat-btn[data-cat="TODOS"]').removeClass('btn-outline-secondary').addClass('btn-success active');
+            });
+
+            // Filtro por Búsqueda de Texto
+            $('#busqueda-modulo-accesos').on('keyup input', function () {
+                var term = $(this).val().toLowerCase().trim();
+                $('#btn-limpiar-busqueda-accesos').toggle(term.length > 0);
+                filtrarModulosEnModal();
+            });
+
+            $('#btn-limpiar-busqueda-accesos').on('click', function () {
+                $('#busqueda-modulo-accesos').val('').focus();
+                $(this).hide();
+                filtrarModulosEnModal();
+            });
+
+            // Filtro por Categoría
+            $('#filtros-categoria-accesos').on('click', '.filter-cat-btn', function () {
+                $('#filtros-categoria-accesos .filter-cat-btn').removeClass('btn-success active').addClass('btn-outline-secondary');
+                $(this).removeClass('btn-outline-secondary').addClass('btn-success active');
+                filtrarModulosEnModal();
+            });
+
+            // Clic en la tarjeta del módulo para seleccionar/deseleccionar
+            $(document).on('click', '.acceso-rapido-item-card', function (e) {
+                // Si el clic fue directamente en el input checkbox, no interferir
+                if ($(e.target).is('input.chk-acceso-rapido')) return;
+
+                var $chk = $(this).find('input.chk-acceso-rapido');
+                $chk.prop('checked', !$chk.is(':checked')).trigger('change');
+            });
+
+            // Cambio de estado de un checkbox de módulo
+            $(document).on('change', '.chk-acceso-rapido', function () {
+                var url = $(this).data('url');
+                var isChecked = $(this).is(':checked');
+                var $card = $(this).closest('.acceso-rapido-item-card');
+
+                $card.toggleClass('is-selected', isChecked);
+
+                var disponibles = obtenerModulosDisponiblesCompletos();
+                var mod = disponibles.find(function (m) {
+                    return (m.url || '').toLowerCase().replace(/^\/+/, '') === url;
+                });
+
+                if (isChecked && mod) {
+                    _modulosSeleccionadosTemp[url] = mod;
+                } else {
+                    delete _modulosSeleccionadosTemp[url];
+                }
+                actualizarConteoAccesosModal();
+            });
+
+            // Botón: Marcar Visibles
+            $('#btn-accesos-marcar-visibles').on('click', function () {
+                var disponibles = obtenerModulosDisponiblesCompletos();
+                $('.acceso-rapido-col:visible .chk-acceso-rapido').each(function () {
+                    $(this).prop('checked', true);
+                    $(this).closest('.acceso-rapido-item-card').addClass('is-selected');
+                    var url = $(this).data('url');
+                    var mod = disponibles.find(function (m) {
+                        return (m.url || '').toLowerCase().replace(/^\/+/, '') === url;
+                    });
+                    if (mod) _modulosSeleccionadosTemp[url] = mod;
+                });
+                actualizarConteoAccesosModal();
+            });
+
+            // Botón: Desmarcar Todos
+            $('#btn-accesos-desmarcar-todos').on('click', function () {
+                $('.chk-acceso-rapido').prop('checked', false);
+                $('.acceso-rapido-item-card').removeClass('is-selected');
+                _modulosSeleccionadosTemp = {};
+                actualizarConteoAccesosModal();
+            });
+
+            // Botón: Restablecer a Predeterminados (6 iniciales)
+            $('#btn-accesos-restablecer').on('click', function () {
+                _modulosSeleccionadosTemp = {};
+                catalogoModulosBase.forEach(function (m) {
+                    if (m.isDefault) {
+                        var cleanUrl = (m.url || '').toLowerCase().replace(/^\/+/, '');
+                        _modulosSeleccionadosTemp[cleanUrl] = m;
+                    }
+                });
+                $('.chk-acceso-rapido').each(function () {
+                    var url = $(this).data('url');
+                    var check = Boolean(_modulosSeleccionadosTemp[url]);
+                    $(this).prop('checked', check);
+                    $(this).closest('.acceso-rapido-item-card').toggleClass('is-selected', check);
+                });
+                actualizarConteoAccesosModal();
+            });
+
+            // Botón: Guardar Cambios
+            $('#btn-guardar-accesos-rapidos').on('click', function () {
+                var listaGuardar = [];
+                var disponibles = obtenerModulosDisponiblesCompletos();
+
+                disponibles.forEach(function (m) {
+                    var cleanUrl = (m.url || '').toLowerCase().replace(/^\/+/, '');
+                    if (_modulosSeleccionadosTemp[cleanUrl]) {
+                        listaGuardar.push(m);
+                    }
+                });
+
+                guardarAccesosRapidosEnStorage(listaGuardar);
+                renderizarAccesosRapidos();
+                $('#modal-gestionar-accesos-rapidos').modal('hide');
+
+                if (typeof msgAlert === 'function') {
+                    msgAlert(msgAlertTypeConstant.SUCCESS, 'Accesos rápidos actualizados correctamente (' + listaGuardar.length + ' módulos).');
+                }
+            });
+        }
+
+        function poblarGridModulosAccesos(disponibles) {
+            var $grid = $('#grid-modulos-accesos-rapidos');
+            $grid.empty();
+
+            $('#cnt-cat-todos').text(disponibles.length);
+
+            disponibles.forEach(function (mod, idx) {
+                var cleanUrl = (mod.url || '').toLowerCase().replace(/^\/+/, '');
+                var isSelected = Boolean(_modulosSeleccionadosTemp[cleanUrl]);
+                var chkId = 'chk-mod-acc-' + idx;
+
+                var areaColor = 'badge-light';
+                if (mod.area === 'Ventas') areaColor = 'badge-success text-white';
+                else if (mod.area === 'Producción') areaColor = 'badge-warning text-dark';
+                else if (mod.area === 'Compras') areaColor = 'badge-danger text-white';
+                else if (mod.area === 'Almacén') areaColor = 'badge-primary text-white';
+                else if (mod.area === 'Maestros') areaColor = 'badge-secondary text-white';
+                else if (mod.area === 'RRHH') areaColor = 'badge-info text-white';
+
+                var colHtml = `
+                    <div class="col-lg-4 col-md-6 col-sm-12 mb-2 acceso-rapido-col" data-cat="${mod.area}" data-search="${mod.title.toLowerCase()} ${cleanUrl} ${(mod.area || '').toLowerCase()}">
+                        <div class="card card-body p-2 border acceso-rapido-item-card shadow-xs h-100 ${isSelected ? 'is-selected' : ''}" style="cursor: pointer;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center text-truncate mr-2">
+                                    <span class="mr-2 d-inline-flex align-items-center justify-content-center shadow-xs" style="width: 34px; height: 34px; border-radius: 8px; background-color: rgba(0,0,0,0.04); flex-shrink: 0;">
+                                        <i class="${mod.icon} ${mod.color || 'text-primary'}" style="font-size: 1.05rem;"></i>
+                                    </span>
+                                    <div class="text-truncate">
+                                        <div class="font-weight-600 text-truncate text-dark" style="font-size: 0.88rem;">${mod.title}</div>
+                                        <small class="badge ${areaColor}" style="font-size: 0.68rem; padding: 2px 6px;">${mod.area}</small>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch custom-switch-sm m-0" style="flex-shrink: 0;">
+                                    <input type="checkbox" class="custom-control-input chk-acceso-rapido" id="${chkId}" data-url="${cleanUrl}" ${isSelected ? 'checked' : ''}>
+                                    <label class="custom-control-label" for="${chkId}"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                $grid.append(colHtml);
+            });
+        }
+
+        function filtrarModulosEnModal() {
+            var searchTerm = ($('#busqueda-modulo-accesos').val() || '').toLowerCase().trim();
+            var selectedCat = $('#filtros-categoria-accesos .filter-cat-btn.active').data('cat') || 'TODOS';
+            var visibleCount = 0;
+
+            $('.acceso-rapido-col').each(function () {
+                var searchData = $(this).data('search') || '';
+                var catData = $(this).data('cat') || 'Otros';
+
+                var matchesText = (searchTerm.length === 0) || (searchData.indexOf(searchTerm) >= 0);
+                var matchesCat = (selectedCat === 'TODOS') || (catData === selectedCat);
+
+                if (matchesText && matchesCat) {
+                    $(this).show();
+                    visibleCount++;
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            $('#info-modulos-visibles').text('Mostrando ' + visibleCount + ' módulos filtrados');
+        }
+
+        function actualizarConteoAccesosModal() {
+            var total = Object.keys(_modulosSeleccionadosTemp).length;
+            $('#conteo-accesos-seleccionados').text(total);
+        }
+
         // -------------------------------------------------------------
         // INICIALIZACIÓN DEL WIDGET DE AGENDA DEL CALENDARIO
         // -------------------------------------------------------------
@@ -4534,7 +5054,7 @@
                     var scriptEs = document.createElement('script');
                     scriptEs.src = '@Url.Content("~/plugins/fullcalendar/es.global.min.js")';
                     scriptEs.onload = function () {
-                        initAgendaCalendarioWidget();
+    initAgendaCalendarioWidget();
                     };
                     document.head.appendChild(scriptEs);
                 };
@@ -4679,6 +5199,7 @@
             }
         });
 
+        initGestionAccesosRapidos();
         initAgendaCalendarioWidget();
 
         sincronizarDashboard();

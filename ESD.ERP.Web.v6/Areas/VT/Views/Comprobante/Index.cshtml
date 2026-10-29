@@ -1,4 +1,4 @@
-﻿@using ESD.Core;
+@using ESD.Core;
 @using ESD.Core.Web;
 @using ESD.Core.Web.JS;
 @using ESD.ERP.Common;
@@ -72,6 +72,8 @@
 
       $("#bandejaGrid").jqGrid({
          @GridHelper.DefaultProperties()
+         sortname: 'Fecha',
+         sortorder: 'desc',
          url: "@Url.Action("ListarBandeja", "Comprobante")",
          postData: {
             jsonModel: function () {
