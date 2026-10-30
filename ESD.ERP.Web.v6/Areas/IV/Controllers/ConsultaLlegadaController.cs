@@ -51,7 +51,7 @@ namespace ESD.ERP.Web.Areas.IV.Controllers
          ConsultaLlegadaViewModel model = JsonSerializer.Deserialize<ConsultaLlegadaViewModel>(jsonModel);
 
          model.OrdenCompraEntregaDTO.PageSize = ObtenerMaximoRegistrosBusqueda();
-         model.OrdenCompraEntregaDTO.OrderBy = "oce.fecha desc,prv.razon_social";
+         model.OrdenCompraEntregaDTO.OrderBy = "oce.fecha asc,prv.razon_social";
 
          model.OrdenCompraEntregaDTO.OrdenCompraProductoDTO.OrdenCompraDTO.PeriodoEmpresaSedeDTO = ObtenerPeriodoEmpresaSedeDTO(model.ViewModelState.CID);
          model.OrdenCompraEntregaDTO.OrdenCompraProductoDTO.OrdenCompraDTO.EstadoAprobacionDTO = new EstadoAprobacionDTO() { Codigo = EstadoAprobacionConstante.APROBADO };

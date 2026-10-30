@@ -40,6 +40,8 @@
 
       $("#bandejaGrid").jqGrid({
          @GridHelper.DefaultProperties()
+         sortname: 'Fecha',
+         sortorder: 'asc',
          url: "@Url.Action("ListarBandeja", "ConsultaLlegada")",
          postData: {
             jsonModel: function () {

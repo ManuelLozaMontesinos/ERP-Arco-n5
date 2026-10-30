@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
     string facturacionMes = ViewBag.FacturacionMes ?? "S/ 0.00";
@@ -96,6 +96,24 @@
 <!-- Main content -->
 <section class="content">
     <div class="container-fluid">
+
+<!-- Estado Vacio cuando el rol no tiene widgets permitidos -->
+        <div id="dashboard-empty-state" class="d-none text-center py-5 my-4 bg-white rounded shadow-sm border" style="border-radius: 12px !important;">
+            <div class="py-4">
+                <div class="mb-3">
+                    <span class="d-inline-flex align-items-center justify-content-center bg-light text-primary rounded-circle shadow-sm" style="width: 80px; height: 80px; font-size: 2.2rem;">
+                        <i class="fas fa-chart-line text-muted"></i>
+                    </span>
+                </div>
+                <h4 class="font-weight-bold text-dark mb-2">Tablero de Control Sin M&oacute;dulos Asignados</h4>
+                <p class="text-muted mx-auto mb-3" style="max-width: 520px; font-size: 0.95rem; line-height: 1.5;">
+                    Actualmente tu rol no tiene widgets o indicadores habilitados en este tablero de control. Un administrador puede asignarte acceso a los m&oacute;dulos correspondientes desde la opci&oacute;n <strong>Gestionar Dashboard por Rol</strong>.
+                </p>
+                <div class="d-inline-flex align-items-center bg-light px-3 py-2 rounded text-secondary" style="font-size: 0.85rem;">
+                    <i class="fas fa-shield-alt mr-2 text-primary"></i>Rol actual: <strong class="ml-1 text-dark">@rolActualCodigo</strong>
+                </div>
+            </div>
+        </div>
 
         <!-- 1. FILA DE TARJETAS KPI (4 por fila, la 5ta cae a la 2da fila) -->
         <div class="row" id="row-kpis-metricas">
@@ -1859,7 +1877,7 @@
                         <h5 class="modal-title font-weight-bold mb-0 text-dark" id="modalGestionarAccesosRapidosLabel" style="font-size: 1.18rem;">
                             Gestionar Accesos Rápidos
                         </h5>
-                        <small class="text-muted">Personaliza los módulos a los que deseas acceder rápidamente desde tu tablero</small>
+                        <small class="text-muted">Personaliza hasta un máximo de 6 módulos a los que deseas acceder rápidamente desde tu tablero</small>
                     </div>
                 </div>
                 <button type="button" class="close text-secondary" data-dismiss="modal" aria-label="Close" style="opacity: 0.7; font-size: 1.5rem; outline: none;">
@@ -1897,15 +1915,12 @@
                 <!-- Barra de Acciones R&aacute;pidas y Contador -->
                 <div class="d-flex flex-wrap justify-content-between align-items-center pb-2 mb-3 border-bottom">
                     <div class="d-flex align-items-center">
-                        <span class="badge badge-success px-2 py-1 font-weight-600 mr-2 shadow-sm" style="font-size: 0.85rem;">
-                            <i class="fas fa-check-circle mr-1"></i><span id="conteo-accesos-seleccionados">6</span> seleccionados
+                        <span class="badge badge-success px-2 py-1 font-weight-600 mr-2 shadow-sm" style="font-size: 0.85rem;" id="badge-conteo-accesos">
+                            <i class="fas fa-check-circle mr-1"></i><span id="conteo-accesos-seleccionados">6</span> / 6 seleccionados (máx. 6)
                         </span>
                         <small class="text-muted" id="info-modulos-visibles">Mostrando módulos disponibles</small>
                     </div>
                     <div class="btn-group btn-group-sm mt-2 mt-sm-0" role="group">
-                        <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-accesos-marcar-visibles" title="Marcar los módulos visibles en la lista">
-                            <i class="fas fa-check-double mr-1 text-success"></i>Marcar Visibles
-                        </button>
                         <button type="button" class="btn btn-outline-secondary btn-xs px-2" id="btn-accesos-desmarcar-todos" title="Desmarcar todos los módulos">
                             <i class="fas fa-times mr-1 text-danger"></i>Desmarcar Todos
                         </button>
@@ -1921,7 +1936,7 @@
                 </div>
             </div>
             <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between align-items-center">
-                <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Tus accesos rápidos se guardan para tu usuario en este equipo.</small>
+                <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Puedes seleccionar como máximo 6 accesos rápidos para tu usuario.</small>
                 <div>
                     <button type="button" class="btn btn-secondary btn-sm px-3 font-weight-600 mr-2" data-dismiss="modal">
                         Cancelar
@@ -1987,7 +2002,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <span class="text-xs text-uppercase font-weight-bold text-muted" style="letter-spacing: 0.05em;">
-                        &Aacute;reas Visibles para este Rol (<span id="modal-rol-conteo-areas-activas" class="text-primary font-weight-bold">10</span> de 10)
+                        &Aacute;reas Visibles para este Rol (<span id="modal-rol-conteo-areas-activas" class="text-primary font-weight-bold">12</span> de 12)
                     </span>
                     <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-outline-primary btn-xs font-weight-600 px-2" id="btn-modal-rol-marcar-todos">Marcar Todos</button>
@@ -3368,7 +3383,8 @@
         var currentUsername = '@usuarioLogonActual';
         var currentRoleCode = '@rolActualCodigo';
         var esUsuarioAdmin = @(esAdmin ? "true" : "false");
-        var STORAGE_ROLES_KEY = 'arco_dashboard_roles_config_v1';
+        var STORAGE_ROLES_KEY = 'arco_dashboard_roles_config_v2';
+        window._serverRolesConfig = @Html.Raw(ViewBag.DashboardRolesConfig ?? "{}");
 
         // Clave de almacenamiento aislada por usuario y por rol para evitar contaminacion
         function getStorageAreasKey() {
@@ -3411,52 +3427,107 @@
             'kpi-guias-remision': { selector: '#card-kpi-guias-remision', name: 'Guias de Remision Emitidas', visible: true }
         };
 
-        // Presets predefinidos por Rol en ERP ARCO (Incluyendo sub-controles de KPIs)
-        var defaultRolePresets = {
-            // Administradores y TI: Acceso total a todas las areas y todos los KPIs
-            'S0001': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
-            'S0002': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
-            '00020': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
-            // Ventas Jefatura: Foco comercial, ventas, pedidos por vendedor, clientes y guias
-            '00003': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': false, 'kpi-compras': false, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': false, 'kpi-mermas': false, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true },
-            // Ventas Operador
-            '00004': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': false, 'kpi-compras': false, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': false, 'kpi-mermas': false, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': false, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
-            // Produccion Operador / Jefatura
-            '00009': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': true, 'kpi-compras': false, 'kpi-pedidos-mes': false, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': false, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
-            '00010': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': true, 'kpi-compras': false, 'kpi-pedidos-mes': false, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': false, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': true, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
-            // Compras y Logistica
-            '00005': { 'kpis': true, 'kpi-facturacion': false, 'kpi-pedidos-activos': false, 'kpi-cotizaciones': false, 'kpi-produccion': false, 'kpi-compras': true, 'kpi-pedidos-mes': false, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': false, 'diferencia-sedes': false, 'pedidos-vendedor': false, 'accesos-rapidos': true, 'estado-produccion': false, 'agenda-calendario': true, 'db-tiempo-real': false, 'top-pedidos': false, 'clientes-inactivos': false, 'stock-insumos': true, 'top-menor-stock': true },
-            // Por defecto
-            'DEFAULT': { 'kpis': true, 'kpi-facturacion': true, 'kpi-pedidos-activos': true, 'kpi-cotizaciones': true, 'kpi-produccion': true, 'kpi-compras': true, 'kpi-pedidos-mes': true, 'kpi-consumo-interno': true, 'kpi-mermas': true, 'kpi-guias-remision': true, 'evolucion-ventas': true, 'diferencia-sedes': true, 'pedidos-vendedor': true, 'accesos-rapidos': true, 'estado-produccion': true, 'agenda-calendario': true, 'db-tiempo-real': true, 'top-pedidos': true, 'clientes-inactivos': true, 'stock-insumos': true, 'top-menor-stock': true }
+        // Presets predefinidos por Rol en ERP ARCO:
+        // PRODUCCION: Por defecto todas las opciones deshabilitadas (false) para todos los roles no administradores.
+        // Solo los administradores (S0001, S0002, 00020 o esAdmin) tienen todas las opciones habilitadas por defecto.
+        var adminPreset = {
+            'kpis': true,
+            'kpi-facturacion': true,
+            'kpi-pedidos-activos': true,
+            'kpi-cotizaciones': true,
+            'kpi-produccion': true,
+            'kpi-compras': true,
+            'kpi-pedidos-mes': true,
+            'kpi-consumo-interno': true,
+            'kpi-mermas': true,
+            'kpi-guias-remision': true,
+            'evolucion-ventas': true,
+            'diferencia-sedes': true,
+            'pedidos-vendedor': true,
+            'accesos-rapidos': true,
+            'estado-produccion': true,
+            'agenda-calendario': true,
+            'db-tiempo-real': true,
+            'top-pedidos': true,
+            'clientes-inactivos': true,
+            'stock-insumos': true,
+            'top-menor-stock': true
         };
 
+        var nonAdminDefaultPreset = {
+            'kpis': false,
+            'kpi-facturacion': false,
+            'kpi-pedidos-activos': false,
+            'kpi-cotizaciones': false,
+            'kpi-produccion': false,
+            'kpi-compras': false,
+            'kpi-pedidos-mes': false,
+            'kpi-consumo-interno': false,
+            'kpi-mermas': false,
+            'kpi-guias-remision': false,
+            'evolucion-ventas': false,
+            'diferencia-sedes': false,
+            'pedidos-vendedor': false,
+            'accesos-rapidos': false,
+            'estado-produccion': false,
+            'agenda-calendario': false,
+            'db-tiempo-real': false,
+            'top-pedidos': false,
+            'clientes-inactivos': false,
+            'stock-insumos': false,
+            'top-menor-stock': false
+        };
+
+        var defaultRolePresets = {
+            'S0001': adminPreset,
+            'S0002': adminPreset,
+            '00020': adminPreset,
+            'DEFAULT': nonAdminDefaultPreset
+        };
+
+        function esRolAdministrador(rolCod) {
+            if (!rolCod) return false;
+            var c = rolCod.toString().trim().toUpperCase();
+            return c === 'S0001' || c === 'S0002' || c === '00020' || c === 'ADMIN';
+        }
+
         function obtenerConfigRolesGuardada() {
+            var obj = {};
+            if (window._serverRolesConfig && typeof window._serverRolesConfig === 'object') {
+                $.extend(true, obj, window._serverRolesConfig);
+            }
             try {
                 var raw = localStorage.getItem(STORAGE_ROLES_KEY);
-                if (raw) return JSON.parse(raw);
+                if (raw) {
+                    var localObj = JSON.parse(raw);
+                    $.extend(true, obj, localObj);
+                }
             } catch (e) {
-                console.warn('Error leyendo roles config:', e);
+                console.warn('Error leyendo roles config local:', e);
             }
-            return {};
+            return obj;
         }
 
         function guardarConfigRolesCompleta(rolesObj) {
             try {
                 localStorage.setItem(STORAGE_ROLES_KEY, JSON.stringify(rolesObj));
             } catch (e) {
-                console.warn('Error guardando roles config:', e);
+                console.warn('Error guardando roles config local:', e);
             }
         }
 
         function obtenerConfiguracionParaRol(rolCod) {
             var rolesObj = obtenerConfigRolesGuardada();
-            if (rolesObj[rolCod]) {
-                return $.extend({}, defaultRolePresets['DEFAULT'], rolesObj[rolCod]);
+            var esAdminRol = esRolAdministrador(rolCod) || (rolCod === '@rolActualCodigo' && esUsuarioAdmin);
+            var basePreset = esAdminRol ? adminPreset : nonAdminDefaultPreset;
+
+            if (rolCod && rolesObj && rolesObj[rolCod]) {
+                return $.extend({}, basePreset, rolesObj[rolCod]);
             }
-            if (defaultRolePresets[rolCod]) {
+            if (rolCod && defaultRolePresets[rolCod]) {
                 return $.extend({}, defaultRolePresets[rolCod]);
             }
-            return $.extend({}, defaultRolePresets['DEFAULT']);
+            return $.extend({}, basePreset);
         }
 
         function cargarConfiguracionAreas() {
@@ -3630,8 +3701,12 @@
 
             if (permitidasCount === 0) {
                 $('#modal-areas-ninguna-permitida').removeClass('d-none').show();
+                if (!esUsuarioAdmin) {
+                    $('#dashboard-empty-state').removeClass('d-none').show();
+                }
             } else {
                 $('#modal-areas-ninguna-permitida').addClass('d-none').hide();
+                $('#dashboard-empty-state').addClass('d-none').hide();
             }
 
             // Ajuste responsivo de columnas
@@ -3785,18 +3860,19 @@
         // ========================================================
         function sincronizarModalRolUI(rolCod) {
             var configRol = obtenerConfiguracionParaRol(rolCod);
+            var esAdminRol = esRolAdministrador(rolCod);
             var activasCount = 0;
 
-            // 1. Sincronizar 9 areas principales
+            // 1. Sincronizar 12 areas principales
             $('.chk-dashboard-rol-area').each(function () {
                 var areaKey = $(this).data('area');
-                var isChecked = (configRol[areaKey] !== undefined) ? Boolean(configRol[areaKey]) : true;
+                var isChecked = (configRol[areaKey] !== undefined) ? Boolean(configRol[areaKey]) : esAdminRol;
                 $(this).prop('checked', isChecked);
                 if (isChecked) activasCount++;
             });
 
             // 2. Despliegue de sub-panel de KPIs para el rol
-            var kpisRolActivo = (configRol['kpis'] !== undefined) ? Boolean(configRol['kpis']) : true;
+            var kpisRolActivo = (configRol['kpis'] !== undefined) ? Boolean(configRol['kpis']) : esAdminRol;
             if (kpisRolActivo) {
                 $('#rol-sub-kpis-container').show();
             } else {
@@ -3806,7 +3882,7 @@
             // 3. Sincronizar cada switch de tarjeta individual
             $('.chk-rol-sub-kpi').each(function () {
                 var kpiKey = $(this).data('kpi');
-                var isChecked = (configRol[kpiKey] !== undefined) ? Boolean(configRol[kpiKey]) : true;
+                var isChecked = (configRol[kpiKey] !== undefined) ? Boolean(configRol[kpiKey]) : esAdminRol;
                 $(this).prop('checked', isChecked);
             });
 
@@ -3834,6 +3910,28 @@
 
             rolesObj[rolCod] = rolConfig;
             guardarConfigRolesCompleta(rolesObj);
+
+            // Persistir en Base de Datos via AJAX para sincronizar con todos los clientes / PCs en produccion
+            $.ajax({
+                url: '@Url.Action("GuardarConfiguracionDashboardRol", "Home")',
+                type: 'POST',
+                data: {
+                    rolCodigo: rolCod,
+                    configJson: JSON.stringify(rolConfig)
+                },
+                success: function (res) {
+                    if (res && res.success) {
+                        if (window._serverRolesConfig) {
+                            window._serverRolesConfig[rolCod] = rolConfig;
+                        }
+                    } else {
+                        console.warn('No se pudo guardar la configuracion en BD:', res ? res.message : '');
+                    }
+                },
+                error: function (err) {
+                    console.error('Error al persistir configuracion de dashboard por rol en BD:', err);
+                }
+            });
 
             // Si el rol modificado es el rol activo o visualizado actualmente, refrescar live
             if (rolCod === currentRoleCode) {
@@ -3888,7 +3986,7 @@
             $('.chk-rol-sub-kpi').prop('checked', true);
             $('#rol-sub-kpis-container').slideDown(250);
             guardarConfiguracionRolActualEnModal();
-            $('#modal-rol-conteo-areas-activas').text(10);
+            $('#modal-rol-conteo-areas-activas').text(12);
         });
 
         $('#btn-modal-rol-desmarcar-todos').on('click', function () {
@@ -3906,6 +4004,20 @@
                 delete rolesObj[rolCod];
                 guardarConfigRolesCompleta(rolesObj);
             }
+            var preset = esRolAdministrador(rolCod) ? adminPreset : nonAdminDefaultPreset;
+            $.ajax({
+                url: '@Url.Action("GuardarConfiguracionDashboardRol", "Home")',
+                type: 'POST',
+                data: {
+                    rolCodigo: rolCod,
+                    configJson: JSON.stringify(preset)
+                },
+                success: function () {
+                    if (window._serverRolesConfig) {
+                        window._serverRolesConfig[rolCod] = preset;
+                    }
+                }
+            });
             sincronizarModalRolUI(rolCod);
             if (rolCod === currentRoleCode) {
                 cargarConfiguracionAreas();
@@ -4655,11 +4767,12 @@
         });
 
         // ========================================================
-        // GESTIÓN DE ACCESOS RÁPIDOS PERSONALIZADOS
+        // GESTIÓN DE ACCESOS RÁPIDOS PERSONALIZADOS (POR ROL Y USUARIO)
         // ========================================================
         function getStorageAccesosKey() {
             var u = (currentUsername || 'default_user').toLowerCase().trim();
-            return 'arco_dashboard_accesos_rapidos_user_' + u + '_v1';
+            var r = (currentRoleCode || 'default_role').toLowerCase().trim();
+            return 'arco_dashboard_accesos_rapidos_user_' + u + '_rol_' + r + '_v2';
         }
 
         var catalogoModulosBase = [
@@ -4734,25 +4847,91 @@
 
         var _modulosSeleccionadosTemp = {};
 
+        function construirErpMenuPermitidosSet() {
+            window.erpMenuPermitidosSet = {};
+            if (window.erpMenuTree && Array.isArray(window.erpMenuTree)) {
+                function extraer(nodes) {
+                    nodes.forEach(function (n) {
+                        if (n.url && n.url.trim() !== '' && n.url.trim() !== '#') {
+                            var c = n.url.trim().toLowerCase().replace(/^\/+/, '').split('?')[0];
+                            window.erpMenuPermitidosSet[c] = true;
+                            if (c.indexOf('/') >= 0) {
+                                window.erpMenuPermitidosSet[c.split('/')[0]] = true;
+                            } else {
+                                window.erpMenuPermitidosSet[c + '/index'] = true;
+                            }
+                        }
+                        if (n.nodes && n.nodes.length > 0) {
+                            extraer(n.nodes);
+                        }
+                    });
+                }
+                extraer(window.erpMenuTree);
+            }
+        }
+
+        function isModuloPermitido(url) {
+            if (!url) return false;
+            if (window.esAdminTotalAccesos === true) return true;
+            if (Array.isArray(window.modulosPermitidosServidor) && window.modulosPermitidosServidor.indexOf('*') >= 0) return true;
+
+            var clean = (url || '').toLowerCase().replace(/^\/+/, '').split('?')[0].trim();
+            if (!clean) return false;
+
+            // Calendario siempre permitido
+            if (clean === 'calendario' || clean === 'calendario/index' || clean.indexOf('calendario') === 0) return true;
+
+            // Verificar contra modulosPermitidosServidor
+            if (Array.isArray(window.modulosPermitidosServidor) && window.modulosPermitidosServidor.length > 0) {
+                if (window.modulosPermitidosServidor.indexOf(clean) >= 0) return true;
+                var ctrl = clean.indexOf('/') >= 0 ? clean.split('/')[0] : clean;
+                if (window.modulosPermitidosServidor.indexOf(ctrl) >= 0) return true;
+                if (window.modulosPermitidosServidor.indexOf(ctrl + '/index') >= 0) return true;
+            }
+
+            // Verificar contra erpMenuTree si existe
+            if (window.erpMenuPermitidosSet) {
+                if (window.erpMenuPermitidosSet[clean]) return true;
+                var ctrl2 = clean.indexOf('/') >= 0 ? clean.split('/')[0] : clean;
+                if (window.erpMenuPermitidosSet[ctrl2] || window.erpMenuPermitidosSet[ctrl2 + '/index']) return true;
+            }
+
+            return false;
+        }
+
         function obtenerModulosDisponiblesCompletos() {
-            var catalogo = [].concat(catalogoModulosBase);
+            construirErpMenuPermitidosSet();
+
+            // 1. Filtrar catálogo base para incluir ÚNICAMENTE módulos permitidos para el rol
+            var catalogo = [];
             var urlMap = {};
-            catalogo.forEach(function (m) {
-                var clean = (m.url || '').toLowerCase().replace(/^\/+/, '');
-                urlMap[clean] = true;
+
+            catalogoModulosBase.forEach(function (m) {
+                if (isModuloPermitido(m.url)) {
+                    var clean = (m.url || '').toLowerCase().replace(/^\/+/, '').split('?')[0];
+                    if (!urlMap[clean]) {
+                        urlMap[clean] = true;
+                        var ctrl = clean.indexOf('/') >= 0 ? clean.split('/')[0] : clean;
+                        urlMap[ctrl] = true;
+                        catalogo.push(m);
+                    }
+                }
             });
 
-            // Extraer módulos adicionales desde window.erpMenuTree si ya fue cargado
+            // 2. Extraer módulos adicionales desde window.erpMenuTree que correspondan al rol
             if (window.erpMenuTree && Array.isArray(window.erpMenuTree)) {
                 function extraerNodos(nodes, padreNombre) {
                     nodes.forEach(function (node) {
                         var areaActual = padreNombre || node.text;
                         if (node.nodes && node.nodes.length > 0) {
                             extraerNodos(node.nodes, areaActual);
-                        } else if (node.url && node.url.trim() !== '') {
+                        } else if (node.url && node.url.trim() !== '' && node.url.trim() !== '#') {
                             var cleanUrl = node.url.trim().toLowerCase().replace(/^\/+/, '').split('?')[0];
-                            if (!urlMap[cleanUrl]) {
+                            var ctrl = cleanUrl.indexOf('/') >= 0 ? cleanUrl.split('/')[0] : cleanUrl;
+                            if (!urlMap[cleanUrl] && !urlMap[ctrl]) {
                                 urlMap[cleanUrl] = true;
+                                urlMap[ctrl] = true;
+
                                 var cat = 'Otros';
                                 var lowArea = (areaActual || '').toLowerCase();
                                 if (lowArea.indexOf('venta') >= 0) cat = 'Ventas';
@@ -4776,27 +4955,60 @@
                 }
                 extraerNodos(window.erpMenuTree, null);
             }
+
             return catalogo;
         }
 
         function obtenerAccesosRapidosGuardados() {
+            var disponibles = obtenerModulosDisponiblesCompletos();
+            var permitidosMap = {};
+            disponibles.forEach(function (d) {
+                var c = (d.url || '').toLowerCase().replace(/^\/+/, '').split('?')[0];
+                permitidosMap[c] = d;
+                if (c.indexOf('/') >= 0) {
+                    permitidosMap[c.split('/')[0]] = d;
+                }
+            });
+
             try {
                 var raw = localStorage.getItem(getStorageAccesosKey());
                 if (raw) {
                     var parsed = JSON.parse(raw);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
+                        var filtrados = [];
+                        parsed.forEach(function (item) {
+                            var c = (item.url || '').toLowerCase().replace(/^\/+/, '').split('?')[0];
+                            var ctrl = c.indexOf('/') >= 0 ? c.split('/')[0] : c;
+                            if (permitidosMap[c]) {
+                                filtrados.push(permitidosMap[c]);
+                            } else if (permitidosMap[ctrl]) {
+                                filtrados.push(permitidosMap[ctrl]);
+                            }
+                        });
+                        if (filtrados.length > 0) {
+                            return filtrados.slice(0, 6);
+                        }
                     }
                 }
             } catch (e) {
                 console.warn('Error leyendo accesos rápidos de localStorage:', e);
             }
-            // Por defecto, retornar los 6 iniciales
-            return catalogoModulosBase.filter(function (m) { return m.isDefault; });
+
+            // Si no tiene guardados o se invalidaron por rol, retornar los predeterminados permitidos (máx 6)
+            var defaults = disponibles.filter(function (m) { return m.isDefault; });
+            if (defaults.length === 0) {
+                defaults = disponibles.slice(0, 6);
+            } else if (defaults.length > 6) {
+                defaults = defaults.slice(0, 6);
+            }
+            return defaults;
         }
 
         function guardarAccesosRapidosEnStorage(lista) {
             try {
+                if (Array.isArray(lista) && lista.length > 6) {
+                    lista = lista.slice(0, 6);
+                }
                 localStorage.setItem(getStorageAccesosKey(), JSON.stringify(lista));
             } catch (e) {
                 console.warn('Error guardando accesos rápidos:', e);
@@ -4808,10 +5020,13 @@
             if (!$container.length) return;
 
             var items = obtenerAccesosRapidosGuardados();
+            if (items && items.length > 6) {
+                items = items.slice(0, 6);
+            }
             $container.empty();
 
             if (!items || items.length === 0) {
-                $container.html('<div class="text-muted text-center py-3 w-100"><i class="fas fa-info-circle mr-1 text-info"></i>No tienes accesos rápidos seleccionados. Haz clic en el botón de ajustes <i class="fas fa-sliders-h text-success mx-1"></i> en la cabecera para agregarlos.</div>');
+                $container.html('<div class="text-muted text-center py-3 w-100"><i class="fas fa-info-circle mr-1 text-info"></i>No tienes accesos rápidos seleccionados. Haz clic en el botón de ajustes <i class="fas fa-sliders-h text-success mx-1"></i> en la cabecera para agregarlos (máximo 6).</div>');
                 return;
             }
 
@@ -4833,6 +5048,10 @@
 
         function initGestionAccesosRapidos() {
             renderizarAccesosRapidos();
+
+            $(document).on('erpMenuTreeLoaded', function () {
+                renderizarAccesosRapidos();
+            });
 
             // Al abrir el modal de personalización
             $('#modal-gestionar-accesos-rapidos').on('show.bs.modal', function () {
@@ -4875,11 +5094,26 @@
 
             // Clic en la tarjeta del módulo para seleccionar/deseleccionar
             $(document).on('click', '.acceso-rapido-item-card', function (e) {
-                // Si el clic fue directamente en el input checkbox, no interferir
-                if ($(e.target).is('input.chk-acceso-rapido')) return;
+                if ($(e.target).is('input.chk-acceso-rapido') || $(e.target).is('label.custom-control-label')) return;
 
                 var $chk = $(this).find('input.chk-acceso-rapido');
-                $chk.prop('checked', !$chk.is(':checked')).trigger('change');
+                var url = $chk.data('url');
+                var willBeChecked = !$chk.is(':checked');
+
+                // Si va a marcar y ya hay 6 seleccionados
+                if (willBeChecked) {
+                    var totalActual = Object.keys(_modulosSeleccionadosTemp).length;
+                    if (totalActual >= 6 && !_modulosSeleccionadosTemp[url]) {
+                        if (typeof msgAlert === 'function') {
+                            msgAlert(msgAlertTypeConstant.WARNING, 'Solo puedes seleccionar un máximo de 6 accesos rápidos.');
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.warning('Solo puedes seleccionar un máximo de 6 accesos rápidos.');
+                        }
+                        return false;
+                    }
+                }
+
+                $chk.prop('checked', willBeChecked).trigger('change');
             });
 
             // Cambio de estado de un checkbox de módulo
@@ -4887,6 +5121,22 @@
                 var url = $(this).data('url');
                 var isChecked = $(this).is(':checked');
                 var $card = $(this).closest('.acceso-rapido-item-card');
+
+                // Validar cupo máximo de 6
+                if (isChecked) {
+                    var totalActual = Object.keys(_modulosSeleccionadosTemp).length;
+                    if (totalActual >= 6 && !_modulosSeleccionadosTemp[url]) {
+                        $(this).prop('checked', false);
+                        $card.removeClass('is-selected');
+
+                        if (typeof msgAlert === 'function') {
+                            msgAlert(msgAlertTypeConstant.WARNING, 'Solo puedes seleccionar un máximo de 6 accesos rápidos.');
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.warning('Solo puedes seleccionar un máximo de 6 accesos rápidos.');
+                        }
+                        return false;
+                    }
+                }
 
                 $card.toggleClass('is-selected', isChecked);
 
@@ -4903,20 +5153,6 @@
                 actualizarConteoAccesosModal();
             });
 
-            // Botón: Marcar Visibles
-            $('#btn-accesos-marcar-visibles').on('click', function () {
-                var disponibles = obtenerModulosDisponiblesCompletos();
-                $('.acceso-rapido-col:visible .chk-acceso-rapido').each(function () {
-                    $(this).prop('checked', true);
-                    $(this).closest('.acceso-rapido-item-card').addClass('is-selected');
-                    var url = $(this).data('url');
-                    var mod = disponibles.find(function (m) {
-                        return (m.url || '').toLowerCase().replace(/^\/+/, '') === url;
-                    });
-                    if (mod) _modulosSeleccionadosTemp[url] = mod;
-                });
-                actualizarConteoAccesosModal();
-            });
 
             // Botón: Desmarcar Todos
             $('#btn-accesos-desmarcar-todos').on('click', function () {
@@ -4926,14 +5162,19 @@
                 actualizarConteoAccesosModal();
             });
 
-            // Botón: Restablecer a Predeterminados (6 iniciales)
+            // Botón: Restablecer a Predeterminados (máximo 6)
             $('#btn-accesos-restablecer').on('click', function () {
                 _modulosSeleccionadosTemp = {};
-                catalogoModulosBase.forEach(function (m) {
-                    if (m.isDefault) {
-                        var cleanUrl = (m.url || '').toLowerCase().replace(/^\/+/, '');
-                        _modulosSeleccionadosTemp[cleanUrl] = m;
-                    }
+                var disponibles = obtenerModulosDisponiblesCompletos();
+                var defaults = disponibles.filter(function (m) { return m.isDefault; });
+                if (defaults.length === 0) {
+                    defaults = disponibles.slice(0, 6);
+                } else if (defaults.length > 6) {
+                    defaults = defaults.slice(0, 6);
+                }
+                defaults.forEach(function (m) {
+                    var cleanUrl = (m.url || '').toLowerCase().replace(/^\/+/, '');
+                    _modulosSeleccionadosTemp[cleanUrl] = m;
                 });
                 $('.chk-acceso-rapido').each(function () {
                     var url = $(this).data('url');
@@ -4956,12 +5197,16 @@
                     }
                 });
 
+                if (listaGuardar.length > 6) {
+                    listaGuardar = listaGuardar.slice(0, 6);
+                }
+
                 guardarAccesosRapidosEnStorage(listaGuardar);
                 renderizarAccesosRapidos();
                 $('#modal-gestionar-accesos-rapidos').modal('hide');
 
                 if (typeof msgAlert === 'function') {
-                    msgAlert(msgAlertTypeConstant.SUCCESS, 'Accesos rápidos actualizados correctamente (' + listaGuardar.length + ' módulos).');
+                    msgAlert(msgAlertTypeConstant.SUCCESS, 'Accesos rápidos actualizados correctamente (' + listaGuardar.length + ' de 6 módulos).');
                 }
             });
         }
@@ -4970,7 +5215,40 @@
             var $grid = $('#grid-modulos-accesos-rapidos');
             $grid.empty();
 
+            var catCounts = {
+                'Ventas': 0,
+                'Producción': 0,
+                'Compras': 0,
+                'Almacén': 0,
+                'Maestros': 0,
+                'RRHH': 0,
+                'Otros': 0
+            };
+
+            disponibles.forEach(function (m) {
+                if (catCounts.hasOwnProperty(m.area)) {
+                    catCounts[m.area]++;
+                } else {
+                    catCounts['Otros'] = (catCounts['Otros'] || 0) + 1;
+                }
+            });
+
             $('#cnt-cat-todos').text(disponibles.length);
+
+            // Mostrar u ocultar botones de categorías según tengan módulos disponibles para este rol
+            $('#filtros-categoria-accesos .filter-cat-btn').each(function () {
+                var cat = $(this).data('cat');
+                if (cat === 'TODOS') {
+                    $(this).show();
+                } else {
+                    var count = catCounts[cat] || 0;
+                    if (count > 0) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                }
+            });
 
             disponibles.forEach(function (mod, idx) {
                 var cleanUrl = (mod.url || '').toLowerCase().replace(/^\/+/, '');
@@ -5036,6 +5314,16 @@
         function actualizarConteoAccesosModal() {
             var total = Object.keys(_modulosSeleccionadosTemp).length;
             $('#conteo-accesos-seleccionados').text(total);
+            var $badge = $('#badge-conteo-accesos');
+            if ($badge.length) {
+                if (total === 6) {
+                    $badge.removeClass('badge-secondary badge-info').addClass('badge-success');
+                } else if (total > 0) {
+                    $badge.removeClass('badge-secondary badge-success').addClass('badge-info');
+                } else {
+                    $badge.removeClass('badge-info badge-success').addClass('badge-secondary');
+                }
+            }
         }
 
         // -------------------------------------------------------------

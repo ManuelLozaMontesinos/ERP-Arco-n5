@@ -49,6 +49,8 @@
     $(document).ready(function () {
        $("#bandejaGrid").jqGrid({
           @GridHelper.DefaultProperties()
+          sortname: 'Fecha',
+          sortorder: 'desc',
           url: "@Url.Action("ListarBandeja", "Cotizacion")",
           postData: {
              jsonModel: function () {

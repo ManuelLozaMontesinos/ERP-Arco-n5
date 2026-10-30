@@ -62,7 +62,7 @@ namespace ESD.ERP.Web.Areas.IV.Controllers
          TransfeSalidaViewModel model = JsonSerializer.Deserialize<TransfeSalidaViewModel>(jsonModel);
 
          model.MovimientoAlmacenDTO.PageSize = ObtenerMaximoRegistrosBusqueda();
-         model.MovimientoAlmacenDTO.OrderBy = "ma.fecha,ma.mov_almacen";
+         model.MovimientoAlmacenDTO.OrderBy = "ma.fecha desc,ma.mov_almacen desc";
 
          model.MovimientoAlmacenDTO.PeriodoEmpresaSedeId = ObtenerPeriodoEmpresaSedeId(model.ViewModelState.CID);
          model.MovimientoAlmacenDTO.TransaccionAlmacenDTO = new TransaccionAlmacenDTO() { Codigo = TransaccionAlmacenConstante.TRANSFERENCIA_ENTRE_ALMACENES };

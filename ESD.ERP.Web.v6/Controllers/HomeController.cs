@@ -8,6 +8,7 @@ using ESD.ERP.DTO;
 using ESD.ERP.Web.Infrastructure;
 using ESD.ERP.WebApiProxy;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace ESD.ERP.Web.Controllers
 {
@@ -1044,6 +1045,15 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.EsAdminAgenda = esAdminAgenda;
          ViewBag.AreaAgendaInicialId = areasAgenda.Count > 0 ? areasAgenda[0].AreaId : (esAdminAgenda ? 1 : 2);
          ViewBag.AreaAgendaInicialNombre = areasAgenda.Count > 0 ? areasAgenda[0].Nombre : (esAdminAgenda ? "Administración" : "Ventas");
+
+         bool esAdminTotal = EsAdministrador();
+         int idUsuarioActual = usuarioDTO != null && usuarioDTO.UsuarioId > 0 ? usuarioDTO.UsuarioId : ObtenerUsuarioId();
+         var urlsPermitidas = ObtenerUrlsModulosPermitidos(idUsuarioActual, esAdminTotal);
+         ViewBag.UrlsModulosPermitidosJson = JsonConvert.SerializeObject(urlsPermitidas);
+         ViewBag.EsAdminTotal = esAdminTotal;
+
+         var rolesConfigDict = ObtenerDashboardRolesConfigDesdeBD();
+         ViewBag.DashboardRolesConfig = JsonConvert.SerializeObject(rolesConfigDict);
 
          bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest"
                     || !string.IsNullOrEmpty(Request.Headers["x-app-cid"])
@@ -2508,6 +2518,207 @@ namespace ESD.ERP.Web.Controllers
          catch (Exception ex)
          {
             return Json(new { success = false, message = "Error al cambiar sesión: " + ex.Message });
+         }
+      }
+
+      private List<string> ObtenerUrlsModulosPermitidos(int usuarioId, bool esAdmin)
+      {
+         var urls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+         urls.Add("calendario/index");
+         urls.Add("calendario");
+
+         if (esAdmin)
+         {
+            return new List<string> { "*" };
+         }
+
+         if (usuarioId <= 0)
+         {
+            return urls.ToList();
+         }
+
+         try
+         {
+            using (var conn = new SqlConnection(GetDbConnectionString()))
+            {
+               conn.Open();
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = @"
+                     SELECT DISTINCT LOWER(LTRIM(RTRIM(m.controlador))) AS controlador, 
+                                     LOWER(LTRIM(RTRIM(ISNULL(m.accion, 'index')))) AS accion,
+                                     LOWER(LTRIM(RTRIM(ISNULL(m.url, '')))) AS url
+                     FROM esderp_v6.dbo.rol_usuario ru
+                     INNER JOIN esderp_v6.dbo.rol_menu rm ON ru.rol_id = rm.rol_id
+                     INNER JOIN esderp_v6.dbo.menu m ON rm.menu_id = m.menu_id
+                     WHERE ru.usuario_id = @usuarioId
+                       AND ru.estado = 'A'
+                       AND rm.estado = 'A'
+                       AND rm.lectura = 'S'
+                       AND m.estado = 'A'
+                       AND m.controlador IS NOT NULL
+                       AND LTRIM(RTRIM(m.controlador)) <> ''
+                       AND LTRIM(RTRIM(m.controlador)) <> '#';";
+
+                  cmd.Parameters.Add(new SqlParameter("@usuarioId", usuarioId));
+                  using (var reader = cmd.ExecuteReader())
+                  {
+                     while (reader.Read())
+                     {
+                        string ctrl = reader["controlador"] != DBNull.Value ? reader["controlador"].ToString().Trim().ToLowerInvariant() : "";
+                        string act = reader["accion"] != DBNull.Value ? reader["accion"].ToString().Trim().ToLowerInvariant() : "index";
+                        if (string.IsNullOrEmpty(act)) act = "index";
+                        string rawUrl = reader["url"] != DBNull.Value ? reader["url"].ToString().Trim().ToLowerInvariant() : "";
+
+                        if (!string.IsNullOrEmpty(ctrl))
+                        {
+                           urls.Add(ctrl);
+                           urls.Add(ctrl + "/" + act);
+                        }
+
+                        if (!string.IsNullOrEmpty(rawUrl) && rawUrl != "#")
+                        {
+                           string cleanUrl = rawUrl.TrimStart('/');
+                           urls.Add(cleanUrl);
+                           if (cleanUrl.Contains("/"))
+                           {
+                              var parts = cleanUrl.Split('/');
+                              if (parts.Length > 0 && !string.IsNullOrEmpty(parts[0]))
+                              {
+                                 urls.Add(parts[0]);
+                              }
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         catch (Exception)
+         {
+            // Fallback
+         }
+
+         return urls.ToList();
+      }
+
+      private void EnsureDashboardRolConfigTable(SqlConnection conn)
+      {
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = @"
+                  IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'dashboard_rol_config')
+                  BEGIN
+                     CREATE TABLE dbo.dashboard_rol_config (
+                        rol_codigo VARCHAR(50) NOT NULL PRIMARY KEY,
+                        config_json NVARCHAR(MAX) NOT NULL,
+                        fecha_modifica DATETIME NOT NULL DEFAULT GETDATE()
+                     );
+                  END";
+               cmd.ExecuteNonQuery();
+            }
+         }
+         catch { }
+      }
+
+      private Dictionary<string, object> ObtenerDashboardRolesConfigDesdeBD()
+      {
+         var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+         try
+         {
+            using (var conn = new SqlConnection(GetDbConnectionString()))
+            {
+               conn.Open();
+               EnsureDashboardRolConfigTable(conn);
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = "SELECT rol_codigo, config_json FROM dbo.dashboard_rol_config";
+                  using (var reader = cmd.ExecuteReader())
+                  {
+                     while (reader.Read())
+                     {
+                        string rolCod = reader["rol_codigo"] != DBNull.Value ? reader["rol_codigo"].ToString().Trim() : "";
+                        string json = reader["config_json"] != DBNull.Value ? reader["config_json"].ToString() : "";
+                        if (!string.IsNullOrEmpty(rolCod) && !string.IsNullOrEmpty(json))
+                        {
+                           try
+                           {
+                              var obj = JsonConvert.DeserializeObject(json);
+                              result[rolCod] = obj;
+                           }
+                           catch { }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         catch (Exception)
+         {
+            // Fallback
+         }
+         return result;
+      }
+
+      [HttpPost]
+      public JsonResult GuardarConfiguracionDashboardRol(string rolCodigo, string configJson)
+      {
+         try
+         {
+            if (!EsAdministrador() && !EsAdminOGerencia())
+            {
+               return Json(new { success = false, message = "Solo los administradores pueden gestionar la configuración del dashboard por rol." });
+            }
+
+            if (string.IsNullOrWhiteSpace(rolCodigo) || string.IsNullOrWhiteSpace(configJson))
+            {
+               return Json(new { success = false, message = "Datos inválidos." });
+            }
+
+            rolCodigo = rolCodigo.Trim();
+
+            using (var conn = new SqlConnection(GetDbConnectionString()))
+            {
+               conn.Open();
+               EnsureDashboardRolConfigTable(conn);
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = @"
+                     MERGE INTO dbo.dashboard_rol_config AS Target
+                     USING (SELECT @rolCodigo AS rol_codigo, @configJson AS config_json) AS Source
+                     ON Target.rol_codigo = Source.rol_codigo
+                     WHEN MATCHED THEN
+                        UPDATE SET config_json = Source.config_json, fecha_modifica = GETDATE()
+                     WHEN NOT MATCHED THEN
+                        INSERT (rol_codigo, config_json, fecha_modifica)
+                        VALUES (Source.rol_codigo, Source.config_json, GETDATE());";
+                  cmd.Parameters.Add(new SqlParameter("@rolCodigo", rolCodigo));
+                  cmd.Parameters.Add(new SqlParameter("@configJson", configJson));
+                  cmd.ExecuteNonQuery();
+               }
+            }
+
+            return Json(new { success = true, rolCodigo = rolCodigo });
+         }
+         catch (Exception ex)
+         {
+            return Json(new { success = false, message = ex.Message });
+         }
+      }
+
+      [HttpGet]
+      public JsonResult ObtenerConfiguracionDashboardRoles()
+      {
+         try
+         {
+            var config = ObtenerDashboardRolesConfigDesdeBD();
+            return Json(new { success = true, data = config });
+         }
+         catch (Exception ex)
+         {
+            return Json(new { success = false, message = ex.Message });
          }
       }
 

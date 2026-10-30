@@ -1,4 +1,4 @@
-﻿-- =========================================================================================
+-- =========================================================================================
 -- Script: CalendarioAreaMigration.sql
 -- Descripción: Módulo de Calendario por Áreas y Gestión de Permisos de Usuarios
 -- Fecha: 23/10/2026 (Actualizado con soporte explícito Unicode N'...')

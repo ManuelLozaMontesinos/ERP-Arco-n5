@@ -46,6 +46,17 @@ function calculateGridHeight(container) {
       return 250;
    }
 
+   // ProtecciÃ³n: si el contenedor estÃ¡ dentro de un modal/popup, jamÃ¡s calcular contra la ventana del navegador
+   if (gridContainer.closest('.modal, .modal-dialog').length > 0) {
+      var currentGridH = parseFloat(gridContainer.find('table.ui-jqgrid-btable').jqGrid('getGridParam', 'height'));
+      if (!isNaN(currentGridH) && currentGridH > 0 && currentGridH < 400) {
+         return currentGridH;
+      }
+      return 150;
+   }
+
+   var tagHeight = 50;
+
    var parent = gridContainer.parent();
    var className = (parent && parent.prop('class')) ? parent.prop('class') : '';
    var classNameList = className ? className.split(' ') : [];
@@ -54,13 +65,13 @@ function calculateGridHeight(container) {
    if (indexClass >= 0) {
       if (className.indexOf('active') == -1) {
          var ph = parent.height();
-         return (ph > 0 ? ph : 250);
+         return (ph > 0 ? (ph + tagHeight - 5) : 250);
       }
    }
 
    var offset = gridContainer.offset();
-   var docHeight = $(window).height();
-   var tagHeight = 110;
+   var winHeight = $(window).height();
+   var docHeight = (winHeight > 0 && winHeight < $(document).height() ? winHeight : $(document).height()) - 20;
    var offsetTop = offset ? offset.top : 0;
 
    var finalHeight = docHeight - Math.abs(offsetTop + tagHeight);
@@ -1379,6 +1390,23 @@ if (typeof window !== 'undefined') {
       return null;
    }
 
+   function detectarModuloOrdenFechaAsc(options) {
+      if (!options) return false;
+      var url = (options.url || '').toLowerCase();
+      var pathname = (window.location && window.location.pathname ? window.location.pathname : '').toLowerCase();
+      var checkStr = url + ' ' + pathname;
+      var modulosAsc = [
+         'consultallegada',
+         'llegada'
+      ];
+      for (var i = 0; i < modulosAsc.length; i++) {
+         if (checkStr.indexOf(modulosAsc[i]) !== -1) {
+            return true;
+         }
+      }
+      return false;
+   }
+
    function detectarModuloOrdenFecha(options) {
       if (!options) return false;
       if (options.sortname && /^fecha/i.test(options.sortname.trim())) {
@@ -1397,7 +1425,33 @@ if (typeof window !== 'undefined') {
          'notacredito',
          'guiaremi',
          'guiaremvta',
-         'guiaremotro'
+         'guiaremotro',
+         'guiaremiauto',
+         'repoguiaremi',
+         'consultallegada',
+         'llegada',
+         'ordencompra',
+         'ordencomauto',
+         'pedidocompra',
+         'pedidocomauto',
+         'valorizacompra',
+         'valoriza',
+         'repovalorizacomprob',
+         'movalmacen',
+         'repomovialma',
+         'transfesalida',
+         'transfeingreso',
+         'transfemodifica',
+         'consumoint',
+         'consumointauto',
+         'controlmerma',
+         'controlmermaauto',
+         'reclasitem',
+         'reclasitemauto',
+         'cotizacion',
+         'cotizaautoriza',
+         'cotiza',
+         'pedido'
       ];
 
       for (var i = 0; i < modulosFecha.length; i++) {
@@ -1530,7 +1584,10 @@ if (typeof window !== 'undefined') {
       // 1. Establecer sortname y sortorder iniciales
       if (infoFecha) {
          options.sortname = infoFecha.name;
-         if (!options.sortorder || options.sortorder === '') {
+         var esAsc = detectarModuloOrdenFechaAsc(options) || (options.sortorder && options.sortorder.toLowerCase() === 'asc');
+         if (detectarModuloOrdenFechaAsc(options)) {
+            options.sortorder = 'asc';
+         } else if (!options.sortorder || options.sortorder === '') {
             options.sortorder = 'desc';
          }
       } else if (infoCodigo) {
@@ -1847,14 +1904,6 @@ if (typeof window !== 'undefined') {
             // Fixes IE issue with in-place resizing when mousing-over frame bars
             Math.abs(width - $(this.element).width()) > 5) {
             $(this.element).jqGrid('setGridWidth', width);
-         }
-
-         var newH = calculateGridHeight(gridContainer);
-         if (newH >= 150) {
-            var curH = parseFloat($(this.element).jqGrid('getGridParam', 'height'));
-            if (isNaN(curH) || Math.abs(newH - curH) > 5) {
-               $(this.element).jqGrid('setGridHeight', newH);
-            }
          }
 
          return true;
@@ -2438,10 +2487,18 @@ function getPopupParam(elem) {
       clearTimeout(_gridResizeTimer);
       _gridResizeTimer = setTimeout(function () {
          $('div[id*="Container"]').each(function () {
+            // Ignorar modales y popups: las tablas dentro de diÃ¡logos mantienen sus proporciones compactas originales
+            if ($(this).closest('.modal, .modal-dialog').length > 0) return;
             var containerId = this.id;
             var grid = $(this).find('table.ui-jqgrid-btable');
             if (grid.length > 0 && grid.is(':visible')) {
                grid.appGrid('resizeGrid', containerId);
+               if (containerId === 'bandejaContainer') {
+                  var newH = calculateGridHeight(containerId);
+                  if (newH >= 150) {
+                     grid.jqGrid('setGridHeight', newH);
+                  }
+               }
             }
          });
       }, 150);
@@ -2450,6 +2507,7 @@ function getPopupParam(elem) {
    $(document).on('shown.bs.tab', 'a[data-toggle="tab"], button[data-toggle="tab"]', function () {
       setTimeout(function () {
          $('div[id*="Container"]:visible').each(function () {
+            if ($(this).closest('.modal, .modal-dialog').length > 0) return;
             var containerId = this.id;
             var grid = $(this).find('table.ui-jqgrid-btable');
             if (grid.length > 0) {
