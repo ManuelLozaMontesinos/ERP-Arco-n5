@@ -109,7 +109,6 @@ namespace ESD.ERP.Web.Controllers
 
    public class HomeController : AuthorizedController
    {
-      private static readonly DateTime TopPedidosFecha = new DateTime(2026, 10, 19);
 
       private const string ClientesInactivosSql = @"
          ;WITH Movimientos AS (
@@ -292,6 +291,7 @@ namespace ESD.ERP.Web.Controllers
          DateTime fechaAncla = (anioConsulta == hoy.Year)
             ? hoy
             : new DateTime(anioConsulta, mesConsulta, (mesConsulta == hoy.Month ? Math.Min(hoy.Day, DateTime.DaysInMonth(anioConsulta, mesConsulta)) : DateTime.DaysInMonth(anioConsulta, mesConsulta)));
+         string fechaTopPedidosStr = fechaAncla.ToString("dd/MM/yyyy");
 
          for (int i = 11; i >= 0; i--)
          {
@@ -670,10 +670,10 @@ namespace ESD.ERP.Web.Controllers
                         LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
                         WHERE c.es_pedido = 'S' 
                           AND c.estado = 'A' 
-                          AND YEAR(c.fecha) = @anio
+                          AND CAST(c.fecha AS DATE) = @fechaDia
                           AND (@sedeSesion IS NULL OR @sedeSesion = 0 OR pes.empresa_sede_id = @sedeSesion)
                         ORDER BY c.monto_total DESC";
-                      cmd.Parameters.AddWithValue("@anio", anioConsulta);
+                      cmd.Parameters.AddWithValue("@fechaDia", fechaAncla.Date);
                       cmd.Parameters.AddWithValue("@sedeSesion", (object)sedeSesionFiltro ?? DBNull.Value);
                      using (var reader = cmd.ExecuteReader())
                      {
@@ -932,7 +932,7 @@ namespace ESD.ERP.Web.Controllers
             prodLabels = new[] { "En Proceso", "Culminadas", "Pendientes", "Anuladas" },
             prodValores = new[] { prodEnProceso, prodCulminadas, prodPendientes, prodAnuladas },
             topPedidos = topPedidos,
-            topPedidosFecha = TopPedidosFecha.ToString("dd/MM/yyyy"),
+            topPedidosFecha = fechaTopPedidosStr,
             clientesInactivos = clientesInactivos
          };
       }

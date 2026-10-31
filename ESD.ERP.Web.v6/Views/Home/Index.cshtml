@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
     string facturacionMes = ViewBag.FacturacionMes ?? "S/ 0.00";
@@ -22,7 +22,7 @@
     string salidasMermaMes = ViewBag.SalidasMermaMes ?? "0";
     string guiasRemisionMes = ViewBag.GuiasRemisionMes ?? "0";
     var topPedidos = ViewBag.TopPedidos as List<ESD.ERP.Web.Controllers.TopPedidoDTO> ?? new List<ESD.ERP.Web.Controllers.TopPedidoDTO>();
-    string topPedidosFecha = ViewBag.TopPedidosFecha ?? "19/10/2026";
+    string topPedidosFecha = ViewBag.TopPedidosFecha ?? DateTime.Today.ToString("dd/MM/yyyy");
     var clientesInactivos = ViewBag.ClientesInactivos as List<ESD.ERP.Web.Controllers.ClienteInactivoDTO> ?? new List<ESD.ERP.Web.Controllers.ClienteInactivoDTO>();
     var stackedDiasDefault = ViewBag.StackedLabels as List<string> ?? new List<string> { "8 Oct", "9 Oct", "10 Oct", "11 Oct", "12 Oct", "13 Oct", "14 Oct", "15 Oct", "16 Oct", "17 Oct", "18 Oct", "19 Oct" };
     var dsCentralDefault = ViewBag.DsCentral as double[] ?? new double[12];
@@ -1105,8 +1105,10 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="3" class="text-center text-muted py-3">
-                                            <i class="fas fa-info-circle mr-1"></i> No se registran pedidos el @topPedidosFecha
+                                        <td colspan="3" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-2x d-block mb-2 text-secondary" style="opacity: 0.5;"></i>
+                                            <span>No se registran pedidos el d&iacute;a de hoy (@topPedidosFecha)</span>
+                                            <div class="small text-muted mt-1">Los pedidos aparecer&aacute;n autom&aacute;ticamente a medida que se registren durante el d&iacute;a.</div>
                                         </td>
                                     </tr>
                                 }
@@ -1114,7 +1116,7 @@
                         </table>
                     </div>
                     <div class="card-footer clearfix border-top-0 py-2">
-                        <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Pedidos m&aacute;s grandes registrados el @topPedidosFecha</small>
+                        <small class="text-muted" id="label-top-pedidos-footer"><i class="fas fa-info-circle mr-1"></i>Pedidos m&aacute;s grandes registrados el @topPedidosFecha</small>
                         <a href="javascript:void(0);" onclick="$(this).getView({ urlAction: 'pedido/index' });" class="btn btn-xs btn-outline-primary float-right">
                             <i class="fas fa-list mr-1"></i>Ver Todos los Pedidos
                         </a>
@@ -4190,7 +4192,7 @@
             var $tbody = $('#tabla-top-pedidos tbody');
             if (!$tbody.length) return;
             if (!lista || !lista.length) {
-                $tbody.html('<tr><td colspan="3" class="text-center text-muted py-3"><i class="fas fa-info-circle mr-1"></i> No se registran pedidos el ' + escapeDashboardHtml(fechaTopPedidos) + '</td></tr>');
+                $tbody.html('<tr><td colspan="3" class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x d-block mb-2 text-secondary" style="opacity: 0.5;"></i><span>No se registran pedidos el d&iacute;a de hoy (' + escapeDashboardHtml(fechaTopPedidos) + ')</span><div class="small text-muted mt-1">Los pedidos aparecer&aacute;n autom&aacute;ticamente a medida que se registren durante el d&iacute;a.</div></td></tr>');
                 return;
             }
             // Asegurar siempre orden descendente por monto (Top 1 = mayor monto)
@@ -4430,6 +4432,8 @@
                         }
                         if (res.topPedidosFecha) {
                             fechaTopPedidos = res.topPedidosFecha;
+                            actualizarBotonesTopPedidosUI();
+                            $('#label-top-pedidos-footer').html('<i class="fas fa-info-circle mr-1"></i>Pedidos m&aacute;s grandes registrados el ' + escapeDashboardHtml(fechaTopPedidos));
                         }
                         if (res.clientesInactivos) {
                             currentClientesInactivosData = res.clientesInactivos;
