@@ -1,4 +1,4 @@
-﻿using ESD.Core.Logging;
+using ESD.Core.Logging;
 using ESD.Core.Web;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
@@ -77,11 +77,11 @@ namespace ESD.ERP.Web.Areas.IV.Controllers
                          cell = new
                          {
                             f.OrdenCompraEntregaId,
-                            f.OrdenCompraProductoDTO.OrdenCompraDTO.ProveedorDTO.RazonSocial,
-                            f.OrdenCompraProductoDTO.ProductoDTO.Codigo,
-                            Producto = f.OrdenCompraProductoDTO.ProductoDTO.Descripcion,
-                            UnidadMedida = f.OrdenCompraProductoDTO.ProductoDTO.UnidadMedidaDTO.Abreviatura,
-                            Fecha = f.Fecha.Value.ToShortDateString(),
+                            RazonSocial = f.OrdenCompraProductoDTO?.OrdenCompraDTO?.ProveedorDTO?.RazonSocial ?? string.Empty,
+                            Codigo = f.OrdenCompraProductoDTO?.ProductoDTO?.Codigo ?? string.Empty,
+                            Producto = f.OrdenCompraProductoDTO?.ProductoDTO?.Descripcion ?? f.OrdenCompraProductoDTO?.Descripcion ?? string.Empty,
+                            UnidadMedida = f.OrdenCompraProductoDTO?.ProductoDTO?.UnidadMedidaDTO?.Abreviatura ?? string.Empty,
+                            Fecha = f.Fecha.HasValue ? f.Fecha.Value.ToShortDateString() : string.Empty,
                             f.Cantidad,
                             f.Estado
                          }

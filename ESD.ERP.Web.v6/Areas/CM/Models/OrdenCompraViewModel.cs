@@ -23,6 +23,7 @@ namespace ESD.ERP.Web.Areas.CM.Models
       public List<SelectListItem> OrdenCompraProductoList { get; set; }
       public List<SelectListItem> EstadoOrdenCompraList { get; set; }
       public bool EsFechaEntrega { get; set; }
+      public int? OrdenCompraId { get; set; }
       public List<int> OrdenCompraEntregaIdList { get; set; }
       public List<OrdenCompraEntregaDTO> OrdenCompraEntregaDTOList { get; set; }
 

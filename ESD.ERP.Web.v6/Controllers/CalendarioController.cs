@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Web;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
@@ -302,6 +302,98 @@ namespace ESD.ERP.Web.Controllers
          }
 
          return Json(eventos);
+      }
+
+      [HttpGet]
+      public JsonResult ObtenerEventoPorId(int id)
+      {
+         int usuarioActualId = ObtenerUsuarioId();
+         if (usuarioActualId <= 0 || id <= 0)
+         {
+            return Json(new { success = false, message = "Parámetros inválidos." });
+         }
+
+         bool esAdmin = EsAdministrador();
+         var areasPermitidas = ObtenerAreasUsuarioInterno(usuarioActualId, esAdmin);
+
+         try
+         {
+            using (var conn = new SqlConnection(GetDbConnectionString()))
+            {
+               conn.Open();
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = @"
+                      SELECT e.evento_id, e.area_id, e.usuario_id, e.usuario_logon, e.titulo, e.contexto,
+                             e.fecha_inicio, e.fecha_fin, e.todo_el_dia, e.color, e.fecha_creacion,
+                             ISNULL(a.nombre, 'General') AS area_nombre
+                      FROM dbo.calendario_evento e
+                      LEFT JOIN dbo.calendario_area a ON e.area_id = a.area_id
+                      WHERE e.estado = 'A' AND e.evento_id = @id";
+                  cmd.Parameters.AddWithValue("@id", id);
+
+                  using (var reader = cmd.ExecuteReader())
+                  {
+                     if (reader.Read())
+                     {
+                        int areaId = Convert.ToInt32(reader["area_id"]);
+                        bool puedeVer = esAdmin || areasPermitidas.Any(a => a.AreaId == areaId);
+                        if (!puedeVer)
+                        {
+                           return Json(new { success = false, message = "No tienes permiso para ver este evento." });
+                        }
+
+                        int propietarioId = Convert.ToInt32(reader["usuario_id"]);
+                        string titulo = reader["titulo"].ToString();
+                        string contexto = reader["contexto"] != DBNull.Value ? reader["contexto"].ToString() : "";
+                        DateTime fInicio = Convert.ToDateTime(reader["fecha_inicio"]);
+                        DateTime? fFin = reader["fecha_fin"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(reader["fecha_fin"]) : null;
+                        bool todoElDia = Convert.ToBoolean(reader["todo_el_dia"]);
+                        string color = reader["color"].ToString();
+                        string usuario = reader["usuario_logon"].ToString();
+                        DateTime fCreacion = Convert.ToDateTime(reader["fecha_creacion"]);
+                        string areaNombre = reader["area_nombre"].ToString();
+                        bool puedeEditar = esAdmin || areasPermitidas.Any(a => a.AreaId == areaId);
+
+                        var eventoObj = new
+                        {
+                           id = id.ToString(),
+                           title = titulo,
+                           start = todoElDia ? fInicio.ToString("yyyy-MM-dd") : fInicio.ToString("yyyy-MM-ddTHH:mm:ss"),
+                           end = fFin.HasValue ? (todoElDia ? fFin.Value.ToString("yyyy-MM-dd") : fFin.Value.ToString("yyyy-MM-ddTHH:mm:ss")) : null,
+                           allDay = todoElDia,
+                           editable = puedeEditar,
+                           backgroundColor = color,
+                           borderColor = color,
+                           textColor = (color == "#ffc107") ? "#212529" : "#ffffff",
+                           areaId = areaId,
+                           areaNombre = areaNombre,
+                           extendedProps = new
+                           {
+                              contexto = contexto,
+                              usuario = usuario,
+                              usuarioId = propietarioId,
+                              areaId = areaId,
+                              areaNombre = areaNombre,
+                              puedeEditar = puedeEditar,
+                              fechaCreacion = fCreacion.ToString("dd/MM/yyyy HH:mm")
+                           }
+                        };
+
+                        return Json(new { success = true, evento = eventoObj });
+                     }
+                     else
+                     {
+                        return Json(new { success = false, message = "Evento no encontrado o inactivo." });
+                     }
+                  }
+               }
+            }
+         }
+         catch (Exception ex)
+         {
+            return Json(new { success = false, message = ex.Message });
+         }
       }
 
       public class EventoInputModel

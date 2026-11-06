@@ -3,10 +3,18 @@
 <div id="mp-edit-panel">
    <div class="card shadow-none border-0 mb-0">
       <div class="card-body p-2">
-         <div class="row">
-            <div class="col-12">
-               <div class="form-group row mb-2">
-                  <esd-datetimepicker id="Fecha" col-position="col-lg-5" label="Fecha" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+         <div class="row align-items-center mb-2">
+            <div class="col-lg-7 col-12">
+               <div class="form-group row mb-0">
+                  <esd-datetimepicker id="Fecha" col-position="col-lg-7" label="Fecha" col-label-position="col-lg-3" in-modal="true"></esd-datetimepicker>
+               </div>
+            </div>
+            <div class="col-lg-5 col-12 mt-2 mt-lg-0 text-lg-right">
+               <div class="input-group input-group-sm ml-auto" style="max-width: 250px;">
+                  <div class="input-group-prepend">
+                     <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                  </div>
+                  <input type="text" id="txtFiltrarEntrega" class="form-control" placeholder="Buscar producto..." onkeyup="mp_filtrarEntregas(this.value)" />
                </div>
             </div>
          </div>
@@ -14,49 +22,101 @@
             <div class="col-12">
                <div class="d-flex justify-content-between align-items-center mb-2">
                   <span class="font-weight-bold" style="font-size: 0.88rem; color: #495057;">
-                     <i class="fas fa-truck mr-1"></i> Registros de Entregas
+                     <i class="fas fa-truck mr-1 text-primary"></i> Entregas de la Orden de Compra
+                     @if (Model?.OrdenCompraEntregaDTOList != null && Model.OrdenCompraEntregaDTOList.Count > 0)
+                     {
+                        <span class="badge badge-info ml-2 px-2 py-1 font-weight-bold" id="spnBadgeContador" style="font-size: 0.82rem;">@(Model?.OrdenCompraEntregaDTOList?.Count ?? 0) registros</span>
+                     }
                   </span>
-                  <button type="button" class="btn btn-sm btn-outline-primary" id="btnSeleccionarTodos" onclick="mp_toggleSeleccionarTodos()">
-                     <i class="fas fa-check-square mr-1"></i> Seleccionar Todos
-                  </button>
+                  <div>
+                     <button type="button" class="btn btn-sm btn-outline-primary" id="btnSeleccionarTodos" onclick="mp_toggleSeleccionarTodos()">
+                        <i class="fas fa-check-square mr-1"></i> Seleccionar Todos
+                     </button>
+                  </div>
                </div>
-               <div class="table-responsive border rounded" style="max-height: 220px; overflow-y: auto;">
+               <div class="table-responsive border rounded" style="max-height: 330px; overflow-y: auto;">
                   <table class="table table-sm table-striped table-hover mb-0" id="tblEntregasPopup">
-                     <thead class="thead-light" style="position: sticky; top: 0; z-index: 1;">
+                     <thead class="thead-light" style="position: sticky; top: 0; z-index: 2;">
                         <tr>
                            <th style="width: 40px; text-align: center;">
                               <input type="checkbox" id="chkTodosEntregas" onchange="mp_chkTodosOnChange(this)" title="Marcar / Desmarcar todos" />
                            </th>
-                           <th style="width: 45px; text-align: center;">#</th>
-                           <th style="text-align: right; width: 130px;">Cantidad</th>
-                           <th style="text-align: center; width: 150px;">Fecha Entrega Actual</th>
+                           <th style="text-align: left;">Producto</th>
+                           <th style="text-align: right; width: 115px;">Cantidad</th>
+                           <th style="text-align: center; width: 165px;">Fecha Entrega Actual</th>
                         </tr>
                      </thead>
                      <tbody id="tblEntregasPopupBody">
                         @if (Model?.OrdenCompraEntregaDTOList != null && Model.OrdenCompraEntregaDTOList.Count > 0)
                         {
-                           int idx = 1;
                            foreach (var item in Model.OrdenCompraEntregaDTOList)
                            {
-                              <tr style="cursor: pointer;">
+                              var prodDesc = item.OrdenCompraProductoDTO?.ProductoDTO?.Descripcion;
+                              if (string.IsNullOrEmpty(prodDesc))
+                              {
+                                 prodDesc = item.OrdenCompraProductoDTO?.Descripcion ?? "-";
+                              }
+                              var prodCod = item.OrdenCompraProductoDTO?.ProductoDTO?.Codigo;
+                              var detalle = item.OrdenCompraProductoDTO?.Descripcion;
+                              var textoBusqueda = ((prodDesc ?? "") + " " + (prodCod ?? "") + " " + (detalle ?? "")).ToLower();
+
+                              <tr class="tr-entrega-row" style="cursor: pointer;" data-busqueda="@textoBusqueda">
                                  <td class="text-center align-middle">
                                     <input type="checkbox" class="chk-entrega-item" value="@item.OrdenCompraEntregaId" onchange="mp_actualizarEstadoBotonTodos()" />
                                  </td>
-                                 <td class="text-center align-middle">@idx</td>
-                                 <td class="text-right align-middle font-weight-bold">@item.Cantidad.ToString("N2")</td>
-                                 <td class="text-center align-middle">@(item.Fecha.HasValue ? item.Fecha.Value.ToString("dd/MM/yyyy") : "-")</td>
+                                 <td class="text-left align-middle">
+                                    <div class="font-weight-bold text-dark" style="font-size: 0.86rem; line-height: 1.25;">
+                                       @prodDesc
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(prodCod))
+                                    {
+                                       <span class="text-muted" style="font-size: 0.78rem;">
+                                          <i class="fas fa-barcode mr-1"></i>@prodCod
+                                       </span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(detalle) && detalle != prodDesc)
+                                    {
+                                       <span class="text-secondary d-block font-italic" style="font-size: 0.78rem;">
+                                          @detalle
+                                       </span>
+                                    }
+                                 </td>
+                                 <td class="text-right align-middle font-weight-bold text-primary" style="font-size: 0.88rem;">
+                                    @item.Cantidad.ToString("N2")
+                                 </td>
+                                 <td class="text-center align-middle">
+                                    @if (item.Fecha.HasValue)
+                                    {
+                                       <span class="badge badge-light border px-2 py-1" style="font-size: 0.82rem;">
+                                          <i class="far fa-calendar-alt mr-1 text-primary"></i>@item.Fecha.Value.ToString("dd/MM/yyyy")
+                                       </span>
+                                    }
+                                    else
+                                    {
+                                       <span class="text-muted font-italic" style="font-size: 0.82rem;">- Sin fecha -</span>
+                                    }
+                                 </td>
                               </tr>
-                              idx++;
                            }
                         }
                         else
                         {
                            <tr id="trSinEntregas">
-                              <td colspan="4" class="text-center text-muted py-3">Cargando registros...</td>
+                              <td colspan="4" class="text-center text-muted py-4">
+                                 <i class="fas fa-info-circle mr-1"></i> No se encontraron registros de entregas para esta orden de compra.
+                              </td>
                            </tr>
                         }
                      </tbody>
                   </table>
+               </div>
+               <div class="d-flex justify-content-between align-items-center mt-2 px-1 text-muted small">
+                  <span id="lblContadorFooter">
+                     <i class="fas fa-list-ul mr-1 text-primary"></i> Mostrando <strong id="spnVisibles" class="text-dark">@(Model?.OrdenCompraEntregaDTOList?.Count ?? 0)</strong> de <strong id="spnTotal" class="text-dark">@(Model?.OrdenCompraEntregaDTOList?.Count ?? 0)</strong> registros
+                  </span>
+                  <span id="lblSeleccionadosFooter" class="badge badge-light border text-primary font-weight-bold px-2 py-1" style="font-size: 0.8rem;">
+                     <i class="fas fa-check-circle mr-1"></i> <span id="spnSeleccionadosCount">0</span> seleccionados
+                  </span>
                </div>
             </div>
          </div>
@@ -77,32 +137,59 @@
       return true;
    }
 
+   function mp_actualizarContadores() {
+      var total = $('#tblEntregasPopupBody tr.tr-entrega-row').length;
+      var visibles = $('#tblEntregasPopupBody tr.tr-entrega-row:visible').length;
+      var seleccionados = $('.chk-entrega-item:checked').length;
+
+      $('#spnVisibles').text(visibles);
+      $('#spnTotal').text(total);
+      $('#spnSeleccionadosCount').text(seleccionados);
+
+      var badgeTexto = (visibles === total)
+         ? (total + ' registros')
+         : (visibles + ' de ' + total + ' registros');
+      $('#spnBadgeContador').text(badgeTexto);
+
+      if (visibles === 0 && total > 0) {
+         if ($('#trSinResultadosFiltro').length === 0) {
+            $('#tblEntregasPopupBody').append('<tr id="trSinResultadosFiltro"><td colspan="4" class="text-center text-muted py-3"><i class="fas fa-search mr-1"></i> No se encontraron productos que coincidan con la búsqueda.</td></tr>');
+         }
+      } else {
+         $('#trSinResultadosFiltro').remove();
+      }
+   }
+
    function mp_toggleSeleccionarTodos() {
-      var chks = $('.chk-entrega-item');
+      var chks = $('.chk-entrega-item:visible');
       if (chks.length === 0) return;
       var todos = (chks.filter(':checked').length === chks.length);
       chks.prop('checked', !todos);
       $('#chkTodosEntregas').prop('checked', !todos);
       mp_actualizarTextoBotonTodos(!todos);
+      mp_actualizarContadores();
    }
 
    function mp_chkTodosOnChange(headerChk) {
       var checked = $(headerChk).prop('checked');
-      $('.chk-entrega-item').prop('checked', checked);
+      $('.chk-entrega-item:visible').prop('checked', checked);
       mp_actualizarTextoBotonTodos(checked);
+      mp_actualizarContadores();
    }
 
    function mp_actualizarEstadoBotonTodos() {
-      var chks = $('.chk-entrega-item');
+      var chks = $('.chk-entrega-item:visible');
       if (chks.length === 0) {
          $('#chkTodosEntregas').prop('checked', false);
          mp_actualizarTextoBotonTodos(false);
+         mp_actualizarContadores();
          return;
       }
       var marcados = chks.filter(':checked').length;
       var todos = (marcados === chks.length);
       $('#chkTodosEntregas').prop('checked', todos);
       mp_actualizarTextoBotonTodos(todos);
+      mp_actualizarContadores();
    }
 
    function mp_actualizarTextoBotonTodos(todosMarcados) {
@@ -116,42 +203,17 @@
       }
    }
 
-   function mp_inicializarTablaEntregas() {
-      var items = $('#tblEntregasPopupBody tr').not('#trSinEntregas');
-      if (items.length > 0) {
-         mp_actualizarEstadoBotonTodos();
-         return;
-      }
-
-      // Si no vinieron del servidor en Razor, poblar directamente desde los datos de entregaGrid
-      if (typeof $ !== 'undefined' && $('#entregaGrid').length > 0) {
-         var gridRows = $('#entregaGrid').jqGrid('getRowData');
-         if (gridRows && gridRows.length > 0) {
-            var html = '';
-            for (var i = 0; i < gridRows.length; i++) {
-               var r = gridRows[i];
-               var id = r.OrdenCompraEntregaId;
-               var cant = parseFloat(r.Cantidad || 0).toFixed(2);
-               var fecha = r.Fecha || '-';
-               html += '<tr style="cursor: pointer;">' +
-                  '<td class="text-center align-middle">' +
-                  '  <input type="checkbox" class="chk-entrega-item" value="' + id + '" onchange="mp_actualizarEstadoBotonTodos()" />' +
-                  '</td>' +
-                  '<td class="text-center align-middle">' + (i + 1) + '</td>' +
-                  '<td class="text-right align-middle font-weight-bold">' + cant + '</td>' +
-                  '<td class="text-center align-middle">' + fecha + '</td>' +
-                  '</tr>';
-            }
-            $('#tblEntregasPopupBody').html(html);
-            mp_actualizarEstadoBotonTodos();
-         } else {
-            $('#tblEntregasPopupBody').html('<tr id="trSinEntregas"><td colspan="4" class="text-center text-muted py-3">No hay registros de entregas para mostrar.</td></tr>');
-            mp_actualizarEstadoBotonTodos();
-         }
-      }
+   function mp_filtrarEntregas(texto) {
+      var term = (texto || '').toLowerCase().trim();
+      $('#tblEntregasPopupBody tr.tr-entrega-row').each(function () {
+         var searchStr = $(this).attr('data-busqueda') || '';
+         var hayMatch = (!term || searchStr.indexOf(term) !== -1);
+         $(this).toggle(hayMatch);
+      });
+      mp_actualizarEstadoBotonTodos();
    }
 
-   $(document).off('click', '#tblEntregasPopupBody tr').on('click', '#tblEntregasPopupBody tr', function (e) {
+   $(document).off('click', '#tblEntregasPopupBody tr.tr-entrega-row').on('click', '#tblEntregasPopupBody tr.tr-entrega-row', function (e) {
       if ($(e.target).is('input[type="checkbox"]')) {
          return;
       }
@@ -160,5 +222,9 @@
          chk.prop('checked', !chk.prop('checked'));
          mp_actualizarEstadoBotonTodos();
       }
+   });
+
+   $(document).ready(function () {
+      mp_actualizarContadores();
    });
 </script>

@@ -18,8 +18,8 @@ namespace ESD.ERP.Web.Services
    public interface INotifyService
    {
       void SendNotification(NotificacionPushDTO notificacionPushDTO);
-      Task SendCalendarReminderAsync(int usuarioId, string tituloEvento, DateTime fechaInicio, string areaNombre = null);
-      Task SendCalendarReminderToUsersAsync(IEnumerable<int> usuarioIds, string tituloEvento, DateTime fechaInicio, string areaNombre = null);
+      Task SendCalendarReminderAsync(int usuarioId, string tituloEvento, DateTime fechaInicio, string areaNombre = null, int? eventoId = null, int? areaId = null);
+      Task SendCalendarReminderToUsersAsync(IEnumerable<int> usuarioIds, string tituloEvento, DateTime fechaInicio, string areaNombre = null, int? eventoId = null, int? areaId = null);
    }
    public class NotifyService: INotifyService
    {
@@ -71,12 +71,12 @@ namespace ESD.ERP.Web.Services
             JsonSerializer.Serialize(data, options));
       }
 
-      public async Task SendCalendarReminderAsync(int usuarioId, string tituloEvento, DateTime fechaInicio, string areaNombre = null)
+      public async Task SendCalendarReminderAsync(int usuarioId, string tituloEvento, DateTime fechaInicio, string areaNombre = null, int? eventoId = null, int? areaId = null)
       {
-         await SendCalendarReminderToUsersAsync(new[] { usuarioId }, tituloEvento, fechaInicio, areaNombre);
+         await SendCalendarReminderToUsersAsync(new[] { usuarioId }, tituloEvento, fechaInicio, areaNombre, eventoId, areaId);
       }
 
-      public async Task SendCalendarReminderToUsersAsync(IEnumerable<int> usuarioIds, string tituloEvento, DateTime fechaInicio, string areaNombre = null)
+      public async Task SendCalendarReminderToUsersAsync(IEnumerable<int> usuarioIds, string tituloEvento, DateTime fechaInicio, string areaNombre = null, int? eventoId = null, int? areaId = null)
       {
          if (usuarioIds == null) return;
          var ids = usuarioIds.Distinct().Where(id => id > 0).ToList();
@@ -94,6 +94,11 @@ namespace ESD.ERP.Web.Services
          string descripcionNotificacion = string.IsNullOrWhiteSpace(areaNombre)
             ? ("El evento inicia el " + fechaInicio.ToString("dd/MM/yyyy HH:mm") + ".")
             : ($"Evento de {areaNombre} inicia el " + fechaInicio.ToString("dd/MM/yyyy HH:mm") + ".");
+
+         if (eventoId.HasValue && eventoId.Value > 0)
+         {
+            descripcionNotificacion += $"<!--CAL:{eventoId.Value}:{(areaId ?? 0)}-->";
+         }
 
          string alertMessage = string.IsNullOrWhiteSpace(areaNombre)
             ? "Tienes un evento próximo que inicia en 15 minutos o menos. Revisa tus notificaciones."

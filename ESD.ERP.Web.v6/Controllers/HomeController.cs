@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -252,7 +252,7 @@ namespace ESD.ERP.Web.Controllers
          return (null, null);
       }
 
-      private dynamic ObtenerMetricasDesdeBD(int? vendedorIdFiltro = null, int mesesInactivos = 5, int? vendedorClientesFiltro = null, int? sedeIdFiltro = null, int? anioSesion = null, int? sedeSesionId = null, int? vendedorGraficoId = null, int? cotizacionGraficoId = null)
+      private dynamic ObtenerMetricasDesdeBD(int? vendedorIdFiltro = null, int mesesInactivos = 5, int? vendedorClientesFiltro = null, int? sedeIdFiltro = null, int? anioSesion = null, int? sedeSesionId = null, int? vendedorGraficoId = null, int? cotizacionGraficoId = null, int? sedeVentasGraficoId = null)
       {
          decimal facturacionMes = 0m;
          int pedidosActivos = 0;
@@ -586,12 +586,13 @@ namespace ESD.ERP.Web.Controllers
                            {SqlTipoCambioApply}
                           WHERE c.fecha >= @inicioConsultaVentas AND c.fecha < @finPeriodoActual
                             AND c.estado = 'A'
-                            AND (@sedeSesion IS NULL OR @sedeSesion = 0 OR pes.empresa_sede_id = @sedeSesion)
+                            AND (@sedeVentas IS NULL OR @sedeVentas = 0 OR pes.empresa_sede_id = @sedeVentas)
                           GROUP BY YEAR(c.fecha), MONTH(c.fecha)
                           ORDER BY anio, mes";
                        cmd.Parameters.Add("@inicioConsultaVentas", SqlDbType.Date).Value = inicioConsultaVentas.Date;
                        cmd.Parameters.Add("@finPeriodoActual", SqlDbType.Date).Value = finPeriodoActual.Date;
-                       cmd.Parameters.AddWithValue("@sedeSesion", (object)sedeSesionFiltro ?? DBNull.Value);
+                       int? sedeVentasFiltro = (sedeVentasGraficoId.HasValue && sedeVentasGraficoId.Value > 0) ? sedeVentasGraficoId.Value : (int?)null;
+                       cmd.Parameters.AddWithValue("@sedeVentas", (object)sedeVentasFiltro ?? DBNull.Value);
 
                        var salesByYearMonth = new Dictionary<string, double>();
                        using (var reader = cmd.ExecuteReader())
@@ -879,7 +880,7 @@ namespace ESD.ERP.Web.Controllers
                             ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
                         FROM cotiza c
                          {SqlTipoCambioApply}
-                        WHERE c.es_pedido = 'S' AND c.estado = 'A'
+                        WHERE c.estado = 'A' AND c.estado_cotiza_id NOT IN (1, 5)
                           AND (@vid <= 0 OR c.vendedor_id = @vid)
                           AND c.fecha >= @fDesde AND c.fecha < @fHasta
                         GROUP BY CAST(c.fecha AS DATE)";
@@ -929,7 +930,7 @@ namespace ESD.ERP.Web.Controllers
                             ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
                         FROM cotiza c
                          {SqlTipoCambioApply}
-                        WHERE c.es_pedido = 'N' AND c.estado = 'A'
+                        WHERE c.estado = 'A' AND c.estado_cotiza_id <> 5
                           AND (@vid <= 0 OR c.vendedor_id = @vid)
                           AND c.fecha >= @fDesde AND c.fecha < @fHasta
                         GROUP BY CAST(c.fecha AS DATE)";
@@ -1090,7 +1091,13 @@ namespace ESD.ERP.Web.Controllers
             sedeDashboard = sId;
          }
          ViewBag.SedeDashboardInicial = sedeDashboard ?? 0;
-         var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, 5, vendedorClientesInicial, sedeDashboard, anioSesion, sedeSesionId);
+         int? sedeVentas = null;
+         if (Request.Query.ContainsKey("sedeVentas") && int.TryParse(Request.Query["sedeVentas"], out int svId))
+         {
+            sedeVentas = svId;
+         }
+         ViewBag.SedeVentasInicial = sedeVentas ?? 0;
+         var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, 5, vendedorClientesInicial, sedeDashboard, anioSesion, sedeSesionId, null, null, (int?)ViewBag.SedeVentasInicial);
 
          List<string> userRoles = new List<string>();
          try { userRoles = ObtenerRoles(); } catch { }
@@ -1477,7 +1484,7 @@ namespace ESD.ERP.Web.Controllers
       }
 
       [HttpGet]
-      public JsonResult ObtenerDatosDashboard(string cid, int mesesInactivos = 5, int? vendedorClientesId = null, int? sedeId = null, int? anio = null, int? vendedorId = null, int? cotizacionVendedorId = null)
+      public JsonResult ObtenerDatosDashboard(string cid, int mesesInactivos = 5, int? vendedorClientesId = null, int? sedeId = null, int? anio = null, int? vendedorId = null, int? cotizacionVendedorId = null, int? sedeVentasId = null)
       {
          try
          {
@@ -1535,7 +1542,7 @@ namespace ESD.ERP.Web.Controllers
             {
                cotizacionGrafico = cotizacionVendedorId.Value;
             }
-            var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, mesesFiltro, vendedorInactivosFiltro, sedeFiltro, anioSesion, sedeSesionId, vendedorGrafico, cotizacionGrafico);
+            var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, mesesFiltro, vendedorInactivosFiltro, sedeFiltro, anioSesion, sedeSesionId, vendedorGrafico, cotizacionGrafico, sedeVentasId);
 
             var response = new
             {
@@ -1690,7 +1697,7 @@ namespace ESD.ERP.Web.Controllers
                          ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
                      FROM cotiza c
                       {SqlTipoCambioApply}
-                     WHERE c.es_pedido = 'S' AND c.estado = 'A'
+                     WHERE c.estado = 'A' AND c.estado_cotiza_id NOT IN (1, 5)
                        AND (@vid <= 0 OR c.vendedor_id = @vid)
                        AND c.fecha >= @fDesde AND c.fecha < @fHasta
                      GROUP BY CAST(c.fecha AS DATE)";
@@ -1822,7 +1829,7 @@ namespace ESD.ERP.Web.Controllers
                          ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
                      FROM cotiza c
                       {SqlTipoCambioApply}
-                     WHERE c.es_pedido = 'N' AND c.estado = 'A'
+                     WHERE c.estado = 'A' AND c.estado_cotiza_id <> 5
                        AND (@vid <= 0 OR c.vendedor_id = @vid)
                        AND c.fecha >= @fDesde AND c.fecha < @fHasta
                      GROUP BY CAST(c.fecha AS DATE)";
@@ -3003,7 +3010,7 @@ namespace ESD.ERP.Web.Controllers
                   cmd.Parameters.Add(new SqlParameter("@rolCodigo", rolCodigo));
                   cmd.Parameters.Add(new SqlParameter("@configJson", configJson));
                   cmd.ExecuteNonQuery();
-               }
+            }
             }
 
             return Json(new { success = true, rolCodigo = rolCodigo });
@@ -3046,5 +3053,61 @@ namespace ESD.ERP.Web.Controllers
             return Json(new { success = false, message = ex.Message });
          }
       }
-   }
+      [HttpGet]
+      public JsonResult ObtenerGraficoVentasPorSede(int? sedeId = null, int? anio = null, string cid = null)
+      {
+         try
+         {
+            if (string.IsNullOrEmpty(cid))
+            {
+               cid = Request.Query["cid"];
+               if (string.IsNullOrEmpty(cid)) { cid = Request.Headers["x-app-cid"]; }
+            }
+
+            int anioConsulta = anio ?? 2026;
+            if (!anio.HasValue || anio.Value <= 0)
+            {
+               if (!string.IsNullOrEmpty(cid))
+               {
+                  try
+                  {
+                     var pDTO = ObtenerPeriodoEmpresaSedeDTO(cid);
+                     if (pDTO?.PeriodoDTO != null && pDTO.PeriodoDTO.Codigo > 0)
+                     {
+                        anioConsulta = pDTO.PeriodoDTO.Codigo;
+                     }
+                  }
+                  catch { }
+               }
+            }
+
+            bool esAdminOGerencia = EsAdminOGerencia();
+            int? vendedorIdFiltro = null;
+            if (!esAdminOGerencia)
+            {
+               var (vid, _) = ObtenerVendedorUsuarioActual();
+               vendedorIdFiltro = vid;
+            }
+
+            var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, 5, null, null, anioConsulta, null, null, null, sedeId ?? 0);
+
+            return Json(new
+            {
+               success = true,
+               graficoVentas = new
+               {
+                  meses = metricas.mesesVentas,
+                  ventasAnterior = metricas.ventasAnterior,
+                  ventasActual = metricas.ventasActual,
+                  ventasBarraActual = metricas.ventasBarraActual
+               }
+            });
+         }
+         catch (Exception ex)
+         {
+            return Json(new { success = false, message = ex.Message });
+         }
+      }
+
+               }
 }

@@ -1,4 +1,4 @@
-﻿// ========================================================
+// ========================================================
 // SISTEMA DE NOTIFICACIONES Y SONIDO (CAMPANITA)
 // ========================================================
 var _notificationAudioCtx = null;
@@ -203,9 +203,19 @@ function buildNotificationDropdown(data) {
    notifications.forEach(function (item) {
       var id = item.id || item.notificacionPushId;
       var title = item.titulo || 'Notificación';
+      var isCalendar = item.tipo === 'CALENDARIO' || (item.eventoId && Number(item.eventoId) > 0);
       var card = $('<article>').addClass('app-notification-card').attr('role', 'listitem');
+
+      if (isCalendar) {
+         card.addClass('app-notification-calendar-item');
+         card.attr('data-evento-id', item.eventoId);
+         if (item.areaId) card.attr('data-area-id', item.areaId);
+         card.attr('title', 'Clic para abrir este evento en el Calendario');
+      }
+
+      var iconClass = isCalendar ? 'far fa-calendar-alt' : 'far fa-bell';
       var icon = $('<span>').addClass('app-notification-card-icon').append(
-         $('<i>').addClass('far fa-bell').attr('aria-hidden', 'true')
+         $('<i>').addClass(iconClass).attr('aria-hidden', 'true')
       );
       var content = $('<div>').addClass('app-notification-card-content');
       var actions = $('<div>').addClass('app-notification-card-actions');
@@ -219,7 +229,16 @@ function buildNotificationDropdown(data) {
 
       $('<h3>').addClass('app-notification-card-title').text(title).appendTo(content);
       $('<p>').addClass('app-notification-card-description').text(item.descripcion || '').appendTo(content);
-      $('<time>').addClass('app-notification-card-time').text(item.fecha || '').appendTo(content);
+
+      var footer = $('<div>').addClass('app-notification-card-footer');
+      $('<time>').addClass('app-notification-card-time').text(item.fecha || '').appendTo(footer);
+      if (isCalendar) {
+         $('<span>').addClass('app-notification-card-badge')
+            .html('<i class="fas fa-calendar-check mr-1"></i>Abrir evento')
+            .appendTo(footer);
+      }
+      footer.appendTo(content);
+
       actions.append(deleteButton);
       card.append(icon, content, actions);
       dropdown.append(card);
@@ -308,6 +327,79 @@ $('#app-notification-clear-all')
       event.preventDefault();
       event.stopPropagation();
       if (!this.disabled) confirmarVaciarNotificaciones();
+   });
+
+// ========================================================
+// INTERACCIÓN CON NOTIFICACIONES DE CALENDARIO
+// ========================================================
+function abrirModuloCalendarioConEvento(eventoId, areaId) {
+   if (!eventoId) return;
+
+   var strEventoId = String(eventoId);
+   var strAreaId = (areaId !== undefined && areaId !== null && String(areaId).length > 0) ? String(areaId) : null;
+
+   // 1. Guardar en almacenamiento de sesión y estado en memoria global
+   try {
+      sessionStorage.setItem('erp_abrir_evento_id', strEventoId);
+      if (strAreaId) {
+         sessionStorage.setItem('erp_abrir_area_id', strAreaId);
+      } else {
+         sessionStorage.removeItem('erp_abrir_area_id');
+      }
+   } catch (e) { }
+
+   window._eventoIdPendienteAbrir = strEventoId;
+   window._areaIdPendienteAbrir = strAreaId;
+
+   // 2. Cerrar dropdown de notificaciones si está desplegado
+   var $dropdownToggle = $('#app-notification-trigger');
+   if ($dropdownToggle.length) {
+      var $parentDropdown = $dropdownToggle.closest('.dropdown');
+      if ($parentDropdown.hasClass('show')) {
+         $dropdownToggle.dropdown('toggle');
+      }
+   }
+
+   // 3. Si ya estamos en el módulo de Calendario, abrir directamente el modal del evento
+   if ($('#calendar').length > 0 && typeof window.abrirModalEventoPorId === 'function') {
+      window.abrirModalEventoPorId(strEventoId, strAreaId);
+      return;
+   }
+
+   // 4. Si estamos en otra vista, navegar al módulo de Calendario
+   var $menuLink = $('#main-menu a.nav-link').filter(function () {
+      return $(this).text().trim().toLowerCase() === 'calendario';
+   });
+
+   if ($menuLink.length > 0) {
+      $menuLink.first().trigger('click');
+   } else {
+      if (window.updateNavbarBreadcrumb) {
+         window.updateNavbarBreadcrumb(['Calendario']);
+      }
+      if (typeof $.fn.getView === 'function') {
+         $(document.body).getView({ urlAction: 'calendario/index' });
+      } else {
+         window.location.href = getBaseUrl() + '/Calendario/Index';
+      }
+   }
+}
+
+$(document)
+   .off('click.appNotificationCard', '.app-notification-card')
+   .on('click.appNotificationCard', '.app-notification-card', function (event) {
+      // Ignorar si se hizo clic en el botón de eliminar o sus elementos internos
+      if ($(event.target).closest('.app-notification-delete, .app-notification-card-actions').length > 0) {
+         return;
+      }
+
+      var card = $(this);
+      var eventoId = card.attr('data-evento-id');
+      var areaId = card.attr('data-area-id');
+
+      if (eventoId) {
+         abrirModuloCalendarioConEvento(eventoId, areaId);
+      }
    });
 
 // ========================================================

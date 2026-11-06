@@ -202,17 +202,45 @@ namespace ESD.ERP.Web.Controllers
          {
             List<NotificacionPushDTO> notificacionPushDTOList = BuscarNotificacionesDeHoy(ObtenerUsuarioId());
 
+            var notifList = notificacionPushDTOList.Select(f =>
+            {
+               int? eventoId = null;
+               int? areaId = null;
+               string desc = f.Descripcion ?? "";
+
+               var match = System.Text.RegularExpressions.Regex.Match(desc, @"<!--CAL:(\d+):?(\d*)-->");
+               if (match.Success)
+               {
+                  if (int.TryParse(match.Groups[1].Value, out int eId)) eventoId = eId;
+                  if (int.TryParse(match.Groups[2].Value, out int aId)) areaId = aId;
+                  desc = desc.Replace(match.Value, "").Trim();
+               }
+               else if (desc.Contains("inicia el ") || (!string.IsNullOrEmpty(f.Titulo) && (f.Titulo.StartsWith("[") || f.Titulo.StartsWith("Próximo evento:"))))
+               {
+                  var res = ResolverEventoCalendario(f.Titulo, desc);
+                  if (res.HasValue)
+                  {
+                     eventoId = res.Value.eventoId;
+                     areaId = res.Value.areaId;
+                  }
+               }
+
+               return new
+               {
+                  Id = f.NotificacionPushId,
+                  f.Titulo,
+                  Descripcion = desc,
+                  Fecha = string.Format(StringFormatConstant.DATE_TIME, f.FechaRegistro),
+                  Tipo = eventoId.HasValue ? "CALENDARIO" : "GENERAL",
+                  EventoId = eventoId,
+                  AreaId = areaId
+               };
+            }).ToList();
+
             resultResponse.Data = new
             {
-               Total = notificacionPushDTOList.Count,
-               List = from f in notificacionPushDTOList.AsEnumerable()
-                      select new
-                      {
-                         Id = f.NotificacionPushId,
-                         f.Titulo,
-                         f.Descripcion,
-                         Fecha = string.Format(StringFormatConstant.DATE_TIME,f.FechaRegistro)
-                      }
+               Total = notifList.Count,
+               List = notifList
             };
          }
          catch (Exception e)
@@ -225,6 +253,54 @@ namespace ESD.ERP.Web.Controllers
          Logger.InfoFinish();
 
          return Json(resultResponse);
+      }
+
+      private (int eventoId, int areaId)? ResolverEventoCalendario(string titulo, string descripcion)
+      {
+         if (string.IsNullOrWhiteSpace(titulo)) return null;
+
+         string tituloEvento = titulo.Trim();
+         if (tituloEvento.StartsWith("[") && tituloEvento.Contains("]"))
+         {
+            int idx = tituloEvento.IndexOf(']');
+            tituloEvento = tituloEvento.Substring(idx + 1).Trim();
+         }
+         else if (tituloEvento.StartsWith("Próximo evento:", StringComparison.OrdinalIgnoreCase))
+         {
+            tituloEvento = tituloEvento.Substring("Próximo evento:".Length).Trim();
+         }
+
+         if (string.IsNullOrWhiteSpace(tituloEvento)) return null;
+
+         try
+         {
+            using (var conn = new SqlConnection(CalendarDatabase.GetConnectionString(configuration)))
+            {
+               conn.Open();
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = @"
+                     SELECT TOP 1 evento_id, area_id
+                     FROM dbo.calendario_evento
+                     WHERE estado = 'A' AND titulo = @titulo
+                     ORDER BY fecha_inicio DESC, evento_id DESC";
+                  cmd.Parameters.AddWithValue("@titulo", tituloEvento);
+
+                  using (var reader = cmd.ExecuteReader())
+                  {
+                     if (reader.Read())
+                     {
+                        return (Convert.ToInt32(reader["evento_id"]), Convert.ToInt32(reader["area_id"]));
+                     }
+                  }
+               }
+            }
+         }
+         catch
+         {
+         }
+
+         return null;
       }
 
       [HttpPost("EliminarNotificacion")]

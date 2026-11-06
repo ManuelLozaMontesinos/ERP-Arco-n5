@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Calendario de Eventos";
     bool isAjaxRequest = Context.Request.Headers["X-Requested-With"] == "XMLHttpRequest"
                       || !string.IsNullOrEmpty(Context.Request.Headers["x-app-cid"])
@@ -1475,6 +1475,77 @@
         calendar.render();
         window._activeCalendarInstance = calendar;
 
+        // Exponer función global para abrir un evento en modal por su ID
+        window.abrirModalEventoPorId = function(eventoId, targetAreaId) {
+            if (!eventoId) return;
+
+            function procesarApertura() {
+                var eid = eventoId.toString();
+
+                // 1. Si se especificó área y es distinta a la actual, cambiar selector de área
+                if (targetAreaId && parseInt(targetAreaId) > 0 && parseInt(targetAreaId) !== obtenerAreaIdActual()) {
+                    var $selArea = $('#select-area-calendario');
+                    if ($selArea.find('option[value="' + targetAreaId + '"]').length > 0) {
+                        $selArea.val(targetAreaId).trigger('change');
+                    }
+                }
+
+                // 2. Intentar buscar en eventos ya cargados en FullCalendar
+                var fcEvent = calendar ? calendar.getEventById(eid) : null;
+                if (fcEvent) {
+                    if (fcEvent.start) {
+                        calendar.gotoDate(fcEvent.start);
+                    }
+                    abrirModalEditarEvento(fcEvent);
+                    return;
+                }
+
+                // 3. Consultar datos completos del evento al servidor
+                $.ajax({
+                    url: '@Url.Action("ObtenerEventoPorId", "Calendario")',
+                    type: 'GET',
+                    data: { id: parseInt(eventoId) },
+                    success: function(res) {
+                        if (res && res.success && res.evento) {
+                            var ev = res.evento;
+                            if (ev.areaId && ev.areaId !== obtenerAreaIdActual()) {
+                                var $sel = $('#select-area-calendario');
+                                if ($sel.find('option[value="' + ev.areaId + '"]').length > 0) {
+                                    $sel.val(ev.areaId).trigger('change');
+                                }
+                            }
+                            if (ev.start && calendar) {
+                                calendar.gotoDate(ev.start);
+                            }
+                            abrirModalEditarEvento(ev);
+                        } else if (window.alertify) {
+                            alertify.warning(res.message || 'No se encontró el evento solicitado.');
+                        }
+                    },
+                    error: function() {
+                        if (window.alertify) {
+                            alertify.error('Error al cargar la información del evento.');
+                        }
+                    }
+                });
+            }
+
+            setTimeout(procesarApertura, 150);
+        };
+
+        // Verificar si se solicitó abrir un evento específico (ej. al hacer clic en notificación)
+        var pendingEventoId = window._eventoIdPendienteAbrir || sessionStorage.getItem('erp_abrir_evento_id');
+        var pendingAreaId = window._areaIdPendienteAbrir || sessionStorage.getItem('erp_abrir_area_id');
+        if (pendingEventoId) {
+            window._eventoIdPendienteAbrir = null;
+            window._areaIdPendienteAbrir = null;
+            try {
+                sessionStorage.removeItem('erp_abrir_evento_id');
+                sessionStorage.removeItem('erp_abrir_area_id');
+            } catch (e) { }
+            window.abrirModalEventoPorId(pendingEventoId, pendingAreaId);
+        }
+
         // Cambio de Área en el Select
         $('#select-area-calendario').off('change').on('change', function() {
             var areaId = obtenerAreaIdActual();
@@ -1558,10 +1629,12 @@
         function abrirModalEditarEvento(event) {
             actualizarNombreAreaModal();
             $('#evento-id').val(event.id);
-            var fInicio = event.startStr ? event.startStr.slice(0, 10) : '';
+            var sStr = event.startStr || event.start || '';
+            var eStr = event.endStr || event.end || '';
+            var fInicio = sStr ? sStr.slice(0, 10) : '';
             $('#evento-fecha-inicio').val(fInicio);
-            $('#evento-hora-inicio').val(!event.allDay && event.startStr.length > 10 ? event.startStr.slice(11, 16) : '');
-            $('#evento-fecha-fin').val(!event.allDay && event.endStr && event.endStr.length > 10 ? event.endStr.slice(0, 16) : '');
+            $('#evento-hora-inicio').val(!event.allDay && sStr.length > 10 ? sStr.slice(11, 16) : '');
+            $('#evento-fecha-fin').val(!event.allDay && eStr && eStr.length > 10 ? eStr.slice(0, 16) : '');
             $('#evento-todo-el-dia').prop('checked', event.allDay);
             actualizarControlesHorario();
             $('#evento-titulo').val(event.title);

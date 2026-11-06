@@ -46,7 +46,7 @@ namespace ESD.ERP.Web.Infrastructure
                      {
                         memberIds.Add(calendarEvent.UserId);
                      }
-                     await notifyService.SendCalendarReminderToUsersAsync(memberIds, calendarEvent.Title, calendarEvent.Start, areaNombre);
+                     await notifyService.SendCalendarReminderToUsersAsync(memberIds, calendarEvent.Title, calendarEvent.Start, areaNombre, calendarEvent.Id, calendarEvent.AreaId);
                      MarkReminderSent(calendarEvent.Id);
                   }
                   catch (Exception ex)

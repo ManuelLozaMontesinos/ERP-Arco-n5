@@ -125,10 +125,26 @@
          <div class="tab-pane" id="entregaTab" role="tabpanel">
             <nav class="navbar bg-white">
                <div class="col-12">
-                  <div class="form-group row">
+                  <div class="form-group row mb-2">
                      <esd-dropdownlist id="OrdenCompraProductoId" for="@Model.OrdenCompraProductoList" col-position="col-lg-6" label="Producto" col-label-position="col-lg-2"
                                        onchange="ordenCompraProductoIdOnChange()"></esd-dropdownlist>
                      <esd-button id="asignarButton" content="Asignar Todos" button-style="Info" size="Small" onclick="asignarButtonOnClick()"></esd-button>
+                  </div>
+                  <div id="entregaBalanceContainer" class="d-flex flex-wrap align-items-center py-2 px-3 mt-1" style="background:#f4f6f9; border-radius:6px; border:1px solid #dee2e6; display:none;">
+                     <div class="mr-4">
+                        <span class="text-secondary small font-weight-bold mr-1"><i class="fas fa-boxes mr-1"></i>Total Pedido:</span>
+                        <span id="ebTotalProd" class="badge badge-primary font-weight-bold" style="font-size:0.85rem;">0.00</span>
+                     </div>
+                     <div class="mr-4">
+                        <span class="text-secondary small font-weight-bold mr-1"><i class="fas fa-calendar-check mr-1"></i>Total Entregas:</span>
+                        <span id="ebTotalEntregas" class="badge badge-info font-weight-bold" style="font-size:0.85rem;">0.00</span>
+                     </div>
+                     <div class="mr-4">
+                        <span class="text-secondary small font-weight-bold mr-1"><i class="fas fa-calculator mr-1"></i>Saldo Disponible:</span>
+                        <span id="ebSaldo" class="badge badge-success font-weight-bold" style="font-size:0.85rem;">0.00</span>
+                     </div>
+                     <div id="ebEstadoBadge" class="ml-auto">
+                     </div>
                   </div>
                </div>
             </nav>
@@ -158,7 +174,7 @@
 <esd-dialog id="almacenListPopup" title="Direcciones" onclick="almacenListPopupOnClick" size="Large">
    <div id="almacenListPopupContent"></div>
 </esd-dialog>
-<esd-dialog id="agregarEditPopup" title="Asignar Fecha de Entrega" onclick="agregarEditPopupOnClick">
+<esd-dialog id="agregarEditPopup" title="Asignar Fecha de Entrega" onclick="agregarEditPopupOnClick" size="Large">
    <div id="agregarEditPopupContent"></div>
 </esd-dialog>
 <style type="text/css">
@@ -334,6 +350,15 @@
                }
             });
 
+            if ($('#entregaTab').hasClass('active') && !$('#OrdenCompraProductoId').val()) {
+               var firstVal = $('#OrdenCompraProductoId option').filter(function () { return !!$(this).val(); }).first().val();
+               if (firstVal) {
+                  $('#OrdenCompraProductoId').val(firstVal);
+                  $('#entregaGrid').appGrid('reloadJSON');
+                  actualizarResumenBalanceEntregas();
+               }
+            }
+
             if ($('#EstadoAprobacion').val() === '@EstadoAprobacionConstante.PENDIENTE_APROBACION' ||
                $('#EstadoAprobacion').val() === '@EstadoAprobacionConstante.APROBADO') {
                $("#productoMenuBar").appMenu('disabled');
@@ -419,6 +444,8 @@
                $("#entregaMenuBar").appMenu('disabled');
                $("#asignarButton").prop('disabled', true);
             }
+
+            actualizarResumenBalanceEntregas();
          },
          @GridHelper.RowDeletedStyle("Estado",EstadoConstante.INACTIVO)
          height: calculateGridHeight('entregaContainer')
@@ -502,7 +529,8 @@
             $(this).getView({
                urlAction: '@Url.Action("AgregarEditPopup", "OrdenCompra")',
                viewModel: [
-                  { name: "OrdenCompraEntregaDTO.OrdenCompraProductoId", value: $('#OrdenCompraProductoId').val() || '0', type: 'int' }
+                  { name: "OrdenCompraDTO.OrdenCompraId", value: $('#OrdenCompraId').val() || '0', type: 'int' },
+                  { name: "OrdenCompraId", value: $('#OrdenCompraId').val() || '0', type: 'int' }
                ],
                container: 'agregarEditPopupContent',
                showLoading: false,
@@ -515,8 +543,8 @@
                fecha = moment().format('DD/MM/YYYY');
             }
             $("#mp-Fecha").val(fecha);
-            if (typeof mp_inicializarTablaEntregas === 'function') {
-               mp_inicializarTablaEntregas();
+            if (typeof mp_actualizarEstadoBotonTodos === 'function') {
+               mp_actualizarEstadoBotonTodos();
             }
          }
       });
@@ -530,8 +558,16 @@
                break;
 
             case '#entregaTab':
+               if (!$('#OrdenCompraProductoId').val()) {
+                  var firstValidVal = $('#OrdenCompraProductoId option').filter(function () { return !!$(this).val(); }).first().val();
+                  if (firstValidVal) {
+                     $('#OrdenCompraProductoId').val(firstValidVal);
+                     $('#entregaGrid').appGrid('reloadJSON');
+                  }
+               }
                $('#entregaGrid').appGrid('resizeGrid', 'entregaContainer');
                $('#entregaGrid').jqGrid('setGridHeight', calculateGridHeight('entregaContainer'));
+               actualizarResumenBalanceEntregas();
                break;
 
          }
@@ -1123,12 +1159,83 @@
    };
    function ordenCompraProductoIdOnChange() {
       $("#entregaGrid").appGrid('reloadJSON');
+      actualizarResumenBalanceEntregas();
+   };
+   function obtenerProductoOrdenCompra(ocpId) {
+      if (!ocpId) return null;
+      var data = $("#productoGrid").appGrid('getData');
+      if (!data || data.length === 0) {
+         data = $('#productoGrid').jqGrid('getRowData');
+      }
+      for (var i = 0; i < data.length; i++) {
+         if (parseInt(data[i].OrdenCompraProductoId) === parseInt(ocpId)) {
+            return data[i];
+         }
+      }
+      return null;
+   };
+   function obtenerCantidadProducto(ocpId) {
+      var prod = obtenerProductoOrdenCompra(ocpId);
+      if (prod) {
+         return parseFloatEx(prod.Cantidad) || 0;
+      }
+      var selectedText = $('#OrdenCompraProductoId option:selected').text();
+      var match = selectedText.match(/Cantidad:\s*([\d,\.]+)/);
+      if (match && match[1]) {
+         return parseFloatEx(match[1]) || 0;
+      }
+      return 0;
+   };
+   function obtenerTotalEntregasProgramadas(excluirRowId) {
+      var ids = $('#entregaGrid').jqGrid('getDataIDs');
+      var total = 0;
+      if (ids && ids.length > 0) {
+         for (var i = 0; i < ids.length; i++) {
+            var id = ids[i];
+            if (excluirRowId && id.toString() === excluirRowId.toString()) {
+               continue;
+            }
+            var r = $('#entregaGrid').jqGrid('getRowData', id);
+            if (r && r.Estado !== '@EstadoConstante.INACTIVO') {
+               total += parseFloatEx(r.Cantidad) || 0;
+            }
+         }
+      }
+      return total;
+   };
+   function actualizarResumenBalanceEntregas() {
+      var ocpId = parseInt($('#OrdenCompraProductoId').val()) || 0;
+      if (ocpId <= 0) {
+         $('#entregaBalanceContainer').hide();
+         return;
+      }
+
+      var cantTotal = obtenerCantidadProducto(ocpId);
+      var cantEntregas = obtenerTotalEntregasProgramadas();
+      var saldo = cantTotal - cantEntregas;
+      saldo = Math.round(saldo * 10000) / 10000;
+
+      $('#ebTotalProd').text(numeral(cantTotal).format('0,0.00'));
+      $('#ebTotalEntregas').text(numeral(cantEntregas).format('0,0.00'));
+      $('#ebSaldo').text(numeral(Math.max(0, saldo)).format('0,0.00'));
+
+      var $badge = $('#ebEstadoBadge');
+      if (Math.abs(saldo) <= 0.0001) {
+         $badge.html('<span class="badge badge-success font-weight-bold px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Totalmente Asignado (100%)</span>');
+      } else if (saldo > 0) {
+         $badge.html('<span class="badge badge-warning font-weight-bold px-2 py-1 text-dark"><i class="fas fa-hourglass-half mr-1"></i>Por Asignar: ' + numeral(saldo).format('0,0.00') + '</span>');
+      } else {
+         $badge.html('<span class="badge badge-danger font-weight-bold px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i>Exceso en Entregas: ' + numeral(Math.abs(saldo)).format('0,0.00') + '</span>');
+      }
+
+      $('#entregaBalanceContainer').css('display', 'flex');
    };
    function entregaMenuBarOnClick(key) {
 
       if (!$('#OrdenCompraProductoId').validateNumeric('@SR.GetString("CM_producto_servicio_seleccion_requerida")'))
          return false;
 
+      var ocpId = parseInt($('#OrdenCompraProductoId').val()) || 0;
       var row = $('#entregaGrid').appGrid('getSelectedRow');
       var excludeKeys = ['@MenuItemKey.NEW'];
       if(excludeKeys.indexOf(key) == -1){
@@ -1140,10 +1247,25 @@
 
       switch (key) {
          case '@MenuItemKey.NEW':
+            var cantTotalProd = obtenerCantidadProducto(ocpId);
+            var sumActual = obtenerTotalEntregasProgramadas();
+            var saldoDisp = Math.round((cantTotalProd - sumActual) * 10000) / 10000;
+
+            if (saldoDisp <= 0.0001) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, 'La cantidad total del producto (' + numeral(cantTotalProd).format('0,0.00') + ') ya ha sido completada en las entregas programadas. No se pueden agregar más entregas.');
+               return false;
+            }
+
+            var defaultFecha = $('#FechaEntrega').val();
+            if (!defaultFecha) {
+               defaultFecha = $('#Fecha').val() || moment().format('DD/MM/YYYY');
+            }
+
             var initdata = {
                OrdenCompraEntregaId: 0,
-               OrdenCompraProductoId: $('#OrdenCompraProductoId').val(),
-               Cantidad: 0,
+               OrdenCompraProductoId: ocpId,
+               Cantidad: saldoDisp,
+               Fecha: defaultFecha,
                '@AppConstante.DTO_STATE' : '@(((int) DTOState.Added).ToString())',
                Estado: '@EstadoConstante.ACTIVO'
             };
@@ -1165,6 +1287,20 @@
 
             if (!$('#' + rowId + '_Cantidad').validateNumeric('@SR.GetString("GEN_cantidad_requerida")'))
                return false;
+
+            var cantidadIngresada = parseFloatEx($('#' + rowId + '_Cantidad').val()) || 0;
+            if (cantidadIngresada <= 0) {
+               msgAlert(msgAlertTypeConstant.INFORMATION, 'La cantidad de entrega debe ser mayor a cero.');
+               return false;
+            }
+
+            var cantTotalProd = obtenerCantidadProducto(ocpId);
+            var sumaOtras = obtenerTotalEntregasProgramadas(rowId);
+            if ((sumaOtras + cantidadIngresada) > (cantTotalProd + 0.0001)) {
+               var saldoMax = Math.max(0, Math.round((cantTotalProd - sumaOtras) * 10000) / 10000);
+               msgAlert(msgAlertTypeConstant.INFORMATION, 'La suma de las entregas (' + numeral(sumaOtras + cantidadIngresada).format('0,0.00') + ') no puede superar la cantidad total del producto (' + numeral(cantTotalProd).format('0,0.00') + '). Saldo disponible: ' + numeral(saldoMax).format('0,0.00'));
+               return false;
+            }
 
             $("#entregaGrid").jqGrid('saveRow', rowId, {url: 'clientArray', aftersavefunc: function (id, response, options) {
                row = $("#entregaGrid").appGrid('getSelectedRow');
@@ -1226,12 +1362,15 @@
       $("#entregaMenuBar").appMenu('saveMenu');
    };
    function asignarButtonOnClick() {
-      if (!$('#OrdenCompraProductoId').validateNumeric('@SR.GetString("CM_producto_servicio_seleccion_requerida")'))
+      var ordenCompraId = parseInt($('#OrdenCompraId').val()) || 0;
+      if (ordenCompraId <= 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, 'Debe guardar la orden de compra antes de asignar fechas de entrega.');
          return;
+      }
 
-      var gridRows = $('#entregaGrid').jqGrid('getRowData');
-      if (!gridRows || gridRows.length === 0) {
-         msgAlert(msgAlertTypeConstant.INFORMATION, 'No existen registros de entregas para el producto seleccionado.');
+      var productos = $('#productoGrid').jqGrid('getRowData');
+      if (productos && productos.length === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, 'La orden de compra no tiene productos registrados.');
          return;
       }
 
@@ -1255,15 +1394,21 @@
          return;
       }
 
+      var nuevaFecha = $('#mp-Fecha').val();
+
       $(this).saveView({
          urlAction: '@Url.Action("AgregarTodosProductos", "OrdenCompra")',
          viewModel: [
+            { name: "OrdenCompraDTO.OrdenCompraId", value: $('#OrdenCompraId').val(), type: 'int' },
             { name: "OrdenCompraId", value: $('#OrdenCompraId').val(), type: 'int' },
             { name: "OrdenCompraEntregaIdList", value: selectedIds, type: 'listInt' },
-            { name: "OrdenCompraEntregaDTO.Fecha", value: $('#mp-Fecha').val(), type: 'date' }
+            { name: "OrdenCompraEntregaDTO.Fecha", value: nuevaFecha, type: 'date' }
          ],
          onSuccess: function (response) {
             if (response.success) {
+               if (nuevaFecha) {
+                  $('#FechaEntrega').val(nuevaFecha);
+               }
                $("#entregaGrid").appGrid('reloadJSON');
                $("#productoGrid").appGrid('reloadJSON');
                msgAlert(msgAlertTypeConstant.SUCCESS, response.message);

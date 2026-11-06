@@ -10,6 +10,7 @@ using ESD.ERP.WebApiProxy;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text.Json;
@@ -1018,6 +1019,14 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
 
          try
          {
+            int ocpId = model.OrdenCompraEntregaDTO.OrdenCompraProductoId;
+            if (ocpId > 0)
+            {
+               int usuarioId = ObtenerUsuarioId();
+               if (usuarioId <= 0) usuarioId = 1;
+               AsegurarEntregaInicialProducto(ocpId, usuarioId);
+            }
+
             List<OrdenCompraEntregaDTO> ordenCompraEntregaDTOList = ordenCompraEntregaProxy.Search(model.OrdenCompraEntregaDTO);
 
             int index = 1;
@@ -1051,6 +1060,57 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
             throw;
          }
       }
+
+      private void AsegurarEntregaInicialProducto(int ordenCompraProductoId, int usuarioId)
+      {
+         if (ordenCompraProductoId <= 0) return;
+
+         try
+         {
+            using (SqlConnection conn = new(DatabaseConnectionHelper.GetConnectionString()))
+            {
+               conn.Open();
+               using (SqlCommand cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = @"
+                     IF NOT EXISTS (
+                         SELECT 1 FROM dbo.orden_c_ent 
+                         WHERE orden_c_prod_id = @ocpId AND estado = 'A'
+                     )
+                     BEGIN
+                         INSERT INTO dbo.orden_c_ent (
+                             orden_c_ent_id,
+                             orden_c_prod_id,
+                             cantidad,
+                             fecha,
+                             estado,
+                             usuario_creacion_id,
+                             fecha_creacion
+                         )
+                         SELECT 
+                             NEXT VALUE FOR orden_c_ent_seq,
+                             op.orden_c_prod_id,
+                             op.cantidad,
+                             ISNULL(oc.fecha_entrega, ISNULL(oc.fecha, GETDATE())),
+                             'A',
+                             @usuarioId,
+                             GETDATE()
+                         FROM dbo.orden_c_prod op
+                         INNER JOIN dbo.orden_co oc ON op.orden_co_id = oc.orden_co_id
+                         WHERE op.orden_c_prod_id = @ocpId AND op.estado = 'A';
+                     END";
+                  cmd.Parameters.AddWithValue("@ocpId", ordenCompraProductoId);
+                  cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
+                  cmd.ExecuteNonQuery();
+               }
+            }
+         }
+         catch (Exception ex)
+         {
+            Logger.Error(ex);
+         }
+      }
+
       [HttpPost("GrabarOrdenCompraEntrega")]
       public ActionResult GrabarOrdenCompraEntrega([FromBody] OrdenCompraViewModel model)
       {
@@ -1061,6 +1121,61 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
          try
          {
             OrdenCompraEntregaDTO ordenCompraEntregaDTO = cargarOrdenCompraEntregaDTO(model);
+            int ocpId = ordenCompraEntregaDTO.OrdenCompraProductoId;
+            decimal cantidadNueva = ordenCompraEntregaDTO.Cantidad;
+
+            if (cantidadNueva <= 0)
+            {
+               resultResponse.Success = false;
+               resultResponse.Message = "La cantidad de entrega debe ser mayor a cero.";
+               return Json(resultResponse, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+            }
+
+            if (ocpId > 0)
+            {
+               using (SqlConnection conn = new(DatabaseConnectionHelper.GetConnectionString()))
+               {
+                  conn.Open();
+
+                  decimal cantidadTotalProducto = 0;
+                  using (SqlCommand cmdProd = conn.CreateCommand())
+                  {
+                     cmdProd.CommandText = "SELECT cantidad FROM dbo.orden_c_prod WHERE orden_c_prod_id = @ocpId AND estado = 'A'";
+                     cmdProd.Parameters.AddWithValue("@ocpId", ocpId);
+                     var val = cmdProd.ExecuteScalar();
+                     if (val != null && val != DBNull.Value)
+                     {
+                        cantidadTotalProducto = Convert.ToDecimal(val);
+                     }
+                  }
+
+                  if (cantidadTotalProducto > 0)
+                  {
+                     decimal sumaOtrasEntregas = 0;
+                     using (SqlCommand cmdOtras = conn.CreateCommand())
+                     {
+                        cmdOtras.CommandText = @"SELECT ISNULL(SUM(cantidad), 0) FROM dbo.orden_c_ent 
+                                                 WHERE orden_c_prod_id = @ocpId AND estado = 'A' 
+                                                   AND orden_c_ent_id <> @currentId";
+                        cmdOtras.Parameters.AddWithValue("@ocpId", ocpId);
+                        cmdOtras.Parameters.AddWithValue("@currentId", ordenCompraEntregaDTO.OrdenCompraEntregaId);
+                        var valOtras = cmdOtras.ExecuteScalar();
+                        if (valOtras != null && valOtras != DBNull.Value)
+                        {
+                           sumaOtrasEntregas = Convert.ToDecimal(valOtras);
+                        }
+                     }
+
+                     if ((sumaOtrasEntregas + cantidadNueva) > (cantidadTotalProducto + 0.0001m))
+                     {
+                        decimal saldoDisponible = Math.Max(0, cantidadTotalProducto - sumaOtrasEntregas);
+                        resultResponse.Success = false;
+                        resultResponse.Message = $"La suma de las entregas ({sumaOtrasEntregas + cantidadNueva:N2}) no puede superar la cantidad total del producto ({cantidadTotalProducto:N2}). Saldo disponible para esta entrega: {saldoDisponible:N2}.";
+                        return Json(resultResponse, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+                     }
+                  }
+               }
+            }
 
             int newId = model.OrdenCompraEntregaDTO.Id;
             string messageResourceKey = string.Empty;
@@ -1142,13 +1257,116 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
       public ActionResult AgregarEditPopup([FromBody] OrdenCompraViewModel model)
       {
          model ??= new OrdenCompraViewModel();
-         if (model.OrdenCompraEntregaDTO != null && model.OrdenCompraEntregaDTO.OrdenCompraProductoId > 0)
+         int ordenCompraId = model.OrdenCompraDTO?.OrdenCompraId ?? model.OrdenCompraId ?? 0;
+         if (ordenCompraId == 0 && model.OrdenCompraProductoDTO?.OrdenCompraId > 0)
+         {
+            ordenCompraId = model.OrdenCompraProductoDTO.OrdenCompraId;
+         }
+
+         if (ordenCompraId == 0 && model.OrdenCompraEntregaDTO?.OrdenCompraProductoId > 0)
          {
             try
             {
-               model.OrdenCompraEntregaDTO.PageSize = ObtenerMaximoRegistrosBusqueda();
-               model.OrdenCompraEntregaDTO.OrderBy = "oce.fecha";
-               model.OrdenCompraEntregaDTOList = ordenCompraEntregaProxy.Search(model.OrdenCompraEntregaDTO);
+               using (SqlConnection conn = new(DatabaseConnectionHelper.GetConnectionString()))
+               {
+                  conn.Open();
+                  using (SqlCommand cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = "SELECT orden_co_id FROM dbo.orden_c_prod WHERE orden_c_prod_id = @id";
+                     cmd.Parameters.AddWithValue("@id", model.OrdenCompraEntregaDTO.OrdenCompraProductoId);
+                     var res = cmd.ExecuteScalar();
+                     if (res != null && res != DBNull.Value)
+                     {
+                        ordenCompraId = Convert.ToInt32(res);
+                     }
+                  }
+               }
+            }
+            catch (Exception ex)
+            {
+               Logger.Error(ex);
+            }
+         }
+
+         if (ordenCompraId > 0)
+         {
+            try
+            {
+               model.OrdenCompraEntregaDTOList = new List<OrdenCompraEntregaDTO>();
+               int usuarioId = ObtenerUsuarioId();
+
+               using (SqlConnection conn = new(DatabaseConnectionHelper.GetConnectionString()))
+               {
+                  conn.Open();
+
+                  // Asegurar que todos los productos de la orden tengan al menos un registro de entrega si aún no lo tienen
+                  try
+                  {
+                     using (SqlCommand cmdSp = conn.CreateCommand())
+                     {
+                        cmdSp.CommandType = CommandType.StoredProcedure;
+                        cmdSp.CommandText = "sp_orden_c_ent_agregarDesdeOrdenCompraProducto";
+                        cmdSp.Parameters.AddWithValue("@ordenCompraId", ordenCompraId);
+                        cmdSp.Parameters.AddWithValue("@fecha", DBNull.Value);
+                        cmdSp.Parameters.AddWithValue("@usuarioAccionId", usuarioId);
+                        cmdSp.ExecuteNonQuery();
+                     }
+                  }
+                  catch (Exception exSp)
+                  {
+                     Logger.Error(exSp);
+                  }
+
+                  // Obtener todos los items de entregas de todos los productos de la orden de compra
+                  using (SqlCommand cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = @"SELECT 
+                                          e.orden_c_ent_id,
+                                          e.orden_c_prod_id,
+                                          e.cantidad,
+                                          e.fecha,
+                                          e.estado,
+                                          op.producto_id,
+                                          op.descripcion AS op_descripcion,
+                                          ISNULL(NULLIF(p.descripcion, ''), ISNULL(NULLIF(op.descripcion, ''), '-')) AS producto_nombre,
+                                          p.producto AS producto_codigo
+                                       FROM dbo.orden_c_ent e
+                                       INNER JOIN dbo.orden_c_prod op ON e.orden_c_prod_id = op.orden_c_prod_id
+                                       LEFT JOIN dbo.producto p ON op.producto_id = p.producto_id
+                                       WHERE op.orden_co_id = @ordenCompraId
+                                         AND e.estado = 'A'
+                                         AND op.estado = 'A'
+                                       ORDER BY op.orden_c_prod_id, e.fecha, e.orden_c_ent_id";
+                     cmd.Parameters.AddWithValue("@ordenCompraId", ordenCompraId);
+
+                     using (SqlDataReader reader = cmd.ExecuteReader())
+                     {
+                        while (reader.Read())
+                        {
+                           var entrega = new OrdenCompraEntregaDTO
+                           {
+                              OrdenCompraEntregaId = reader.GetInt32(reader.GetOrdinal("orden_c_ent_id")),
+                              OrdenCompraProductoId = reader.GetInt32(reader.GetOrdinal("orden_c_prod_id")),
+                              Cantidad = reader.GetDecimal(reader.GetOrdinal("cantidad")),
+                              Fecha = reader.IsDBNull(reader.GetOrdinal("fecha")) ? null : reader.GetDateTime(reader.GetOrdinal("fecha")),
+                              Estado = reader.GetString(reader.GetOrdinal("estado")),
+                              OrdenCompraProductoDTO = new OrdenCompraProductoDTO
+                              {
+                                 OrdenCompraProductoId = reader.GetInt32(reader.GetOrdinal("orden_c_prod_id")),
+                                 OrdenCompraId = ordenCompraId,
+                                 Descripcion = reader.IsDBNull(reader.GetOrdinal("op_descripcion")) ? string.Empty : reader.GetString(reader.GetOrdinal("op_descripcion")),
+                                 ProductoDTO = new ProductoDTO
+                                 {
+                                    Codigo = reader.IsDBNull(reader.GetOrdinal("producto_codigo")) ? string.Empty : reader.GetString(reader.GetOrdinal("producto_codigo")),
+                                    Descripcion = reader.IsDBNull(reader.GetOrdinal("producto_nombre")) ? "-" : reader.GetString(reader.GetOrdinal("producto_nombre"))
+                                 }
+                              }
+                           };
+                           model.OrdenCompraEntregaDTOList.Add(entrega);
+                        }
+                     }
+                  }
+               }
             }
             catch (Exception e)
             {
@@ -1167,6 +1385,8 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
          try
          {
             DateTime? fecha = model?.OrdenCompraEntregaDTO?.Fecha;
+            int ordenCompraId = model?.OrdenCompraDTO?.OrdenCompraId ?? model?.OrdenCompraId ?? 0;
+
             if (model?.OrdenCompraEntregaIdList != null && model.OrdenCompraEntregaIdList.Count > 0)
             {
                int usuarioId = ObtenerUsuarioId();
@@ -1186,6 +1406,22 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
                         cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
                         cmd.Parameters.AddWithValue("@entregaId", entregaId);
                         cmd.ExecuteNonQuery();
+                     }
+                  }
+
+                  if (ordenCompraId > 0 && fecha.HasValue)
+                  {
+                     using (SqlCommand cmdOc = conn.CreateCommand())
+                     {
+                        cmdOc.CommandText = @"UPDATE dbo.orden_co 
+                                              SET fecha_entrega = @fecha, 
+                                                  usuario_modifica_id = @usuarioId, 
+                                                  fecha_modifica = GETDATE() 
+                                              WHERE orden_co_id = @ordenCompraId";
+                        cmdOc.Parameters.AddWithValue("@fecha", fecha.Value);
+                        cmdOc.Parameters.AddWithValue("@usuarioId", usuarioId);
+                        cmdOc.Parameters.AddWithValue("@ordenCompraId", ordenCompraId);
+                        cmdOc.ExecuteNonQuery();
                      }
                   }
                }

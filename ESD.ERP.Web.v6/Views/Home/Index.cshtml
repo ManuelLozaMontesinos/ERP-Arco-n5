@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Tablero Principal";
     string cid = ViewBag.cid;
     string facturacionMes = ViewBag.FacturacionMes ?? "S/ 0.00";
@@ -53,11 +53,40 @@
     int areaAgendaInicialId = ViewBag.AreaAgendaInicialId != null ? Convert.ToInt32(ViewBag.AreaAgendaInicialId) : (esAdminAgenda ? 1 : 2);
     string areaAgendaInicialNombre = ViewBag.AreaAgendaInicialNombre ?? (esAdminAgenda ? "Administración" : "Ventas");
     int sedeDashboardInicial = ViewBag.SedeDashboardInicial != null ? Convert.ToInt32(ViewBag.SedeDashboardInicial) : 0;
+    int sedeVentasInicial = ViewBag.SedeVentasInicial != null ? Convert.ToInt32(ViewBag.SedeVentasInicial) : 0;
     int anioSesion = ViewBag.AnioSesion != null ? Convert.ToInt32(ViewBag.AnioSesion) : 2026;
     int sedeSesionId = ViewBag.SedeSesionId != null ? Convert.ToInt32(ViewBag.SedeSesionId) : 1;
     string sedeSesionNombre = ViewBag.SedeSesionNombre ?? (sedeSesionId == 2 ? "SEDE ILO" : "SEDE CENTRAL");
+    bool kpisHabilitadosInicial = !esDashboardVacio && (!permisosDashboardRol.ContainsKey("kpis") || permisosDashboardRol["kpis"]);
 }
 <style>
+    /* Header del Dashboard fijado (Sticky Header debajo del Navbar fijo) */
+    .dashboard-sticky-header {
+        position: -webkit-sticky;
+        position: sticky;
+        top: calc(3.5rem + 1px);
+        z-index: 1020;
+        background-color: #f4f6f9;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+        transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    body.dark-mode .dashboard-sticky-header,
+    .dark-mode .dashboard-sticky-header {
+        background-color: #454d55;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+    }
+
+    .text-sm .dashboard-sticky-header,
+    body.text-sm .dashboard-sticky-header {
+        top: calc(2.93725rem + 1px);
+    }
+
     @if (esDashboardVacio)
     {
         <text>
@@ -66,7 +95,9 @@
         #row-main-dashboard,
         #row-tablas-detalle,
         #row-stock-insumos,
-        #row-top-menor-stock {
+        #row-top-menor-stock,
+        #box-filtro-sede-dashboard,
+        #container-botones-dashboard {
             display: none !important;
         }
         #dashboard-empty-state {
@@ -82,7 +113,7 @@
 </script>
 
 <!-- Content Header (Page header) -->
-<div class="content-header pb-2 mb-3">
+<div class="content-header dashboard-sticky-header pb-2 mb-3">
     <div class="container-fluid">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-1" style="gap: 12px;">
             <div>
@@ -91,8 +122,8 @@
                 </h1>
                 <small class="text-muted" style="font-size: 0.825rem;">SIGANET ERP &mdash; M&eacute;tricas en Tiempo Real (Sincronizado con BD <code>esderp_v6</code>)</small>
             </div>
-            <!-- RECUADRO ROJO: SELECT DE SEDE (GLOBAL / CENTRAL / ILO) -->
-            <div class="d-inline-flex align-items-center my-1" id="box-filtro-sede-dashboard">
+            <!-- RECUADRO ROJO: SELECT DE SEDE (GLOBAL / CENTRAL / ILO) - Exclusivo para KPIs -->
+            <div class="d-inline-flex align-items-center my-1 @(!kpisHabilitadosInicial ? "d-none" : "")" id="box-filtro-sede-dashboard" style="@(!kpisHabilitadosInicial ? "display: none !important;" : "")">
                 <div class="dashboard-sede-chip d-inline-flex align-items-center shadow-sm">
                     <i class="fas fa-building text-primary mr-2" style="font-size: 0.95rem;"></i>
                     <label for="select-filtro-sede-dashboard" class="mb-0 font-weight-bold mr-2 label-sede-dash">SEDE:</label>
@@ -103,7 +134,7 @@
                     </select>
                 </div>
             </div>
-            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+            <div class="d-flex align-items-center flex-wrap @(esDashboardVacio ? "d-none" : "")" style="gap: 8px; @(esDashboardVacio ? "display: none !important;" : "")" id="container-botones-dashboard">
                 @if (esAdmin)
                 {
                     <button type="button" class="btn btn-outline-primary btn-sm shadow-sm font-weight-600 px-3 py-1 d-inline-flex align-items-center" id="btn-gestionar-dashboard-rol" data-toggle="modal" data-target="#modal-gestionar-dashboard-rol" style="border-radius: 6px; font-size: 0.875rem; letter-spacing: 0.01em;">
@@ -112,6 +143,21 @@
                 }
                 <button type="button" class="btn btn-primary btn-sm shadow-sm font-weight-600 px-3 py-1 d-inline-flex align-items-center" id="btn-gestionar-dashboard" data-toggle="modal" data-target="#modal-gestionar-dashboard" style="border-radius: 6px; font-size: 0.875rem; letter-spacing: 0.01em;">
                     <i class="fas fa-sliders-h mr-2"></i> Gestionar Dashboard
+                </button>
+                <div class="btn-group btn-group-sm shadow-sm" id="dropdown-proporcion-columnas" title="Ajustar proporci&oacute;n de columnas">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle font-weight-600 px-3 py-1 d-inline-flex align-items-center" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius: 6px; font-size: 0.875rem; letter-spacing: 0.01em;">
+                        <i class="fas fa-columns mr-1 text-primary"></i> <span id="label-proporcion-actual">Columnas: 6:6 (Sim&eacute;trico)</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.85rem; min-width: 185px;">
+                        <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Proporci&oacute;n de Columnas</h6>
+                        <a class="dropdown-item py-1 item-proporcion-col" href="javascript:void(0);" data-ratio="6-6"><i class="fas fa-columns mr-2 text-primary"></i>6 : 6 (Sim&eacute;trico 50/50)</a>
+                        <a class="dropdown-item py-1 item-proporcion-col" href="javascript:void(0);" data-ratio="7-5"><i class="fas fa-columns mr-2 text-info"></i>7 : 5 (Izquierda m&aacute;s ancha)</a>
+                        <a class="dropdown-item py-1 item-proporcion-col" href="javascript:void(0);" data-ratio="5-7"><i class="fas fa-columns mr-2 text-success"></i>5 : 7 (Derecha m&aacute;s ancha)</a>
+                        <a class="dropdown-item py-1 item-proporcion-col" href="javascript:void(0);" data-ratio="12-12"><i class="fas fa-square mr-2 text-warning"></i>100% (Una Columna)</a>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm shadow-sm font-weight-600 px-3 py-1 d-inline-flex align-items-center" id="btn-restablecer-layout" title="Restablecer el orden y tama&ntilde;o predeterminado de los widgets" style="border-radius: 6px; font-size: 0.875rem; letter-spacing: 0.01em;">
+                    <i class="fas fa-undo-alt mr-1 text-danger"></i> Restablecer Dise&ntilde;o
                 </button>
             </div>
         </div>
@@ -132,10 +178,31 @@
                 </div>
                 <h4 class="font-weight-bold text-dark mb-2">Tablero de Control Sin M&oacute;dulos Asignados</h4>
                 <p class="text-muted mx-auto mb-3" style="max-width: 520px; font-size: 0.95rem; line-height: 1.5;">
-                    Actualmente tu rol no tiene widgets o indicadores habilitados en este tablero de control. Un administrador puede asignarte acceso a los m&oacute;dulos correspondientes desde la opci&oacute;n <strong>Gestionar Dashboard por Rol</strong>.
+                    Actualmente no cuentas con widgets o indicadores activos en este tablero de control. Un administrador puede asignarte acceso a los m&oacute;dulos correspondientes desde la opci&oacute;n <strong>Gestionar Dashboard por Rol</strong>.
                 </p>
-                <div class="d-inline-flex align-items-center bg-light px-3 py-2 rounded text-secondary" style="font-size: 0.85rem;">
+                <div class="d-inline-flex align-items-center bg-light px-3 py-2 rounded text-secondary mb-3" style="font-size: 0.85rem;">
                     <i class="fas fa-shield-alt mr-2 text-primary"></i>Rol actual: <strong class="ml-1 text-dark">@rolActualCodigo</strong>
+                </div>
+                <div id="empty-state-actions">
+                    @if (esAdmin)
+                    {
+                        <div class="d-flex justify-content-center align-items-center flex-wrap" style="gap: 10px;">
+                            <button type="button" class="btn btn-outline-primary btn-sm shadow-sm font-weight-600 px-3 py-2" data-toggle="modal" data-target="#modal-gestionar-dashboard-rol" style="border-radius: 6px;">
+                                <i class="fas fa-user-shield mr-2"></i>Gestionar Dashboard por Rol
+                            </button>
+                            <button type="button" class="btn btn-primary btn-sm shadow-sm font-weight-600 px-3 py-2" data-toggle="modal" data-target="#modal-gestionar-dashboard" style="border-radius: 6px;">
+                                <i class="fas fa-sliders-h mr-2"></i>Gestionar Dashboard
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div id="empty-state-btn-gestionar-container" class="d-none">
+                            <button type="button" class="btn btn-primary btn-sm shadow-sm font-weight-600 px-3 py-2" data-toggle="modal" data-target="#modal-gestionar-dashboard" style="border-radius: 6px;">
+                                <i class="fas fa-sliders-h mr-2"></i>Gestionar Mis M&oacute;dulos
+                            </button>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -146,7 +213,7 @@
         <!-- 1. FILA DE TARJETAS KPI (4 por fila, la 5ta cae a la 2da fila) -->
         <div class="row @(permisosDashboardRol.ContainsKey("kpis") && !permisosDashboardRol["kpis"] ? "d-none" : "")" id="row-kpis-metricas">
             <!-- 1. Facturacion del mes -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-facturacion">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-facturacion" data-kpi-id="card-kpi-facturacion">
                 <div class="small-box bg-info shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-ventas">@facturacionMes</h3>
@@ -162,7 +229,7 @@
             </div>
 
             <!-- 2. Pedidos Activos -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-pedidos-activos">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-pedidos-activos" data-kpi-id="card-kpi-pedidos-activos">
                 <div class="small-box bg-primary shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-pedidos">@pedidosActivos</h3>
@@ -178,7 +245,7 @@
             </div>
 
             <!-- 3. Cotizaciones Activas -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-cotizaciones">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-cotizaciones" data-kpi-id="card-kpi-cotizaciones">
                 <div class="small-box bg-success shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-cotizaciones">@cotizacionesActivas</h3>
@@ -194,7 +261,7 @@
             </div>
 
             <!-- 4. Ordenes de Produccion del mes -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-produccion">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-produccion" data-kpi-id="card-kpi-produccion">
                 <div class="small-box bg-warning shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-produccion" style="color: #ffffff !important;">@ordenesProduccionMes</h3>
@@ -210,7 +277,7 @@
             </div>
 
             <!-- 5. Ordenes de Compra del mes -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-compras">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-compras" data-kpi-id="card-kpi-compras">
                 <div class="small-box bg-danger shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-compras">@ordenesCompraMes</h3>
@@ -226,7 +293,7 @@
             </div>
 
             <!-- 6. Sumatoria de Pedidos del Mes (Pedido, Factura Parcial, Facturado) -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-pedidos-mes">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-pedidos-mes" data-kpi-id="card-kpi-pedidos-mes">
                 <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-pedidos-cantidad" style="color: #ffffff !important; font-weight: 700;">@pedidosMesCantidad.ToString("N0")</h3>
@@ -244,7 +311,7 @@
             </div>
 
             <!-- 7. Cantidad de Salidas por Consumo Interno -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-consumo-interno">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-consumo-interno" data-kpi-id="card-kpi-consumo-interno">
                 <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #0d9488 0%, #115e59 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-consumo-interno" style="color: #ffffff !important; font-weight: 700;">@consumoInternoMes</h3>
@@ -260,7 +327,7 @@
             </div>
 
             <!-- 8. Control de Mermas (Ingresos y Salidas) -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-mermas">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-mermas" data-kpi-id="card-kpi-mermas">
                 <div class="small-box shadow-sm h-100 mb-0 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, #334155 0%, #1e293b 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner pb-1">
                         <div class="d-flex align-items-center mb-1" style="max-width: 80%;">
@@ -292,7 +359,7 @@
             </div>
 
             <!-- 9. Guías de Remisión Emitidas -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3" id="card-kpi-guias-remision">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-guias-remision" data-kpi-id="card-kpi-guias-remision">
                 <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-guias-remision" style="color: #ffffff !important; font-weight: 700;">@guiasRemisionMes</h3>
@@ -309,18 +376,31 @@
         </div>
 
         <!-- 2. SECCIÓN PRINCIPAL (Gráficos y Accesos Rápidos con estilo unificado card-outline) -->
+        <!-- ZONA SUPERIOR DE ANCHO COMPLETO (Dropzone para widgets a 100%) -->
+        <div class="row dashboard-dropzone mb-0 @(esDashboardVacio ? "d-none" : "")" id="zone-full-top" data-zone="full-top" style="min-height: 5px;"></div>
         <div class="row" id="row-main-dashboard">
 
-            <!-- Columna Izquierda (7 columnas) -->
-            <div class="col-lg-7" id="col-main-left">
+            <!-- Columna Izquierda (6 columnas - Simétrica 50%) -->
+            <div class="col-lg-6 col-md-12 dashboard-dropzone" id="col-main-left" data-zone="left">
 
                 <!-- 1. Gráfico de Ventas -->
-                <div class="card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("evolucion-ventas") && !permisosDashboardRol["evolucion-ventas"] ? "d-none" : "")" id="area-evolucion-ventas">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
-                        <h3 class="card-title font-weight-bold m-0">
+                <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("evolucion-ventas") && !permisosDashboardRol["evolucion-ventas"] ? "d-none" : "")" id="area-evolucion-ventas" data-widget-id="evolucion-ventas">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
+                        <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-chart-line text-primary mr-2"></i>Evoluci&oacute;n de Ventas (Miles de Soles)
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="d-inline-flex align-items-center mr-2" id="box-filtro-sede-ventas">
+                                <div class="dashboard-sede-chip d-inline-flex align-items-center shadow-sm" style="padding: 1px 8px 1px 10px; height: 31px; border-radius: 6px;">
+                                    <i class="fas fa-building text-primary mr-1" style="font-size: 0.85rem;"></i>
+                                    <label for="select-filtro-sede-ventas" class="mb-0 font-weight-bold mr-1 label-sede-dash" style="font-size: 0.78rem;">SEDE:</label>
+                                    <select id="select-filtro-sede-ventas" class="form-control form-control-sm select-sede-dash font-weight-bold" style="min-width: 140px; height: 28px; font-size: 0.82rem; padding: 0 18px 0 2px;">
+                                        <option value="0" selected="@(sedeVentasInicial == 0 ? "selected" : null)">Global (ambas)</option>
+                                        <option value="1" selected="@(sedeVentasInicial == 1 ? "selected" : null)">Sede Central</option>
+                                        <option value="2" selected="@(sedeVentasInicial == 2 ? "selected" : null)">Sede Ilo</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Filtro de meses">
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-ventas-6" onclick="setVentasMeses(6);">6m</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-ventas-8" onclick="setVentasMeses(8);">8m</button>
@@ -328,6 +408,24 @@
                                 <button type="button" class="btn btn-primary active btn-sm px-2" id="btn-ventas-12" onclick="setVentasMeses(12);">12m</button>
                             </div>
                             <span class="badge badge-success px-2 py-1 mr-2" id="badge-meses-ventas"><i class="fas fa-calendar-alt mr-1"></i>@(mesesVentasDefault != null && mesesVentasDefault.Length > 0 && mesesVentasDefault[0].StartsWith("Ene", StringComparison.OrdinalIgnoreCase) ? "12 Meses (Año " + anioSesion + ")" : "12 Meses (Últimos 12 meses)")</span>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -355,6 +453,7 @@
                             </span>
                         </div>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
 
                 <style>
@@ -362,9 +461,13 @@
     .content .card-header,
     .card-header {
         display: flex !important;
+        flex-wrap: wrap !important;
         justify-content: space-between !important;
         align-items: center !important;
         width: 100% !important;
+        row-gap: 8px !important;
+        column-gap: 8px !important;
+        min-height: 48px !important;
     }
     .content .card-header::after,
     .content .card-header::before,
@@ -377,7 +480,12 @@
     .content .card-header > .card-title,
     .card-header > .card-title {
         margin-right: auto !important;
-        flex-shrink: 0 !important;
+        flex-shrink: 1 !important;
+        max-width: 100% !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
     }
     .content .card-header > .card-tools,
     .card-header > .card-tools {
@@ -387,7 +495,10 @@
         display: inline-flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
-        flex-shrink: 0 !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        flex-shrink: 1 !important;
+        max-width: 100% !important;
     }
                     .btn-sede-filter {
                         display: inline-flex;
@@ -811,13 +922,310 @@
                         background-color: #2b3035 !important;
                         border-top-color: #3f474e !important;
                     }
+                    /* ======================================================== */
+                    /* ESTILOS: DRAG & DROP Y REDIMENSIONAMIENTO DE WIDGETS     */
+                    /* ======================================================== */
+                    .dashboard-draggable-card {
+                        transition: box-shadow 0.2s ease, transform 0.2s ease;
+                        position: relative;
+                    }
+                    .dashboard-draggable-card.is-dragging {
+                        opacity: 0.45 !important;
+                        transform: scale(0.99) !important;
+                        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+                    }
+                    .widget-drag-handle {
+                        cursor: grab;
+                        user-select: none;
+                        color: #94a3b8;
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        transition: all 0.15s ease;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .widget-drag-handle:hover {
+                        color: #0284c7;
+                        background-color: rgba(2, 132, 199, 0.1);
+                    }
+                    .widget-drag-handle:active {
+                        cursor: grabbing;
+                    }
+                    .dashboard-dropzone {
+                        min-height: 45px;
+                        transition: background-color 0.2s ease;
+                    }
+                    .dashboard-dropzone.drag-active {
+                        background-color: rgba(2, 132, 199, 0.03);
+                        outline: 1px dashed rgba(2, 132, 199, 0.3);
+                        border-radius: 8px;
+                    }
+                    .dashboard-drop-placeholder {
+                        border: 2px dashed #0284c7 !important;
+                        background: rgba(2, 132, 199, 0.04) !important;
+                        border-radius: 8px !important;
+                        margin-bottom: 1.5rem !important;
+                        min-height: 120px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        animation: placeholderPulse 1.2s infinite alternate ease-in-out;
+                        width: 100%;
+                    }
+                    .dashboard-drop-placeholder .placeholder-inner {
+                        color: #0284c7;
+                        font-weight: 600;
+                        font-size: 0.9rem;
+                        pointer-events: none;
+                        letter-spacing: 0.02em;
+                    }
+                    @@keyframes placeholderPulse {
+                        from { background: rgba(2, 132, 199, 0.04); border-color: #0284c7; }
+                        to { background: rgba(2, 132, 199, 0.12); border-color: #2563eb; }
+                    }
+                    .dashboard-card-resize-bar {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        right: 0;
+                        height: 9px;
+                        cursor: ns-resize;
+                        user-select: none;
+                        z-index: 10;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: transparent;
+                        transition: background 0.2s ease;
+                    }
+                    .dashboard-card-resize-bar:hover,
+                    .dashboard-card-resize-bar.is-resizing {
+                        background: rgba(2, 132, 199, 0.15);
+                    }
+                    .dashboard-card-resize-bar .resize-grip {
+                        width: 32px;
+                        height: 3px;
+                        border-radius: 2px;
+                        background-color: #cbd5e1;
+                        transition: background-color 0.2s ease, width 0.2s ease;
+                    }
+                    .dashboard-card-resize-bar:hover .resize-grip,
+                    .dashboard-card-resize-bar.is-resizing .resize-grip {
+                        background-color: #0284c7;
+                        width: 48px;
+                    }
+                    .kpi-draggable-card {
+                        transition: transform 0.18s ease, box-shadow 0.18s ease;
+                        cursor: grab;
+                        user-select: none;
+                    }
+                    .kpi-draggable-card:hover .small-box {
+                        box-shadow: 0 6px 16px rgba(0,0,0,0.14) !important;
+                    }
+                    .kpi-draggable-card:active {
+                        cursor: grabbing;
+                    }
+                    .kpi-draggable-card .small-box-footer {
+                        cursor: pointer;
+                    }
+                    .kpi-draggable-card.is-dragging {
+                        position: absolute !important;
+                        opacity: 0 !important;
+                        pointer-events: none !important;
+                        width: 1px !important;
+                        height: 1px !important;
+                        overflow: hidden !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        border: none !important;
+                    }
+                    .kpi-drop-placeholder {
+                        pointer-events: none;
+                        transition: none !important;
+                    }
+                    .kpi-placeholder-inner {
+                        height: 100%;
+                        min-height: 125px;
+                        border: 2px dashed #0284c7;
+                        border-radius: 8px;
+                        background: rgba(2, 132, 199, 0.08);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        color: #0284c7;
+                        font-weight: 700;
+                        font-size: 0.88rem;
+                        box-sizing: border-box;
+                        box-shadow: inset 0 0 14px rgba(2, 132, 199, 0.08);
+                    }
+                    body.dark-mode .kpi-placeholder-inner {
+                        border-color: #38bdf8;
+                        background: rgba(56, 189, 248, 0.1);
+                        color: #38bdf8;
+                    }
+                    body.dark-mode .widget-drag-handle {
+                        color: #64748b;
+                    }
+                    body.dark-mode .widget-drag-handle:hover {
+                        color: #38bdf8;
+                        background-color: rgba(56, 189, 248, 0.12);
+                    }
+                    body.dark-mode .dashboard-drop-placeholder {
+                        border-color: #38bdf8 !important;
+                        background: rgba(56, 189, 248, 0.06) !important;
+                    }
+                    body.dark-mode .dashboard-drop-placeholder .placeholder-inner {
+                        color: #38bdf8;
+                    }
+                    body.dark-mode .dashboard-card-resize-bar .resize-grip {
+                        background-color: #475569;
+                    }
+                    body.dark-mode .dashboard-card-resize-bar:hover,
+                    body.dark-mode .dashboard-card-resize-bar.is-resizing {
+                        background: rgba(56, 189, 248, 0.2);
+                    }
+                    
+                    /* ======================================================== */
+                                        /* Garantizar que celdas con text-truncate en tablas fixed respeten su ancho */
+                    .dashboard-draggable-card table.table {
+                        table-layout: fixed !important;
+                        width: 100% !important;
+                    }
+                    .dashboard-draggable-card table.table td.text-truncate,
+                    .dashboard-draggable-card table.table th.text-truncate {
+                        max-width: 0 !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        white-space: nowrap !important;
+                    }
+                    .dashboard-draggable-card table.table td .text-truncate {
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        white-space: nowrap !important;
+                    }
+                    /* Spacing de accesos rapidos en cualquier tamano */
+                    #contenedor-accesos-rapidos .btn-app {
+                        min-width: 82px !important;
+                        height: 60px !important;
+                        margin: 3px !important;
+                        padding: 10px 5px !important;
+                        font-size: 0.78rem !important;
+                    }
+                    #contenedor-accesos-rapidos .btn-app > .fas {
+                        font-size: 1.15rem !important;
+                    }
+                    /* Redimensionar canvas de Chart.js dinamicamente sin overflow */
+                    .dashboard-draggable-card .card-body canvas {
+                        max-width: 100% !important;
+                    }
+                    /* REGLAS RESPONSIVAS UNIVERSALES PARA WIDGETS REDIMENSIONABLES */
+                    /* ======================================================== */
+                    .dashboard-draggable-card .card-header {
+                        display: flex !important;
+                        flex-wrap: wrap !important;
+                        justify-content: space-between !important;
+                        align-items: center !important;
+                        row-gap: 8px !important;
+                        column-gap: 6px !important;
+                        padding-top: 0.55rem !important;
+                        padding-bottom: 0.55rem !important;
+                        min-height: 48px !important;
+                    }
+                    .dashboard-draggable-card .card-header::after,
+                    .dashboard-draggable-card .card-header::before {
+                        display: none !important;
+                        content: none !important;
+                    }
+                    .dashboard-draggable-card .card-title {
+                        margin: 0 !important;
+                        font-size: 0.98rem !important;
+                        font-weight: 700 !important;
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        flex-wrap: wrap !important;
+                        gap: 6px !important;
+                        max-width: 100% !important;
+                    }
+                    .dashboard-draggable-card .card-tools {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        flex-wrap: wrap !important;
+                        gap: 5px !important;
+                        margin-left: auto !important;
+                        float: none !important;
+                    }
+                    .dashboard-draggable-card select.form-control-sm {
+                        font-size: 0.8rem !important;
+                    }
+                    .dashboard-draggable-card .btn-group-sm > .btn {
+                        font-size: 0.8rem !important;
+                    }
+
+                    /* Tablas dentro de widgets: ajuste estricto sin desbordamiento */
+                    .dashboard-draggable-card table {
+                        table-layout: fixed !important;
+                        width: 100% !important;
+                        margin-bottom: 0 !important;
+                    }
+                    .dashboard-draggable-card table th,
+                    .dashboard-draggable-card table td {
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        vertical-align: middle !important;
+                    }
+
+                    /* Columnas especificas de clientes inactivos */
+                    #tabla-clientes-inactivos th:nth-child(1),
+                    #tabla-clientes-inactivos td:nth-child(1) {
+                        width: 44% !important;
+                    }
+                    #tabla-clientes-inactivos th:nth-child(2),
+                    #tabla-clientes-inactivos td:nth-child(2) {
+                        width: 32% !important;
+                    }
+                    #tabla-clientes-inactivos th:nth-child(3),
+                    #tabla-clientes-inactivos td:nth-child(3) {
+                        width: 24% !important;
+                        text-align: right !important;
+                        white-space: nowrap !important;
+                    }
+
+                    /* Columnas especificas de top pedidos */
+                    #tabla-top-pedidos th:nth-child(1),
+                    #tabla-top-pedidos td:nth-child(1) {
+                        width: 28% !important;
+                        text-align: center !important;
+                    }
+                    #tabla-top-pedidos th:nth-child(2),
+                    #tabla-top-pedidos td:nth-child(2) {
+                        width: 44% !important;
+                    }
+                    #tabla-top-pedidos th:nth-child(3),
+                    #tabla-top-pedidos td:nth-child(3) {
+                        width: 28% !important;
+                        text-align: right !important;
+                    }
+
+                    /* Badge de meses de ventas responsive */
+                    #badge-meses-ventas {
+                        max-width: 210px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    body.dark-mode .dashboard-card-resize-bar:hover .resize-grip,
+                    body.dark-mode .dashboard-card-resize-bar.is-resizing .resize-grip {
+                        background-color: #38bdf8;
+                    }
                 </style>
 
-                <!-- 2. CONTROL: DIFERENCIA (Central vs. Ilo) -->
-                <div class="card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("diferencia-sedes") && !permisosDashboardRol["diferencia-sedes"] ? "d-none" : "")" id="area-diferencia-sedes">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
-                        <h3 class="card-title font-weight-bold m-0">
-                            <i class="fas fa-chart-bar text-primary mr-2"></i>Diferencia
+                <!-- 2. CONTROL: VENTA DIARIA (Central vs. Ilo) -->
+                <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("diferencia-sedes") && !permisosDashboardRol["diferencia-sedes"] ? "d-none" : "")" id="area-diferencia-sedes" data-widget-id="diferencia-sedes">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
+                        <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
+                            <i class="fas fa-chart-bar text-primary mr-2"></i>Venta diaria
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
                             <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Filtro de d&iacute;as">
@@ -825,6 +1233,24 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-dias-8" onclick="setDiferenciaDias(8);">8d</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-dias-10" onclick="setDiferenciaDias(10);">10d</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-dias-12" onclick="setDiferenciaDias(12);">12d</button>
+                            </div>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
                             </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
@@ -850,13 +1276,14 @@
                             </button>
                         </div>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
 
                 <!-- 3. CONTROL: PEDIDOS POR VENDEDOR (D&iacute;a a D&iacute;a) -->
-                <div class="card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("pedidos-vendedor") && !permisosDashboardRol["pedidos-vendedor"] ? "d-none" : "")" id="area-pedidos-vendedor">
+                <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("pedidos-vendedor") && !permisosDashboardRol["pedidos-vendedor"] ? "d-none" : "")" id="area-pedidos-vendedor" data-widget-id="pedidos-vendedor">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2 flex-wrap" style="gap: 8px;">
                         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-                            <h3 class="card-title font-weight-bold m-0">
+                            <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                                 <i class="fas fa-user-tag text-primary mr-2"></i>Pedidos por Vendedor
                             </h3>
                             @if (puedeFiltrarVendedorClientes)
@@ -905,6 +1332,24 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-vendedor-dias-10" onclick="setVendedorDias(10);">10d</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-vendedor-dias-12" onclick="setVendedorDias(12);">12d</button>
                             </div>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -924,13 +1369,14 @@
                             </div>
                         </div>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
 
                 <!-- 3.1 CONTROL: COTIZACIONES POR VENDEDOR (D&iacute;a a D&iacute;a) -->
-                <div class="card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("cotizaciones-vendedor") && !permisosDashboardRol["cotizaciones-vendedor"] ? "d-none" : "")" id="area-cotizaciones-vendedor">
+                <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("cotizaciones-vendedor") && !permisosDashboardRol["cotizaciones-vendedor"] ? "d-none" : "")" id="area-cotizaciones-vendedor" data-widget-id="cotizaciones-vendedor">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2 flex-wrap" style="gap: 8px;">
                         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-                            <h3 class="card-title font-weight-bold m-0">
+                            <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                                 <i class="fas fa-file-invoice text-info mr-2"></i>Cotizaciones por Vendedor
                             </h3>
                             @if (puedeFiltrarVendedorClientes)
@@ -979,6 +1425,24 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-cotizacion-dias-10" onclick="setCotizacionDias(10);">10d</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-cotizacion-dias-12" onclick="setCotizacionDias(12);">12d</button>
                             </div>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -998,20 +1462,39 @@
                             </div>
                         </div>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
 
             </div>
 
-            <!-- Columna Derecha (5 columnas) -->
-            <div class="col-lg-5" id="col-main-right">
+            <!-- Columna Derecha (6 columnas - Simétrica 50%) -->
+            <div class="col-lg-6 col-md-12 dashboard-dropzone" id="col-main-right" data-zone="right">
 
                 <!-- 3. Accesos Rápidos del ERP -->
-                <div class="card card-success card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("accesos-rapidos") && !permisosDashboardRol["accesos-rapidos"] ? "d-none" : "")" id="area-accesos-rapidos">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
-                        <h3 class="card-title font-weight-bold m-0">
+                <div class="card dashboard-draggable-card card-success card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("accesos-rapidos") && !permisosDashboardRol["accesos-rapidos"] ? "d-none" : "")" id="area-accesos-rapidos" data-widget-id="accesos-rapidos">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
+                        <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-bolt text-success mr-2"></i>Accesos Rápidos
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool mr-1" id="btn-gestionar-accesos-rapidos" data-toggle="modal" data-target="#modal-gestionar-accesos-rapidos" title="Personalizar Accesos Rápidos" style="font-size: 0.85rem;"><i class="fas fa-sliders-h text-success"></i></button>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
@@ -1040,17 +1523,36 @@
                             </a>
                         </div>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
 
                 <!-- 4. Gráfico de Producción en Planta -->
-                <div class="card card-warning card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("estado-produccion") && !permisosDashboardRol["estado-produccion"] ? "d-none" : "")" id="area-estado-produccion">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
-                        <h3 class="card-title font-weight-bold m-0">
+                <div class="card dashboard-draggable-card card-warning card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("estado-produccion") && !permisosDashboardRol["estado-produccion"] ? "d-none" : "")" id="area-estado-produccion" data-widget-id="estado-produccion">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
+                        <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-chart-pie text-warning mr-2"></i>Estado de Producción
                             <span class="badge badge-light border text-warning ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre (@anioSesion)</span>
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
                             <span class="badge badge-warning px-2 py-1 mr-2" id="badge-prod-mes"><i class="fas fa-calendar-alt mr-1"></i>Mes Actual</span>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -1064,15 +1566,16 @@
                             <small class="text-muted">en el mes actual</small>
                         </div>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
 
                 <!-- 4. Widget: Agenda del Calendario -->
                 @if (tienePermisoCalendario)
                 {
-                <div class="card card-primary card-outline shadow-sm mb-4" id="area-agenda-calendario" style="border-radius: 8px;">
+                <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4" id="area-agenda-calendario" data-widget-id="agenda-calendario" style="border-radius: 8px;">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 8px;">
                         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-                            <h3 class="card-title font-weight-bold m-0" style="font-size: 1rem;">
+                            <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0" style="font-size: 1rem;">
                                 <i class="fas fa-calendar-check text-primary mr-1"></i> Agenda de Eventos
                             </h3>
                             @if (!esAdminAgenda && !tieneMultiplesAreasAgenda)
@@ -1106,6 +1609,24 @@
                             <a href="javascript:void(0);" onclick="if (window.updateNavbarBreadcrumb) { window.updateNavbarBreadcrumb(['Inicio', 'Calendario']); } $(this).getView({ urlAction: 'calendario/index' });" class="btn btn-xs btn-outline-primary px-2 py-1 font-weight-600" title="Abrir Calendario completo" style="height: 28px; display: inline-flex; align-items: center;">
                                 <i class="fas fa-calendar-alt mr-1"></i> Ir al Calendario
                             </a>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" id="btn-recargar-agenda" title="Actualizar Agenda" style="height: 28px; width: 28px; display: inline-flex; align-items: center; justify-content: center;">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
@@ -1126,17 +1647,36 @@
                         <span class="text-muted"><i class="fas fa-info-circle text-info mr-1"></i> Vista de agenda semanal continua</span>
                         <span class="text-muted font-weight-bold" id="agenda-area-info-footer">@areaAgendaInicialNombre</span>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
                 }
 
                 <!-- 5. Tarjeta informativa de Base de Datos en Tiempo Real -->
-                <div class="card card-outline card-success shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("db-tiempo-real") && !permisosDashboardRol["db-tiempo-real"] ? "d-none" : "")" id="area-db-tiempo-real" style="border-radius: 8px;">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
-                        <h3 class="card-title font-weight-bold m-0">
+                <div class="card dashboard-draggable-card card-outline card-success shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("db-tiempo-real") && !permisosDashboardRol["db-tiempo-real"] ? "d-none" : "")" id="area-db-tiempo-real" data-widget-id="db-tiempo-real" style="border-radius: 8px;">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
+                        <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-database text-success mr-2"></i>Base de Datos en Tiempo Real
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
                             <span class="badge badge-success px-2 py-1 mr-2"><i class="fas fa-check-circle mr-1"></i>Sincronizado</span>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -1155,6 +1695,7 @@
                             <i class="fas fa-bolt text-success mr-1"></i> Totales y m&eacute;tricas calculados directamente desde BD
                         </span>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
 
             </div>
@@ -1162,12 +1703,13 @@
         </div>
 
         <!-- 3. SECCION: TOP 5/10 PEDIDOS DEL DIA Y CLIENTES INACTIVOS -->
-        <div class="row" id="row-tablas-detalle">
+        <!-- ZONA INFERIOR DE ANCHO COMPLETO (Dropzone para tablas e inventario) -->
+        <div class="row dashboard-dropzone mb-0 @(esDashboardVacio ? "d-none" : "")" id="zone-full-bottom" data-zone="full-bottom">
             <!-- 3.1. Top 5 / Top 10 Pedidos del Día (Izquierda) -->
-            <div class="col-lg-6 mb-4 @(permisosDashboardRol.ContainsKey("top-pedidos") && !permisosDashboardRol["top-pedidos"] ? "d-none" : "")" id="area-top-pedidos">
+            <div class="col-12 col-lg-6 dashboard-draggable-card mb-4 @(permisosDashboardRol.ContainsKey("top-pedidos") && !permisosDashboardRol["top-pedidos"] ? "d-none" : "")" id="area-top-pedidos" data-widget-id="top-pedidos">
                 <div class="card card-primary card-outline shadow-sm mb-4">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
-                        <h3 class="card-title font-weight-bold m-0">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
+                        <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-crown text-warning mr-2"></i>Top Pedidos del D&iacute;a
                             <span class="badge badge-light border text-primary ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre (@anioSesion)</span>
                         </h3>
@@ -1177,13 +1719,31 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-top-10" onclick="cambiarTopPedidos(10);">Top 10</button>
                             </div>
                             <span class="badge badge-primary px-2 py-1 mr-2" id="badge-top-pedidos"><i class="fas fa-calendar-day mr-1"></i>Top 5 · @topPedidosFecha</span>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
                         </div>
                     </div>
                     <div class="card-body p-0 table-responsive">
-                        <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-top-pedidos">
+                        <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-top-pedidos" style="table-layout: fixed; width: 100%;">
                             <thead class="thead-light">
                                 <tr>
                                     <th style="width: 24%; text-align: center;">ID del Pedido</th>
@@ -1206,8 +1766,8 @@
                                                 <span class="badge @badgeClass mr-1">@Html.Raw(rankIcon)#@ranking</span>
                                                 <span>@p.Codigo</span>
                                             </td>
-                                            <td class="py-2">
-                                                <span class="font-weight-600">@p.Cliente</span>
+                                            <td class="py-2 text-truncate" style="max-width: 0;" title="@p.Cliente">
+                                                <span class="font-weight-600 text-truncate d-block">@p.Cliente</span>
                                             </td>
                                             <td class="text-right font-weight-bold text-success py-2" style="white-space: nowrap;">
                                                 @p.MontoFormateado
@@ -1235,14 +1795,15 @@
                             <i class="fas fa-list mr-1"></i>Ver Todos los Pedidos
                         </a>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
             </div>
 
             <!-- 3.2. Clientes sin Compras (+5 Meses) (Derecha) -->
-            <div class="col-lg-6 mb-4 @(permisosDashboardRol.ContainsKey("clientes-inactivos") && !permisosDashboardRol["clientes-inactivos"] ? "d-none" : "")" id="area-clientes-inactivos">
+            <div class="col-12 col-lg-6 dashboard-draggable-card mb-4 @(permisosDashboardRol.ContainsKey("clientes-inactivos") && !permisosDashboardRol["clientes-inactivos"] ? "d-none" : "")" id="area-clientes-inactivos" data-widget-id="clientes-inactivos">
                 <div class="card card-warning card-outline shadow-sm mb-4">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center py-2 pl-3 pr-2">
-                        <h3 class="card-title font-weight-bold m-0">
+                    <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
+                        <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
                             <i class="fas fa-user-clock text-warning mr-2"></i>Clientes sin Compras (<span id="label-meses-inactivos">&ge; 5 Meses</span>)
                             <span class="badge badge-light border text-warning ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre</span>
                         </h3>
@@ -1257,7 +1818,7 @@
                             </div>
                             @if (puedeFiltrarVendedorClientes)
                             {
-                                <select id="select-vendedor-inactivos" class="form-control form-control-sm" aria-label="Filtrar clientes por vendedor" style="width: 165px; height: 28px; padding: 2px 8px; font-size: 0.8rem;">
+                                <select id="select-vendedor-inactivos" class="form-control form-control-sm" aria-label="Filtrar clientes por vendedor" style="width: auto; max-width: 140px; height: 28px; padding: 2px 6px; font-size: 0.8rem;">
                                     <option value="" selected>Todos los Vendedores</option>
                                     @foreach (var vendedor in listaVendedores.OrderBy(v => v.nombre))
                                     {
@@ -1268,13 +1829,31 @@
                             <button type="button" class="btn btn-outline-secondary btn-sm mr-2" id="btn-ver-mas-clientes" onclick="alternarVerMasClientesInactivos();" style="height: 28px; padding: 2px 8px; font-size: 0.8rem;">
                                 <i class="fas fa-chevron-down mr-1"></i>Ver m&aacute;s (10)
                             </button>
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
                         </div>
                     </div>
                     <div class="card-body p-0 table-responsive">
-                        <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-clientes-inactivos">
+                        <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-clientes-inactivos" style="table-layout: fixed; width: 100%;">
                             <thead class="thead-light">
                                 <tr>
                                     @if (esAdmin)
@@ -1296,13 +1875,13 @@
                                     foreach (var c in clientesInactivos.Take(5))
                                     {
                                         <tr class="dashboard-drilldown-row" role="link" tabindex="0" data-cliente-nombre="@System.Uri.EscapeDataString(c.Cliente ?? string.Empty)">
-                                            <td class="py-2">
-                                                <span class="font-weight-600">@c.Cliente</span>
+                                            <td class="py-2 text-truncate" style="max-width: 0;" title="@c.Cliente">
+                                                <span class="font-weight-600 text-truncate d-block">@c.Cliente</span>
                                             </td>
                                             @if (esAdmin)
                                             {
-                                                <td class="py-2 text-truncate" style="max-width: 150px;">
-                                                    <span class="text-muted"><i class="fas fa-user-tie text-secondary mr-1"></i>@(string.IsNullOrWhiteSpace(c.Vendedor) ? "Sin vendedor" : c.Vendedor)</span>
+                                                <td class="py-2 text-truncate" style="max-width: 0;" title="@(string.IsNullOrWhiteSpace(c.Vendedor) ? "Sin vendedor" : c.Vendedor)">
+                                                    <span class="text-muted text-truncate d-block"><i class="fas fa-user-tie text-secondary mr-1"></i>@(string.IsNullOrWhiteSpace(c.Vendedor) ? "Sin vendedor" : c.Vendedor)</span>
                                                 </td>
                                             }
                                             <td class="text-right py-2" style="white-space: nowrap;">
@@ -1327,17 +1906,18 @@
                     <div class="card-footer clearfix border-top-0 py-2">
                         <small class="text-muted"><i class="fas fa-exclamation-triangle text-warning mr-1"></i>Listado ordenado por mayor tiempo de inactividad</small>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
             </div>
         </div>
 
         <!-- 4. SECCION: STOCK Y CONSUMO DE INSUMOS CRITICOS EN TIEMPO REAL -->
-        <div class="row @(permisosDashboardRol.ContainsKey("stock-insumos") && !permisosDashboardRol["stock-insumos"] ? "d-none" : "")" id="row-stock-insumos">
+        <div class="col-12 mb-4 dashboard-draggable-card @(permisosDashboardRol.ContainsKey("stock-insumos") && !permisosDashboardRol["stock-insumos"] ? "d-none" : "")" id="row-stock-insumos" data-widget-id="stock-insumos">
             <div class="col-12 mb-4">
                 <div class="card card-info card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2">
                         <div class="d-flex align-items-center flex-wrap">
-                            <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
+                            <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
                                 <i class="fas fa-boxes text-info mr-2"></i>Stock y Consumo de Insumos Cr&iacute;ticos
                                 <span class="badge badge-light border text-info ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre</span>
                             </h3>
@@ -1374,6 +1954,24 @@
                             </button>
 
                             <!-- Minimizar -->
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -1383,7 +1981,7 @@
                         <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-stock-insumos">
                             <thead class="thead-light">
                                 <tr>
-                                    <th style="width: 5%; text-align: center;">#</th>
+                                    <th style="width: 65px; min-width: 60px; text-align: center;">#</th>
                                     <th style="width: 15%; text-align: center;">C&oacute;digo</th>
                                     <th style="width: 32%;">Descripci&oacute;n del Producto</th>
                                     <th style="width: 18%; text-align: right;">Consumo Mes</th>
@@ -1396,7 +1994,7 @@
                                     foreach (var prod in listaStockInsumos)
                                     {
                                         <tr class="fila-producto-stock" data-codigo="@prod.Codigo" data-desc="@prod.Descripcion.ToLowerInvariant()">
-                                            <td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">
+                                            <td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem; width: 65px; min-width: 60px;">
                                                 @prod.Orden
                                             </td>
                                             <td class="text-center py-2" style="white-space: nowrap;">
@@ -1451,17 +2049,18 @@
                             <i class="fas fa-clipboard-list mr-1"></i><span id="span-cant-insumos-monitoreados">@(listaStockInsumos != null ? listaStockInsumos.Count : 0)</span> Insumos Monitoreados
                         </span>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
             </div>
         </div>
 
         <!-- 5. SECCION: TOP 10 PRODUCTOS CON MENOR STOCK -->
-        <div class="row @(permisosDashboardRol.ContainsKey("top-menor-stock") && !permisosDashboardRol["top-menor-stock"] ? "d-none" : "")" id="row-top-menor-stock">
+        <div class="col-12 mb-4 dashboard-draggable-card @(permisosDashboardRol.ContainsKey("top-menor-stock") && !permisosDashboardRol["top-menor-stock"] ? "d-none" : "")" id="row-top-menor-stock" data-widget-id="top-menor-stock">
             <div class="col-12 mb-4">
                 <div class="card card-danger card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2">
                         <div class="d-flex align-items-center flex-wrap">
-                            <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
+                            <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
                                 <i class="fas fa-boxes text-danger mr-2"></i>Top 10 Productos con Menor Stock
                                 <span id="badge-menor-stock-sede" class="badge badge-light border text-danger ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre</span>
                             </h3>
@@ -1525,6 +2124,24 @@
                             </button>
 
                             <!-- Minimizar -->
+                            <div class="btn-group btn-group-sm widget-size-control mr-1">
+                                <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right shadow-sm py-1" style="font-size: 0.825rem; min-width: 195px;">
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Ubicaci&oacute;n / Ancho</h6>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-top"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Superior</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="left"><i class="fas fa-arrow-left mr-2 text-info"></i>Columna Izquierda</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="right"><i class="fas fa-arrow-right mr-2 text-info"></i>Columna Derecha</a>
+                                    <a class="dropdown-item py-1 btn-widget-pos" href="javascript:void(0);" data-zone="full-bottom"><i class="fas fa-arrows-alt-v mr-2 text-primary"></i>Ancho Completo Inferior</a>
+                                    <div class="dropdown-divider my-1"></div>
+                                    <h6 class="dropdown-header text-xs text-uppercase font-weight-bold py-1">Altura de Contenido</h6>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="190"><i class="fas fa-compress-arrows-alt mr-2 text-muted"></i>Compacta (190px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="260"><i class="fas fa-equals mr-2 text-muted"></i>Normal (260px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="360"><i class="fas fa-expand-alt mr-2 text-muted"></i>Ampliada (360px)</a>
+                                    <a class="dropdown-item py-1 btn-widget-height" href="javascript:void(0);" data-height="480"><i class="fas fa-arrows-alt-v mr-2 text-muted"></i>Grande (480px)</a>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Minimizar">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -1534,7 +2151,7 @@
                         <table class="table table-striped table-hover table-sm table-valign-middle mb-0" id="tabla-top-menor-stock">
                             <thead class="thead-light">
                                 <tr>
-                                    <th style="width: 5%; text-align: center;">#</th>
+                                    <th style="width: 65px; min-width: 60px; text-align: center;">#</th>
                                     <th style="width: 14%; text-align: center;">C&oacute;digo</th>
                                     <th style="width: 33%;">Nombre del Producto</th>
                                     <th style="width: 28%;">Categor&iacute;a</th>
@@ -1547,8 +2164,8 @@
                                     foreach (var prod in listaTopMenorStock)
                                     {
                                         <tr>
-                                            <td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">
-                                                <span class="badge @(prod.Orden <= 3 ? "badge-danger" : "badge-secondary") font-weight-bold" style="font-size: 0.8rem; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem; width: 65px; min-width: 60px;">
+                                                <span class="badge @(prod.Orden <= 3 ? "badge-danger" : "badge-secondary") font-weight-bold" style="font-size: 0.82rem; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;">
                                                     @prod.Orden
                                                 </span>
                                             </td>
@@ -1604,9 +2221,11 @@
                             <i class="fas fa-filter mr-1"></i>Filtro: Todos los Grupos
                         </span>
                     </div>
+                    <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
             </div>
         </div>
+        </div><!-- /#zone-full-bottom -->
         </div><!-- /#dashboard-content-container -->
     </div>
 </section>
@@ -1804,7 +2423,7 @@
                                 <i class="fas fa-chart-bar fa-lg"></i>
                             </div>
                             <div>
-                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Diferencia (Central vs. Ilo)</div>
+                                <div class="font-weight-600 text-dark mb-0" style="font-size: 0.95rem;">Venta diaria (Central vs. Ilo)</div>
                                 <small class="text-muted">Comparativa d&iacute;a a d&iacute;a del volumen de ventas entre la Sede Central y la Sede Ilo</small>
                             </div>
                         </div>
@@ -2303,7 +2922,7 @@
                                     <i class="fas fa-chart-bar"></i>
                                 </div>
                                 <div>
-                                    <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Diferencia (Sedes)</span>
+                                    <span class="d-block font-weight-600 text-dark" style="font-size: 0.95rem;">Venta diaria (Sedes)</span>
                                     <small class="text-muted">Comparativa d&iacute;a a d&iacute;a Central vs. Ilo</small>
                                 </div>
                             </div>
@@ -4087,28 +4706,56 @@
                 $('#sub-kpis-container').hide();
             }
 
-            // Si todas las tarjetas individuales de KPI estan ocultas, ocultar el row completo en dashboard
-            if (kpisAreaActiva && kpisActivosCount === 0) {
+            // Visibilidad de la fila de KPIs
+            var kpisVisiblesYActivos = kpisAreaActiva && (kpisActivosCount > 0);
+            if (!kpisVisiblesYActivos) {
                 $('#row-kpis-metricas').addClass('d-none').hide();
-            } else if (kpisAreaActiva && kpisActivosCount > 0) {
+            } else {
                 $('#row-kpis-metricas').removeClass('d-none').show();
+            }
+
+            // 1. Selector de SEDE: solo cae para los KPIs, y si estos no estan habilitados/activos, debe estar invisible
+            if (kpisVisiblesYActivos) {
+                $('#box-filtro-sede-dashboard').removeClass('d-none').show();
+            } else {
+                $('#box-filtro-sede-dashboard').addClass('d-none').hide();
+            }
+
+            // 2. Conteo de controles/widgets activos en total
+            var widgetsActivosCount = 0;
+            for (var wKey in areasDashboardConfig) {
+                if (wKey !== 'kpis' && areasDashboardConfig[wKey].visible) {
+                    widgetsActivosCount++;
+                }
+            }
+            var totalControlesActivos = (kpisVisiblesYActivos ? 1 : 0) + widgetsActivosCount;
+
+            // Los demás botones tambien deben estar invisibles si no hay ningun control o widget activo
+            if (totalControlesActivos > 0) {
+                $('#container-botones-dashboard').removeClass('d-none').show();
+                $('#dashboard-empty-state').addClass('d-none').hide();
+                $('#dashboard-content-container').removeClass('d-none').show();
+            } else {
+                $('#container-botones-dashboard').addClass('d-none').hide();
+                $('#dashboard-empty-state').removeClass('d-none').show();
+                $('#dashboard-content-container').addClass('d-none').hide();
+            }
+
+            if (permitidasCount > 0) {
+                $('#empty-state-btn-gestionar-container').removeClass('d-none').show();
+            } else {
+                $('#empty-state-btn-gestionar-container').addClass('d-none').hide();
+            }
+
+            if (permitidasCount === 0) {
+                $('#modal-areas-ninguna-permitida').removeClass('d-none').show();
+            } else {
+                $('#modal-areas-ninguna-permitida').addClass('d-none').hide();
             }
 
             $('#badge-conteo-kpis-activos').text(kpisActivosCount + ' de ' + kpisPermitidosCount + ' activas');
             $('#modal-conteo-areas-activas').text(activasCount);
             $('#modal-conteo-areas-permitidas').text(permitidasCount);
-
-            if (permitidasCount === 0) {
-                $('#modal-areas-ninguna-permitida').removeClass('d-none').show();
-                if (!esUsuarioAdmin) {
-                    $('#dashboard-empty-state').removeClass('d-none').show();
-                    $('#dashboard-content-container').addClass('d-none').hide();
-                }
-            } else {
-                $('#modal-areas-ninguna-permitida').addClass('d-none').hide();
-                $('#dashboard-empty-state').addClass('d-none').hide();
-                $('#dashboard-content-container').removeClass('d-none').show();
-            }
 
             // Ajuste responsivo de columnas
             var leftVisible = areasDashboardConfig['evolucion-ventas'].visible || areasDashboardConfig['diferencia-sedes'].visible || areasDashboardConfig['pedidos-vendedor'].visible || (areasDashboardConfig['cotizaciones-vendedor'] && areasDashboardConfig['cotizaciones-vendedor'].visible);
@@ -4123,14 +4770,16 @@
             } else {
                 $rowMain.removeClass('d-none');
                 if (leftVisible && !rightVisible) {
-                    $colLeft.removeClass('d-none col-lg-7').addClass('col-lg-12');
+                    $colLeft.removeClass('d-none col-lg-5 col-lg-6 col-lg-7').addClass('col-lg-12');
                     $colRight.addClass('d-none');
                 } else if (!leftVisible && rightVisible) {
                     $colLeft.addClass('d-none');
-                    $colRight.removeClass('d-none col-lg-5').addClass('col-lg-12');
+                    $colRight.removeClass('d-none col-lg-5 col-lg-6 col-lg-7').addClass('col-lg-12');
                 } else {
-                    $colLeft.removeClass('d-none col-lg-12').addClass('col-lg-7');
-                    $colRight.removeClass('d-none col-lg-12').addClass('col-lg-5');
+                    var targetLeft = (typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '7-5') ? 'col-lg-7' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '5-7') ? 'col-lg-5' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '12-12') ? 'col-lg-12' : 'col-lg-6'));
+                    var targetRight = (typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '7-5') ? 'col-lg-5' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '5-7') ? 'col-lg-7' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '12-12') ? 'col-lg-12' : 'col-lg-6'));
+                    $colLeft.removeClass('d-none col-lg-12 col-lg-7 col-lg-5 col-lg-6').addClass(targetLeft);
+                    $colRight.removeClass('d-none col-lg-12 col-lg-7 col-lg-5 col-lg-6').addClass(targetRight);
                 }
             }
 
@@ -4805,9 +5454,35 @@
                         if (res.kpis.salidasMermaMes !== undefined) $('#kpi-merma-salidas').text(res.kpis.salidasMermaMes);
                         if (res.kpis.guiasRemisionMes !== undefined) $('#kpi-guias-remision').text(res.kpis.guiasRemisionMes);
                     }
+
                 },
                 complete: function () {
                     $('#row-kpis-metricas').css('opacity', '1');
+                }
+            });
+        }
+
+        $(document).off("change", "#select-filtro-sede-ventas").on("change", "#select-filtro-sede-ventas", function () {
+            var sedeId = parseInt($(this).val()) || 0;
+            actualizarVentasPorSede(sedeId);
+        });
+
+        function actualizarVentasPorSede(sedeId) {
+            var $cardBody = $("#area-evolucion-ventas .card-body");
+            $cardBody.css({ "opacity": "0.5", "transition": "opacity 0.2s ease" });
+            var anioSel = parseInt($("#header-select-periodo").val()) || @anioSesion;
+            $.ajax({
+                url: '@Url.Action("ObtenerGraficoVentasPorSede", "Home")',
+                type: "GET",
+                data: { sedeId: sedeId, anio: anioSel, cid: cid },
+                headers: { "x-app-cid": cid },
+                success: function (res) {
+                    if (res && res.success && res.graficoVentas) {
+                        renderSalesChart(res.graficoVentas);
+                    }
+                },
+                complete: function () {
+                    $cardBody.css("opacity", "1");
                 }
             });
         }
@@ -4828,6 +5503,7 @@
                     vendedorClientesId: $('#select-vendedor-inactivos').val() || null,
                     vendedorId: (vendChartId !== null && !isNaN(vendChartId)) ? vendChartId : null,
                     cotizacionVendedorId: (cotizChartId !== null && !isNaN(cotizChartId)) ? cotizChartId : null,
+                    sedeVentasId: parseInt($("#select-filtro-sede-ventas").val()) || 0,
                     anio: parseInt($('#header-select-periodo').val()) || @anioSesion
                 },
                 headers: { 'x-app-cid': cid },
@@ -4956,7 +5632,7 @@
                 var stockColorClass = (prod.stockActual <= 0) ? 'text-danger' : 'text-primary';
 
                 var tr = '<tr class="fila-producto-stock" data-codigo="' + (prod.codigo || '') + '" data-desc="' + ((prod.descripcion || '').toLowerCase()) + '">' +
-                    '<td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">' + prod.orden + '</td>' +
+                    '<td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem; width: 65px; min-width: 60px;">' + prod.orden + '</td>' +
                     '<td class="text-center py-2" style="white-space: nowrap;">' +
                         '<span class="badge badge-secondary font-weight-bold px-2 py-1" style="font-family: monospace; font-size: 0.85rem; letter-spacing: 0.03em;">' +
                             escapeDashboardHtml(prod.codigo) +
@@ -5150,8 +5826,8 @@
                 }
 
                 var tr = '<tr>' +
-                    '<td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem;">' +
-                        '<span class="badge ' + rankBadgeClass + ' font-weight-bold" style="font-size: 0.8rem; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;">' +
+                    '<td class="text-center font-weight-bold text-muted py-2" style="font-size: 0.85rem; width: 65px; min-width: 60px;">' +
+                        '<span class="badge ' + rankBadgeClass + ' font-weight-bold" style="font-size: 0.82rem; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;">' +
                             prod.orden +
                         '</span>' +
                     '</td>' +
@@ -6085,8 +6761,636 @@
             }
         });
 
+        // ========================================================
+        // MOTOR DE DRAG & DROP Y PERSONALIZACION DE DASHBOARD
+        // ========================================================
+        var currentProporcionColumnas = '6-6';
+        var draggedCardElement = null;
+        var dashboardDropPlaceholder = null;
+
+        function getStorageLayoutKey() {
+            var u = (currentUsername || 'default_user').toLowerCase().trim();
+            var r = (currentRoleCode || 'default_role').toLowerCase().trim();
+            return 'arco_dashboard_layout_u_' + u + '_r_' + r + '_v1';
+        }
+
+        function findWidgetElement(widgetKey) {
+            var $el = $('[data-widget-id="' + widgetKey + '"]');
+            if ($el.length) return $el;
+            return $('#area-' + widgetKey).length ? $('#area-' + widgetKey) : $('#row-' + widgetKey);
+        }
+
+        function aplicarProporcionColumnas(ratio, save) {
+            currentProporcionColumnas = ratio || '6-6';
+            var $colLeft = $('#col-main-left');
+            var $colRight = $('#col-main-right');
+            var labelText = 'Columnas: 6:6 (Simétrico)';
+
+            $colLeft.removeClass('col-lg-5 col-lg-6 col-lg-7 col-lg-8 col-lg-12 col-md-12');
+            $colRight.removeClass('col-lg-5 col-lg-6 col-lg-7 col-lg-4 col-lg-12 col-md-12');
+
+            if (ratio === '7-5') {
+                $colLeft.addClass('col-lg-7 col-md-12');
+                $colRight.addClass('col-lg-5 col-md-12');
+                labelText = 'Columnas: 7:5';
+            } else if (ratio === '5-7') {
+                $colLeft.addClass('col-lg-5 col-md-12');
+                $colRight.addClass('col-lg-7 col-md-12');
+                labelText = 'Columnas: 5:7';
+            } else if (ratio === '12-12') {
+                $colLeft.addClass('col-lg-12');
+                $colRight.addClass('col-lg-12');
+                labelText = 'Columnas: 100%';
+            } else {
+                currentProporcionColumnas = '6-6';
+                $colLeft.addClass('col-lg-6 col-md-12');
+                $colRight.addClass('col-lg-6 col-md-12');
+                labelText = 'Columnas: 6:6 (Simétrico)';
+            }
+
+            $('#label-proporcion-actual').text(labelText);
+
+            if (save !== false) {
+                guardarLayoutDashboard();
+            }
+
+            setTimeout(function() {
+                redimensionarTodosLosGraficos();
+            }, 80);
+        }
+
+                function redimensionarTodosLosGraficos() {
+            try {
+                if (typeof salesChartInstance !== 'undefined' && salesChartInstance) salesChartInstance.resize();
+                if (typeof diferenciaChartInstance !== 'undefined' && diferenciaChartInstance) diferenciaChartInstance.resize();
+                if (typeof vendedorBarChartInstance !== 'undefined' && vendedorBarChartInstance) vendedorBarChartInstance.resize();
+                if (typeof cotizacionVendedorChartInstance !== 'undefined' && cotizacionVendedorChartInstance) cotizacionVendedorChartInstance.resize();
+                if (typeof donutChartProduccion !== 'undefined' && donutChartProduccion) donutChartProduccion.resize();
+                if (typeof donutChartPedidos !== 'undefined' && donutChartPedidos) donutChartPedidos.resize();
+                if (typeof calendarAgendaWidget !== 'undefined' && calendarAgendaWidget) calendarAgendaWidget.updateSize();
+            } catch (e) { }
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        function adaptCardToZone(cardEl, zoneName) {
+            var $c = $(cardEl);
+            var isCard = $c.hasClass('card');
+
+            if (zoneName === 'full-top' || zoneName === 'full-bottom') {
+                if (isCard) {
+                    $c.addClass('col-12 mb-4');
+                } else {
+                    $c.addClass('col-12 mb-4').removeClass('col-lg-6');
+                }
+            } else {
+                if (isCard) {
+                    $c.removeClass('col-12');
+                } else {
+                    $c.removeClass('col-12 col-lg-6');
+                }
+                $c.addClass('mb-4');
+            }
+        }
+
+        function aplicarAlturaWidget($card, heightPx, notify) {
+            var h = parseInt(heightPx, 10);
+            if (isNaN(h) || h < 120) return;
+
+            var $target = $card.find('#diferencia-chart-container, #vendedor-chart-container, #cotizacion-vendedor-chart-container, #calendar-agenda-widget, .table-responsive').first();
+            if (!$target.length) {
+                $target = $card.find('.position-relative').first();
+            }
+            if (!$target.length) {
+                $target = $card.find('.card-body').first();
+            }
+
+            if ($target.length) {
+                $target.css({ 'height': h + 'px', 'max-height': h + 'px' });
+                $card.attr('data-custom-height', h);
+                window.dispatchEvent(new Event('resize'));
+                if (notify && window.alertify) {
+                    alertify.message('Altura ajustada a ' + h + 'px');
+                }
+            }
+        }
+
+        function guardarLayoutDashboard() {
+            try {
+                var layout = {
+                    proporcion: currentProporcionColumnas || '6-6',
+                    kpis: [],
+                    fullTop: [],
+                    colLeft: [],
+                    colRight: [],
+                    fullBottom: [],
+                    heights: {}
+                };
+
+                // Guardar orden de KPIs
+                $('#row-kpis-metricas .kpi-draggable-card').each(function() {
+                    layout.kpis.push($(this).attr('data-kpi-id') || this.id);
+                });
+
+                // Guardar orden por zonas
+                $('#zone-full-top .dashboard-draggable-card').each(function() {
+                    var k = $(this).attr('data-widget-id');
+                    if (k) layout.fullTop.push(k);
+                });
+
+                $('#col-main-left .dashboard-draggable-card').each(function() {
+                    var k = $(this).attr('data-widget-id');
+                    if (k) layout.colLeft.push(k);
+                });
+
+                $('#col-main-right .dashboard-draggable-card').each(function() {
+                    var k = $(this).attr('data-widget-id');
+                    if (k) layout.colRight.push(k);
+                });
+
+                $('#zone-full-bottom .dashboard-draggable-card').each(function() {
+                    var k = $(this).attr('data-widget-id');
+                    if (k) layout.fullBottom.push(k);
+                });
+
+                // Guardar alturas personalizadas
+                $('.dashboard-draggable-card').each(function() {
+                    var k = $(this).attr('data-widget-id');
+                    var h = $(this).attr('data-custom-height');
+                    if (k && h) {
+                        layout.heights[k] = h;
+                    }
+                });
+
+                localStorage.setItem(getStorageLayoutKey(), JSON.stringify(layout));
+            } catch (e) {
+                console.warn('Error guardando layout de dashboard:', e);
+            }
+        }
+
+        function restaurarLayoutDashboard() {
+            try {
+                var raw = localStorage.getItem(getStorageLayoutKey());
+                if (!raw) {
+                    aplicarProporcionColumnas('6-6', false);
+                    return;
+                }
+                var layout = JSON.parse(raw);
+                if (!layout) {
+                    aplicarProporcionColumnas('6-6', false);
+                    return;
+                }
+
+                // 1. Proporcion de columnas (migrar automáticamente '7-5' anterior al nuevo predeterminado '6-6' simétrico)
+                if (layout.proporcion && layout.proporcion !== '7-5') {
+                    aplicarProporcionColumnas(layout.proporcion, false);
+                } else {
+                    aplicarProporcionColumnas('6-6', false);
+                }
+
+                // 2. Orden de KPIs
+                if (layout.kpis && layout.kpis.length > 0) {
+                    var $kpiRow = $('#row-kpis-metricas');
+                    layout.kpis.forEach(function(kId) {
+                        var $kCard = $('#' + kId);
+                        if ($kCard.length) {
+                            $kpiRow.append($kCard);
+                        }
+                    });
+                }
+
+                function placeWidget(wKey, $targetZone, zoneName) {
+                    var $w = findWidgetElement(wKey);
+                    if ($w && $w.length) {
+                        adaptCardToZone($w[0], zoneName);
+                        $targetZone.append($w);
+                    }
+                }
+
+                // 3. Zonas
+                if (layout.fullTop && layout.fullTop.length) {
+                    var $zTop = $('#zone-full-top');
+                    layout.fullTop.forEach(function(k) { placeWidget(k, $zTop, 'full-top'); });
+                }
+                if (layout.colLeft && layout.colLeft.length) {
+                    var $zLeft = $('#col-main-left');
+                    layout.colLeft.forEach(function(k) { placeWidget(k, $zLeft, 'left'); });
+                }
+                if (layout.colRight && layout.colRight.length) {
+                    var $zRight = $('#col-main-right');
+                    layout.colRight.forEach(function(k) { placeWidget(k, $zRight, 'right'); });
+                }
+                if (layout.fullBottom && layout.fullBottom.length) {
+                    var $zBottom = $('#zone-full-bottom');
+                    layout.fullBottom.forEach(function(k) { placeWidget(k, $zBottom, 'full-bottom'); });
+                }
+
+                // 4. Alturas
+                if (layout.heights) {
+                    for (var hKey in layout.heights) {
+                        var $item = findWidgetElement(hKey);
+                        if ($item && $item.length) {
+                            aplicarAlturaWidget($item, layout.heights[hKey], false);
+                        }
+                    }
+                }
+
+                setTimeout(function() {
+                    window.dispatchEvent(new Event('resize'));
+                }, 120);
+            } catch (e) {
+                console.warn('Error restaurando layout de dashboard:', e);
+            }
+        }
+
+        function getDragAfterElement(container, y) {
+            var draggableElements = Array.prototype.slice.call(container.querySelectorAll('.dashboard-draggable-card:not(.is-dragging)'));
+            return draggableElements.reduce(function(closest, child) {
+                var box = child.getBoundingClientRect();
+                var offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+
+
+        function initDashboardDragAndDrop() {
+            // Placeholder de soltado
+            if (!dashboardDropPlaceholder) {
+                dashboardDropPlaceholder = document.createElement('div');
+                dashboardDropPlaceholder.className = 'dashboard-drop-placeholder';
+                dashboardDropPlaceholder.innerHTML = '<div class="placeholder-inner"><i class="fas fa-arrows-alt mr-2"></i>Soltar widget aqu&iacute;</div>';
+            }
+
+            // Drag & Drop de Widgets del Dashboard
+            $(document).on('mousedown', '.widget-drag-handle', function() {
+                var card = $(this).closest('.dashboard-draggable-card')[0];
+                if (card) {
+                    card.setAttribute('draggable', 'true');
+                }
+            });
+
+            $(document).on('mouseup', function() {
+                $('.dashboard-draggable-card[draggable="true"]').removeAttr('draggable');
+            });
+
+            $('.dashboard-draggable-card').each(function() {
+                var card = this;
+
+                card.addEventListener('dragstart', function(e) {
+                    var tag = (e.target.tagName || '').toLowerCase();
+                    if (tag === 'select' || tag === 'input' || tag === 'button' || tag === 'a' || tag === 'option') {
+                        e.preventDefault();
+                        return false;
+                    }
+                    if ($(e.target).closest('select, input, button, a, .btn, .btn-group, .dropdown-menu').length > 0) {
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    draggedCardElement = card;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', $(card).attr('data-widget-id') || card.id);
+
+                    setTimeout(function() {
+                        $(card).addClass('is-dragging');
+                        $('.dashboard-dropzone').addClass('drag-active');
+                    }, 0);
+                });
+
+                card.addEventListener('dragend', function() {
+                    $(card).removeAttr('draggable').removeClass('is-dragging');
+                    $('.dashboard-dropzone').removeClass('drag-active');
+                    if (dashboardDropPlaceholder && dashboardDropPlaceholder.parentNode) {
+                        dashboardDropPlaceholder.parentNode.removeChild(dashboardDropPlaceholder);
+                    }
+                    draggedCardElement = null;
+                    guardarLayoutDashboard();
+                    setTimeout(function() {
+                        window.dispatchEvent(new Event('resize'));
+                    }, 60);
+                });
+            });
+
+            // Zonas de soltado
+            var dropzones = document.querySelectorAll('.dashboard-dropzone');
+            dropzones.forEach(function(zone) {
+                zone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (!draggedCardElement) return;
+
+                    var afterElement = getDragAfterElement(zone, e.clientY);
+                    if (!afterElement) {
+                        zone.appendChild(dashboardDropPlaceholder);
+                    } else {
+                        zone.insertBefore(dashboardDropPlaceholder, afterElement);
+                    }
+                });
+
+                zone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (!draggedCardElement || !dashboardDropPlaceholder) return;
+
+                    var zoneName = $(zone).attr('data-zone') || '';
+                    adaptCardToZone(draggedCardElement, zoneName);
+
+                    zone.insertBefore(draggedCardElement, dashboardDropPlaceholder);
+                    if (dashboardDropPlaceholder.parentNode) {
+                        dashboardDropPlaceholder.parentNode.removeChild(dashboardDropPlaceholder);
+                    }
+
+                    guardarLayoutDashboard();
+                    setTimeout(function() {
+                        window.dispatchEvent(new Event('resize'));
+                    }, 60);
+                });
+            });
+
+            // Drag & Drop de tarjetas KPI (Reordenamiento profesional con Placeholder e Histéresis)
+            var kpiRow = document.getElementById('row-kpis-metricas');
+            var draggedKpiCard = null;
+            var kpiDropPlaceholder = null;
+
+            function getOrCreateKpiPlaceholder() {
+                if (!kpiDropPlaceholder) {
+                    kpiDropPlaceholder = document.createElement('div');
+                    kpiDropPlaceholder.className = 'col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-drop-placeholder';
+                    kpiDropPlaceholder.innerHTML = '<div class="kpi-placeholder-inner"><i class="fas fa-arrows-alt fa-lg mb-1"></i><span>Soltar aqu&iacute;</span></div>';
+                }
+                return kpiDropPlaceholder;
+            }
+
+            function finalizarArrastreKpi() {
+                if (!draggedKpiCard) return;
+
+                var card = draggedKpiCard;
+                draggedKpiCard = null;
+
+                var placeholder = kpiDropPlaceholder;
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.insertBefore(card, placeholder);
+                    placeholder.parentNode.removeChild(placeholder);
+                }
+
+                $(card).removeClass('is-dragging');
+                guardarLayoutDashboard();
+            }
+
+            if (kpiRow) {
+                var $kpis = $(kpiRow).find('.kpi-draggable-card');
+                $kpis.each(function() {
+                    var kpi = this;
+                    kpi.setAttribute('draggable', 'true');
+
+                    kpi.addEventListener('dragstart', function(e) {
+                        var tag = (e.target.tagName || '').toLowerCase();
+                        if (tag === 'select' || tag === 'input' || tag === 'button' || tag === 'a' || tag === 'option') {
+                            e.preventDefault();
+                            return false;
+                        }
+                        if ($(e.target).closest('select, input, button, a, .btn, .btn-group, .dropdown-menu, .small-box-footer').length > 0) {
+                            e.preventDefault();
+                            return false;
+                        }
+
+                        draggedKpiCard = kpi;
+                        var placeholder = getOrCreateKpiPlaceholder();
+                        kpiRow.insertBefore(placeholder, kpi);
+
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', kpi.id);
+
+                        setTimeout(function() {
+                            if (draggedKpiCard === kpi) {
+                                $(kpi).addClass('is-dragging');
+                            }
+                        }, 0);
+                    });
+
+                    kpi.addEventListener('dragend', function() {
+                        finalizarArrastreKpi();
+                    });
+                });
+
+                kpiRow.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (!draggedKpiCard) return;
+
+                    var placeholder = getOrCreateKpiPlaceholder();
+
+                    // Buscar elemento bajo el puntero del mouse
+                    var elUnder = document.elementFromPoint(e.clientX, e.clientY);
+                    if (!elUnder) return;
+
+                    var targetCard = elUnder.closest('.kpi-draggable-card:not(.is-dragging)');
+
+                    if (targetCard && targetCard !== draggedKpiCard && targetCard !== placeholder) {
+                        var rect = targetCard.getBoundingClientRect();
+                        var relX = e.clientX - rect.left;
+                        var width = rect.width;
+
+                        // Histéresis: si el placeholder ya es adyacente, usar umbral 35% / 65% para evitar parpadeos
+                        var isPlaceholderBefore = (placeholder.nextElementSibling === targetCard);
+                        var isPlaceholderAfter = (targetCard.nextElementSibling === placeholder);
+
+                        var shouldMoveBefore = false;
+                        var shouldMoveAfter = false;
+
+                        if (isPlaceholderBefore) {
+                            if (relX > width * 0.65) {
+                                shouldMoveAfter = true;
+                            }
+                        } else if (isPlaceholderAfter) {
+                            if (relX < width * 0.35) {
+                                shouldMoveBefore = true;
+                            }
+                        } else {
+                            if (relX < width * 0.5) {
+                                shouldMoveBefore = true;
+                            } else {
+                                shouldMoveAfter = true;
+                            }
+                        }
+
+                        if (shouldMoveBefore) {
+                            if (placeholder.nextElementSibling !== targetCard) {
+                                kpiRow.insertBefore(placeholder, targetCard);
+                            }
+                        } else if (shouldMoveAfter) {
+                            var nextEl = targetCard.nextElementSibling;
+                            if (nextEl !== placeholder) {
+                                if (nextEl) {
+                                    kpiRow.insertBefore(placeholder, nextEl);
+                                } else {
+                                    kpiRow.appendChild(placeholder);
+                                }
+                            }
+                        }
+                    } else if (!targetCard && (elUnder === kpiRow || elUnder.closest('#row-kpis-metricas'))) {
+                        // El cursor está sobre espacio vacío de la fila de KPIs (por ejemplo, después de la última tarjeta)
+                        var lastCard = kpiRow.querySelector('.kpi-draggable-card:not(.is-dragging):last-of-type');
+                        if (lastCard) {
+                            var lastRect = lastCard.getBoundingClientRect();
+                            if (e.clientY > lastRect.bottom - 15 || (e.clientY >= lastRect.top && e.clientX > lastRect.right)) {
+                                if (kpiRow.lastElementChild !== placeholder) {
+                                    kpiRow.appendChild(placeholder);
+                                }
+                            }
+                        }
+                    }
+                });
+
+                kpiRow.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    finalizarArrastreKpi();
+                });
+            }
+
+            // Click en posicion del widget
+            $(document).on('click', '.btn-widget-pos', function(e) {
+                e.preventDefault();
+                var $btn = $(this);
+                var zoneName = $btn.data('zone');
+                var $card = $btn.closest('.dashboard-draggable-card');
+                if (!$card.length) return;
+
+                var $targetZone = $('#zone-' + zoneName);
+                if (zoneName === 'left') $targetZone = $('#col-main-left');
+                if (zoneName === 'right') $targetZone = $('#col-main-right');
+                if (zoneName === 'full-top') $targetZone = $('#zone-full-top');
+                if (zoneName === 'full-bottom') $targetZone = $('#zone-full-bottom');
+
+                if ($targetZone.length) {
+                    adaptCardToZone($card[0], zoneName);
+                    $targetZone.prepend($card);
+                    guardarLayoutDashboard();
+                    window.dispatchEvent(new Event('resize'));
+                    if (window.alertify) {
+                        alertify.message('Widget reubicado correctamente');
+                    }
+                }
+            });
+
+            // Click en altura de widget
+            $(document).on('click', '.btn-widget-height', function(e) {
+                e.preventDefault();
+                var h = $(this).data('height');
+                var $card = $(this).closest('.dashboard-draggable-card');
+                if ($card.length && h) {
+                    aplicarAlturaWidget($card, h, true);
+                    guardarLayoutDashboard();
+                }
+            });
+
+            // Click en proporcion de columnas
+            $(document).on('click', '.item-proporcion-col', function(e) {
+                e.preventDefault();
+                var ratio = $(this).data('ratio');
+                aplicarProporcionColumnas(ratio, true);
+            });
+
+            // Click en restablecer layout
+            $(document).on('click', '#btn-restablecer-layout', function(e) {
+                e.preventDefault();
+                if (window.Swal) {
+                    Swal.fire({
+                        title: '\u00bfRestablecer dise\u00f1o?',
+                        text: 'Se restablecer\u00e1 la ubicaci\u00f3n, orden y tama\u00f1os predeterminados de todos los widgets del dashboard.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#0284c7',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: '<i class="fas fa-undo-alt mr-1"></i> S\u00ed, restablecer',
+                        cancelButtonText: 'Cancelar'
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            localStorage.removeItem(getStorageLayoutKey());
+                            if (window.alertify) {
+                                alertify.success('Dise\u00f1o restablecido correctamente');
+                            }
+                            setTimeout(function() {
+                                location.reload();
+                            }, 300);
+                        }
+                    });
+                } else if (confirm('\u00bfDeseas restablecer el dise\u00f1o y tama\u00f1os predeterminados del dashboard?')) {
+                    localStorage.removeItem(getStorageLayoutKey());
+                    location.reload();
+                }
+            });
+
+            // Redimensionamiento vertical arrastrable (Resize bar)
+            $(document).on('mousedown', '.dashboard-card-resize-bar', function(e) {
+                e.preventDefault();
+                var $bar = $(this);
+                var $card = $bar.closest('.dashboard-draggable-card');
+
+                var $target = $card.find('#diferencia-chart-container, #vendedor-chart-container, #cotizacion-vendedor-chart-container, #calendar-agenda-widget, .table-responsive').first();
+                if (!$target.length) {
+                    $target = $card.find('.position-relative').first();
+                }
+                if (!$target.length) {
+                    $target = $card.find('.card-body').first();
+                }
+                if (!$target.length) return;
+
+                var startY = e.clientY;
+                var startHeight = $target.outerHeight() || 250;
+
+                $bar.addClass('is-resizing');
+                $('body').css('cursor', 'ns-resize');
+
+                function onMouseMove(moveEvt) {
+                    var deltaY = moveEvt.clientY - startY;
+                    var newH = Math.max(140, Math.min(850, startHeight + deltaY));
+                    $target.css({ 'height': newH + 'px', 'max-height': newH + 'px' });
+                    $card.attr('data-custom-height', newH);
+                    window.dispatchEvent(new Event('resize'));
+                }
+
+                function onMouseUp() {
+                    $(document).off('mousemove', onMouseMove);
+                    $(document).off('mouseup', onMouseUp);
+                    $bar.removeClass('is-resizing');
+                    $('body').css('cursor', '');
+                    guardarLayoutDashboard();
+                    setTimeout(function() {
+                        window.dispatchEvent(new Event('resize'));
+                    }, 50);
+                }
+
+                $(document).on('mousemove', onMouseMove);
+                $(document).on('mouseup', onMouseUp);
+            });
+        }
+        function initStickyDashboardHeader() {
+            var $nav = $('.main-header.navbar');
+            var $header = $('.dashboard-sticky-header');
+            if (!$header.length) return;
+
+            function ajustarPosicion() {
+                var navH = ($nav.length && $nav.is(':visible')) ? $nav.outerHeight() : 57;
+                if (navH > 0) {
+                    $header.css('top', navH + 'px');
+                }
+            }
+
+            ajustarPosicion();
+            $(window).on('resize.stickyHeader', ajustarPosicion);
+            $('[data-widget="pushmenu"]').on('click', function() {
+                setTimeout(ajustarPosicion, 350);
+            });
+        }
+        initStickyDashboardHeader();
         initGestionAccesosRapidos();
         initAgendaCalendarioWidget();
+        initDashboardDragAndDrop();
+        restaurarLayoutDashboard();
 
         sincronizarDashboard();
 

@@ -544,3 +544,73 @@ body.dark-mode .app-toast-container .swal2-popup.app-toast.app-toast--error .swa
       height: 36px;
    }
 }
+
+/* ========================================================
+   NOTIFICACIONES INTERACTIVAS DE CALENDARIO
+   ======================================================== */
+.app-notification-card.app-notification-calendar-item {
+   cursor: pointer;
+   position: relative;
+   border-left: 3.5px solid var(--notification-accent);
+}
+
+.app-notification-card.app-notification-calendar-item:hover {
+   transform: translateY(-2px);
+   border-color: var(--notification-accent);
+   box-shadow: 0 8px 22px rgba(37, 99, 235, .15);
+   background: linear-gradient(135deg, rgba(37, 99, 235, .06), var(--notification-surface) 60%);
+}
+
+.app-notification-card.app-notification-calendar-item:hover .app-notification-card-title {
+   color: var(--notification-accent);
+}
+
+.app-notification-card.app-notification-calendar-item .app-notification-card-icon {
+   background: rgba(37, 99, 235, .12);
+   color: var(--notification-accent);
+}
+
+.app-notification-card-footer {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 8px;
+   margin-top: 7px;
+}
+
+.app-notification-card-footer .app-notification-card-time {
+   margin-top: 0;
+}
+
+.app-notification-card-badge {
+   display: inline-flex;
+   align-items: center;
+   padding: 2px 7px;
+   border-radius: 999px;
+   background: rgba(37, 99, 235, .1);
+   color: var(--notification-accent);
+   font-size: .67rem;
+   font-weight: 700;
+   letter-spacing: .02em;
+   transition: background-color .18s ease, color .18s ease;
+}
+
+.app-notification-card.app-notification-calendar-item:hover .app-notification-card-badge {
+   background: var(--notification-accent);
+   color: #ffffff;
+}
+
+body.dark-mode .app-notification-card.app-notification-calendar-item:hover {
+   box-shadow: 0 8px 22px rgba(0, 0, 0, .4);
+   background: linear-gradient(135deg, rgba(125, 170, 255, .1), var(--notification-surface) 60%);
+}
+
+body.dark-mode .app-notification-card-badge {
+   background: rgba(125, 170, 255, .15);
+   color: var(--notification-accent);
+}
+
+body.dark-mode .app-notification-card.app-notification-calendar-item:hover .app-notification-card-badge {
+   background: var(--notification-accent);
+   color: #1e293b;
+}
