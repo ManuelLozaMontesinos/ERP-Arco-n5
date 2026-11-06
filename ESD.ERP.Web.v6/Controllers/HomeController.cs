@@ -148,6 +148,15 @@ namespace ESD.ERP.Web.Controllers
            AND u.fecha <= DATEADD(month, -@meses, GETDATE())
          ORDER BY u.fecha DESC";
 
+      private const string SqlTipoCambioApply = @"
+         OUTER APPLY (
+             SELECT TOP 1 tcd.monto_v 
+             FROM tipo_camb_dia tcd 
+             WHERE c.moneda_id = 2 AND ISNULL(c.monto_tc, 0) <= 0 AND tcd.fecha <= c.fecha AND tcd.moneda_id = 2 AND tcd.estado = 'A' 
+             ORDER BY tcd.fecha DESC
+         ) tc";
+
+      private const string SqlMontoEnSoles = @"(CASE WHEN c.moneda_id = 2 THEN c.monto_total * (CASE WHEN ISNULL(c.monto_tc, 0) > 0 THEN c.monto_tc ELSE ISNULL(tc.monto_v, 3.50) END) ELSE c.monto_total END)";
       private readonly IComprobanteProxy comprobanteProxy;
       private readonly ICotizacionProxy cotizacionProxy;
       private readonly IOrdenProduccionProxy ordenProduccionProxy;
@@ -243,7 +252,7 @@ namespace ESD.ERP.Web.Controllers
          return (null, null);
       }
 
-      private dynamic ObtenerMetricasDesdeBD(int? vendedorIdFiltro = null, int mesesInactivos = 5, int? vendedorClientesFiltro = null, int? sedeIdFiltro = null, int? anioSesion = null, int? sedeSesionId = null, int? vendedorGraficoId = null)
+      private dynamic ObtenerMetricasDesdeBD(int? vendedorIdFiltro = null, int mesesInactivos = 5, int? vendedorClientesFiltro = null, int? sedeIdFiltro = null, int? anioSesion = null, int? sedeSesionId = null, int? vendedorGraficoId = null, int? cotizacionGraficoId = null)
       {
          decimal facturacionMes = 0m;
          int pedidosActivos = 0;
@@ -259,10 +268,14 @@ namespace ESD.ERP.Web.Controllers
          double sumatoriaPedidosMes = 0;
          int cantidadPedidosMes = 0;
          var listaVendedores = new List<VendedorDTO>();
-         int primerVendedorId = vendedorIdFiltro ?? (vendedorGraficoId.HasValue && vendedorGraficoId.Value > 0 ? vendedorGraficoId.Value : 50);
+         int primerVendedorId = vendedorIdFiltro ?? (vendedorGraficoId.HasValue ? vendedorGraficoId.Value : 50);
          string primerVendedorNombre = "CRISTIAN";
          var vendedorCantidades = new List<int>();
          var vendedorMontos = new List<double>();
+         int primerCotizacionVendedorId = vendedorIdFiltro ?? (cotizacionGraficoId.HasValue ? cotizacionGraficoId.Value : primerVendedorId);
+         string primerCotizacionVendedorNombre = primerVendedorNombre;
+         var cotizacionCantidades = new List<int>();
+         var cotizacionMontos = new List<double>();
          var listaRoles = new List<RolDTO>();
 
          string[] nombresMeses = { "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
@@ -318,11 +331,12 @@ namespace ESD.ERP.Web.Controllers
                {
                   using (var cmd = conn.CreateCommand())
                   {
-                     cmd.CommandText = @"
-                        SELECT ISNULL(SUM(c.monto_total), 0) AS total
+                     cmd.CommandText = $@"
+                        SELECT ISNULL(SUM({SqlMontoEnSoles}), 0) AS total
                         FROM comprobante c
                         INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
                         LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         {SqlTipoCambioApply}
                         WHERE YEAR(c.fecha) = @anio 
                           AND MONTH(c.fecha) = @mes 
                           AND c.estado = 'A'
@@ -565,10 +579,11 @@ namespace ESD.ERP.Web.Controllers
                  {
                     using (var cmd = conn.CreateCommand())
                     {
-                       cmd.CommandText = @"
-                          SELECT YEAR(c.fecha) AS anio, MONTH(c.fecha) AS mes, ROUND(SUM(c.monto_total) / 1000.0, 1) AS miles
+                       cmd.CommandText = $@"
+                          SELECT YEAR(c.fecha) AS anio, MONTH(c.fecha) AS mes, ROUND(SUM({SqlMontoEnSoles}) / 1000.0, 1) AS miles
                           FROM comprobante c
                           LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                           {SqlTipoCambioApply}
                           WHERE c.fecha >= @inicioConsultaVentas AND c.fecha < @finPeriodoActual
                             AND c.estado = 'A'
                             AND (@sedeSesion IS NULL OR @sedeSesion = 0 OR pes.empresa_sede_id = @sedeSesion)
@@ -623,14 +638,15 @@ namespace ESD.ERP.Web.Controllers
                 {
                    using (var cmd = conn.CreateCommand())
                    {
-                      cmd.CommandText = @"
+                      cmd.CommandText = $@"
                          SELECT
                              CAST(c.fecha AS DATE) AS fecha_dia,
-                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 1 THEN c.monto_total ELSE 0 END), 2) AS central,
-                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 2 THEN c.monto_total ELSE 0 END), 2) AS ilo
+                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 1 THEN {SqlMontoEnSoles} ELSE 0 END), 2) AS central,
+                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 2 THEN {SqlMontoEnSoles} ELSE 0 END), 2) AS ilo
                          FROM comprobante c
                          INNER JOIN periodo_emp_sede p ON c.periodo_emp_sede_id = p.periodo_emp_sede_id
                          INNER JOIN empresa_sede s ON p.empresa_sede_id = s.empresa_sede_id
+                          {SqlTipoCambioApply}
                           WHERE c.fecha >= @fDesde AND c.fecha < @fHasta
                            AND c.estado = 'A'
                          GROUP BY CAST(c.fecha AS DATE)
@@ -659,20 +675,21 @@ namespace ESD.ERP.Web.Controllers
                {
                   using (var cmd = conn.CreateCommand())
                   {
-                     cmd.CommandText = @"
+                     cmd.CommandText = $@"
                         SELECT TOP 10 
                             c.cotiza_id, 
                             c.cotiza, 
                             ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres)), 'Sin Cliente')) AS cliente, 
-                            c.monto_total
+                            {SqlMontoEnSoles} AS monto_total
                         FROM cotiza c
                         LEFT JOIN proveedor p ON c.proveedor_id = p.proveedor_id
                         LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         {SqlTipoCambioApply}
                         WHERE c.es_pedido = 'S' 
                           AND c.estado = 'A' 
                           AND CAST(c.fecha AS DATE) = @fechaDia
                           AND (@sedeSesion IS NULL OR @sedeSesion = 0 OR pes.empresa_sede_id = @sedeSesion)
-                        ORDER BY c.monto_total DESC";
+                        ORDER BY {SqlMontoEnSoles} DESC";
                       cmd.Parameters.AddWithValue("@fechaDia", fechaAncla.Date);
                       cmd.Parameters.AddWithValue("@sedeSesion", (object)sedeSesionFiltro ?? DBNull.Value);
                      using (var reader = cmd.ExecuteReader())
@@ -734,12 +751,13 @@ namespace ESD.ERP.Web.Controllers
                {
                   using (var cmd = conn.CreateCommand())
                   {
-                     cmd.CommandText = @"
+                     cmd.CommandText = $@"
                         SELECT 
-                            ROUND(ISNULL(SUM(c.monto_total), 0), 2) AS sumatoria,
+                            ROUND(ISNULL(SUM({SqlMontoEnSoles}), 0), 2) AS sumatoria,
                             COUNT(*) AS cantidad
                         FROM cotiza c
                         LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         {SqlTipoCambioApply}
                         WHERE c.es_pedido = 'S' 
                           AND c.estado = 'A'
                           AND c.estado_cotiza_id IN (2, 3, 4)
@@ -817,9 +835,32 @@ namespace ESD.ERP.Web.Controllers
 
                      if (listaVendedores.Count > 0)
                      {
-                        var defaultVendedor = listaVendedores.FirstOrDefault(x => x.id == primerVendedorId) ?? listaVendedores[0];
-                        primerVendedorId = defaultVendedor.id;
-                        primerVendedorNombre = defaultVendedor.nombre;
+                        if (primerVendedorId > 0)
+                        {
+                           var defaultVendedor = listaVendedores.FirstOrDefault(x => x.id == primerVendedorId) ?? listaVendedores[0];
+                           primerVendedorId = defaultVendedor.id;
+                           primerVendedorNombre = defaultVendedor.nombre;
+     
+                        }
+                        else
+                        {
+                           primerVendedorId = 0;
+                           primerVendedorNombre = "Todos los vendedores";
+                        }
+
+                        if (primerCotizacionVendedorId > 0)
+                        {
+                           var defaultCotizVendedor = listaVendedores.FirstOrDefault(x => x.id == primerCotizacionVendedorId) ?? listaVendedores[0];
+                           primerCotizacionVendedorId = defaultCotizVendedor.id;
+                           primerCotizacionVendedorNombre = defaultCotizVendedor.nombre;
+                        }
+                        else
+                        {
+                           primerCotizacionVendedorId = 0;
+                           primerCotizacionVendedorNombre = "Todos los vendedores";
+                        }
+
+
                      }
                   }
                   catch { }
@@ -831,14 +872,15 @@ namespace ESD.ERP.Web.Controllers
                   var mapaVendedor = new Dictionary<string, (int cantidad, double monto)>();
                   using (var cmd = conn.CreateCommand())
                   {
-                     cmd.CommandText = @"
+                     cmd.CommandText = $@"
                         SELECT 
                             CAST(c.fecha AS DATE) AS dia,
                             COUNT(*) AS cantidad,
-                            ROUND(SUM(c.monto_total), 2) AS monto
+                            ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
                         FROM cotiza c
+                         {SqlTipoCambioApply}
                         WHERE c.es_pedido = 'S' AND c.estado = 'A'
-                          AND c.vendedor_id = @vid
+                          AND (@vid <= 0 OR c.vendedor_id = @vid)
                           AND c.fecha >= @fDesde AND c.fecha < @fHasta
                         GROUP BY CAST(c.fecha AS DATE)";
                      cmd.Parameters.AddWithValue("@vid", primerVendedorId);
@@ -869,6 +911,56 @@ namespace ESD.ERP.Web.Controllers
                      {
                         vendedorCantidades.Add(0);
                         vendedorMontos.Add(0.0);
+                     }
+                  }
+               }
+               catch { }
+
+               // Cotizaciones diarias del vendedor seleccionado/inicial (ultimos 12 dias)
+               try
+               {
+                  var mapaCotizaciones = new Dictionary<string, (int cantidad, double monto)>();
+                  using (var cmd = conn.CreateCommand())
+                  {
+                     cmd.CommandText = $@"
+                        SELECT 
+                            CAST(c.fecha AS DATE) AS dia,
+                            COUNT(*) AS cantidad,
+                            ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
+                        FROM cotiza c
+                         {SqlTipoCambioApply}
+                        WHERE c.es_pedido = 'N' AND c.estado = 'A'
+                          AND (@vid <= 0 OR c.vendedor_id = @vid)
+                          AND c.fecha >= @fDesde AND c.fecha < @fHasta
+                        GROUP BY CAST(c.fecha AS DATE)";
+                     cmd.Parameters.AddWithValue("@vid", primerCotizacionVendedorId);
+                     cmd.Parameters.AddWithValue("@fDesde", fechasLista[0]);
+                     cmd.Parameters.AddWithValue("@fHasta", fechaAncla.AddDays(1).Date);
+
+                     using (var reader = cmd.ExecuteReader())
+                     {
+                        while (reader.Read())
+                        {
+                           DateTime d = Convert.ToDateTime(reader["dia"]);
+                           int cant = Convert.ToInt32(reader["cantidad"]);
+                           double mto = Convert.ToDouble(reader["monto"]);
+                           mapaCotizaciones[d.ToString("yyyy-MM-dd")] = (cant, mto);
+                        }
+                     }
+                  }
+
+                  foreach (var f in fechasLista)
+                  {
+                     string k = f.ToString("yyyy-MM-dd");
+                     if (mapaCotizaciones.ContainsKey(k))
+                     {
+                        cotizacionCantidades.Add(mapaCotizaciones[k].cantidad);
+                        cotizacionMontos.Add(mapaCotizaciones[k].monto);
+                     }
+                     else
+                     {
+                        cotizacionCantidades.Add(0);
+                        cotizacionMontos.Add(0.0);
                      }
                   }
                }
@@ -913,6 +1005,10 @@ namespace ESD.ERP.Web.Controllers
             primerVendedorNombre = primerVendedorNombre,
             vendedorCantidades = vendedorCantidades,
             vendedorMontos = vendedorMontos,
+            primerCotizacionVendedorId = primerCotizacionVendedorId,
+            primerCotizacionVendedorNombre = primerCotizacionVendedorNombre,
+            cotizacionCantidades = cotizacionCantidades,
+            cotizacionMontos = cotizacionMontos,
             listaRoles = listaRoles,
             pedidosActivos = pedidosActivos.ToString("N0"),
             cotizacionesActivas = cotizacionesActivas.ToString("N0"),
@@ -1010,6 +1106,10 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.VendedorNombreInicial = metricas.primerVendedorNombre;
          ViewBag.VendedorCantidades = metricas.vendedorCantidades;
          ViewBag.VendedorMontos = metricas.vendedorMontos;
+         ViewBag.CotizacionVendedorIdInicial = metricas.primerCotizacionVendedorId;
+         ViewBag.CotizacionVendedorNombreInicial = metricas.primerCotizacionVendedorNombre;
+         ViewBag.CotizacionCantidades = metricas.cotizacionCantidades;
+         ViewBag.CotizacionMontos = metricas.cotizacionMontos;
          ViewBag.PedidosActivos = metricas.pedidosActivos;
          ViewBag.CotizacionesActivas = metricas.cotizacionesActivas;
          ViewBag.OrdenesProduccionMes = metricas.ordenesProduccionMes;
@@ -1046,6 +1146,9 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.AreaAgendaInicialId = areasAgenda.Count > 0 ? areasAgenda[0].AreaId : (esAdminAgenda ? 1 : 2);
          ViewBag.AreaAgendaInicialNombre = areasAgenda.Count > 0 ? areasAgenda[0].Nombre : (esAdminAgenda ? "Administración" : "Ventas");
 
+         bool tienePermisoCalendario = TienePermisoLectura("calendario/index");
+         ViewBag.TienePermisoCalendario = tienePermisoCalendario;
+
          bool esAdminTotal = EsAdministrador();
          int idUsuarioActual = usuarioDTO != null && usuarioDTO.UsuarioId > 0 ? usuarioDTO.UsuarioId : ObtenerUsuarioId();
          var urlsPermitidas = ObtenerUrlsModulosPermitidos(idUsuarioActual, esAdminTotal);
@@ -1054,6 +1157,12 @@ namespace ESD.ERP.Web.Controllers
 
          var rolesConfigDict = ObtenerDashboardRolesConfigDesdeBD();
          ViewBag.DashboardRolesConfig = JsonConvert.SerializeObject(rolesConfigDict);
+
+         string rolCodActual = ViewBag.RolActualCodigo as string;
+         var permisosRolActual = ObtenerPermisosDashboardRol(rolCodActual, esAdminTotal, rolesConfigDict, tienePermisoCalendario);
+         bool esDashboardVacio = EsDashboardVacioParaRol(rolCodActual, esAdminTotal, rolesConfigDict, tienePermisoCalendario);
+         ViewBag.PermisosDashboardRol = permisosRolActual;
+         ViewBag.EsDashboardVacio = esDashboardVacio;
 
          bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest"
                     || !string.IsNullOrEmpty(Request.Headers["x-app-cid"])
@@ -1129,11 +1238,12 @@ namespace ESD.ERP.Web.Controllers
                {
                   using (var cmd = conn.CreateCommand())
                   {
-                     cmd.CommandText = @"
-                        SELECT ISNULL(SUM(c.monto_total), 0) AS total
+                     cmd.CommandText = $@"
+                        SELECT ISNULL(SUM({SqlMontoEnSoles}), 0) AS total
                         FROM comprobante c
                         INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
                         LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         {SqlTipoCambioApply}
                         WHERE YEAR(c.fecha) = @anio 
                           AND MONTH(c.fecha) = @mes 
                           AND c.estado = 'A'
@@ -1250,12 +1360,13 @@ namespace ESD.ERP.Web.Controllers
                {
                   using (var cmd = conn.CreateCommand())
                   {
-                     cmd.CommandText = @"
+                     cmd.CommandText = $@"
                         SELECT 
-                            ROUND(ISNULL(SUM(c.monto_total), 0), 2) AS sumatoria,
+                            ROUND(ISNULL(SUM({SqlMontoEnSoles}), 0), 2) AS sumatoria,
                             COUNT(*) AS cantidad
                         FROM cotiza c
                         LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         {SqlTipoCambioApply}
                         WHERE c.es_pedido = 'S' 
                           AND c.estado = 'A'
                           AND c.estado_cotiza_id IN (2, 3, 4)
@@ -1366,7 +1477,7 @@ namespace ESD.ERP.Web.Controllers
       }
 
       [HttpGet]
-      public JsonResult ObtenerDatosDashboard(string cid, int mesesInactivos = 5, int? vendedorClientesId = null, int? sedeId = null, int? anio = null, int? vendedorId = null)
+      public JsonResult ObtenerDatosDashboard(string cid, int mesesInactivos = 5, int? vendedorClientesId = null, int? sedeId = null, int? anio = null, int? vendedorId = null, int? cotizacionVendedorId = null)
       {
          try
          {
@@ -1414,12 +1525,17 @@ namespace ESD.ERP.Web.Controllers
             int sedeSesionId = periodoEmpresaSedeDTO?.EmpresaSedeDTO?.EmpresaSedeId ?? 1;
 
             int? vendedorGrafico = null;
-            if (EsAdministrador() && vendedorId.GetValueOrDefault() > 0)
+            if (esAdminOGerencia && vendedorId.HasValue)
             {
                vendedorGrafico = vendedorId.Value;
             }
             int? sedeFiltro = (sedeId.HasValue && sedeId.Value > 0) ? sedeId.Value : (int?)null;
-            var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, mesesFiltro, vendedorInactivosFiltro, sedeFiltro, anioSesion, sedeSesionId, vendedorGrafico);
+            int? cotizacionGrafico = null;
+            if (esAdminOGerencia && cotizacionVendedorId.HasValue)
+            {
+               cotizacionGrafico = cotizacionVendedorId.Value;
+            }
+            var metricas = ObtenerMetricasDesdeBD(vendedorIdFiltro, mesesFiltro, vendedorInactivosFiltro, sedeFiltro, anioSesion, sedeSesionId, vendedorGrafico, cotizacionGrafico);
 
             var response = new
             {
@@ -1446,6 +1562,13 @@ namespace ESD.ERP.Web.Controllers
                   nombre = metricas.primerVendedorNombre,
                   cantidades = metricas.vendedorCantidades,
                   montos = metricas.vendedorMontos
+               },
+               cotizacionData = new
+               {
+                  id = metricas.primerCotizacionVendedorId,
+                  nombre = metricas.primerCotizacionVendedorNombre,
+                  cantidades = metricas.cotizacionCantidades,
+                  montos = metricas.cotizacionMontos
                },
                topPedidos = metricas.topPedidos,
                topPedidosFecha = metricas.topPedidosFecha,
@@ -1560,14 +1683,15 @@ namespace ESD.ERP.Web.Controllers
                conn.Open();
                using (var cmd = conn.CreateCommand())
                {
-                  cmd.CommandText = @"
+                  cmd.CommandText = $@"
                      SELECT 
                          CAST(c.fecha AS DATE) AS dia,
                          COUNT(*) AS cantidad,
-                         ROUND(SUM(c.monto_total), 2) AS monto
+                         ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
                      FROM cotiza c
+                      {SqlTipoCambioApply}
                      WHERE c.es_pedido = 'S' AND c.estado = 'A'
-                       AND c.vendedor_id = @vid
+                       AND (@vid <= 0 OR c.vendedor_id = @vid)
                        AND c.fecha >= @fDesde AND c.fecha < @fHasta
                      GROUP BY CAST(c.fecha AS DATE)";
                   cmd.Parameters.AddWithValue("@vid", vendedorId);
@@ -1615,6 +1739,138 @@ namespace ESD.ERP.Web.Controllers
                cantidades = cantidades,
                montos = montos,
                totalPedidos = totalPedidos,
+               totalMonto = "S/ " + totalMonto.ToString("N2")
+            });
+         }
+         catch (Exception ex)
+         {
+            return Json(new { success = false, message = ex.Message });
+         }
+      }
+
+      [HttpGet]
+      public JsonResult ObtenerCotizacionesVendedor(int vendedorId, int dias = 12, int? anio = null, string cid = null)
+      {
+         try
+         {
+            bool esAdminOGerencia = EsAdminOGerencia();
+            if (!esAdminOGerencia)
+            {
+               var (vid, _) = ObtenerVendedorUsuarioActual();
+               if (vid.HasValue)
+               {
+                  vendedorId = vid.Value; // El vendedor solo puede consultar sus propias cotizaciones
+               }
+            }
+
+            if (dias < 4 || dias > 30) dias = 12;
+
+            if (string.IsNullOrEmpty(cid))
+            {
+               cid = Request.Query["cid"];
+               if (string.IsNullOrEmpty(cid)) { cid = Request.Headers["x-app-cid"]; }
+            }
+
+            int anioConsulta = anio ?? 0;
+            if (anioConsulta <= 0 && !string.IsNullOrEmpty(cid))
+            {
+               try
+               {
+                  var periodoEmpresaSedeDTO = ObtenerPeriodoEmpresaSedeDTO(cid);
+                  if (periodoEmpresaSedeDTO?.PeriodoDTO != null && periodoEmpresaSedeDTO.PeriodoDTO.Codigo > 0)
+                  {
+                     anioConsulta = periodoEmpresaSedeDTO.PeriodoDTO.Codigo;
+                  }
+               }
+               catch { }
+            }
+            if (anioConsulta <= 0)
+            {
+               anioConsulta = DateTime.Today.Year;
+            }
+
+            DateTime hoy = DateTime.Today;
+            int mesConsulta = (anioConsulta == hoy.Year) ? hoy.Month : 12;
+            DateTime fechaAncla = (anioConsulta == hoy.Year)
+               ? hoy
+               : new DateTime(anioConsulta, mesConsulta, (mesConsulta == hoy.Month ? Math.Min(hoy.Day, DateTime.DaysInMonth(anioConsulta, mesConsulta)) : DateTime.DaysInMonth(anioConsulta, mesConsulta)));
+
+            string[] mesesCortos = { "", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic" };
+            var diasList = new List<DateTime>();
+            var labelsList = new List<string>();
+
+            for (int i = dias - 1; i >= 0; i--)
+            {
+               DateTime f = fechaAncla.AddDays(-i).Date;
+               diasList.Add(f);
+               labelsList.Add(f.Day + " " + mesesCortos[f.Month]);
+            }
+
+            var mapa = new Dictionary<string, (int cantidad, double monto)>();
+            int totalCotizaciones = 0;
+            double totalMonto = 0;
+
+            using (var conn = new SqlConnection(GetDbConnectionString()))
+            {
+               conn.Open();
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = $@"
+                     SELECT 
+                         CAST(c.fecha AS DATE) AS dia,
+                         COUNT(*) AS cantidad,
+                         ROUND(SUM({SqlMontoEnSoles}), 2) AS monto
+                     FROM cotiza c
+                      {SqlTipoCambioApply}
+                     WHERE c.es_pedido = 'N' AND c.estado = 'A'
+                       AND (@vid <= 0 OR c.vendedor_id = @vid)
+                       AND c.fecha >= @fDesde AND c.fecha < @fHasta
+                     GROUP BY CAST(c.fecha AS DATE)";
+                  cmd.Parameters.AddWithValue("@vid", vendedorId);
+                  cmd.Parameters.AddWithValue("@fDesde", diasList[0]);
+                  cmd.Parameters.AddWithValue("@fHasta", fechaAncla.AddDays(1).Date);
+
+                  using (var reader = cmd.ExecuteReader())
+                  {
+                     while (reader.Read())
+                     {
+                        DateTime d = Convert.ToDateTime(reader["dia"]);
+                        int cant = Convert.ToInt32(reader["cantidad"]);
+                        double mto = Convert.ToDouble(reader["monto"]);
+                        mapa[d.ToString("yyyy-MM-dd")] = (cant, mto);
+                        totalCotizaciones += cant;
+                        totalMonto += mto;
+                     }
+                  }
+               }
+            }
+
+            var cantidades = new List<int>();
+            var montos = new List<double>();
+            foreach (var f in diasList)
+            {
+               string k = f.ToString("yyyy-MM-dd");
+               if (mapa.ContainsKey(k))
+               {
+                  cantidades.Add(mapa[k].cantidad);
+                  montos.Add(mapa[k].monto);
+               }
+               else
+               {
+                  cantidades.Add(0);
+                  montos.Add(0.0);
+               }
+            }
+
+            return Json(new
+            {
+               success = true,
+               vendedorId = vendedorId,
+               dias = dias,
+               labels = labelsList,
+               cantidades = cantidades,
+               montos = montos,
+               totalCotizaciones = totalCotizaciones,
                totalMonto = "S/ " + totalMonto.ToString("N2")
             });
          }
@@ -2274,6 +2530,11 @@ namespace ESD.ERP.Web.Controllers
       public JsonResult ObtenerEventosAgenda(int? areaId = null)
       {
          var eventos = new List<object>();
+         if (!TienePermisoLectura("calendario/index"))
+         {
+            return Json(eventos);
+         }
+
          int usuarioActualId = ObtenerUsuarioId();
          if (usuarioActualId <= 0)
          {
@@ -2524,8 +2785,6 @@ namespace ESD.ERP.Web.Controllers
       private List<string> ObtenerUrlsModulosPermitidos(int usuarioId, bool esAdmin)
       {
          var urls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-         urls.Add("calendario/index");
-         urls.Add("calendario");
 
          if (esAdmin)
          {
@@ -2545,9 +2804,7 @@ namespace ESD.ERP.Web.Controllers
                using (var cmd = conn.CreateCommand())
                {
                   cmd.CommandText = @"
-                     SELECT DISTINCT LOWER(LTRIM(RTRIM(m.controlador))) AS controlador, 
-                                     LOWER(LTRIM(RTRIM(ISNULL(m.accion, 'index')))) AS accion,
-                                     LOWER(LTRIM(RTRIM(ISNULL(m.url, '')))) AS url
+                     SELECT DISTINCT LOWER(LTRIM(RTRIM(ISNULL(m.url, '')))) AS url
                      FROM esderp_v6.dbo.rol_usuario ru
                      INNER JOIN esderp_v6.dbo.rol_menu rm ON ru.rol_id = rm.rol_id
                      INNER JOIN esderp_v6.dbo.menu m ON rm.menu_id = m.menu_id
@@ -2556,37 +2813,30 @@ namespace ESD.ERP.Web.Controllers
                        AND rm.estado = 'A'
                        AND rm.lectura = 'S'
                        AND m.estado = 'A'
-                       AND m.controlador IS NOT NULL
-                       AND LTRIM(RTRIM(m.controlador)) <> ''
-                       AND LTRIM(RTRIM(m.controlador)) <> '#';";
+                       AND m.url IS NOT NULL
+                       AND LTRIM(RTRIM(m.url)) <> ''
+                       AND LTRIM(RTRIM(m.url)) <> '#';";
 
                   cmd.Parameters.Add(new SqlParameter("@usuarioId", usuarioId));
                   using (var reader = cmd.ExecuteReader())
                   {
                      while (reader.Read())
                      {
-                        string ctrl = reader["controlador"] != DBNull.Value ? reader["controlador"].ToString().Trim().ToLowerInvariant() : "";
-                        string act = reader["accion"] != DBNull.Value ? reader["accion"].ToString().Trim().ToLowerInvariant() : "index";
-                        if (string.IsNullOrEmpty(act)) act = "index";
                         string rawUrl = reader["url"] != DBNull.Value ? reader["url"].ToString().Trim().ToLowerInvariant() : "";
-
-                        if (!string.IsNullOrEmpty(ctrl))
-                        {
-                           urls.Add(ctrl);
-                           urls.Add(ctrl + "/" + act);
-                        }
 
                         if (!string.IsNullOrEmpty(rawUrl) && rawUrl != "#")
                         {
                            string cleanUrl = rawUrl.TrimStart('/');
                            urls.Add(cleanUrl);
-                           if (cleanUrl.Contains("/"))
+                           var parts = cleanUrl.Split('/');
+                           if (parts.Length > 0 && !string.IsNullOrEmpty(parts[0]))
                            {
-                              var parts = cleanUrl.Split('/');
-                              if (parts.Length > 0 && !string.IsNullOrEmpty(parts[0]))
-                              {
-                                 urls.Add(parts[0]);
-                              }
+                              urls.Add(parts[0]);
+                              urls.Add(parts[0] + "/index");
+                           }
+                           if (parts.Length > 1 && !string.IsNullOrEmpty(parts[1]))
+                           {
+                              urls.Add(parts[0] + "/" + parts[1]);
                            }
                         }
                      }
@@ -2660,6 +2910,62 @@ namespace ESD.ERP.Web.Controllers
             // Fallback
          }
          return result;
+      }
+
+      private Dictionary<string, bool> ObtenerPermisosDashboardRol(string rolCodigo, bool esAdmin, Dictionary<string, object> rolesConfigDict, bool tienePermisoCalendario)
+      {
+         var result = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+         if (string.IsNullOrEmpty(rolCodigo)) rolCodigo = "S0001";
+         string rolNorm = rolCodigo.Trim().ToUpperInvariant();
+         bool esAdminRol = esAdmin || rolNorm == "S0001" || rolNorm == "S0002" || rolNorm == "00020" || rolNorm == "ADMIN";
+
+         var areaKeys = new string[] {
+            "kpis", "evolucion-ventas", "diferencia-sedes", "pedidos-vendedor", "cotizaciones-vendedor",
+            "accesos-rapidos", "estado-produccion", "agenda-calendario",
+            "db-tiempo-real", "top-pedidos", "clientes-inactivos",
+            "stock-insumos", "top-menor-stock"
+         };
+
+         Newtonsoft.Json.Linq.JObject rolObj = null;
+         if (rolesConfigDict != null && rolesConfigDict.ContainsKey(rolCodigo))
+         {
+            var raw = rolesConfigDict[rolCodigo];
+            if (raw is Newtonsoft.Json.Linq.JObject jObj) rolObj = jObj;
+            else if (raw != null)
+            {
+               try { rolObj = Newtonsoft.Json.Linq.JObject.FromObject(raw); } catch { }
+            }
+         }
+
+         foreach (var key in areaKeys)
+         {
+            bool permitido = esAdminRol;
+            if (rolObj != null && rolObj[key] != null)
+            {
+               try { permitido = (bool)rolObj[key]; } catch { }
+            }
+
+            if (key == "agenda-calendario" && !tienePermisoCalendario)
+            {
+               permitido = false;
+            }
+
+            result[key] = permitido;
+         }
+
+         return result;
+      }
+
+      private bool EsDashboardVacioParaRol(string rolCodigo, bool esAdmin, Dictionary<string, object> rolesConfigDict, bool tienePermisoCalendario)
+      {
+         if (string.IsNullOrEmpty(rolCodigo)) rolCodigo = "S0001";
+         string rolNorm = rolCodigo.Trim().ToUpperInvariant();
+         bool esAdminRol = esAdmin || rolNorm == "S0001" || rolNorm == "S0002" || rolNorm == "00020" || rolNorm == "ADMIN";
+         if (esAdminRol) return false;
+
+         var permisos = ObtenerPermisosDashboardRol(rolCodigo, esAdmin, rolesConfigDict, tienePermisoCalendario);
+         int permitidasCount = permisos.Values.Count(v => v);
+         return permitidasCount == 0;
       }
 
       [HttpPost]

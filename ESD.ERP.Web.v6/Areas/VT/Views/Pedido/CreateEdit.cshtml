@@ -308,7 +308,35 @@
             { name: 'CotizacionProductoId', hidden: true },
             { name: 'CotizacionId', hidden: true },
             { name: 'ProductoId', hidden: true },
-            { name: 'Codigo', width: 90, formatter: codigoFormatter },
+            {
+               name: 'Codigo', width: 90, formatter: codigoFormatter,
+               sorttype: function (cellVal, rowData) {
+                  var t = 'P';
+                  if (rowData) {
+                     if (rowData.TipoProducto) t = String(rowData.TipoProducto).trim().toUpperCase();
+                     else if (rowData.cell && rowData.cell.TipoProducto) t = String(rowData.cell.TipoProducto).trim().toUpperCase();
+                  }
+                  var prefijo = (t === '@TipoProductoConstante.SERVICIO' || t === 'S') ? '2_' : '1_';
+                  var cod = (cellVal || '');
+                  if (typeof cod === 'string' && cod.indexOf('<') !== -1) {
+                     cod = cod.replace(/<[^>]*>/g, '').trim();
+                  }
+                  return prefijo + cod;
+               },
+               sortfunc: function (a, b, direction) {
+                  var dir = (direction === -1 || direction === 'desc' || direction === 'd') ? -1 : 1;
+                  var sA = String(a || '');
+                  var sB = String(b || '');
+                  var pA = sA.substring(0, 2);
+                  var pB = sB.substring(0, 2);
+                  if (pA !== pB) {
+                     return pA < pB ? -1 : 1;
+                  }
+                  var codA = sA.substring(2);
+                  var codB = sB.substring(2);
+                  return dir * codA.localeCompare(codB, 'es', { numeric: true, sensitivity: 'base' });
+               }
+            },
             { name: 'ProductoNombre', width: 350, formatter: descripcionFormatter, editable: false },
             {
                name: '_selP', width: 35, align: 'center', formatter: function (cellvalue, options, rowObject) {

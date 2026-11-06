@@ -1298,6 +1298,22 @@ if (typeof window !== 'undefined') {
       return null;
    }
 
+   function detectarColumnaTipoProducto(options) {
+      if (!options || !Array.isArray(options.colModel)) return null;
+      var colModel = options.colModel;
+
+      for (var i = 0; i < colModel.length; i++) {
+         var col = colModel[i];
+         if (col && col.name) {
+            var colNameLower = col.name.trim().toLowerCase();
+            if (colNameLower === 'tipoproducto' || colNameLower === 'tipo_producto') {
+               return { name: col.name, index: i };
+            }
+         }
+      }
+      return null;
+   }
+
    function obtenerValorFila(row, colName, colIndex) {
       if (!row) return '';
       if (row.cell !== undefined) {
@@ -1759,11 +1775,29 @@ if (typeof window !== 'undefined') {
                   } else if (infoCodigo && (!userHasSorted) && (currentSort === '' || currentSort === infoCodigo.name)) {
                      var targetNameC = infoCodigo.name;
                      var targetIndexC = infoCodigo.index;
-                     rowsArray.sort(function (itemA, itemB) {
-                        var vA = obtenerValorFila(itemA, targetNameC, targetIndexC);
-                        var vB = obtenerValorFila(itemB, targetNameC, targetIndexC);
-                        return compararTextoNatural(vA, vB);
-                     });
+                     var infoTipoB = detectarColumnaTipoProducto(options);
+                     if (infoTipoB) {
+                        var targetNameTB = infoTipoB.name;
+                        var targetIndexTB = infoTipoB.index;
+                        rowsArray.sort(function (itemA, itemB) {
+                           var tA = (obtenerValorFila(itemA, targetNameTB, targetIndexTB) || '').toString().trim().toUpperCase();
+                           var tB = (obtenerValorFila(itemB, targetNameTB, targetIndexTB) || '').toString().trim().toUpperCase();
+                           var pesoA = (tA === 'S' || tA === 'SERVICIO') ? 2 : 1;
+                           var pesoB = (tB === 'S' || tB === 'SERVICIO') ? 2 : 1;
+                           if (pesoA !== pesoB) {
+                              return pesoA - pesoB;
+                           }
+                           var vA = obtenerValorFila(itemA, targetNameC, targetIndexC);
+                           var vB = obtenerValorFila(itemB, targetNameC, targetIndexC);
+                           return compararTextoNatural(vA, vB);
+                        });
+                     } else {
+                        rowsArray.sort(function (itemA, itemB) {
+                           var vA = obtenerValorFila(itemA, targetNameC, targetIndexC);
+                           var vB = obtenerValorFila(itemB, targetNameC, targetIndexC);
+                           return compararTextoNatural(vA, vB);
+                        });
+                     }
                   }
                }
             }

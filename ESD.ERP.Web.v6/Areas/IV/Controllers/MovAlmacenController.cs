@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service.DTO;
 using ESD.Core.Web;
@@ -78,7 +78,7 @@ namespace ESD.ERP.Web.Areas.IV.Controllers
          MovAlmacenViewModel model = JsonSerializer.Deserialize<MovAlmacenViewModel>(jsonModel);
 
          model.MovimientoAlmacenDTO.PageSize = ObtenerMaximoRegistrosBusqueda();
-         model.MovimientoAlmacenDTO.OrderBy = "ma.fecha desc,tma.tipo_mov_alma,ma.mov_almacen";
+         model.MovimientoAlmacenDTO.OrderBy = "ma.fecha desc,tma.tipo_mov_alma,ma.mov_almacen desc";
 
          model.MovimientoAlmacenDTO.PeriodoEmpresaSedeId = ObtenerPeriodoEmpresaSedeId(model.ViewModelState.CID);
 

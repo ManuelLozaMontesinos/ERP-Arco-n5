@@ -1,4 +1,4 @@
-using ESD.Core;
+﻿using ESD.Core;
 using ESD.Core.Web;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
@@ -53,6 +53,15 @@ namespace ESD.ERP.Web.Controllers
          bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest"
                     || !string.IsNullOrEmpty(Request.Headers["x-app-cid"])
                     || string.Equals(Request.Method, "POST", StringComparison.OrdinalIgnoreCase);
+
+         if (!TienePermisoLectura())
+         {
+            if (isAjax)
+            {
+               return Json(new { success = false, message = "No cuenta con permisos de lectura para acceder al Calendario." });
+            }
+            return RedirectToAction("Index", "Home");
+         }
 
          if (isAjax)
          {
@@ -310,6 +319,11 @@ namespace ESD.ERP.Web.Controllers
       [HttpPost]
       public JsonResult GuardarEvento([FromBody] EventoInputModel model)
       {
+         if (!TienePermisoEscritura())
+         {
+            return Json(new { success = false, message = "No cuenta con permisos de escritura para registrar o modificar eventos en el Calendario." });
+         }
+
          if (model == null || string.IsNullOrWhiteSpace(model.titulo) || string.IsNullOrWhiteSpace(model.fechaInicio))
          {
             return Json(new { success = false, message = "El título y la fecha son obligatorios." });
@@ -475,6 +489,11 @@ namespace ESD.ERP.Web.Controllers
       [HttpPost]
       public JsonResult EliminarEvento(int id)
       {
+         if (!TienePermisoEscritura())
+         {
+            return Json(new { success = false, message = "No cuenta con permisos de escritura para eliminar eventos en el Calendario." });
+         }
+
          if (id <= 0)
          {
             return Json(new { success = false, message = "ID de evento no válido." });
@@ -605,6 +624,11 @@ namespace ESD.ERP.Web.Controllers
       [HttpPost]
       public JsonResult GuardarEtiqueta([FromBody] EtiquetaInputModel model)
       {
+         if (!TienePermisoEscritura())
+         {
+            return Json(new { success = false, message = "No cuenta con permisos de escritura para modificar etiquetas en el Calendario." });
+         }
+
          int usuarioId = ObtenerUsuarioId();
          if (usuarioId <= 0 || model == null || model.slotIndex < 0 || model.slotIndex > 10)
          {

@@ -1,4 +1,4 @@
-using ESD.Core;
+﻿using ESD.Core;
 using ESD.ERP.Common;
 using ESD.ERP.DTO;
 using ESD.ERP.Web.Infrastructure;
@@ -52,19 +52,7 @@ namespace ESD.ERP.Web.Controllers
             }
          }
 
-         List<MenuTreeNode> menuNodeList = obtenerArbol(menuDTOList.Distinct().OrderBy(x => x.MenuId).ToList(), null);
-
-         if (menuNodeList != null && !menuNodeList.Any(m => m.Text != null && m.Text.Trim().Equals("Calendario", System.StringComparison.OrdinalIgnoreCase)))
-         {
-            menuNodeList.Add(new MenuTreeNode
-            {
-               Text = "Calendario",
-               Icon = "far fa-calendar-alt ",
-               Selectable = true,
-               Url = Url.Action("Index", "Calendario"),
-               Nodes = null
-            });
-         }
+         List<MenuTreeNode> menuNodeList = obtenerArbol(menuDTOList.Distinct().OrderBy(x => x.Orden).ThenBy(x => x.MenuId).ToList(), null);
 
          return Json(menuNodeList);
       }

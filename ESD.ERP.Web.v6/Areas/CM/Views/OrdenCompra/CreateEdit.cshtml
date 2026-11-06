@@ -1,4 +1,4 @@
-﻿@using ESD.Core;
+@using ESD.Core;
 @using ESD.Core.Web;
 @using ESD.ERP.Common;
 @using ESD.Core.Service.DTO;
@@ -158,7 +158,7 @@
 <esd-dialog id="almacenListPopup" title="Direcciones" onclick="almacenListPopupOnClick" size="Large">
    <div id="almacenListPopupContent"></div>
 </esd-dialog>
-<esd-dialog id="agregarEditPopup" title="Guardar" onclick="agregarEditPopupOnClick">
+<esd-dialog id="agregarEditPopup" title="Asignar Fecha de Entrega" onclick="agregarEditPopupOnClick">
    <div id="agregarEditPopupContent"></div>
 </esd-dialog>
 <style type="text/css">
@@ -501,13 +501,23 @@
          onShow: function (p) {
             $(this).getView({
                urlAction: '@Url.Action("AgregarEditPopup", "OrdenCompra")',
+               viewModel: [
+                  { name: "OrdenCompraEntregaDTO.OrdenCompraProductoId", value: $('#OrdenCompraProductoId').val() || '0', type: 'int' }
+               ],
                container: 'agregarEditPopupContent',
                showLoading: false,
                hideLoading: false
             });
          },
          onShown: function () {
-            $("#mp-Fecha").val($("#FechaEntrega").val());
+            var fecha = $("#FechaEntrega").val();
+            if (!fecha) {
+               fecha = moment().format('DD/MM/YYYY');
+            }
+            $("#mp-Fecha").val(fecha);
+            if (typeof mp_inicializarTablaEntregas === 'function') {
+               mp_inicializarTablaEntregas();
+            }
          }
       });
 
@@ -1216,6 +1226,14 @@
       $("#entregaMenuBar").appMenu('saveMenu');
    };
    function asignarButtonOnClick() {
+      if (!$('#OrdenCompraProductoId').validateNumeric('@SR.GetString("CM_producto_servicio_seleccion_requerida")'))
+         return;
+
+      var gridRows = $('#entregaGrid').jqGrid('getRowData');
+      if (!gridRows || gridRows.length === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, 'No existen registros de entregas para el producto seleccionado.');
+         return;
+      }
 
       $('#agregarEditPopup').showDialog();
    };
@@ -1224,19 +1242,34 @@
       if (!mp_validarDatos())
          return;
 
+      var selectedIds = [];
+      $('.chk-entrega-item:checked').each(function () {
+         var val = parseInt($(this).val());
+         if (val > 0) {
+            selectedIds.push(val);
+         }
+      });
+
+      if (selectedIds.length === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, 'Debe seleccionar al menos un registro de entrega.');
+         return;
+      }
+
       $(this).saveView({
          urlAction: '@Url.Action("AgregarTodosProductos", "OrdenCompra")',
          viewModel: [
-            { name: "OrdenCompraEntregaDTO.OrdenCompraProductoDTO.OrdenCompraId", value: $('#OrdenCompraId').val(), type: 'int' },
+            { name: "OrdenCompraId", value: $('#OrdenCompraId').val(), type: 'int' },
+            { name: "OrdenCompraEntregaIdList", value: selectedIds, type: 'listInt' },
             { name: "OrdenCompraEntregaDTO.Fecha", value: $('#mp-Fecha').val(), type: 'date' }
          ],
          onSuccess: function (response) {
             if (response.success) {
+               $("#entregaGrid").appGrid('reloadJSON');
                $("#productoGrid").appGrid('reloadJSON');
                msgAlert(msgAlertTypeConstant.SUCCESS, response.message);
             } else {
                msgAlert(msgAlertTypeConstant.INFORMATION, response.message);
-               $("#productoGrid").appMenu('saveMenu');
+               $("#entregaMenuBar").appMenu('saveMenu');
             }
             $('#agregarEditPopup').hideDialog();
          }

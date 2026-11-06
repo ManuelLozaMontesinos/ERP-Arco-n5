@@ -1,4 +1,4 @@
-﻿using ESD.Core;
+using ESD.Core;
 using ESD.Core.Logging;
 using ESD.Core.Service.DTO;
 using ESD.Core.Web;
@@ -10,6 +10,7 @@ using ESD.ERP.WebApiProxy;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text.Json;
 
@@ -1138,8 +1139,22 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
          return Json(resultResponse, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
       }
       [HttpPost("AgregarEditPopup")]
-      public ActionResult AgregarEditPopup([FromBody] PedidoCompraViewModel model)
+      public ActionResult AgregarEditPopup([FromBody] OrdenCompraViewModel model)
       {
+         model ??= new OrdenCompraViewModel();
+         if (model.OrdenCompraEntregaDTO != null && model.OrdenCompraEntregaDTO.OrdenCompraProductoId > 0)
+         {
+            try
+            {
+               model.OrdenCompraEntregaDTO.PageSize = ObtenerMaximoRegistrosBusqueda();
+               model.OrdenCompraEntregaDTO.OrderBy = "oce.fecha";
+               model.OrdenCompraEntregaDTOList = ordenCompraEntregaProxy.Search(model.OrdenCompraEntregaDTO);
+            }
+            catch (Exception e)
+            {
+               Logger.Error(e);
+            }
+         }
          return PartialView(model);
       }
       [HttpPost("AgregarTodosProductos")]
@@ -1151,9 +1166,36 @@ namespace ESD.ERP.Web.Areas.CM.Controllers
 
          try
          {
-            ordenCompraEntregaProxy.AgregarDesdeOrdenCompraProducto(model.OrdenCompraEntregaDTO);
-
-            resultResponse.Message = SR.GetString("CM_productos_entregables_agregados");
+            DateTime? fecha = model?.OrdenCompraEntregaDTO?.Fecha;
+            if (model?.OrdenCompraEntregaIdList != null && model.OrdenCompraEntregaIdList.Count > 0)
+            {
+               int usuarioId = ObtenerUsuarioId();
+               using (SqlConnection conn = new(DatabaseConnectionHelper.GetConnectionString()))
+               {
+                  conn.Open();
+                  foreach (int entregaId in model.OrdenCompraEntregaIdList)
+                  {
+                     using (SqlCommand cmd = conn.CreateCommand())
+                     {
+                        cmd.CommandText = @"UPDATE dbo.orden_c_ent 
+                                            SET fecha = @fecha, 
+                                                usuario_modifica_id = @usuarioId, 
+                                                fecha_modifica = GETDATE() 
+                                            WHERE orden_c_ent_id = @entregaId";
+                        cmd.Parameters.AddWithValue("@fecha", (object)fecha ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
+                        cmd.Parameters.AddWithValue("@entregaId", entregaId);
+                        cmd.ExecuteNonQuery();
+                     }
+                  }
+               }
+               resultResponse.Message = "Fechas de entrega asignadas correctamente.";
+            }
+            else
+            {
+               ordenCompraEntregaProxy.AgregarDesdeOrdenCompraProducto(model.OrdenCompraEntregaDTO);
+               resultResponse.Message = SR.GetString("CM_productos_entregables_agregados");
+            }
          }
          catch (Exception e)
          {

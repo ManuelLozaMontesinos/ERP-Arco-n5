@@ -1,4 +1,4 @@
-﻿@using ESD.Core;
+@using ESD.Core;
 @using ESD.Core.Web.JS;
 @using ESD.ERP.Common;
 @model ESD.ERP.Web.Areas.IV.Models.MovAlmacenViewModel
@@ -45,6 +45,8 @@
 <script type="text/javascript">
    $("#bandejaPopupGrid").jqGrid({
       @GridHelper.DefaultProperties()
+      sortname: 'Fecha',
+      sortorder: 'desc',
       url: "@Url.Action("ListarBandeja", "MovAlmacen")",
       postData: {
          jsonModel: function () {

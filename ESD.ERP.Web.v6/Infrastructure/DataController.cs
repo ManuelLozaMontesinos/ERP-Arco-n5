@@ -1,4 +1,4 @@
-using ESD.Core;
+﻿using ESD.Core;
 using ESD.Core.Cryptography;
 using ESD.Core.Web;
 using ESD.Core.Service.DTO;
@@ -218,18 +218,30 @@ namespace ESD.ERP.Web.Infrastructure
          if (EsAdministrador())
             return true;
 
+         if (!string.IsNullOrEmpty(menuUrl))
+         {
+            string cleanUrl = menuUrl.Trim().Trim('/').ToLower();
+            if (cleanUrl.Equals("perfilacceso", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("home", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("home/index", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("menu", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("login", StringComparison.OrdinalIgnoreCase))
+            {
+               return true;
+            }
+
+            List<RolMenuDTO> permisosMenu = ObtenerPermisosUsuario();
+            if (permisosMenu == null || permisosMenu.Count == 0)
+               return false;
+
+            return permisosMenu.Any(p =>
+               p.Escritura == SiNoConstante.S &&
+               EsPermisoCoincidente(p, null, null, menuUrl)
+            );
+         }
+
          string controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
          string areaName = ControllerContext.RouteData?.Values["area"]?.ToString() ?? string.Empty;
-
-         if (string.IsNullOrEmpty(controllerName) && !string.IsNullOrEmpty(menuUrl))
-         {
-            var parts = menuUrl.Trim().Trim('/').Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length > 0)
-            {
-               controllerName = parts.Length > 1 ? parts[1] : parts[0];
-               if (parts.Length > 1) areaName = parts[0];
-            }
-         }
 
          if (string.IsNullOrEmpty(controllerName))
             return false;
@@ -237,8 +249,7 @@ namespace ESD.ERP.Web.Infrastructure
          if (controllerName.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
-             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase) ||
-             controllerName.Equals("Calendario", StringComparison.OrdinalIgnoreCase))
+             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase))
          {
             return true;
          }
@@ -249,7 +260,7 @@ namespace ESD.ERP.Web.Infrastructure
 
          return permisos.Any(p =>
             p.Escritura == SiNoConstante.S &&
-            EsPermisoCoincidente(p, controllerName, areaName, menuUrl)
+            EsPermisoCoincidente(p, controllerName, areaName, null)
          );
       }
       public bool TienePermisoLectura(string menuUrl = null)
@@ -257,18 +268,30 @@ namespace ESD.ERP.Web.Infrastructure
          if (EsAdministrador())
             return true;
 
+         if (!string.IsNullOrEmpty(menuUrl))
+         {
+            string cleanUrl = menuUrl.Trim().Trim('/').ToLower();
+            if (cleanUrl.Equals("perfilacceso", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("home", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("home/index", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("menu", StringComparison.OrdinalIgnoreCase) ||
+                cleanUrl.Equals("login", StringComparison.OrdinalIgnoreCase))
+            {
+               return true;
+            }
+
+            List<RolMenuDTO> permisosMenu = ObtenerPermisosUsuario();
+            if (permisosMenu == null || permisosMenu.Count == 0)
+               return false;
+
+            return permisosMenu.Any(p =>
+               p.Lectura == SiNoConstante.S &&
+               EsPermisoCoincidente(p, null, null, menuUrl)
+            );
+         }
+
          string controllerName = ControllerContext.ActionDescriptor?.ControllerName ?? string.Empty;
          string areaName = ControllerContext.RouteData?.Values["area"]?.ToString() ?? string.Empty;
-
-         if (string.IsNullOrEmpty(controllerName) && !string.IsNullOrEmpty(menuUrl))
-         {
-            var parts = menuUrl.Trim().Trim('/').Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length > 0)
-            {
-               controllerName = parts.Length > 1 ? parts[1] : parts[0];
-               if (parts.Length > 1) areaName = parts[0];
-            }
-         }
 
          if (string.IsNullOrEmpty(controllerName))
             return false;
@@ -276,8 +299,7 @@ namespace ESD.ERP.Web.Infrastructure
          if (controllerName.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
              controllerName.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
-             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase) ||
-             controllerName.Equals("Calendario", StringComparison.OrdinalIgnoreCase))
+             controllerName.Equals("Login", StringComparison.OrdinalIgnoreCase))
          {
             return true;
          }
@@ -288,7 +310,7 @@ namespace ESD.ERP.Web.Infrastructure
 
          return permisos.Any(p =>
             p.Lectura == SiNoConstante.S &&
-            EsPermisoCoincidente(p, controllerName, areaName, menuUrl)
+            EsPermisoCoincidente(p, controllerName, areaName, null)
          );
       }
       public override void OnActionExecuting(ActionExecutingContext context)
@@ -299,8 +321,7 @@ namespace ESD.ERP.Web.Infrastructure
          if (currentController.Equals("PerfilAcceso", StringComparison.OrdinalIgnoreCase) ||
              currentController.Equals("Home", StringComparison.OrdinalIgnoreCase) ||
              currentController.Equals("Menu", StringComparison.OrdinalIgnoreCase) ||
-             currentController.Equals("Login", StringComparison.OrdinalIgnoreCase) ||
-             currentController.Equals("Calendario", StringComparison.OrdinalIgnoreCase))
+             currentController.Equals("Login", StringComparison.OrdinalIgnoreCase))
          {
             return;
          }
@@ -329,6 +350,10 @@ namespace ESD.ERP.Web.Infrastructure
             string actionName = context.ActionDescriptor?.RouteValues["action"]?.ToLower() ?? string.Empty;
             if (actionName == "grabar" || 
                 actionName == "eliminar" || 
+                actionName == "guardarevento" ||
+                actionName == "eliminarevento" ||
+                actionName == "guardaretiqueta" ||
+                actionName.StartsWith("admin") ||
                 actionName == "aprobar" || 
                 actionName == "desaprobar" || 
                 actionName == "generarpedido" || 

@@ -1,11 +1,62 @@
-﻿@using ESD.ERP.Web.Infrastructure;
+@model ESD.ERP.Web.Areas.CM.Models.OrdenCompraViewModel
+@using ESD.ERP.Web.Infrastructure;
 <div id="mp-edit-panel">
-   <div class="card">
-      <div class="card-body">
+   <div class="card shadow-none border-0 mb-0">
+      <div class="card-body p-2">
          <div class="row">
             <div class="col-12">
-               <div class="form-group row">
-                  <esd-datetimepicker id="Fecha" col-position="col-lg-4" label="Fecha" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+               <div class="form-group row mb-2">
+                  <esd-datetimepicker id="Fecha" col-position="col-lg-5" label="Fecha" col-label-position="col-lg-2" in-modal="true"></esd-datetimepicker>
+               </div>
+            </div>
+         </div>
+         <div class="row mt-2">
+            <div class="col-12">
+               <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="font-weight-bold" style="font-size: 0.88rem; color: #495057;">
+                     <i class="fas fa-truck mr-1"></i> Registros de Entregas
+                  </span>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="btnSeleccionarTodos" onclick="mp_toggleSeleccionarTodos()">
+                     <i class="fas fa-check-square mr-1"></i> Seleccionar Todos
+                  </button>
+               </div>
+               <div class="table-responsive border rounded" style="max-height: 220px; overflow-y: auto;">
+                  <table class="table table-sm table-striped table-hover mb-0" id="tblEntregasPopup">
+                     <thead class="thead-light" style="position: sticky; top: 0; z-index: 1;">
+                        <tr>
+                           <th style="width: 40px; text-align: center;">
+                              <input type="checkbox" id="chkTodosEntregas" onchange="mp_chkTodosOnChange(this)" title="Marcar / Desmarcar todos" />
+                           </th>
+                           <th style="width: 45px; text-align: center;">#</th>
+                           <th style="text-align: right; width: 130px;">Cantidad</th>
+                           <th style="text-align: center; width: 150px;">Fecha Entrega Actual</th>
+                        </tr>
+                     </thead>
+                     <tbody id="tblEntregasPopupBody">
+                        @if (Model?.OrdenCompraEntregaDTOList != null && Model.OrdenCompraEntregaDTOList.Count > 0)
+                        {
+                           int idx = 1;
+                           foreach (var item in Model.OrdenCompraEntregaDTOList)
+                           {
+                              <tr style="cursor: pointer;">
+                                 <td class="text-center align-middle">
+                                    <input type="checkbox" class="chk-entrega-item" value="@item.OrdenCompraEntregaId" onchange="mp_actualizarEstadoBotonTodos()" />
+                                 </td>
+                                 <td class="text-center align-middle">@idx</td>
+                                 <td class="text-right align-middle font-weight-bold">@item.Cantidad.ToString("N2")</td>
+                                 <td class="text-center align-middle">@(item.Fecha.HasValue ? item.Fecha.Value.ToString("dd/MM/yyyy") : "-")</td>
+                              </tr>
+                              idx++;
+                           }
+                        }
+                        else
+                        {
+                           <tr id="trSinEntregas">
+                              <td colspan="4" class="text-center text-muted py-3">Cargando registros...</td>
+                           </tr>
+                        }
+                     </tbody>
+                  </table>
                </div>
             </div>
          </div>
@@ -13,12 +64,101 @@
    </div>
 </div>
 <script type="text/javascript">
-
    function mp_validarDatos() {
-
       if (!$('#mp-Fecha').validateString('@SR.GetString("CM_fecha_entrega_requerida")'))
          return false;
 
+      var marcados = $('.chk-entrega-item:checked');
+      if (marcados.length === 0) {
+         msgAlert(msgAlertTypeConstant.INFORMATION, 'Debe seleccionar al menos un registro de entrega.');
+         return false;
+      }
+
       return true;
    }
+
+   function mp_toggleSeleccionarTodos() {
+      var chks = $('.chk-entrega-item');
+      if (chks.length === 0) return;
+      var todos = (chks.filter(':checked').length === chks.length);
+      chks.prop('checked', !todos);
+      $('#chkTodosEntregas').prop('checked', !todos);
+      mp_actualizarTextoBotonTodos(!todos);
+   }
+
+   function mp_chkTodosOnChange(headerChk) {
+      var checked = $(headerChk).prop('checked');
+      $('.chk-entrega-item').prop('checked', checked);
+      mp_actualizarTextoBotonTodos(checked);
+   }
+
+   function mp_actualizarEstadoBotonTodos() {
+      var chks = $('.chk-entrega-item');
+      if (chks.length === 0) {
+         $('#chkTodosEntregas').prop('checked', false);
+         mp_actualizarTextoBotonTodos(false);
+         return;
+      }
+      var marcados = chks.filter(':checked').length;
+      var todos = (marcados === chks.length);
+      $('#chkTodosEntregas').prop('checked', todos);
+      mp_actualizarTextoBotonTodos(todos);
+   }
+
+   function mp_actualizarTextoBotonTodos(todosMarcados) {
+      var btn = $('#btnSeleccionarTodos');
+      if (todosMarcados) {
+         btn.html('<i class="fas fa-times-circle mr-1"></i> Deseleccionar Todos');
+         btn.removeClass('btn-outline-primary').addClass('btn-outline-secondary');
+      } else {
+         btn.html('<i class="fas fa-check-square mr-1"></i> Seleccionar Todos');
+         btn.removeClass('btn-outline-secondary').addClass('btn-outline-primary');
+      }
+   }
+
+   function mp_inicializarTablaEntregas() {
+      var items = $('#tblEntregasPopupBody tr').not('#trSinEntregas');
+      if (items.length > 0) {
+         mp_actualizarEstadoBotonTodos();
+         return;
+      }
+
+      // Si no vinieron del servidor en Razor, poblar directamente desde los datos de entregaGrid
+      if (typeof $ !== 'undefined' && $('#entregaGrid').length > 0) {
+         var gridRows = $('#entregaGrid').jqGrid('getRowData');
+         if (gridRows && gridRows.length > 0) {
+            var html = '';
+            for (var i = 0; i < gridRows.length; i++) {
+               var r = gridRows[i];
+               var id = r.OrdenCompraEntregaId;
+               var cant = parseFloat(r.Cantidad || 0).toFixed(2);
+               var fecha = r.Fecha || '-';
+               html += '<tr style="cursor: pointer;">' +
+                  '<td class="text-center align-middle">' +
+                  '  <input type="checkbox" class="chk-entrega-item" value="' + id + '" onchange="mp_actualizarEstadoBotonTodos()" />' +
+                  '</td>' +
+                  '<td class="text-center align-middle">' + (i + 1) + '</td>' +
+                  '<td class="text-right align-middle font-weight-bold">' + cant + '</td>' +
+                  '<td class="text-center align-middle">' + fecha + '</td>' +
+                  '</tr>';
+            }
+            $('#tblEntregasPopupBody').html(html);
+            mp_actualizarEstadoBotonTodos();
+         } else {
+            $('#tblEntregasPopupBody').html('<tr id="trSinEntregas"><td colspan="4" class="text-center text-muted py-3">No hay registros de entregas para mostrar.</td></tr>');
+            mp_actualizarEstadoBotonTodos();
+         }
+      }
+   }
+
+   $(document).off('click', '#tblEntregasPopupBody tr').on('click', '#tblEntregasPopupBody tr', function (e) {
+      if ($(e.target).is('input[type="checkbox"]')) {
+         return;
+      }
+      var chk = $(this).find('.chk-entrega-item');
+      if (chk.length > 0) {
+         chk.prop('checked', !chk.prop('checked'));
+         mp_actualizarEstadoBotonTodos();
+      }
+   });
 </script>
