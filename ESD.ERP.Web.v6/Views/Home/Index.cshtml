@@ -105,6 +105,18 @@
         }
         </text>
     }
+
+    /* Anti-Flicker (FOUC): Evita parpadeo de widgets durante la carga inicial del DOM */
+    #dashboard-content-container.dashboard-loading {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+    #dashboard-content-container.dashboard-ready {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transition: opacity 0.15s ease-in-out;
+    }
 </style>
 <script type="text/javascript">
     if (window.resetNavbarBreadcrumb) {
@@ -208,12 +220,12 @@
         </div>
 
         <!-- Contenedor general del contenido del Dashboard (oculto de inmediato si el rol no tiene modulos permitidos) -->
-        <div id="dashboard-content-container" class="@(esDashboardVacio ? "d-none" : "")" style="@(esDashboardVacio ? "display: none !important;" : "")">
+        <div id="dashboard-content-container" class="dashboard-loading @(esDashboardVacio ? "d-none" : "")" style="@(esDashboardVacio ? "display: none !important;" : "")">
 
         <!-- 1. FILA DE TARJETAS KPI (4 por fila, la 5ta cae a la 2da fila) -->
         <div class="row @(permisosDashboardRol.ContainsKey("kpis") && !permisosDashboardRol["kpis"] ? "d-none" : "")" id="row-kpis-metricas">
             <!-- 1. Facturacion del mes -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-facturacion" data-kpi-id="card-kpi-facturacion">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-facturacion") && !permisosDashboardRol["kpi-facturacion"] ? "d-none" : "")" id="card-kpi-facturacion" data-kpi-id="card-kpi-facturacion">
                 <div class="small-box bg-info shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-ventas">@facturacionMes</h3>
@@ -229,7 +241,7 @@
             </div>
 
             <!-- 2. Pedidos Activos -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-pedidos-activos" data-kpi-id="card-kpi-pedidos-activos">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-pedidos-activos") && !permisosDashboardRol["kpi-pedidos-activos"] ? "d-none" : "")" id="card-kpi-pedidos-activos" data-kpi-id="card-kpi-pedidos-activos">
                 <div class="small-box bg-primary shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-pedidos">@pedidosActivos</h3>
@@ -245,7 +257,7 @@
             </div>
 
             <!-- 3. Cotizaciones Activas -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-cotizaciones" data-kpi-id="card-kpi-cotizaciones">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-cotizaciones") && !permisosDashboardRol["kpi-cotizaciones"] ? "d-none" : "")" id="card-kpi-cotizaciones" data-kpi-id="card-kpi-cotizaciones">
                 <div class="small-box bg-success shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-cotizaciones">@cotizacionesActivas</h3>
@@ -261,7 +273,7 @@
             </div>
 
             <!-- 4. Ordenes de Produccion del mes -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-produccion" data-kpi-id="card-kpi-produccion">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-produccion") && !permisosDashboardRol["kpi-produccion"] ? "d-none" : "")" id="card-kpi-produccion" data-kpi-id="card-kpi-produccion">
                 <div class="small-box bg-warning shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-produccion" style="color: #ffffff !important;">@ordenesProduccionMes</h3>
@@ -277,7 +289,7 @@
             </div>
 
             <!-- 5. Ordenes de Compra del mes -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-compras" data-kpi-id="card-kpi-compras">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-compras") && !permisosDashboardRol["kpi-compras"] ? "d-none" : "")" id="card-kpi-compras" data-kpi-id="card-kpi-compras">
                 <div class="small-box bg-danger shadow-sm h-100 mb-0" style="transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-compras">@ordenesCompraMes</h3>
@@ -293,7 +305,7 @@
             </div>
 
             <!-- 6. Sumatoria de Pedidos del Mes (Pedido, Factura Parcial, Facturado) -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-pedidos-mes" data-kpi-id="card-kpi-pedidos-mes">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-pedidos-mes") && !permisosDashboardRol["kpi-pedidos-mes"] ? "d-none" : "")" id="card-kpi-pedidos-mes" data-kpi-id="card-kpi-pedidos-mes">
                 <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-pedidos-cantidad" style="color: #ffffff !important; font-weight: 700;">@pedidosMesCantidad.ToString("N0")</h3>
@@ -311,7 +323,7 @@
             </div>
 
             <!-- 7. Cantidad de Salidas por Consumo Interno -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-consumo-interno" data-kpi-id="card-kpi-consumo-interno">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-consumo-interno") && !permisosDashboardRol["kpi-consumo-interno"] ? "d-none" : "")" id="card-kpi-consumo-interno" data-kpi-id="card-kpi-consumo-interno">
                 <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #0d9488 0%, #115e59 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-consumo-interno" style="color: #ffffff !important; font-weight: 700;">@consumoInternoMes</h3>
@@ -327,7 +339,7 @@
             </div>
 
             <!-- 8. Control de Mermas (Ingresos y Salidas) -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-mermas" data-kpi-id="card-kpi-mermas">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-mermas") && !permisosDashboardRol["kpi-mermas"] ? "d-none" : "")" id="card-kpi-mermas" data-kpi-id="card-kpi-mermas">
                 <div class="small-box shadow-sm h-100 mb-0 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, #334155 0%, #1e293b 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner pb-1">
                         <div class="d-flex align-items-center mb-1" style="max-width: 80%;">
@@ -359,7 +371,7 @@
             </div>
 
             <!-- 9. Guías de Remisión Emitidas -->
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card" id="card-kpi-guias-remision" data-kpi-id="card-kpi-guias-remision">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12 mb-3 kpi-draggable-card @(permisosDashboardRol.ContainsKey("kpi-guias-remision") && !permisosDashboardRol["kpi-guias-remision"] ? "d-none" : "")" id="card-kpi-guias-remision" data-kpi-id="card-kpi-guias-remision">
                 <div class="small-box shadow-sm h-100 mb-0" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff !important; transition: transform 0.2s ease, box-shadow 0.2s ease; border-radius: 8px;">
                     <div class="inner">
                         <h3 id="kpi-guias-remision" style="color: #ffffff !important; font-weight: 700;">@guiasRemisionMes</h3>
@@ -382,6 +394,12 @@
 
             <!-- Columna Izquierda (6 columnas - Simétrica 50%) -->
             <div class="col-lg-6 col-md-12 dashboard-dropzone" id="col-main-left" data-zone="left">
+
+                <div class="dropzone-empty-placeholder text-center p-4 my-2" id="placeholder-col-left" style="display: none;">
+                    <i class="fas fa-columns fa-2x mb-2 text-muted" style="opacity: 0.6;"></i>
+                    <h6 class="font-weight-bold mb-1 text-muted">Columna Izquierda Vac&iacute;a</h6>
+                    <small class="text-muted">Arrastra un widget aqu&iacute; o usa el men&uacute; de opciones de un widget (Ubicaci&oacute;n &rarr; Columna Izquierda).</small>
+                </div>
 
                 <!-- 1. Gráfico de Ventas -->
                 <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("evolucion-ventas") && !permisosDashboardRol["evolucion-ventas"] ? "d-none" : "")" id="area-evolucion-ventas" data-widget-id="evolucion-ventas">
@@ -953,13 +971,51 @@
                         cursor: grabbing;
                     }
                     .dashboard-dropzone {
-                        min-height: 45px;
-                        transition: background-color 0.2s ease;
+                        min-height: 200px;
+                        transition: background-color 0.2s ease, outline 0.2s ease;
                     }
                     .dashboard-dropzone.drag-active {
-                        background-color: rgba(2, 132, 199, 0.03);
-                        outline: 1px dashed rgba(2, 132, 199, 0.3);
+                        background-color: rgba(2, 132, 199, 0.04);
+                        outline: 2px dashed rgba(2, 132, 199, 0.4);
                         border-radius: 8px;
+                    }
+                    .dropzone-empty-placeholder {
+                        border: 2px dashed #cbd5e1;
+                        background: rgba(248, 250, 252, 0.85);
+                        border-radius: 8px;
+                        padding: 3rem 1.5rem !important;
+                        text-align: center;
+                        color: #64748b;
+                        margin-bottom: 1.5rem;
+                        transition: all 0.2s ease;
+                        user-select: none;
+                        width: 100%;
+                    }
+                    body.dark-mode .dropzone-empty-placeholder {
+                        border-color: #475569;
+                        background: rgba(30, 41, 59, 0.6);
+                        color: #94a3b8;
+                    }
+                    .dashboard-dropzone.drag-active .dropzone-empty-placeholder {
+                        border-color: #0284c7;
+                        background: rgba(2, 132, 199, 0.08);
+                        color: #0284c7;
+                    }
+                    .widget-highlight-pulse {
+                        animation: widgetHighlightAnim 1.8s ease-out;
+                    }
+                    @@keyframes widgetHighlightAnim {
+                        0% {
+                            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.7), 0 10px 25px -5px rgba(2, 132, 199, 0.35);
+                            transform: translateY(-2px);
+                        }
+                        50% {
+                            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.4), 0 10px 25px -5px rgba(2, 132, 199, 0.2);
+                        }
+                        100% {
+                            box-shadow: none;
+                            transform: none;
+                        }
                     }
                     .dashboard-drop-placeholder {
                         border: 2px dashed #0284c7 !important;
@@ -1470,6 +1526,12 @@
             <!-- Columna Derecha (6 columnas - Simétrica 50%) -->
             <div class="col-lg-6 col-md-12 dashboard-dropzone" id="col-main-right" data-zone="right">
 
+                <div class="dropzone-empty-placeholder text-center p-4 my-2" id="placeholder-col-right" style="display: none;">
+                    <i class="fas fa-columns fa-2x mb-2 text-muted" style="opacity: 0.6;"></i>
+                    <h6 class="font-weight-bold mb-1 text-muted">Columna Derecha Vac&iacute;a</h6>
+                    <small class="text-muted">Arrastra un widget aqu&iacute; o usa el men&uacute; de opciones de un widget (Ubicaci&oacute;n &rarr; Columna Derecha).</small>
+                </div>
+
                 <!-- 3. Accesos Rápidos del ERP -->
                 <div class="card dashboard-draggable-card card-success card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("accesos-rapidos") && !permisosDashboardRol["accesos-rapidos"] ? "d-none" : "")" id="area-accesos-rapidos" data-widget-id="accesos-rapidos">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
@@ -1572,7 +1634,7 @@
                 <!-- 4. Widget: Agenda del Calendario -->
                 @if (tienePermisoCalendario)
                 {
-                <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4" id="area-agenda-calendario" data-widget-id="agenda-calendario" style="border-radius: 8px;">
+                <div class="card dashboard-draggable-card card-primary card-outline shadow-sm mb-4 @(permisosDashboardRol.ContainsKey("agenda-calendario") && !permisosDashboardRol["agenda-calendario"] ? "d-none" : "")" id="area-agenda-calendario" data-widget-id="agenda-calendario" style="border-radius: 8px;">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 8px;">
                         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
                             <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0" style="font-size: 1rem;">
@@ -1714,11 +1776,17 @@
                             <span class="badge badge-light border text-primary ml-2 font-weight-bold" style="font-size: 0.75rem;"><i class="fas fa-filter mr-1"></i>@sedeSesionNombre (@anioSesion)</span>
                         </h3>
                         <div class="card-tools d-inline-flex align-items-center ml-auto m-0">
+                            <div class="d-inline-flex align-items-center mr-2">
+                                <input type="date" id="filtro-top-pedidos-fecha" class="form-control form-control-sm font-weight-600 shadow-sm" value="@(DateTime.Today.ToString("yyyy-MM-dd"))" style="height: 31px; width: 135px; font-size: 0.825rem; padding: 2px 6px;" title="Seleccionar d&iacute;a para ver Top Pedidos" onchange="recargarTopPedidosFecha();">
+                            </div>
                             <div class="btn-group btn-group-sm mr-2" role="group" aria-label="Cantidad pedidos">
                                 <button type="button" class="btn btn-primary active btn-sm px-2" id="btn-top-5" onclick="cambiarTopPedidos(5);">Top 5</button>
                                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="btn-top-10" onclick="cambiarTopPedidos(10);">Top 10</button>
                             </div>
                             <span class="badge badge-primary px-2 py-1 mr-2" id="badge-top-pedidos"><i class="fas fa-calendar-day mr-1"></i>Top 5 · @topPedidosFecha</span>
+                            <button type="button" class="btn btn-outline-primary btn-sm shadow-none px-2 mr-1" id="btn-recargar-top-pedidos" title="Actualizar pedidos de la fecha" onclick="recargarTopPedidosFecha();" style="height: 31px;">
+                                <i class="fas fa-sync-alt" id="icon-recargar-top-pedidos"></i>
+                            </button>
                             <div class="btn-group btn-group-sm widget-size-control mr-1">
                                 <button type="button" class="btn btn-tool" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Tama&ntilde;o y posici&oacute;n del widget">
                                     <i class="fas fa-expand-arrows-alt"></i>
@@ -2215,7 +2283,7 @@
                     </div>
                     <div class="card-footer clearfix border-top-0 py-2 d-flex flex-wrap justify-content-between align-items-center">
                         <small class="text-muted">
-                            <i class="fas fa-info-circle text-danger mr-1"></i>Top 10 productos con menor stock vinculados al m&oacute;dulo Volumen de Existencias en tiempo real.
+                            <i class="fas fa-info-circle text-danger mr-1"></i>Top 10 productos con menor stock vinculados al m&oacute;dulo Consulta de Saldos en tiempo real.
                         </small>
                         <span class="badge badge-light border text-muted px-2 py-1 font-weight-600" id="badge-filtro-menor-stock-info">
                             <i class="fas fa-filter mr-1"></i>Filtro: Todos los Grupos
@@ -2609,9 +2677,14 @@
             </div>
             <div class="modal-footer bg-light py-2 px-4 border-top d-flex justify-content-between align-items-center">
                 <small class="text-muted"><i class="fas fa-check-circle mr-1 text-success"></i>Los cambios se aplican y guardan autom&aacute;ticamente.</small>
-                <button type="button" class="btn btn-secondary btn-sm px-4 font-weight-600" data-dismiss="modal">
-                    Cerrar
-                </button>
+                <div>
+                    <button type="button" class="btn btn-secondary btn-sm px-3 mr-2 font-weight-600" data-dismiss="modal">
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm px-4 font-weight-600 shadow-sm" data-dismiss="modal" id="btn-modal-aceptar-footer">
+                        <i class="fas fa-check mr-1"></i>Aceptar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -3128,9 +3201,14 @@
                 <small class="text-muted">
                     <i class="fas fa-info-circle mr-1 text-primary"></i>Los cambios se guardan autom&aacute;ticamente al activar o desactivar cada switch.
                 </small>
-                <button type="button" class="btn btn-secondary btn-sm px-4 font-weight-600" data-dismiss="modal">
-                    Cerrar
-                </button>
+                <div>
+                    <button type="button" class="btn btn-secondary btn-sm px-3 mr-2 font-weight-600" data-dismiss="modal">
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm px-4 font-weight-600 shadow-sm" data-dismiss="modal" id="btn-modal-rol-listo-footer">
+                        <i class="fas fa-check mr-1"></i>Listo
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -4817,8 +4895,32 @@
             }, 60);
         }
 
+        // ========================================================
+        // NOTIFICACIONES DE GUARDADO DEL DASHBOARD
+        // ========================================================
+        function notificarGuardadoDashboard(msg) {
+            if (typeof msgAlert === 'function' && typeof msgAlertTypeConstant !== 'undefined') {
+                msgAlert(msgAlertTypeConstant.SUCCESS, msg);
+            } else if (window.alertify && typeof alertify.success === 'function') {
+                alertify.success(msg);
+            } else if (typeof toastr !== 'undefined' && typeof toastr.success === 'function') {
+                toastr.success(msg);
+            }
+        }
+
+        var _timerToastRol = null;
+        function notificarGuardadoRolDebounced(msg) {
+            if (_timerToastRol) clearTimeout(_timerToastRol);
+            _timerToastRol = setTimeout(function () {
+                notificarGuardadoDashboard(msg);
+            }, 350);
+        }
+
+        var huboCambiosMiDashboard = false;
+
         // Eventos de switches principales del modal de usuario
         $(document).off('change', '.chk-dashboard-area').on('change', '.chk-dashboard-area', function () {
+            huboCambiosMiDashboard = true;
             var areaKey = $(this).data('area');
             var isChecked = $(this).is(':checked');
             var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
@@ -4848,6 +4950,7 @@
 
         // Eventos de switches de sub-tarjetas de KPIs en modal de usuario
         $(document).off('change', '.chk-sub-kpi').on('change', '.chk-sub-kpi', function () {
+            huboCambiosMiDashboard = true;
             var kpiKey = $(this).data('kpi');
             var isChecked = $(this).is(':checked');
             var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
@@ -4867,6 +4970,7 @@
 
         // Botones auxiliares del modal de usuario
         $('#btn-modal-marcar-todos').on('click', function () {
+            huboCambiosMiDashboard = true;
             var rolPermisos = obtenerConfiguracionParaRol(currentRoleCode);
             for (var k in areasDashboardConfig) {
                 var permitidoPorRol = (rolPermisos[k] !== undefined) ? Boolean(rolPermisos[k]) : true;
@@ -4886,6 +4990,7 @@
         });
 
         $('#btn-modal-desmarcar-todos').on('click', function () {
+            huboCambiosMiDashboard = true;
             for (var k in areasDashboardConfig) {
                 areasDashboardConfig[k].visible = false;
             }
@@ -4898,11 +5003,26 @@
         });
 
         $('#btn-modal-restablecer').on('click', function () {
+            huboCambiosMiDashboard = false;
             try {
                 localStorage.removeItem(getStorageAreasKey());
             } catch (e) { }
             cargarConfiguracionAreas();
             aplicarVisibilidadAreas();
+            notificarGuardadoDashboard('Se ha restablecido la configuración por defecto de tu dashboard.');
+        });
+
+        // Confirmacion de guardado al hacer clic en Aceptar o al cerrar el modal habiendo realizado cambios
+        $(document).on('click', '#btn-modal-aceptar-header, #btn-modal-aceptar-footer', function () {
+            huboCambiosMiDashboard = false;
+            notificarGuardadoDashboard('Tu configuración del dashboard se ha guardado correctamente.');
+        });
+
+        $('#modal-gestionar-dashboard').on('hidden.bs.modal', function () {
+            if (huboCambiosMiDashboard) {
+                huboCambiosMiDashboard = false;
+                notificarGuardadoDashboard('Tu configuración del dashboard se ha guardado correctamente.');
+            }
         });
 
         // ========================================================
@@ -4974,6 +5094,8 @@
                         if (window._serverRolesConfig) {
                             window._serverRolesConfig[rolCod] = rolConfig;
                         }
+                        var rolNombre = $('#select-rol-dashboard option:selected').text() || rolCod;
+                        notificarGuardadoRolDebounced('Configuración guardada correctamente para ' + rolNombre + '.');
                     } else {
                         console.warn('No se pudo guardar la configuracion en BD:', res ? res.message : '');
                     }
@@ -5066,6 +5188,8 @@
                     if (window._serverRolesConfig) {
                         window._serverRolesConfig[rolCod] = preset;
                     }
+                    var rolNombre = $('#select-rol-dashboard option:selected').text() || rolCod;
+                    notificarGuardadoDashboard('Se ha restablecido la configuración por defecto para ' + rolNombre + '.');
                 }
             });
             sincronizarModalRolUI(rolCod);
@@ -5075,16 +5199,25 @@
             }
         });
 
+        // Boton Listo del modal de Gestionar Dashboard por Rol
+        $(document).on('click', '#btn-modal-rol-listo-header, #btn-modal-rol-listo-footer', function () {
+            if (_timerToastRol) clearTimeout(_timerToastRol);
+            var rolNombre = $('#select-rol-dashboard option:selected').text() || 'el rol seleccionado';
+            notificarGuardadoDashboard('Configuración del dashboard guardada para ' + rolNombre + '.');
+        });
+
         // Boton para ver el Dashboard como el rol seleccionado en el selector
         $(document).on('click', '#btn-aplicar-vista-rol', function () {
             var selectedRol = $('#select-rol-dashboard').val();
             if (selectedRol) {
+                var rolNombre = $('#select-rol-dashboard option:selected').text() || selectedRol;
                 currentRoleCode = selectedRol;
                 $('#badge-rol-usuario-indicador').remove();
                 $('#btn-gestionar-dashboard-rol').after('<span id="badge-rol-usuario-indicador" class="badge badge-info ml-2 font-weight-600 px-2 py-1 shadow-sm" style="cursor: pointer;" title="Clic para volver a tu rol original"><i class="fas fa-eye mr-1"></i>Vista Rol: ' + selectedRol + ' &times;</span>');
                 cargarConfiguracionAreas();
                 aplicarVisibilidadAreas();
                 $('#modal-gestionar-dashboard-rol').modal('hide');
+                notificarGuardadoDashboard('Visualizando el Dashboard con el rol: ' + rolNombre + '.');
             }
         });
 
@@ -5271,11 +5404,55 @@
             }
         }
 
+        function recargarTopPedidosFecha() {
+            var fecha = $('#filtro-top-pedidos-fecha').val();
+            if (!fecha) return;
+
+            var $icon = $('#icon-recargar-top-pedidos');
+            if ($icon.length) $icon.addClass('fa-spin');
+            $('#btn-recargar-top-pedidos').prop('disabled', true);
+
+            var $badge = $('#badge-top-pedidos');
+            var originalBadge = $badge.html();
+            $badge.html('<i class="fas fa-spinner fa-spin mr-1"></i>Cargando...');
+
+            $.ajax({
+                url: '@Url.Action("ObtenerTopPedidosPorFecha", "Home")',
+                type: 'GET',
+                data: {
+                    fecha: fecha,
+                    top: 10,
+                    cid: cid
+                },
+                success: function (res) {
+                    if (res && res.success) {
+                        currentTopPedidosData = res.data || [];
+                        fechaTopPedidos = res.fechaFormateada || fecha;
+                        renderTopPedidos(currentTopPedidosData, currentTopLimit);
+                        actualizarBotonesTopPedidosUI();
+                        $('#label-top-pedidos-footer').html('<i class="fas fa-info-circle mr-1"></i>Pedidos m&aacute;s grandes registrados el ' + escapeDashboardHtml(fechaTopPedidos));
+                    } else {
+                        console.error('Error al obtener pedidos por fecha:', res ? res.message : 'Error desconocido');
+                        $badge.html(originalBadge);
+                    }
+                },
+                error: function (err) {
+                    console.error('Error cargando top pedidos por fecha:', err);
+                    $badge.html(originalBadge);
+                },
+                complete: function () {
+                    if ($icon.length) $icon.removeClass('fa-spin');
+                    $('#btn-recargar-top-pedidos').prop('disabled', false);
+                }
+            });
+        }
+        window.recargarTopPedidosFecha = recargarTopPedidosFecha;
+
         function renderTopPedidos(lista, limit) {
             var $tbody = $('#tabla-top-pedidos tbody');
             if (!$tbody.length) return;
             if (!lista || !lista.length) {
-                $tbody.html('<tr><td colspan="3" class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x d-block mb-2 text-secondary" style="opacity: 0.5;"></i><span>No se registran pedidos el d&iacute;a de hoy (' + escapeDashboardHtml(fechaTopPedidos) + ')</span><div class="small text-muted mt-1">Los pedidos aparecer&aacute;n autom&aacute;ticamente a medida que se registren durante el d&iacute;a.</div></td></tr>');
+                $tbody.html('<tr><td colspan="3" class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x d-block mb-2 text-secondary" style="opacity: 0.5;"></i><span>No se registran pedidos el d&iacute;a ' + escapeDashboardHtml(fechaTopPedidos) + '</span><div class="small text-muted mt-1">Los pedidos aparecer&aacute;n autom&aacute;ticamente a medida que se registren en la fecha seleccionada.</div></td></tr>');
                 return;
             }
             // Asegurar siempre orden descendente por monto (Top 1 = mayor monto)
@@ -5305,7 +5482,7 @@
                         '<span class="badge ' + badgeClass + ' mr-1">' + rankIcon + '#' + rank + '</span>' +
                         '<span>' + escapeDashboardHtml(p.codigo || p.Codigo || '&mdash;') + '</span>' +
                     '</td>' +
-                    '<td class="py-2"><span class="font-weight-600">' + escapeDashboardHtml(cliente) + '</span></td>' +
+                    '<td class="py-2 text-truncate" style="max-width: 0;" title="' + escapeDashboardHtml(cliente) + '"><span class="font-weight-600 text-truncate d-block">' + escapeDashboardHtml(cliente) + '</span></td>' +
                     '<td class="text-right font-weight-bold text-success py-2" style="white-space: nowrap;">' + escapeDashboardHtml(montoFormateado) + '</td>' +
                 '</tr>';
             }
@@ -6201,34 +6378,46 @@
             if (!disponibles || disponibles.length === 0) return [];
 
             var permitidosMap = {};
+            var permitidosById = {};
             disponibles.forEach(function (d) {
                 var keys = getNormalizedUrlKeys(d.url);
                 keys.forEach(function (k) {
                     if (!permitidosMap[k]) permitidosMap[k] = d;
                 });
+                var mId = getModuloIdentifier(d);
+                if (mId && !permitidosById[mId]) permitidosById[mId] = d;
             });
 
-            // Si no tiene guardados o se restablece, retornar los predeterminados permitidos (máx 6)
+            // Si no tiene guardados o se restablece, retornar los predeterminados permitidos (hasta 6)
             var defaults = disponibles.filter(function (m) { return m.isDefault; });
-            if (defaults.length === 0) {
-                defaults = disponibles.slice(0, 6);
+            if (defaults.length < 6) {
+                disponibles.forEach(function (m) {
+                    if (defaults.length < 6 && defaults.indexOf(m) === -1) {
+                        defaults.push(m);
+                    }
+                });
             } else if (defaults.length > 6) {
                 defaults = defaults.slice(0, 6);
             }
 
             try {
                 var raw = localStorage.getItem(getStorageAccesosKey());
-                if (raw) {
+                if (raw !== null) {
                     var parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
+                    if (Array.isArray(parsed)) {
                         var filtrados = [];
                         parsed.forEach(function (item) {
-                            var keys = getNormalizedUrlKeys(item.url);
                             var matched = null;
-                            for (var i = 0; i < keys.length; i++) {
-                                if (permitidosMap[keys[i]]) {
-                                    matched = permitidosMap[keys[i]];
-                                    break;
+                            var mId = getModuloIdentifier(item);
+                            if (mId && permitidosById[mId]) {
+                                matched = permitidosById[mId];
+                            } else {
+                                var keys = getNormalizedUrlKeys(item.url);
+                                for (var i = 0; i < keys.length; i++) {
+                                    if (permitidosMap[keys[i]]) {
+                                        matched = permitidosMap[keys[i]];
+                                        break;
+                                    }
                                 }
                             }
                             if (matched && filtrados.indexOf(matched) === -1) {
@@ -6236,25 +6425,8 @@
                             }
                         });
 
-                        // Detección de estado residual generado por el bug anterior en producción:
-                        // Si solo hay <= 2 ítems y todos son 'calendario' o 'persona'/'proveedor',
-                        // pero ahora hay más módulos disponibles (ej. administrador), auto-recuperar a los 6 predeterminados.
-                        var esBugResidual = false;
-                        if (filtrados.length <= 2 && disponibles.length > 5) {
-                            var soloItemsBug = filtrados.every(function (f) {
-                                var k = (f.url || '').toLowerCase();
-                                return k.indexOf('calendario') >= 0 || k.indexOf('persona') >= 0 || k.indexOf('proveedor') >= 0;
-                            });
-                            if (soloItemsBug) {
-                                esBugResidual = true;
-                            }
-                        }
-
-                        if (!esBugResidual && filtrados.length > 0) {
+                        if (filtrados.length > 0) {
                             return filtrados.slice(0, 6);
-                        } else if (esBugResidual) {
-                            guardarAccesosRapidosEnStorage(defaults);
-                            return defaults;
                         }
                     }
                 }
@@ -6334,7 +6506,9 @@
                 _modulosSeleccionadosTemp = {};
                 activos.forEach(function (a) {
                     var modId = getModuloIdentifier(a);
-                    _modulosSeleccionadosTemp[modId] = a;
+                    if (modId) {
+                        _modulosSeleccionadosTemp[modId] = a;
+                    }
                 });
 
                 poblarGridModulosAccesos(disponibles);
@@ -6406,6 +6580,8 @@
                             msgAlert(msgAlertTypeConstant.WARNING, 'Solo puedes seleccionar un máximo de 6 accesos rápidos.');
                         } else if (typeof toastr !== 'undefined') {
                             toastr.warning('Solo puedes seleccionar un máximo de 6 accesos rápidos.');
+                        } else if (window.alertify) {
+                            alertify.warning('Solo puedes seleccionar un máximo de 6 accesos rápidos.');
                         }
                         return false;
                     }
@@ -6415,7 +6591,7 @@
 
                 var disponibles = obtenerModulosDisponiblesCompletos();
                 var mod = disponibles.find(function (m) {
-                    return getModuloIdentifier(m) === modKey;
+                    return getModuloIdentifier(m) === modId;
                 });
 
                 if (isChecked && mod) {
@@ -6439,14 +6615,20 @@
                 _modulosSeleccionadosTemp = {};
                 var disponibles = obtenerModulosDisponiblesCompletos();
                 var defaults = disponibles.filter(function (m) { return m.isDefault; });
-                if (defaults.length === 0) {
-                    defaults = disponibles.slice(0, 6);
+                if (defaults.length < 6) {
+                    disponibles.forEach(function (m) {
+                        if (defaults.length < 6 && defaults.indexOf(m) === -1) {
+                            defaults.push(m);
+                        }
+                    });
                 } else if (defaults.length > 6) {
                     defaults = defaults.slice(0, 6);
                 }
                 defaults.forEach(function (m) {
                     var modId = getModuloIdentifier(m);
-                    _modulosSeleccionadosTemp[modId] = m;
+                    if (modId) {
+                        _modulosSeleccionadosTemp[modId] = m;
+                    }
                 });
                 $('.chk-acceso-rapido').each(function () {
                     var modId = $(this).data('modkey');
@@ -6461,13 +6643,21 @@
             $('#btn-guardar-accesos-rapidos').on('click', function () {
                 var listaGuardar = [];
                 var disponibles = obtenerModulosDisponiblesCompletos();
+                var dispMap = {};
 
                 disponibles.forEach(function (m) {
-                    var modKey = getModuloIdentifier(m);
-                    if (_modulosSeleccionadosTemp[modKey]) {
-                        listaGuardar.push(m);
-                    }
+                    var mId = getModuloIdentifier(m);
+                    if (mId) dispMap[mId] = m;
                 });
+
+                for (var k in _modulosSeleccionadosTemp) {
+                    if (_modulosSeleccionadosTemp[k]) {
+                        var itemToAdd = dispMap[k] || _modulosSeleccionadosTemp[k];
+                        if (itemToAdd && listaGuardar.indexOf(itemToAdd) === -1) {
+                            listaGuardar.push(itemToAdd);
+                        }
+                    }
+                }
 
                 if (listaGuardar.length > 6) {
                     listaGuardar = listaGuardar.slice(0, 6);
@@ -6477,8 +6667,13 @@
                 renderizarAccesosRapidos();
                 $('#modal-gestionar-accesos-rapidos').modal('hide');
 
+                var msg = 'Accesos rápidos actualizados correctamente (' + listaGuardar.length + ' de 6 módulos).';
                 if (typeof msgAlert === 'function') {
-                    msgAlert(msgAlertTypeConstant.SUCCESS, 'Accesos rápidos actualizados correctamente (' + listaGuardar.length + ' de 6 módulos).');
+                    msgAlert(msgAlertTypeConstant.SUCCESS, msg);
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.success(msg);
+                } else if (window.alertify) {
+                    alertify.success(msg);
                 }
             });
         }
@@ -6814,6 +7009,8 @@
                 guardarLayoutDashboard();
             }
 
+            actualizarPlaceholdersZonasVacias();
+
             setTimeout(function() {
                 redimensionarTodosLosGraficos();
             }, 80);
@@ -6830,6 +7027,29 @@
                 if (typeof calendarAgendaWidget !== 'undefined' && calendarAgendaWidget) calendarAgendaWidget.updateSize();
             } catch (e) { }
             window.dispatchEvent(new Event('resize'));
+        }
+
+        function actualizarPlaceholdersZonasVacias() {
+            try {
+                var visibleLeft = $('#col-main-left .dashboard-draggable-card').filter(function() {
+                    return !$(this).hasClass('d-none') && $(this).css('display') !== 'none';
+                }).length;
+                var visibleRight = $('#col-main-right .dashboard-draggable-card').filter(function() {
+                    return !$(this).hasClass('d-none') && $(this).css('display') !== 'none';
+                }).length;
+
+                if (visibleLeft === 0) {
+                    $('#placeholder-col-left').show();
+                } else {
+                    $('#placeholder-col-left').hide();
+                }
+
+                if (visibleRight === 0) {
+                    $('#placeholder-col-right').show();
+                } else {
+                    $('#placeholder-col-right').hide();
+                }
+            } catch (e) { }
         }
 
         function adaptCardToZone(cardEl, zoneName) {
@@ -6994,8 +7214,10 @@
                     }
                 }
 
+                actualizarPlaceholdersZonasVacias();
+
                 setTimeout(function() {
-                    window.dispatchEvent(new Event('resize'));
+                    redimensionarTodosLosGraficos();
                 }, 120);
             } catch (e) {
                 console.warn('Error restaurando layout de dashboard:', e);
@@ -7003,7 +7225,9 @@
         }
 
         function getDragAfterElement(container, y) {
-            var draggableElements = Array.prototype.slice.call(container.querySelectorAll('.dashboard-draggable-card:not(.is-dragging)'));
+            var draggableElements = Array.prototype.slice.call(container.querySelectorAll('.dashboard-draggable-card:not(.is-dragging)')).filter(function(child) {
+                return !child.classList.contains('d-none') && child.offsetParent !== null;
+            });
             return draggableElements.reduce(function(closest, child) {
                 var box = child.getBoundingClientRect();
                 var offset = y - box.top - box.height / 2;
@@ -7069,8 +7293,9 @@
                     }
                     draggedCardElement = null;
                     guardarLayoutDashboard();
+                    actualizarPlaceholdersZonasVacias();
                     setTimeout(function() {
-                        window.dispatchEvent(new Event('resize'));
+                        redimensionarTodosLosGraficos();
                     }, 60);
                 });
             });
@@ -7104,9 +7329,13 @@
                     }
 
                     guardarLayoutDashboard();
+                    actualizarPlaceholdersZonasVacias();
                     setTimeout(function() {
-                        window.dispatchEvent(new Event('resize'));
+                        redimensionarTodosLosGraficos();
                     }, 60);
+                    setTimeout(function() {
+                        redimensionarTodosLosGraficos();
+                    }, 200);
                 });
             });
 
@@ -7267,11 +7496,41 @@
 
                 if ($targetZone.length) {
                     adaptCardToZone($card[0], zoneName);
-                    $targetZone.prepend($card);
+                    
+                    var $emptyPh = $targetZone.find('.dropzone-empty-placeholder');
+                    if ($emptyPh.length) {
+                        $card.insertBefore($emptyPh);
+                    } else {
+                        $targetZone.prepend($card);
+                    }
+
+                    actualizarPlaceholdersZonasVacias();
                     guardarLayoutDashboard();
-                    window.dispatchEvent(new Event('resize'));
+
+                    // Scroll suave hacia la nueva posición del widget para que el usuario no lo pierda de vista
+                    setTimeout(function() {
+                        if ($card[0] && typeof $card[0].scrollIntoView === 'function') {
+                            $card[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        $card.addClass('widget-highlight-pulse');
+                        setTimeout(function() {
+                            $card.removeClass('widget-highlight-pulse');
+                        }, 1800);
+                    }, 50);
+
+                    // Redimensionar gráficos con delay para garantizar render en el nuevo contenedor
+                    setTimeout(function() {
+                        redimensionarTodosLosGraficos();
+                    }, 80);
+                    setTimeout(function() {
+                        redimensionarTodosLosGraficos();
+                    }, 250);
+
                     if (window.alertify) {
-                        alertify.message('Widget reubicado correctamente');
+                        var nomZona = (zoneName === 'left') ? 'Columna Izquierda' :
+                                      (zoneName === 'right') ? 'Columna Derecha' :
+                                      (zoneName === 'full-top') ? 'Ancho Completo Superior' : 'Ancho Completo Inferior';
+                        alertify.message('Widget movido a ' + nomZona);
                     }
                 }
             });
@@ -7391,6 +7650,17 @@
         initAgendaCalendarioWidget();
         initDashboardDragAndDrop();
         restaurarLayoutDashboard();
+        actualizarPlaceholdersZonasVacias();
+
+        // Anti-Flicker: Revelar el dashboard suavemente una vez configuradas visibilidades y posiciones
+        function revelarDashboardListo() {
+            var $dc = $('#dashboard-content-container');
+            if ($dc.hasClass('dashboard-loading')) {
+                $dc.removeClass('dashboard-loading').addClass('dashboard-ready');
+            }
+        }
+        revelarDashboardListo();
+        setTimeout(revelarDashboardListo, 300);
 
         sincronizarDashboard();
 

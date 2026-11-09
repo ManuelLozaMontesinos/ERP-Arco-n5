@@ -71,7 +71,7 @@
                   [
                      { name: "OrdenCompraComprobanteDTO.OrdenCompraDTO.Codigo", value: $('#codigoCab').val() },
                      { name: "OrdenCompraComprobanteDTO.FechaDesde", value: $('#FechaDesde').val(), type: 'date' },
-                     { name: "PedidoCompraDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
+                     { name: "OrdenCompraComprobanteDTO.FechaHasta", value: $('#FechaHasta').val(), type: 'date' },
                      { name: "OrdenCompraComprobanteDTO.OrdenCompraDTO.ProveedorDTO.RazonSocial", value: $('#RazonSocial').val() },
                      { name: "OrdenCompraComprobanteDTO.CondicionPagoId", value: $('#condicionPagoId').val() || 0, type: 'int' },
                      { name: "OrdenCompraComprobanteDTO.Estado", value: $('#verAnulado').prop('checked') ? '' : '@EstadoConstante.ACTIVO' }
@@ -271,16 +271,12 @@
             $('#bandejaGrid').appGrid('reloadJSON');
          }
       });
-      $("#FechaDesde").keydown(function (e) {
-         if (event.which == 13) {
-            $("#FechaHasta").val($("#FechaDesde").val());
-            event.preventDefault();
-            $('#bandejaGrid').appGrid('reloadJSON');
-         }
+      $("#FechaDesde-ddiv, #FechaHasta-ddiv").on('change.datetimepicker', function () {
+         $('#bandejaGrid').appGrid('reloadJSON');
       });
-      $("#FechaHasta").keydown(function (e) {
-         if (event.which == 13) {
-            event.preventDefault();
+      $("#FechaDesde, #FechaHasta").keydown(function (e) {
+         if (e.which == 13 || event.which == 13) {
+            e.preventDefault();
             $('#bandejaGrid').appGrid('reloadJSON');
          }
       });

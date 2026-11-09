@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ESD.Core.Service.DTO;
 
 namespace ESD.ERP.DTO
@@ -26,5 +26,7 @@ namespace ESD.ERP.DTO
 		public OrdenCompraDTO OrdenCompraDTO { get; set; }
 		public TipoDocumentoComercialDTO TipoDocumentoComercialDTO { get; set; }
 		public CondicionPagoDTO CondicionPagoDTO { get; set; }
+		public DateTime? FechaDesde { get; set; }
+		public DateTime? FechaHasta { get; set; }
 	}
 }

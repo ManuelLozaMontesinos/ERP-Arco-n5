@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ESD.Core.Data;
@@ -64,5 +64,9 @@ namespace ESD.ERP.Domain
 		public OrdenCompra OrdenCompra { get; set; }
 		public TipoDocumentoComercial TipoDocumentoComercial { get; set; }
 		public CondicionPago CondicionPago { get; set; }
+		[NotMapped]
+		public DateTime? FechaDesde { get; set; }
+		[NotMapped]
+		public DateTime? FechaHasta { get; set; }
 	}
 }

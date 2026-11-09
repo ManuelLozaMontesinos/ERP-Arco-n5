@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ESD.Core.Data;
@@ -49,6 +49,8 @@ namespace ESD.ERP.Repository.Impl
 			parameters.AddParameter("registroReferencialId", entity.RegistroReferencialId);
 			parameters.AddParameter("condicionPagoId", entity.CondicionPagoId);
 			parameters.AddParameter("estado", entity.Estado);
+			parameters.AddParameter("fechaDesde", entity.FechaDesde);
+			parameters.AddParameter("fechaHasta", entity.FechaHasta);
 
 			try
 			{

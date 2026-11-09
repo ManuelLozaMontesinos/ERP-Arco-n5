@@ -332,17 +332,30 @@ namespace ESD.ERP.Web.Controllers
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = $@"
-                        SELECT ISNULL(SUM({SqlMontoEnSoles}), 0) AS total
-                        FROM comprobante c
-                        INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                         {SqlTipoCambioApply}
-                        WHERE YEAR(c.fecha) = @anio 
-                          AND MONTH(c.fecha) = @mes 
-                          AND c.estado = 'A'
-                          AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+                        SELECT ISNULL(SUM(monto_neto_soles), 0) AS total
+                        FROM (
+                           SELECT {SqlMontoEnSoles} AS monto_neto_soles
+                           FROM comprobante c
+                           INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
+                           LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                            {SqlTipoCambioApply}
+                           WHERE YEAR(c.fecha) = @anio 
+                             AND MONTH(c.fecha) = @mes 
+                             AND c.estado = 'A'
+                             AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
+                             AND (@vid IS NULL OR c.vendedor_id = @vid)
+                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
+                           UNION ALL
+                           SELECT -1.0 * (CASE WHEN c.moneda_id = 2 THEN nc.monto_total * ISNULL(NULLIF(c.monto_tc, 0), 3.50) ELSE nc.monto_total END) AS monto_neto_soles
+                           FROM nota_credito nc
+                           LEFT JOIN comprobante c ON nc.comprobante_id = c.comprobante_id
+                           LEFT JOIN periodo_emp_sede pes ON nc.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                           WHERE YEAR(nc.fecha) = @anio 
+                             AND MONTH(nc.fecha) = @mes 
+                             AND nc.estado = 'A'
+                             AND (@vid IS NULL OR nc.vendedor_id = @vid)
+                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
+                        ) t";
                      cmd.Parameters.AddWithValue("@anio", anioConsulta);
                      cmd.Parameters.AddWithValue("@mes", mesConsulta);
                      cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
@@ -580,14 +593,31 @@ namespace ESD.ERP.Web.Controllers
                     using (var cmd = conn.CreateCommand())
                     {
                        cmd.CommandText = $@"
-                          SELECT YEAR(c.fecha) AS anio, MONTH(c.fecha) AS mes, ROUND(SUM({SqlMontoEnSoles}) / 1000.0, 1) AS miles
-                          FROM comprobante c
-                          LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                           {SqlTipoCambioApply}
-                          WHERE c.fecha >= @inicioConsultaVentas AND c.fecha < @finPeriodoActual
-                            AND c.estado = 'A'
-                            AND (@sedeVentas IS NULL OR @sedeVentas = 0 OR pes.empresa_sede_id = @sedeVentas)
-                          GROUP BY YEAR(c.fecha), MONTH(c.fecha)
+                          SELECT anio, mes, ROUND(SUM(monto_neto_soles) / 1000.0, 1) AS miles
+                          FROM (
+                             SELECT 
+                                YEAR(c.fecha) AS anio, 
+                                MONTH(c.fecha) AS mes, 
+                                {SqlMontoEnSoles} AS monto_neto_soles
+                             FROM comprobante c
+                             LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                              {SqlTipoCambioApply}
+                             WHERE c.fecha >= @inicioConsultaVentas AND c.fecha < @finPeriodoActual
+                               AND c.estado = 'A'
+                               AND (@sedeVentas IS NULL OR @sedeVentas = 0 OR pes.empresa_sede_id = @sedeVentas)
+                             UNION ALL
+                             SELECT 
+                                YEAR(nc.fecha) AS anio, 
+                                MONTH(nc.fecha) AS mes, 
+                                -1.0 * (CASE WHEN c.moneda_id = 2 THEN nc.monto_total * ISNULL(NULLIF(c.monto_tc, 0), 3.50) ELSE nc.monto_total END) AS monto_neto_soles
+                             FROM nota_credito nc
+                             LEFT JOIN comprobante c ON nc.comprobante_id = c.comprobante_id
+                             LEFT JOIN periodo_emp_sede pes ON nc.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                             WHERE nc.fecha >= @inicioConsultaVentas AND nc.fecha < @finPeriodoActual
+                               AND nc.estado = 'A'
+                               AND (@sedeVentas IS NULL OR @sedeVentas = 0 OR pes.empresa_sede_id = @sedeVentas)
+                          ) t
+                          GROUP BY anio, mes
                           ORDER BY anio, mes";
                        cmd.Parameters.Add("@inicioConsultaVentas", SqlDbType.Date).Value = inicioConsultaVentas.Date;
                        cmd.Parameters.Add("@finPeriodoActual", SqlDbType.Date).Value = finPeriodoActual.Date;
@@ -602,7 +632,7 @@ namespace ESD.ERP.Web.Controllers
                              int anio = Convert.ToInt32(reader["anio"]);
                              int mes = Convert.ToInt32(reader["mes"]);
                              double miles = Convert.ToDouble(reader["miles"]);
-                             salesByYearMonth[string.Format("{0}-{1}", anio, mes)] = miles;
+                             salesByYearMonth[string.Format("{0}-{1}", anio, mes)] = Math.Max(0.0, miles);
                           }
                        }
 
@@ -641,16 +671,33 @@ namespace ESD.ERP.Web.Controllers
                    {
                       cmd.CommandText = $@"
                          SELECT
-                             CAST(c.fecha AS DATE) AS fecha_dia,
-                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 1 THEN {SqlMontoEnSoles} ELSE 0 END), 2) AS central,
-                             ROUND(SUM(CASE WHEN s.empresa_sede_id = 2 THEN {SqlMontoEnSoles} ELSE 0 END), 2) AS ilo
-                         FROM comprobante c
-                         INNER JOIN periodo_emp_sede p ON c.periodo_emp_sede_id = p.periodo_emp_sede_id
-                         INNER JOIN empresa_sede s ON p.empresa_sede_id = s.empresa_sede_id
-                          {SqlTipoCambioApply}
-                          WHERE c.fecha >= @fDesde AND c.fecha < @fHasta
-                           AND c.estado = 'A'
-                         GROUP BY CAST(c.fecha AS DATE)
+                             fecha_dia,
+                             ROUND(SUM(CASE WHEN empresa_sede_id = 1 THEN monto_soles ELSE 0 END), 2) AS central,
+                             ROUND(SUM(CASE WHEN empresa_sede_id = 2 THEN monto_soles ELSE 0 END), 2) AS ilo
+                         FROM (
+                             SELECT
+                                 CAST(c.fecha AS DATE) AS fecha_dia,
+                                 s.empresa_sede_id,
+                                 {SqlMontoEnSoles} AS monto_soles
+                             FROM comprobante c
+                             INNER JOIN periodo_emp_sede p ON c.periodo_emp_sede_id = p.periodo_emp_sede_id
+                             INNER JOIN empresa_sede s ON p.empresa_sede_id = s.empresa_sede_id
+                              {SqlTipoCambioApply}
+                             WHERE c.fecha >= @fDesde AND c.fecha < @fHasta
+                               AND c.estado = 'A'
+                             UNION ALL
+                             SELECT
+                                 CAST(nc.fecha AS DATE) AS fecha_dia,
+                                 s.empresa_sede_id,
+                                 -1.0 * (CASE WHEN c.moneda_id = 2 THEN nc.monto_total * ISNULL(NULLIF(c.monto_tc, 0), 3.50) ELSE nc.monto_total END) AS monto_soles
+                              FROM nota_credito nc
+                             LEFT JOIN comprobante c ON nc.comprobante_id = c.comprobante_id
+                             INNER JOIN periodo_emp_sede p ON nc.periodo_emp_sede_id = p.periodo_emp_sede_id
+                             INNER JOIN empresa_sede s ON p.empresa_sede_id = s.empresa_sede_id
+                             WHERE nc.fecha >= @fDesde AND nc.fecha < @fHasta
+                               AND nc.estado = 'A'
+                         ) t
+                         GROUP BY fecha_dia
                          ORDER BY fecha_dia";
                        cmd.Parameters.Add("@fDesde", SqlDbType.Date).Value = fechasLista[0].Date;
                        cmd.Parameters.Add("@fHasta", SqlDbType.Date).Value = fechaAncla.AddDays(1).Date;
@@ -1141,7 +1188,7 @@ namespace ESD.ERP.Web.Controllers
          ViewBag.ListaAlmacenesStock = ObtenerAlmacenesActivos(sedeSesionId);
          ViewBag.MesActualStock = DateTime.Today.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES"));
          ViewBag.ListaGruposProducto = ObtenerGruposActivos();
-         ViewBag.ListaTopMenorStock = ObtenerTopMenorStockInterno(null, null, null, sedeSesionId);
+         ViewBag.ListaTopMenorStock = ObtenerTopMenorStockInterno(null, null, null, sedeSesionId, anioSesion, DateTime.Today.Month);
 
          int usuarioIdAgenda = ObtenerUsuarioId();
          if (usuarioIdAgenda <= 0 && usuarioDTO != null) usuarioIdAgenda = usuarioDTO.UsuarioId;
@@ -1246,17 +1293,30 @@ namespace ESD.ERP.Web.Controllers
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = $@"
-                        SELECT ISNULL(SUM({SqlMontoEnSoles}), 0) AS total
-                        FROM comprobante c
-                        INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                         {SqlTipoCambioApply}
-                        WHERE YEAR(c.fecha) = @anio 
-                          AND MONTH(c.fecha) = @mes 
-                          AND c.estado = 'A'
-                          AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+                        SELECT ISNULL(SUM(monto_neto_soles), 0) AS total
+                        FROM (
+                           SELECT {SqlMontoEnSoles} AS monto_neto_soles
+                           FROM comprobante c
+                           INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
+                           LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                            {SqlTipoCambioApply}
+                           WHERE YEAR(c.fecha) = @anio 
+                             AND MONTH(c.fecha) = @mes 
+                             AND c.estado = 'A'
+                             AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
+                             AND (@vid IS NULL OR c.vendedor_id = @vid)
+                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
+                           UNION ALL
+                           SELECT -1.0 * (CASE WHEN c.moneda_id = 2 THEN nc.monto_total * ISNULL(NULLIF(c.monto_tc, 0), 3.50) ELSE nc.monto_total END) AS monto_neto_soles
+                           FROM nota_credito nc
+                           LEFT JOIN comprobante c ON nc.comprobante_id = c.comprobante_id
+                           LEFT JOIN periodo_emp_sede pes ON nc.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                           WHERE YEAR(nc.fecha) = @anio 
+                             AND MONTH(nc.fecha) = @mes 
+                             AND nc.estado = 'A'
+                             AND (@vid IS NULL OR nc.vendedor_id = @vid)
+                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
+                        ) t";
                      cmd.Parameters.AddWithValue("@anio", anioConsulta);
                      cmd.Parameters.AddWithValue("@mes", mesConsulta);
                      cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
@@ -2280,10 +2340,12 @@ namespace ESD.ERP.Web.Controllers
          }
       }
 
-      private List<TopMenorStockDTO> ObtenerTopMenorStockInterno(int? grupoId = null, int? claseId = null, int? familiaId = null, int? sedeSesionId = null)
+      private List<TopMenorStockDTO> ObtenerTopMenorStockInterno(int? grupoId = null, int? claseId = null, int? familiaId = null, int? sedeSesionId = null, int? anioConsulta = null, int? mesConsulta = null)
       {
          var lista = new List<TopMenorStockDTO>();
          int sedeFiltro = (sedeSesionId.HasValue && sedeSesionId.Value > 0) ? sedeSesionId.Value : 1;
+         int anioFiltro = anioConsulta ?? DateTime.Today.Year;
+         int mesFiltro = mesConsulta ?? DateTime.Today.Month;
          try
          {
             using (var conn = new SqlConnection(GetDbConnectionString()))
@@ -2292,48 +2354,62 @@ namespace ESD.ERP.Web.Controllers
                using (var cmd = conn.CreateCommand())
                {
                   cmd.CommandText = @"
-                     WITH SaldoAbierto AS (
-                         SELECT 
-                             mas.producto_id,
-                             SUM((mas.cant_ant + mas.cant_ing) - (mas.cant_reserva + mas.cant_sal)) AS stock_total
-                         FROM dbo.mov_alm_saldo mas
-                         INNER JOIN dbo.mov_alm_cierre mac ON mac.periodo_emp_sede_id = mas.periodo_emp_sede_id
-                             AND mac.almacen_id = mas.almacen_id
-                             AND mac.mes_contable_id = mas.mes_contable_id
-                         INNER JOIN dbo.estado_ape_cie eac ON eac.estado_ape_cie_id = mac.estado_ape_cie_id
-                         LEFT JOIN dbo.periodo_emp_sede pes ON mac.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                         WHERE eac.estado_ape_cie = 'A'
-                           AND pes.empresa_sede_id = @sedeId
-                         GROUP BY mas.producto_id
+                     DECLARE @periodoId INT;
+                     SELECT TOP 1 @periodoId = periodo_id FROM dbo.periodo WHERE CAST(periodo AS INT) = @anioFiltro;
+                     IF @periodoId IS NULL SELECT TOP 1 @periodoId = periodo_id FROM dbo.periodo ORDER BY periodo DESC;
+
+                     DECLARE @mesContableId INT;
+                     SELECT TOP 1 @mesContableId = mes_contable_id FROM dbo.mes_contable WHERE CAST(mes_contable AS INT) = @mesFiltro;
+
+                     IF NOT EXISTS (
+                         SELECT 1 FROM dbo.mov_alm_saldo mas
+                         INNER JOIN dbo.periodo_emp_sede pes ON mas.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         WHERE pes.empresa_sede_id = @sedeId AND pes.periodo_id = @periodoId AND mas.mes_contable_id = @mesContableId
                      )
+                     BEGIN
+                         SELECT TOP 1 @mesContableId = mas.mes_contable_id
+                         FROM dbo.mov_alm_saldo mas
+                         INNER JOIN dbo.periodo_emp_sede pes ON mas.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         WHERE pes.empresa_sede_id = @sedeId AND pes.periodo_id = @periodoId
+                         ORDER BY mas.mes_contable_id DESC;
+                     END
+
                      SELECT TOP 10 
                          p.producto_id,
                          p.producto AS codigo,
                          p.descripcion AS nombre,
-                         ISNULL(s.stock_total, 0) AS cantidad,
-                         avp.stock_min,
+                         sc.cant_saldo AS cantidad,
+                         ISNULL(avp.stock_min, 0) AS stock_min,
                          ISNULL(um.abrev, 'UND') AS unidad_medida,
                          g.nombre AS grupo_nombre,
                          cl.nombre AS clase_nombre,
                          f.nombre AS familia_nombre
-                     FROM dbo.alm_vol_prod avp
-                     INNER JOIN dbo.producto p ON avp.producto_id = p.producto_id
-                     LEFT JOIN SaldoAbierto s ON p.producto_id = s.producto_id
+                     FROM (
+                         SELECT
+                             mas.producto_id,
+                             SUM(cant_reserva) AS cant_reserva,
+                             SUM((cant_ant + cant_ing) - (cant_sal + cant_reserva)) AS cant_saldo
+                         FROM dbo.mov_alm_saldo mas
+                         INNER JOIN dbo.periodo_emp_sede pes ON mas.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                         WHERE pes.empresa_sede_id = @sedeId
+                           AND pes.periodo_id = @periodoId
+                           AND mas.mes_contable_id = @mesContableId
+                         GROUP BY mas.producto_id
+                     ) sc
+                     INNER JOIN dbo.producto p ON sc.producto_id = p.producto_id
+                     LEFT JOIN dbo.alm_vol_prod avp ON p.producto_id = avp.producto_id AND avp.empresa_sede_id = @sedeId
                      LEFT JOIN dbo.unidad_medida um ON p.unidad_medida_id = um.unidad_medida_id
                      LEFT JOIN dbo.familia_producto f ON p.familia_producto_id = f.familia_producto_id
                      LEFT JOIN dbo.clase_producto cl ON f.clase_producto_id = cl.clase_producto_id
                      LEFT JOIN dbo.grupo_producto g ON cl.grupo_producto_id = g.grupo_producto_id
-                     WHERE avp.empresa_sede_id = @sedeId
-                       AND avp.stock_min > 0
-                       AND p.estado_producto_id = 1
-                        AND ISNULL(g.es_combo, 'N') <> 'S'
-                        AND ISNULL(g.tipo_producto_id, 1) <> 2
-                       AND (@grupoId IS NULL OR @grupoId = 0 OR g.grupo_producto_id = @grupoId)
+                     WHERE (@grupoId IS NULL OR @grupoId = 0 OR g.grupo_producto_id = @grupoId)
                        AND (@claseId IS NULL OR @claseId = 0 OR cl.clase_producto_id = @claseId)
                        AND (@familiaId IS NULL OR @familiaId = 0 OR f.familia_producto_id = @familiaId)
-                     ORDER BY ISNULL(s.stock_total, 0) ASC, (ISNULL(s.stock_total, 0) - avp.stock_min) ASC, p.descripcion ASC;";
+                     ORDER BY sc.cant_saldo ASC, p.producto ASC;";
 
                   cmd.Parameters.AddWithValue("@sedeId", sedeFiltro);
+                  cmd.Parameters.AddWithValue("@anioFiltro", anioFiltro);
+                  cmd.Parameters.AddWithValue("@mesFiltro", mesFiltro);
                   cmd.Parameters.AddWithValue("@grupoId", (object)grupoId ?? DBNull.Value);
                   cmd.Parameters.AddWithValue("@claseId", (object)claseId ?? DBNull.Value);
                   cmd.Parameters.AddWithValue("@familiaId", (object)familiaId ?? DBNull.Value);
@@ -2352,9 +2428,19 @@ namespace ESD.ERP.Web.Controllers
                            estado = "Agotado";
                            badge = "danger";
                         }
-                        else if (cantidad <= stockMin)
+                        else if (stockMin > 0 && cantidad <= stockMin)
                         {
                            estado = "Stock Crítico";
+                           badge = "warning";
+                        }
+                        else if (cantidad <= 1m)
+                        {
+                           estado = "Stock Crítico";
+                           badge = "warning";
+                        }
+                        else if (cantidad <= 5m)
+                        {
+                           estado = "Stock Bajo";
                            badge = "warning";
                         }
                         else
@@ -2400,24 +2486,32 @@ namespace ESD.ERP.Web.Controllers
             }
 
             int? sedeSesionId = null;
+            int? anioSesion = null;
             if (sedeId.HasValue && sedeId.Value > 0)
             {
                sedeSesionId = sedeId.Value;
             }
-            else if (!string.IsNullOrEmpty(cid))
+            if (!string.IsNullOrEmpty(cid))
             {
                try
                {
                   var pDTO = ObtenerPeriodoEmpresaSedeDTO(cid);
-                  if (pDTO?.EmpresaSedeDTO != null && pDTO.EmpresaSedeDTO.EmpresaSedeId > 0)
+                  if (pDTO != null)
                   {
-                     sedeSesionId = pDTO.EmpresaSedeDTO.EmpresaSedeId;
+                     if (pDTO.EmpresaSedeDTO != null && pDTO.EmpresaSedeDTO.EmpresaSedeId > 0 && (!sedeId.HasValue || sedeId.Value <= 0))
+                     {
+                        sedeSesionId = pDTO.EmpresaSedeDTO.EmpresaSedeId;
+                     }
+                     if (pDTO.PeriodoDTO != null && pDTO.PeriodoDTO.Codigo > 0)
+                     {
+                        anioSesion = pDTO.PeriodoDTO.Codigo;
+                     }
                   }
                }
                catch { }
             }
 
-            var data = ObtenerTopMenorStockInterno(grupoId, claseId, familiaId, sedeSesionId);
+            var data = ObtenerTopMenorStockInterno(grupoId, claseId, familiaId, sedeSesionId, anioSesion, DateTime.Today.Month);
             return Json(new { success = true, data = data });
          }
          catch (Exception ex)
@@ -2449,29 +2543,6 @@ namespace ESD.ERP.Web.Controllers
                   else
                   {
                      cmd.CommandText = @"
-                        INSERT INTO dbo.calendario_usuario_area (usuario_id, area_id, es_principal, fecha_creacion)
-                        SELECT DISTINCT @usuarioId, m.area_id, 0, SYSDATETIME()
-                        FROM dbo.rol_usuario ru
-                        JOIN dbo.rol r ON ru.rol_id = r.rol_id
-                        CROSS APPLY (
-                            SELECT area_id FROM dbo.calendario_area
-                            WHERE estado = 'A' AND (
-                                (area_id = 2 AND (r.nombre LIKE '%Venta%' OR r.nombre LIKE '%Comercial%' OR r.rol IN ('00003','00004','00010','00017')))
-                                OR (area_id = 3 AND (r.nombre LIKE '%Market%' OR r.rol IN ('00015')))
-                                OR (area_id = 4 AND (r.nombre LIKE '%Producci%' OR r.rol IN ('00023')))
-                                OR (area_id = 5 AND (r.nombre LIKE '%Almac%' OR r.nombre LIKE '%Log%stica%' OR r.nombre LIKE '%Despacho%' OR r.nombre LIKE '%Operacion%' OR r.rol IN ('00007','00011','00013','00014','00016','00018','00019','00021','00022')))
-                                OR (area_id = 6 AND (r.nombre LIKE '%Contab%' OR r.nombre LIKE '%Tesor%' OR r.nombre LIKE '%Caja%' OR r.rol IN ('00005','00006','00008','00012')))
-                                OR (area_id = 7 AND (r.nombre LIKE '%Capital Humano%' OR r.nombre LIKE '%RRHH%' OR r.rol IN ('00009')))
-                                OR (area_id = 8 AND (r.rol = '00020' OR r.nombre = 'TI' OR r.nombre LIKE '%TI %' OR r.nombre LIKE '% TI' OR r.nombre LIKE '%Sistemas%'))
-                                OR (area_id = 1 AND (r.rol = 'S0001' OR r.nombre LIKE '%Admin%'))
-                            )
-                        ) m
-                        WHERE ru.usuario_id = @usuarioId
-                          AND NOT EXISTS (
-                              SELECT 1 FROM dbo.calendario_usuario_area cua 
-                              WHERE cua.usuario_id = @usuarioId AND cua.area_id = m.area_id
-                          );
-
                         IF EXISTS (SELECT 1 FROM dbo.calendario_usuario_area WHERE usuario_id = @usuarioId)
                            AND NOT EXISTS (SELECT 1 FROM dbo.calendario_usuario_area WHERE usuario_id = @usuarioId AND es_principal = 1)
                         BEGIN
@@ -2499,29 +2570,6 @@ namespace ESD.ERP.Web.Controllers
                            Descripcion = reader["descripcion"] != DBNull.Value ? reader["descripcion"].ToString() : "",
                            Color = reader["color"] != DBNull.Value ? reader["color"].ToString() : "#0d6efd"
                         });
-                     }
-                  }
-
-                  if (!esAdmin && areas.Count == 0)
-                  {
-                     cmd.Parameters.Clear();
-                     cmd.CommandText = @"
-                        SELECT TOP 1 area_id, nombre, descripcion, color 
-                        FROM dbo.calendario_area 
-                        WHERE estado = 'A' AND (area_id = 2 OR nombre LIKE '%Venta%') 
-                        ORDER BY area_id ASC";
-                     using (var reader = cmd.ExecuteReader())
-                     {
-                        if (reader.Read())
-                        {
-                           areas.Add(new CalendarioAreaDTO
-                           {
-                              AreaId = Convert.ToInt32(reader["area_id"]),
-                              Nombre = reader["nombre"].ToString(),
-                              Descripcion = reader["descripcion"] != DBNull.Value ? reader["descripcion"].ToString() : "",
-                              Color = reader["color"] != DBNull.Value ? reader["color"].ToString() : "#198754"
-                           });
-                        }
                      }
                   }
                }
@@ -3053,7 +3101,98 @@ namespace ESD.ERP.Web.Controllers
             return Json(new { success = false, message = ex.Message });
          }
       }
-      [HttpGet]
+            [HttpGet]
+      public JsonResult ObtenerTopPedidosPorFecha(string fecha, int? sedeId = null, int top = 10, string cid = "")
+      {
+         try
+         {
+            if (string.IsNullOrEmpty(cid))
+            {
+               cid = Request.Query["cid"];
+               if (string.IsNullOrEmpty(cid)) { cid = Request.Headers["x-app-cid"]; }
+            }
+
+            DateTime fechaFiltro = DateTime.Today;
+            if (!string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out DateTime dtParsed))
+            {
+               fechaFiltro = dtParsed.Date;
+            }
+
+            int? sedeSesionId = null;
+            if (sedeId.HasValue && sedeId.Value > 0)
+            {
+               sedeSesionId = sedeId.Value;
+            }
+            else if (!string.IsNullOrEmpty(cid))
+            {
+               try
+               {
+                  var pDTO = ObtenerPeriodoEmpresaSedeDTO(cid);
+                  if (pDTO?.EmpresaSedeDTO != null && pDTO.EmpresaSedeDTO.EmpresaSedeId > 0)
+                  {
+                     sedeSesionId = pDTO.EmpresaSedeDTO.EmpresaSedeId;
+                  }
+               }
+               catch { }
+            }
+
+            var lista = new List<TopPedidoDTO>();
+            using (var conn = new SqlConnection(GetDbConnectionString()))
+            {
+               conn.Open();
+               using (var cmd = conn.CreateCommand())
+               {
+                  cmd.CommandText = $@"
+                     SELECT TOP (@top)
+                         c.cotiza_id, 
+                         c.cotiza, 
+                         ISNULL(NULLIF(RTRIM(LTRIM(p.razon_social)), ''), ISNULL(RTRIM(LTRIM(p.nombres)), 'Sin Cliente')) AS cliente, 
+                         {SqlMontoEnSoles} AS monto_total
+                     FROM cotiza c
+                     LEFT JOIN proveedor p ON c.proveedor_id = p.proveedor_id
+                     LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                      {SqlTipoCambioApply}
+                     WHERE c.es_pedido = 'S' 
+                       AND c.estado = 'A' 
+                       AND CAST(c.fecha AS DATE) = @fechaDia
+                       AND (@sedeSesion IS NULL OR @sedeSesion = 0 OR pes.empresa_sede_id = @sedeSesion)
+                     ORDER BY {SqlMontoEnSoles} DESC";
+
+                  cmd.Parameters.Add("@fechaDia", SqlDbType.Date).Value = fechaFiltro;
+                  cmd.Parameters.AddWithValue("@top", top > 0 ? top : 10);
+                  cmd.Parameters.AddWithValue("@sedeSesion", (object)sedeSesionId ?? DBNull.Value);
+
+                  using (var reader = cmd.ExecuteReader())
+                  {
+                     while (reader.Read())
+                     {
+                        decimal monto = reader["monto_total"] != DBNull.Value ? Convert.ToDecimal(reader["monto_total"]) : 0m;
+                        lista.Add(new TopPedidoDTO
+                        {
+                           Id = Convert.ToInt32(reader["cotiza_id"]),
+                           Codigo = reader["cotiza"]?.ToString()?.Trim(),
+                           Cliente = reader["cliente"]?.ToString()?.Trim(),
+                           Monto = monto,
+                           MontoFormateado = "S/ " + monto.ToString("N2")
+                        });
+                     }
+                  }
+               }
+            }
+
+            return Json(new
+            {
+               success = true,
+               data = lista,
+               fechaFormateada = fechaFiltro.ToString("dd/MM/yyyy")
+            });
+         }
+         catch (Exception ex)
+         {
+            return Json(new { success = false, message = ex.Message });
+         }
+      }
+[HttpGet]
       public JsonResult ObtenerGraficoVentasPorSede(int? sedeId = null, int? anio = null, string cid = null)
       {
          try

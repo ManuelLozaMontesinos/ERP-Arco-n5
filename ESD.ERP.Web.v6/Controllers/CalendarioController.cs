@@ -94,29 +94,6 @@ namespace ESD.ERP.Web.Controllers
                   else
                   {
                      cmd.CommandText = @"
-                        INSERT INTO dbo.calendario_usuario_area (usuario_id, area_id, es_principal, fecha_creacion)
-                        SELECT DISTINCT @usuarioId, m.area_id, 0, SYSDATETIME()
-                        FROM dbo.rol_usuario ru
-                        JOIN dbo.rol r ON ru.rol_id = r.rol_id
-                        CROSS APPLY (
-                            SELECT area_id FROM dbo.calendario_area
-                            WHERE estado = 'A' AND (
-                                (area_id = 2 AND (r.nombre LIKE '%Venta%' OR r.nombre LIKE '%Comercial%' OR r.rol IN ('00003','00004','00010','00017')))
-                                OR (area_id = 3 AND (r.nombre LIKE '%Market%' OR r.rol IN ('00015')))
-                                OR (area_id = 4 AND (r.nombre LIKE '%Producci%' OR r.rol IN ('00023')))
-                                OR (area_id = 5 AND (r.nombre LIKE '%Almac%' OR r.nombre LIKE '%Log%stica%' OR r.nombre LIKE '%Despacho%' OR r.nombre LIKE '%Operacion%' OR r.rol IN ('00007','00011','00013','00014','00016','00018','00019','00021','00022')))
-                                OR (area_id = 6 AND (r.nombre LIKE '%Contab%' OR r.nombre LIKE '%Tesor%' OR r.nombre LIKE '%Caja%' OR r.rol IN ('00005','00006','00008','00012')))
-                                OR (area_id = 7 AND (r.nombre LIKE '%Capital Humano%' OR r.nombre LIKE '%RRHH%' OR r.rol IN ('00009')))
-                                OR (area_id = 8 AND (r.rol = '00020' OR r.nombre = 'TI' OR r.nombre LIKE '%TI %' OR r.nombre LIKE '% TI' OR r.nombre LIKE '%Sistemas%'))
-                                OR (area_id = 1 AND (r.rol = 'S0001' OR r.nombre LIKE '%Admin%'))
-                            )
-                        ) m
-                        WHERE ru.usuario_id = @usuarioId
-                          AND NOT EXISTS (
-                              SELECT 1 FROM dbo.calendario_usuario_area cua 
-                              WHERE cua.usuario_id = @usuarioId AND cua.area_id = m.area_id
-                          );
-
                         IF EXISTS (SELECT 1 FROM dbo.calendario_usuario_area WHERE usuario_id = @usuarioId)
                            AND NOT EXISTS (SELECT 1 FROM dbo.calendario_usuario_area WHERE usuario_id = @usuarioId AND es_principal = 1)
                         BEGIN
@@ -144,43 +121,6 @@ namespace ESD.ERP.Web.Controllers
                            Descripcion = reader["descripcion"] != DBNull.Value ? reader["descripcion"].ToString() : "",
                            Color = reader["color"] != DBNull.Value ? reader["color"].ToString() : "#0d6efd"
                         });
-                     }
-                  }
-
-                  if (!esAdmin && areas.Count == 0)
-                  {
-                     cmd.Parameters.Clear();
-                     cmd.CommandText = @"
-                        IF EXISTS (
-                           SELECT 1 FROM dbo.rol_usuario ru
-                           JOIN dbo.rol r ON ru.rol_id = r.rol_id
-                           WHERE ru.usuario_id = @uid AND (r.rol IN ('00003','00004','00010') OR r.nombre LIKE '%Venta%')
-                        )
-                        BEGIN
-                           IF NOT EXISTS (SELECT 1 FROM dbo.calendario_usuario_area WHERE usuario_id = @uid AND area_id = 2)
-                           BEGIN
-                              INSERT INTO dbo.calendario_usuario_area (usuario_id, area_id, es_principal, fecha_creacion)
-                              VALUES (@uid, 2, 1, GETDATE());
-                           END
-                        END
-
-                        SELECT TOP 1 area_id, nombre, descripcion, color 
-                        FROM dbo.calendario_area 
-                        WHERE estado = 'A' AND (area_id = 2 OR nombre LIKE '%Venta%') 
-                        ORDER BY area_id ASC";
-                     cmd.Parameters.AddWithValue("@uid", usuarioId);
-                     using (var reader = cmd.ExecuteReader())
-                     {
-                        if (reader.Read())
-                        {
-                           areas.Add(new AreaItemModel
-                           {
-                              AreaId = Convert.ToInt32(reader["area_id"]),
-                              Nombre = reader["nombre"].ToString(),
-                              Descripcion = reader["descripcion"] != DBNull.Value ? reader["descripcion"].ToString() : "",
-                              Color = reader["color"] != DBNull.Value ? reader["color"].ToString() : "#198754"
-                           });
-                        }
                      }
                   }
                }
