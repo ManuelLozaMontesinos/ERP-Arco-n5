@@ -92,8 +92,9 @@
         <text>
         #dashboard-content-container,
         #row-kpis-metricas,
+        #zone-full-top,
         #row-main-dashboard,
-        #row-tablas-detalle,
+        #zone-full-bottom,
         #row-stock-insumos,
         #row-top-menor-stock,
         #box-filtro-sede-dashboard,
@@ -389,7 +390,7 @@
 
         <!-- 2. SECCIÓN PRINCIPAL (Gráficos y Accesos Rápidos con estilo unificado card-outline) -->
         <!-- ZONA SUPERIOR DE ANCHO COMPLETO (Dropzone para widgets a 100%) -->
-        <div class="row dashboard-dropzone mb-0 @(esDashboardVacio ? "d-none" : "")" id="zone-full-top" data-zone="full-top" style="min-height: 5px;"></div>
+        <div class="row dashboard-dropzone mb-0 @(esDashboardVacio ? "d-none" : "")" id="zone-full-top" data-zone="full-top"></div>
         <div class="row" id="row-main-dashboard">
 
             <!-- Columna Izquierda (6 columnas - Simétrica 50%) -->
@@ -971,8 +972,17 @@
                         cursor: grabbing;
                     }
                     .dashboard-dropzone {
-                        min-height: 200px;
-                        transition: background-color 0.2s ease, outline 0.2s ease;
+                        min-height: 220px;
+                        transition: background-color 0.2s ease, outline 0.2s ease, min-height 0.15s ease;
+                    }
+                    #zone-full-top.dashboard-dropzone,
+                    #zone-full-bottom.dashboard-dropzone {
+                        min-height: 8px;
+                    }
+                    #zone-full-top.dashboard-dropzone.drag-active,
+                    #zone-full-bottom.dashboard-dropzone.drag-active {
+                        min-height: 80px !important;
+                        margin-bottom: 1rem !important;
                     }
                     .dashboard-dropzone.drag-active {
                         background-color: rgba(2, 132, 199, 0.04);
@@ -990,6 +1000,19 @@
                         transition: all 0.2s ease;
                         user-select: none;
                         width: 100%;
+                        pointer-events: none;
+                    }
+                    .dashboard-dropzone.dropzone-has-placeholder > .dropzone-empty-placeholder {
+                        display: none !important;
+                    }
+                    .dashboard-dropzone.row > .card.dashboard-draggable-card.dashboard-full-card {
+                        flex: 0 0 calc(100% - 30px) !important;
+                        max-width: calc(100% - 30px) !important;
+                        width: calc(100% - 30px) !important;
+                        margin-left: 15px !important;
+                        margin-right: 15px !important;
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
                     }
                     body.dark-mode .dropzone-empty-placeholder {
                         border-color: #475569;
@@ -1028,6 +1051,13 @@
                         justify-content: center !important;
                         animation: placeholderPulse 1.2s infinite alternate ease-in-out;
                         width: 100%;
+                        pointer-events: none;
+                    }
+                    .dashboard-dropzone.row > .dashboard-drop-placeholder {
+                        flex: 0 0 calc(100% - 30px);
+                        max-width: calc(100% - 30px);
+                        margin-left: 15px;
+                        margin-right: 15px;
                     }
                     .dashboard-drop-placeholder .placeholder-inner {
                         color: #0284c7;
@@ -1768,7 +1798,7 @@
         <!-- ZONA INFERIOR DE ANCHO COMPLETO (Dropzone para tablas e inventario) -->
         <div class="row dashboard-dropzone mb-0 @(esDashboardVacio ? "d-none" : "")" id="zone-full-bottom" data-zone="full-bottom">
             <!-- 3.1. Top 5 / Top 10 Pedidos del Día (Izquierda) -->
-            <div class="col-12 col-lg-6 dashboard-draggable-card mb-4 @(permisosDashboardRol.ContainsKey("top-pedidos") && !permisosDashboardRol["top-pedidos"] ? "d-none" : "")" id="area-top-pedidos" data-widget-id="top-pedidos">
+            <div class="col-12 col-lg-6 dashboard-draggable-card mb-4 @(permisosDashboardRol.ContainsKey("top-pedidos") && !permisosDashboardRol["top-pedidos"] ? "d-none" : "")" id="area-top-pedidos" data-widget-id="top-pedidos" data-half-pair="1">
                 <div class="card card-primary card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
                         <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
@@ -1868,7 +1898,7 @@
             </div>
 
             <!-- 3.2. Clientes sin Compras (+5 Meses) (Derecha) -->
-            <div class="col-12 col-lg-6 dashboard-draggable-card mb-4 @(permisosDashboardRol.ContainsKey("clientes-inactivos") && !permisosDashboardRol["clientes-inactivos"] ? "d-none" : "")" id="area-clientes-inactivos" data-widget-id="clientes-inactivos">
+            <div class="col-12 col-lg-6 dashboard-draggable-card mb-4 @(permisosDashboardRol.ContainsKey("clientes-inactivos") && !permisosDashboardRol["clientes-inactivos"] ? "d-none" : "")" id="area-clientes-inactivos" data-widget-id="clientes-inactivos" data-half-pair="1">
                 <div class="card card-warning card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2" style="gap: 6px;">
                         <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0">
@@ -1977,12 +2007,10 @@
                     <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
             </div>
-        </div>
 
         <!-- 4. SECCION: STOCK Y CONSUMO DE INSUMOS CRITICOS EN TIEMPO REAL -->
         <div class="col-12 mb-4 dashboard-draggable-card @(permisosDashboardRol.ContainsKey("stock-insumos") && !permisosDashboardRol["stock-insumos"] ? "d-none" : "")" id="row-stock-insumos" data-widget-id="stock-insumos">
-            <div class="col-12 mb-4">
-                <div class="card card-info card-outline shadow-sm mb-4">
+            <div class="card card-info card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2">
                         <div class="d-flex align-items-center flex-wrap">
                             <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
@@ -2120,12 +2148,10 @@
                     <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
             </div>
-        </div>
 
         <!-- 5. SECCION: TOP 10 PRODUCTOS CON MENOR STOCK -->
         <div class="col-12 mb-4 dashboard-draggable-card @(permisosDashboardRol.ContainsKey("top-menor-stock") && !permisosDashboardRol["top-menor-stock"] ? "d-none" : "")" id="row-top-menor-stock" data-widget-id="top-menor-stock">
-            <div class="col-12 mb-4">
-                <div class="card card-danger card-outline shadow-sm mb-4">
+            <div class="card card-danger card-outline shadow-sm mb-4">
                     <div class="card-header border-0 d-flex flex-wrap justify-content-between align-items-center py-2 pl-3 pr-2">
                         <div class="d-flex align-items-center flex-wrap">
                             <span class="widget-drag-handle mr-2" title="Arrastra para reordenar este widget"><i class="fas fa-grip-vertical"></i></span> <h3 class="card-title font-weight-bold m-0" style="font-size: 1.05rem;">
@@ -2291,7 +2317,6 @@
                     </div>
                     <div class="dashboard-card-resize-bar" title="Arrastra hacia arriba o abajo para cambiar la altura del widget"><div class="resize-grip"></div></div>
                 </div>
-            </div>
         </div>
         </div><!-- /#zone-full-bottom -->
         </div><!-- /#dashboard-content-container -->
@@ -4487,6 +4512,7 @@
         } catch (e) { }
 
         var tienePermisoCalendario = @(tienePermisoCalendario ? "true" : "false");
+        var currentProporcionColumnas = '6-6';
 
         // Configuracion de las 12 areas principales del dashboard
         var areasDashboardConfig = {
@@ -4835,63 +4861,21 @@
             $('#modal-conteo-areas-activas').text(activasCount);
             $('#modal-conteo-areas-permitidas').text(permitidasCount);
 
-            // Ajuste responsivo de columnas
-            var leftVisible = areasDashboardConfig['evolucion-ventas'].visible || areasDashboardConfig['diferencia-sedes'].visible || areasDashboardConfig['pedidos-vendedor'].visible || (areasDashboardConfig['cotizaciones-vendedor'] && areasDashboardConfig['cotizaciones-vendedor'].visible);
-            var rightVisible = areasDashboardConfig['accesos-rapidos'].visible || areasDashboardConfig['estado-produccion'].visible || (areasDashboardConfig['agenda-calendario'] && areasDashboardConfig['agenda-calendario'].visible) || areasDashboardConfig['db-tiempo-real'].visible;
-
-            var $colLeft = $('#col-main-left');
-            var $colRight = $('#col-main-right');
-            var $rowMain = $('#row-main-dashboard');
-
-            if (!leftVisible && !rightVisible) {
-                $rowMain.addClass('d-none');
-            } else {
-                $rowMain.removeClass('d-none');
-                if (leftVisible && !rightVisible) {
-                    $colLeft.removeClass('d-none col-lg-5 col-lg-6 col-lg-7').addClass('col-lg-12');
-                    $colRight.addClass('d-none');
-                } else if (!leftVisible && rightVisible) {
-                    $colLeft.addClass('d-none');
-                    $colRight.removeClass('d-none col-lg-5 col-lg-6 col-lg-7').addClass('col-lg-12');
-                } else {
-                    var targetLeft = (typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '7-5') ? 'col-lg-7' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '5-7') ? 'col-lg-5' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '12-12') ? 'col-lg-12' : 'col-lg-6'));
-                    var targetRight = (typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '7-5') ? 'col-lg-5' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '5-7') ? 'col-lg-7' : ((typeof currentProporcionColumnas !== 'undefined' && currentProporcionColumnas === '12-12') ? 'col-lg-12' : 'col-lg-6'));
-                    $colLeft.removeClass('d-none col-lg-12 col-lg-7 col-lg-5 col-lg-6').addClass(targetLeft);
-                    $colRight.removeClass('d-none col-lg-12 col-lg-7 col-lg-5 col-lg-6').addClass(targetRight);
-                }
+            // Ajuste responsivo de columnas y zonas (permite acomodar libremente widgets a izquierda/derecha sin importar cuantos haya)
+            if (typeof sincronizarEstructuraColumnasDashboard === 'function') {
+                sincronizarEstructuraColumnasDashboard();
             }
 
-            // Ajuste responsivo de tablas
-            var topPedidosVis = areasDashboardConfig['top-pedidos'].visible;
-            var clientesVis = areasDashboardConfig['clientes-inactivos'].visible;
-            var $areaTop = $('#area-top-pedidos');
-            var $areaCli = $('#area-clientes-inactivos');
-            var $rowTablas = $('#row-tablas-detalle');
-
-            if (!topPedidosVis && !clientesVis) {
-                $rowTablas.addClass('d-none');
-            } else {
-                $rowTablas.removeClass('d-none');
-                if (topPedidosVis && !clientesVis) {
-                    $areaTop.removeClass('d-none col-lg-6').addClass('col-lg-12');
-                    $areaCli.addClass('d-none');
-                } else if (!topPedidosVis && clientesVis) {
-                    $areaTop.addClass('d-none');
-                    $areaCli.removeClass('d-none col-lg-6').addClass('col-lg-12');
-                } else {
-                    $areaTop.removeClass('d-none col-lg-12').addClass('col-lg-6');
-                    $areaCli.removeClass('d-none col-lg-12').addClass('col-lg-6');
-                }
-            }
-
-
-
-            // Redimensionar graficos Chart.js
+            // Redimensionar graficos Chart.js y FullCalendar
             setTimeout(function () {
-                if (salesChartInstance) salesChartInstance.resize();
-                if (stackedBarChartInstance) stackedBarChartInstance.resize();
-                if (productionChartInstance) productionChartInstance.resize();
-                if (vendedorChartInstance) vendedorChartInstance.resize();
+                if (typeof redimensionarTodosLosGraficos === 'function') {
+                    redimensionarTodosLosGraficos();
+                } else {
+                    if (salesChartInstance) salesChartInstance.resize();
+                    if (stackedBarChartInstance) stackedBarChartInstance.resize();
+                    if (productionChartInstance) productionChartInstance.resize();
+                    if (vendedorChartInstance) vendedorChartInstance.resize();
+                }
             }, 60);
         }
 
@@ -5611,6 +5595,20 @@
             actualizarSoloKpis(sedeId);
         });
 
+        function actualizarTarjetasKpis(kpis) {
+            if (!kpis) return;
+            if (kpis.facturacionMes !== undefined && kpis.facturacionMes !== null) $('#kpi-ventas').text(kpis.facturacionMes);
+            if (kpis.pedidosActivos !== undefined && kpis.pedidosActivos !== null) $('#kpi-pedidos').text(kpis.pedidosActivos);
+            if (kpis.cotizacionesActivas !== undefined && kpis.cotizacionesActivas !== null) $('#kpi-cotizaciones').text(kpis.cotizacionesActivas);
+            if (kpis.ordenesProduccionMes !== undefined && kpis.ordenesProduccionMes !== null) $('#kpi-produccion').text(kpis.ordenesProduccionMes);
+            if (kpis.ordenesCompraMes !== undefined && kpis.ordenesCompraMes !== null) $('#kpi-compras').text(kpis.ordenesCompraMes);
+            if (kpis.pedidosMesCantidad !== undefined && kpis.pedidosMesCantidad !== null) $('#kpi-pedidos-cantidad').text(Number(kpis.pedidosMesCantidad).toLocaleString('en-US'));
+            if (kpis.consumoInternoMes !== undefined && kpis.consumoInternoMes !== null) $('#kpi-consumo-interno').text(kpis.consumoInternoMes);
+            if (kpis.ingresosMermaMes !== undefined && kpis.ingresosMermaMes !== null) $('#kpi-merma-ingresos').text(kpis.ingresosMermaMes);
+            if (kpis.salidasMermaMes !== undefined && kpis.salidasMermaMes !== null) $('#kpi-merma-salidas').text(kpis.salidasMermaMes);
+            if (kpis.guiasRemisionMes !== undefined && kpis.guiasRemisionMes !== null) $('#kpi-guias-remision').text(kpis.guiasRemisionMes);
+        }
+
         function actualizarSoloKpis(sedeId) {
             $('#row-kpis-metricas').css({ 'opacity': '0.5', 'transition': 'opacity 0.2s ease' });
             $.ajax({
@@ -5620,18 +5618,8 @@
                 headers: { 'x-app-cid': cid },
                 success: function (res) {
                     if (res && res.success && res.kpis) {
-                        if (res.kpis.facturacionMes) $('#kpi-ventas').text(res.kpis.facturacionMes);
-                        if (res.kpis.pedidosActivos) $('#kpi-pedidos').text(res.kpis.pedidosActivos);
-                        if (res.kpis.cotizacionesActivas) $('#kpi-cotizaciones').text(res.kpis.cotizacionesActivas);
-                        if (res.kpis.ordenesProduccionMes) $('#kpi-produccion').text(res.kpis.ordenesProduccionMes);
-                        if (res.kpis.ordenesCompraMes) $('#kpi-compras').text(res.kpis.ordenesCompraMes);
-                        if (res.kpis.pedidosMesCantidad) $('#kpi-pedidos-cantidad').text(res.kpis.pedidosMesCantidad);
-                        if (res.kpis.consumoInternoMes !== undefined) $('#kpi-consumo-interno').text(res.kpis.consumoInternoMes);
-                        if (res.kpis.ingresosMermaMes !== undefined) $('#kpi-merma-ingresos').text(res.kpis.ingresosMermaMes);
-                        if (res.kpis.salidasMermaMes !== undefined) $('#kpi-merma-salidas').text(res.kpis.salidasMermaMes);
-                        if (res.kpis.guiasRemisionMes !== undefined) $('#kpi-guias-remision').text(res.kpis.guiasRemisionMes);
+                        actualizarTarjetasKpis(res.kpis);
                     }
-
                 },
                 complete: function () {
                     $('#row-kpis-metricas').css('opacity', '1');
@@ -5680,6 +5668,7 @@
                     vendedorClientesId: $('#select-vendedor-inactivos').val() || null,
                     vendedorId: (vendChartId !== null && !isNaN(vendChartId)) ? vendChartId : null,
                     cotizacionVendedorId: (cotizChartId !== null && !isNaN(cotizChartId)) ? cotizChartId : null,
+                    sedeId: parseInt($('#select-filtro-sede-dashboard').val()) || 0,
                     sedeVentasId: parseInt($("#select-filtro-sede-ventas").val()) || 0,
                     anio: parseInt($('#header-select-periodo').val()) || @anioSesion
                 },
@@ -5689,16 +5678,7 @@
                         lastDashboardData = res;
 
                         if (res.kpis) {
-                            if (res.kpis.facturacionMes) $('#kpi-ventas').text(res.kpis.facturacionMes);
-                            if (res.kpis.pedidosActivos) $('#kpi-pedidos').text(res.kpis.pedidosActivos);
-                            if (res.kpis.cotizacionesActivas) $('#kpi-cotizaciones').text(res.kpis.cotizacionesActivas);
-                            if (res.kpis.ordenesProduccionMes) $('#kpi-produccion').text(res.kpis.ordenesProduccionMes);
-                            if (res.kpis.ordenesCompraMes) $('#kpi-compras').text(res.kpis.ordenesCompraMes);
-                            if (res.kpis.pedidosMesCantidad) $('#kpi-pedidos-cantidad').text(res.kpis.pedidosMesCantidad);
-                            if (res.kpis.consumoInternoMes !== undefined) $('#kpi-consumo-interno').text(res.kpis.consumoInternoMes);
-                            if (res.kpis.ingresosMermaMes !== undefined) $('#kpi-merma-ingresos').text(res.kpis.ingresosMermaMes);
-                            if (res.kpis.salidasMermaMes !== undefined) $('#kpi-merma-salidas').text(res.kpis.salidasMermaMes);
-                            if (res.kpis.guiasRemisionMes !== undefined) $('#kpi-guias-remision').text(res.kpis.guiasRemisionMes);
+                            actualizarTarjetasKpis(res.kpis);
                         }
 
                         if (res.graficoVentas) {
@@ -6959,7 +6939,6 @@
         // ========================================================
         // MOTOR DE DRAG & DROP Y PERSONALIZACION DE DASHBOARD
         // ========================================================
-        var currentProporcionColumnas = '6-6';
         var draggedCardElement = null;
         var dashboardDropPlaceholder = null;
 
@@ -6975,8 +6954,20 @@
             return $('#area-' + widgetKey).length ? $('#area-' + widgetKey) : $('#row-' + widgetKey);
         }
 
-        function aplicarProporcionColumnas(ratio, save) {
-            currentProporcionColumnas = ratio || '6-6';
+        function contarWidgetsVisiblesDashboard() {
+            var cnt = 0;
+            if (typeof areasDashboardConfig === 'object' && areasDashboardConfig) {
+                for (var k in areasDashboardConfig) {
+                    if (k !== 'kpis' && areasDashboardConfig.hasOwnProperty(k) && areasDashboardConfig[k] && areasDashboardConfig[k].visible) {
+                        cnt++;
+                    }
+                }
+            }
+            return cnt;
+        }
+
+        function applyColumnRatioClasses(ratio) {
+            currentProporcionColumnas = ratio || currentProporcionColumnas || '6-6';
             var $colLeft = $('#col-main-left');
             var $colRight = $('#col-main-right');
             var labelText = 'Columnas: 6:6 (Simétrico)';
@@ -6984,15 +6975,15 @@
             $colLeft.removeClass('col-lg-5 col-lg-6 col-lg-7 col-lg-8 col-lg-12 col-md-12');
             $colRight.removeClass('col-lg-5 col-lg-6 col-lg-7 col-lg-4 col-lg-12 col-md-12');
 
-            if (ratio === '7-5') {
+            if (currentProporcionColumnas === '7-5') {
                 $colLeft.addClass('col-lg-7 col-md-12');
                 $colRight.addClass('col-lg-5 col-md-12');
                 labelText = 'Columnas: 7:5';
-            } else if (ratio === '5-7') {
+            } else if (currentProporcionColumnas === '5-7') {
                 $colLeft.addClass('col-lg-5 col-md-12');
                 $colRight.addClass('col-lg-7 col-md-12');
                 labelText = 'Columnas: 5:7';
-            } else if (ratio === '12-12') {
+            } else if (currentProporcionColumnas === '12-12') {
                 $colLeft.addClass('col-lg-12');
                 $colRight.addClass('col-lg-12');
                 labelText = 'Columnas: 100%';
@@ -7004,6 +6995,76 @@
             }
 
             $('#label-proporcion-actual').text(labelText);
+        }
+
+        function syncAllWidgetZoneClasses() {
+            var zones = [
+                { sel: '#zone-full-top', name: 'full-top' },
+                { sel: '#col-main-left', name: 'left' },
+                { sel: '#col-main-right', name: 'right' },
+                { sel: '#zone-full-bottom', name: 'full-bottom' }
+            ];
+
+            zones.forEach(function(z) {
+                $(z.sel + ' .dashboard-draggable-card').each(function() {
+                    adaptCardToZone(this, z.name);
+                });
+            });
+
+            // Emparejar top-pedidos y clientes-inactivos solo si ambos estan visibles en zone-full-bottom sin ancho completo forzado
+            var $zBottom = $('#zone-full-bottom');
+            var $areaTop = $('#area-top-pedidos');
+            var $areaCli = $('#area-clientes-inactivos');
+            var topInBottom = $areaTop.length && $areaTop.parent()[0] === $zBottom[0] && !$areaTop.hasClass('d-none') && $areaTop.css('display') !== 'none';
+            var cliInBottom = $areaCli.length && $areaCli.parent()[0] === $zBottom[0] && !$areaCli.hasClass('d-none') && $areaCli.css('display') !== 'none';
+            var topForceFull = $areaTop.attr('data-force-full') === '1';
+            var cliForceFull = $areaCli.attr('data-force-full') === '1';
+
+            if (topInBottom && cliInBottom && !topForceFull && !cliForceFull) {
+                $areaTop.removeClass('col-lg-12').addClass('col-12 col-lg-6 mb-4');
+                $areaCli.removeClass('col-lg-12').addClass('col-12 col-lg-6 mb-4');
+            } else {
+                if (topInBottom) {
+                    $areaTop.removeClass('col-lg-6').addClass('col-12 col-lg-12 mb-4');
+                }
+                if (cliInBottom) {
+                    $areaCli.removeClass('col-lg-6').addClass('col-12 col-lg-12 mb-4');
+                }
+            }
+        }
+
+        function sincronizarEstructuraColumnasDashboard() {
+            var widgetsVisiblesTotal = contarWidgetsVisiblesDashboard();
+            var $zoneTop = $('#zone-full-top');
+            var $rowMain = $('#row-main-dashboard');
+            var $colLeft = $('#col-main-left');
+            var $colRight = $('#col-main-right');
+            var $zoneBottom = $('#zone-full-bottom');
+
+            if (widgetsVisiblesTotal === 0) {
+                $zoneTop.addClass('d-none');
+                $rowMain.addClass('d-none');
+                $zoneBottom.addClass('d-none');
+            } else {
+                $zoneTop.removeClass('d-none').css('display', '');
+                $rowMain.removeClass('d-none').css('display', '');
+                $colLeft.removeClass('d-none').css('display', '');
+                $colRight.removeClass('d-none').css('display', '');
+                $zoneBottom.removeClass('d-none').css('display', '');
+                applyColumnRatioClasses(currentProporcionColumnas);
+                syncAllWidgetZoneClasses();
+                actualizarPlaceholdersZonasVacias();
+            }
+        }
+
+        function aplicarProporcionColumnas(ratio, save) {
+            applyColumnRatioClasses(ratio || '6-6');
+
+            if (contarWidgetsVisiblesDashboard() > 0) {
+                $('#row-main-dashboard').removeClass('d-none').css('display', '');
+                $('#col-main-left').removeClass('d-none').css('display', '');
+                $('#col-main-right').removeClass('d-none').css('display', '');
+            }
 
             if (save !== false) {
                 guardarLayoutDashboard();
@@ -7016,7 +7077,7 @@
             }, 80);
         }
 
-                function redimensionarTodosLosGraficos() {
+        function redimensionarTodosLosGraficos() {
             try {
                 if (typeof salesChartInstance !== 'undefined' && salesChartInstance) salesChartInstance.resize();
                 if (typeof diferenciaChartInstance !== 'undefined' && diferenciaChartInstance) diferenciaChartInstance.resize();
@@ -7058,15 +7119,19 @@
 
             if (zoneName === 'full-top' || zoneName === 'full-bottom') {
                 if (isCard) {
-                    $c.addClass('col-12 mb-4');
+                    $c.removeClass('col-12 col-lg-6 col-lg-12 w-100').addClass('dashboard-full-card mb-4');
                 } else {
-                    $c.addClass('col-12 mb-4').removeClass('col-lg-6');
+                    $c.removeClass('w-100 dashboard-full-card').addClass('col-12 mb-4');
+                    if (zoneName === 'full-top' || $c.attr('data-half-pair') !== '1' || $c.attr('data-force-full') === '1') {
+                        $c.removeClass('col-lg-6').addClass('col-lg-12');
+                    }
                 }
             } else {
-                if (isCard) {
-                    $c.removeClass('col-12');
+                $c.removeClass('col-12 col-lg-6 col-lg-12 dashboard-full-card').removeAttr('data-force-full');
+                if (!isCard) {
+                    $c.addClass('w-100');
                 } else {
-                    $c.removeClass('col-12 col-lg-6');
+                    $c.removeClass('w-100');
                 }
                 $c.addClass('mb-4');
             }
@@ -7103,7 +7168,8 @@
                     colLeft: [],
                     colRight: [],
                     fullBottom: [],
-                    heights: {}
+                    heights: {},
+                    forceFullWidgets: []
                 };
 
                 // Guardar orden de KPIs
@@ -7132,12 +7198,15 @@
                     if (k) layout.fullBottom.push(k);
                 });
 
-                // Guardar alturas personalizadas
+                // Guardar alturas personalizadas y ancho completo forzado
                 $('.dashboard-draggable-card').each(function() {
                     var k = $(this).attr('data-widget-id');
                     var h = $(this).attr('data-custom-height');
                     if (k && h) {
                         layout.heights[k] = h;
+                    }
+                    if (k && $(this).attr('data-force-full') === '1') {
+                        layout.forceFullWidgets.push(k);
                     }
                 });
 
@@ -7152,19 +7221,25 @@
                 var raw = localStorage.getItem(getStorageLayoutKey());
                 if (!raw) {
                     aplicarProporcionColumnas('6-6', false);
+                    sincronizarEstructuraColumnasDashboard();
                     return;
                 }
                 var layout = JSON.parse(raw);
                 if (!layout) {
                     aplicarProporcionColumnas('6-6', false);
+                    sincronizarEstructuraColumnasDashboard();
                     return;
                 }
 
-                // 1. Proporcion de columnas (migrar automáticamente '7-5' anterior al nuevo predeterminado '6-6' simétrico)
-                if (layout.proporcion && layout.proporcion !== '7-5') {
-                    aplicarProporcionColumnas(layout.proporcion, false);
-                } else {
-                    aplicarProporcionColumnas('6-6', false);
+                // 1. Proporcion de columnas
+                aplicarProporcionColumnas(layout.proporcion || '6-6', false);
+
+                // Restaurar marcas de ancho completo forzado
+                if (layout.forceFullWidgets && Array.isArray(layout.forceFullWidgets)) {
+                    layout.forceFullWidgets.forEach(function(k) {
+                        var $fw = findWidgetElement(k);
+                        if ($fw && $fw.length) $fw.attr('data-force-full', '1');
+                    });
                 }
 
                 // 2. Orden de KPIs
@@ -7214,7 +7289,7 @@
                     }
                 }
 
-                actualizarPlaceholdersZonasVacias();
+                sincronizarEstructuraColumnasDashboard();
 
                 setTimeout(function() {
                     redimensionarTodosLosGraficos();
@@ -7287,13 +7362,13 @@
 
                 card.addEventListener('dragend', function() {
                     $(card).removeAttr('draggable').removeClass('is-dragging');
-                    $('.dashboard-dropzone').removeClass('drag-active');
+                    $('.dashboard-dropzone').removeClass('drag-active dropzone-has-placeholder');
                     if (dashboardDropPlaceholder && dashboardDropPlaceholder.parentNode) {
                         dashboardDropPlaceholder.parentNode.removeChild(dashboardDropPlaceholder);
                     }
                     draggedCardElement = null;
+                    sincronizarEstructuraColumnasDashboard();
                     guardarLayoutDashboard();
-                    actualizarPlaceholdersZonasVacias();
                     setTimeout(function() {
                         redimensionarTodosLosGraficos();
                     }, 60);
@@ -7303,10 +7378,18 @@
             // Zonas de soltado
             var dropzones = document.querySelectorAll('.dashboard-dropzone');
             dropzones.forEach(function(zone) {
+                zone.addEventListener('dragenter', function(e) {
+                    if (!draggedCardElement) return;
+                    e.preventDefault();
+                });
+
                 zone.addEventListener('dragover', function(e) {
+                    if (!draggedCardElement) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
-                    if (!draggedCardElement) return;
+
+                    $('.dashboard-dropzone').not(zone).removeClass('dropzone-has-placeholder');
+                    $(zone).addClass('dropzone-has-placeholder');
 
                     var afterElement = getDragAfterElement(zone, e.clientY);
                     if (!afterElement) {
@@ -7317,19 +7400,31 @@
                 });
 
                 zone.addEventListener('drop', function(e) {
+                    if (!draggedCardElement) return;
                     e.preventDefault();
-                    if (!draggedCardElement || !dashboardDropPlaceholder) return;
 
                     var zoneName = $(zone).attr('data-zone') || '';
+                    $(draggedCardElement).removeAttr('data-force-full');
                     adaptCardToZone(draggedCardElement, zoneName);
 
-                    zone.insertBefore(draggedCardElement, dashboardDropPlaceholder);
-                    if (dashboardDropPlaceholder.parentNode) {
+                    if (dashboardDropPlaceholder && dashboardDropPlaceholder.parentNode === zone) {
+                        zone.insertBefore(draggedCardElement, dashboardDropPlaceholder);
+                    } else {
+                        var afterEl = getDragAfterElement(zone, e.clientY);
+                        if (!afterEl) {
+                            zone.appendChild(draggedCardElement);
+                        } else {
+                            zone.insertBefore(draggedCardElement, afterEl);
+                        }
+                    }
+
+                    $('.dashboard-dropzone').removeClass('drag-active dropzone-has-placeholder');
+                    if (dashboardDropPlaceholder && dashboardDropPlaceholder.parentNode) {
                         dashboardDropPlaceholder.parentNode.removeChild(dashboardDropPlaceholder);
                     }
 
+                    sincronizarEstructuraColumnasDashboard();
                     guardarLayoutDashboard();
-                    actualizarPlaceholdersZonasVacias();
                     setTimeout(function() {
                         redimensionarTodosLosGraficos();
                     }, 60);
@@ -7495,16 +7590,34 @@
                 if (zoneName === 'full-bottom') $targetZone = $('#zone-full-bottom');
 
                 if ($targetZone.length) {
+                    // Garantizar visibilidad de la zona destino y su fila contenedora para que el widget nunca desaparezca
+                    $('#dashboard-content-container').removeClass('d-none').css('display', '');
+                    if (zoneName === 'left' || zoneName === 'right') {
+                        $('#row-main-dashboard').removeClass('d-none').css('display', '');
+                        $('#col-main-left').removeClass('d-none').css('display', '');
+                        $('#col-main-right').removeClass('d-none').css('display', '');
+                        applyColumnRatioClasses(currentProporcionColumnas);
+                    } else {
+                        $targetZone.removeClass('d-none').css('display', '');
+                    }
+
+                    if (zoneName === 'full-top' || zoneName === 'full-bottom') {
+                        $card.attr('data-force-full', '1');
+                    } else {
+                        $card.removeAttr('data-force-full');
+                    }
+
                     adaptCardToZone($card[0], zoneName);
-                    
+                    $card.removeClass('d-none').show();
+
                     var $emptyPh = $targetZone.find('.dropzone-empty-placeholder');
                     if ($emptyPh.length) {
-                        $card.insertBefore($emptyPh);
+                        $card.insertAfter($emptyPh);
                     } else {
                         $targetZone.prepend($card);
                     }
 
-                    actualizarPlaceholdersZonasVacias();
+                    sincronizarEstructuraColumnasDashboard();
                     guardarLayoutDashboard();
 
                     // Scroll suave hacia la nueva posición del widget para que el usuario no lo pierda de vista

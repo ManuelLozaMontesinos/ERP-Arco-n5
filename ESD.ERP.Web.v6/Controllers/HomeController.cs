@@ -107,6 +107,21 @@ namespace ESD.ERP.Web.Controllers
       public string Color { get; set; }
    }
 
+   internal class DashboardKpisDTO
+   {
+      public decimal FacturacionMes { get; set; }
+      public int PedidosActivos { get; set; }
+      public int CotizacionesActivas { get; set; }
+      public int OrdenesProduccionMes { get; set; }
+      public int OrdenesCompraMes { get; set; }
+      public double SumatoriaPedidosMes { get; set; }
+      public int CantidadPedidosMes { get; set; }
+      public int SalidasConsumoInternoMes { get; set; }
+      public int IngresosMermaMes { get; set; }
+      public int SalidasMermaMes { get; set; }
+      public int GuiasRemisionEmitidasMes { get; set; }
+   }
+
    public class HomeController : AuthorizedController
    {
 
@@ -199,20 +214,31 @@ namespace ESD.ERP.Web.Controllers
       {
          try
          {
+            var roles = ObtenerRoles();
+            bool tieneRolVentas = roles != null && roles.Any(r =>
+               r == "00003" || r == "00004" || r == "00010" ||
+               r.IndexOf("venta", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (!tieneRolVentas)
+            {
+               return (null, null);
+            }
+
             var usuarioDTO = ObtenerUsuarioDTO();
             if (usuarioDTO != null)
             {
                using (var conn = new SqlConnection(GetDbConnectionString()))
                {
                   conn.Open();
-                  // 1. Busqueda directa por p.usuario_id
+                  // 1. Busqueda directa por p.usuario_id (solo vendedores activos con abreviatura asignada)
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = @"
                         SELECT TOP 1 v.vendedor_id, v.abrev
                         FROM vendedor v
                         INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
-                        WHERE v.estado = 'A' AND p.usuario_id = @uid";
+                        WHERE v.estado = 'A'
+                          AND p.usuario_id = @uid
+                          AND LEN(LTRIM(RTRIM(ISNULL(v.abrev, '')))) > 0";
                      cmd.Parameters.AddWithValue("@uid", usuarioDTO.UsuarioId);
                      using (var reader = cmd.ExecuteReader())
                      {
@@ -230,7 +256,9 @@ namespace ESD.ERP.Web.Controllers
                         SELECT TOP 1 v.vendedor_id, v.abrev
                         FROM vendedor v
                         INNER JOIN proveedor p ON v.proveedor_id = p.proveedor_id
-                        WHERE v.estado = 'A' AND (
+                        WHERE v.estado = 'A'
+                          AND LEN(LTRIM(RTRIM(ISNULL(v.abrev, '')))) > 0
+                          AND (
                            UPPER(v.abrev) = UPPER(@logon)
                            OR UPPER(p.razon_social) LIKE '%' + UPPER(@logon) + '%'
                            OR UPPER(p.nombres) LIKE '%' + UPPER(@logon) + '%'
@@ -250,6 +278,250 @@ namespace ESD.ERP.Web.Controllers
          catch { }
 
          return (null, null);
+      }
+
+      /// <summary>
+      /// Calcula los KPIs globales del tablero segun periodo y sede, sin restringir por vendedor_id
+      /// para que todo usuario con las tarjetas KPI habilitadas visualice los valores reales.
+      /// </summary>
+      private DashboardKpisDTO CalcularKpisGenerales(SqlConnection conn, int anioConsulta, int mesConsulta, int? sedeIdFiltro)
+      {
+         var kpis = new DashboardKpisDTO();
+
+         // 1. Facturacion del mes actual
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = $@"
+                  SELECT ISNULL(SUM(monto_neto_soles), 0) AS total
+                  FROM (
+                     SELECT {SqlMontoEnSoles} AS monto_neto_soles
+                     FROM comprobante c
+                     INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
+                     LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                      {SqlTipoCambioApply}
+                     WHERE YEAR(c.fecha) = @anio
+                       AND MONTH(c.fecha) = @mes
+                       AND c.estado = 'A'
+                       AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
+                       AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
+                     UNION ALL
+                     SELECT -1.0 * (CASE WHEN c.moneda_id = 2 THEN nc.monto_total * ISNULL(NULLIF(c.monto_tc, 0), 3.50) ELSE nc.monto_total END) AS monto_neto_soles
+                     FROM nota_credito nc
+                     LEFT JOIN comprobante c ON nc.comprobante_id = c.comprobante_id
+                     LEFT JOIN periodo_emp_sede pes ON nc.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                     WHERE YEAR(nc.fecha) = @anio
+                       AND MONTH(nc.fecha) = @mes
+                       AND nc.estado = 'A'
+                       AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
+                  ) t";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@mes", mesConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               var val = cmd.ExecuteScalar();
+               if (val != null && val != DBNull.Value)
+               {
+                  kpis.FacturacionMes = Convert.ToDecimal(val);
+               }
+            }
+         }
+         catch { }
+
+         // 2. Pedidos Activos
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = @"
+                  SELECT COUNT(*)
+                  FROM cotiza c
+                  LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                  WHERE c.es_pedido = 'S' AND c.estado_cotiza_id IN (2, 4) AND c.estado = 'A'
+                    AND (@anio IS NULL OR @anio = 0 OR YEAR(c.fecha) = @anio)
+                    AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               var val = cmd.ExecuteScalar();
+               if (val != null && val != DBNull.Value)
+               {
+                  kpis.PedidosActivos = Convert.ToInt32(val);
+               }
+            }
+         }
+         catch { }
+
+         // 3. Cotizaciones Activas
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = @"
+                  SELECT COUNT(*)
+                  FROM cotiza c
+                  LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                  WHERE c.es_pedido = 'N' AND c.estado_cotiza_id = 1 AND c.estado = 'A'
+                    AND (@anio IS NULL OR @anio = 0 OR YEAR(c.fecha) = @anio)
+                    AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               var val = cmd.ExecuteScalar();
+               if (val != null && val != DBNull.Value)
+               {
+                  kpis.CotizacionesActivas = Convert.ToInt32(val);
+               }
+            }
+         }
+         catch { }
+
+         // 4. Ordenes de Produccion del mes actual
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = @"
+                  SELECT COUNT(*)
+                  FROM orden_pro o
+                  LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                  WHERE YEAR(o.fecha) = @anio
+                    AND MONTH(o.fecha) = @mes
+                    AND ISNULL(o.estado, 'A') <> 'I'
+                    AND ISNULL(o.estado_orden_p_id, 0) <> 4
+                    AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@mes", mesConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               var val = cmd.ExecuteScalar();
+               if (val != null && val != DBNull.Value)
+               {
+                  kpis.OrdenesProduccionMes = Convert.ToInt32(val);
+               }
+            }
+         }
+         catch { }
+
+         // 5. Ordenes de Compra del mes actual
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = @"
+                  SELECT COUNT(*)
+                  FROM orden_co o
+                  LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                  WHERE YEAR(o.fecha) = @anio
+                    AND MONTH(o.fecha) = @mes
+                    AND o.estado = 'A'
+                    AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@mes", mesConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               var val = cmd.ExecuteScalar();
+               if (val != null && val != DBNull.Value)
+               {
+                  kpis.OrdenesCompraMes = Convert.ToInt32(val);
+               }
+            }
+         }
+         catch { }
+
+         // 5b. Sumatoria de Pedidos del Mes Actual
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = $@"
+                  SELECT
+                      ROUND(ISNULL(SUM({SqlMontoEnSoles}), 0), 2) AS sumatoria,
+                      COUNT(*) AS cantidad
+                  FROM cotiza c
+                  LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                   {SqlTipoCambioApply}
+                  WHERE c.es_pedido = 'S'
+                    AND c.estado = 'A'
+                    AND c.estado_cotiza_id IN (2, 3, 4)
+                    AND YEAR(c.fecha) = @anio
+                    AND MONTH(c.fecha) = @mes
+                    AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@mes", mesConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               using (var reader = cmd.ExecuteReader())
+               {
+                  if (reader.Read())
+                  {
+                     if (reader["sumatoria"] != DBNull.Value) kpis.SumatoriaPedidosMes = Convert.ToDouble(reader["sumatoria"]);
+                     if (reader["cantidad"] != DBNull.Value) kpis.CantidadPedidosMes = Convert.ToInt32(reader["cantidad"]);
+                  }
+               }
+            }
+         }
+         catch { }
+
+         // 5c. Movimientos de Almacen: Consumo Interno (9), Ingreso Merma (7), Salida Merma (8) Aprobados
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = @"
+                  SELECT
+                      m.trans_alma_id,
+                      COUNT(*) AS cantidad
+                  FROM mov_almacen m
+                  LEFT JOIN periodo_emp_sede pes ON m.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                  WHERE YEAR(m.fecha) = @anio
+                    AND MONTH(m.fecha) = @mes
+                    AND m.estado = 'A'
+                    AND ISNULL(m.estado_mov_alm_id, 0) <> 3
+                    AND m.estado_aproba_id = 2
+                    AND m.trans_alma_id IN (7, 8, 9)
+                    AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
+                  GROUP BY m.trans_alma_id";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@mes", mesConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               using (var reader = cmd.ExecuteReader())
+               {
+                  while (reader.Read())
+                  {
+                     int tid = Convert.ToInt32(reader["trans_alma_id"]);
+                     int cant = Convert.ToInt32(reader["cantidad"]);
+                     if (tid == 9) kpis.SalidasConsumoInternoMes = cant;
+                     else if (tid == 7) kpis.IngresosMermaMes = cant;
+                     else if (tid == 8) kpis.SalidasMermaMes = cant;
+                  }
+               }
+            }
+         }
+         catch { }
+
+         // 5d. Guias de Remision del mes actual con estado Emitido (2)
+         try
+         {
+            using (var cmd = conn.CreateCommand())
+            {
+               cmd.CommandText = @"
+                  SELECT COUNT(*)
+                  FROM guia_remision g
+                  LEFT JOIN periodo_emp_sede pes ON g.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                  WHERE YEAR(g.fecha) = @anio
+                    AND MONTH(g.fecha) = @mes
+                    AND g.estado = 'A'
+                    AND g.estado_guia_r_id = 2
+                    AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
+               cmd.Parameters.AddWithValue("@anio", anioConsulta);
+               cmd.Parameters.AddWithValue("@mes", mesConsulta);
+               cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+               var val = cmd.ExecuteScalar();
+               if (val != null && val != DBNull.Value)
+               {
+                  kpis.GuiasRemisionEmitidasMes = Convert.ToInt32(val);
+               }
+            }
+         }
+         catch { }
+
+         return kpis;
       }
 
       private dynamic ObtenerMetricasDesdeBD(int? vendedorIdFiltro = null, int mesesInactivos = 5, int? vendedorClientesFiltro = null, int? sedeIdFiltro = null, int? anioSesion = null, int? sedeSesionId = null, int? vendedorGraficoId = null, int? cotizacionGraficoId = null, int? sedeVentasGraficoId = null)
@@ -326,262 +598,62 @@ namespace ESD.ERP.Web.Controllers
             using (var conn = new SqlConnection(GetDbConnectionString()))
             {
                conn.Open();
-               // 1. Facturacion del mes actual (filtrado por vendedor y sede si aplica)
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = $@"
-                        SELECT ISNULL(SUM(monto_neto_soles), 0) AS total
-                        FROM (
-                           SELECT {SqlMontoEnSoles} AS monto_neto_soles
-                           FROM comprobante c
-                           INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
-                           LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                            {SqlTipoCambioApply}
-                           WHERE YEAR(c.fecha) = @anio 
-                             AND MONTH(c.fecha) = @mes 
-                             AND c.estado = 'A'
-                             AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
-                             AND (@vid IS NULL OR c.vendedor_id = @vid)
-                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
-                           UNION ALL
-                           SELECT -1.0 * (CASE WHEN c.moneda_id = 2 THEN nc.monto_total * ISNULL(NULLIF(c.monto_tc, 0), 3.50) ELSE nc.monto_total END) AS monto_neto_soles
-                           FROM nota_credito nc
-                           LEFT JOIN comprobante c ON nc.comprobante_id = c.comprobante_id
-                           LEFT JOIN periodo_emp_sede pes ON nc.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                           WHERE YEAR(nc.fecha) = @anio 
-                             AND MONTH(nc.fecha) = @mes 
-                             AND nc.estado = 'A'
-                             AND (@vid IS NULL OR nc.vendedor_id = @vid)
-                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
-                        ) t";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value)
-                     {
-                        facturacionMes = Convert.ToDecimal(val);
-                     }
-                  }
-               }
-               catch { }
+               // 1-5d. KPIs Generales del Tablero (sin restriccion por vendedor; visibles con valor real segun rol)
+               var kpisGenerales = CalcularKpisGenerales(conn, anioConsulta, mesConsulta, sedeIdFiltro);
+               facturacionMes = kpisGenerales.FacturacionMes;
+               pedidosActivos = kpisGenerales.PedidosActivos;
+               cotizacionesActivas = kpisGenerales.CotizacionesActivas;
+               ordenesProduccionMes = kpisGenerales.OrdenesProduccionMes;
+               ordenesCompraMes = kpisGenerales.OrdenesCompraMes;
+               salidasConsumoInternoMes = kpisGenerales.SalidasConsumoInternoMes;
+               ingresosMermaMes = kpisGenerales.IngresosMermaMes;
+               salidasMermaMes = kpisGenerales.SalidasMermaMes;
+               guiasRemisionEmitidasMes = kpisGenerales.GuiasRemisionEmitidasMes;
+               sumatoriaPedidosMes = kpisGenerales.SumatoriaPedidosMes;
+               cantidadPedidosMes = kpisGenerales.CantidadPedidosMes;
 
-               // 2. Pedidos Activos (filtrado por vendedor y sede si aplica)
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*) 
-                        FROM cotiza c
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                        WHERE c.es_pedido = 'S' AND c.estado_cotiza_id IN (2, 4) AND c.estado = 'A'
-                          AND (@anio IS NULL OR @anio = 0 OR YEAR(c.fecha) = @anio)
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value)
-                     {
-                        pedidosActivos = Convert.ToInt32(val);
-                     }
-                  }
-               }
-               catch { }
-
-               // 3. Cotizaciones Activas (filtrado por vendedor y sede si aplica)
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*) 
-                        FROM cotiza c
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                        WHERE c.es_pedido = 'N' AND c.estado_cotiza_id = 1 AND c.estado = 'A' 
-                          AND (@anio IS NULL OR @anio = 0 OR YEAR(c.fecha) = @anio)
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value)
-                     {
-                        cotizacionesActivas = Convert.ToInt32(val);
-                     }
-                  }
-               }
-               catch { }
-
-                // 4. Ordenes de Produccion del mes actual (filtradas por vendedor cuando aplica)
-                try
-                {
-                   using (var cmd = conn.CreateCommand())
-                   {
-                      cmd.CommandText = @"
-                         SELECT COUNT(*)
-                         FROM orden_pro o
-                         LEFT JOIN cotiza c ON c.cotiza_id = o.cotiza_id
-                         LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                          WHERE YEAR(o.fecha) = @anio
-                            AND MONTH(o.fecha) = @mes
-                           AND ISNULL(o.estado, 'A') <> 'I'
-                           AND ISNULL(o.estado_orden_p_id, 0) <> 4
-                           AND (@vid IS NULL OR c.vendedor_id = @vid)
-                           AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                       cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                       cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                      cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                      cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
-                      var val = cmd.ExecuteScalar();
-                      if (val != null && val != DBNull.Value)
-                      {
-                         ordenesProduccionMes = Convert.ToInt32(val);
-                      }
-                   }
-                }
-                catch { }
-
-                // La distribucion de produccion y compras es un indicador general de gestion.
-               if (!vendedorIdFiltro.HasValue)
-               {
-                  // 4b. Estado de Produccion del mes actual (Doughnut Chart)
-                  try
-                  {
-                     using (var cmd = conn.CreateCommand())
-                     {
-                        cmd.CommandText = @"
-                           SELECT 
-                               CASE 
-                                   WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
-                                   WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
-                                   WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
-                                   WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
-                                   ELSE 'En Proceso'
-                               END AS Estado,
-                               COUNT(*) AS Cantidad
-                           FROM orden_pro o
-                           LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                           WHERE YEAR(o.fecha) = @anio
-                             AND MONTH(o.fecha) = @mes
-                             AND (@sedeSesion IS NULL OR @sedeSesion = 0 OR pes.empresa_sede_id = @sedeSesion)
-                           GROUP BY 
-                               CASE 
-                                   WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
-                                   WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
-                                   WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
-                                   WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
-                                   ELSE 'En Proceso'
-                               END";
-                        cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                        cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                        cmd.Parameters.AddWithValue("@sedeSesion", (object)sedeSesionFiltro ?? DBNull.Value);
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                           while (reader.Read())
-                           {
-                              string est = reader["Estado"]?.ToString();
-                              int cnt = Convert.ToInt32(reader["Cantidad"]);
-                              if (est == "En Proceso") prodEnProceso = cnt;
-                              else if (est == "Culminadas") prodCulminadas = cnt;
-                              else if (est == "Pendientes") prodPendientes = cnt;
-                              else if (est == "Anuladas") prodAnuladas = cnt;
-                           }
-                        }
-                     }
-                  }
-                  catch { }
-
-                  // 5. Ordenes de Compra del mes actual
-                  try
-                  {
-                     using (var cmd = conn.CreateCommand())
-                     {
-                        cmd.CommandText = @"
-                           SELECT COUNT(*) 
-                           FROM orden_co o
-                           LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                            WHERE YEAR(o.fecha) = @anio 
-                              AND MONTH(o.fecha) = @mes 
-                             AND o.estado = 'A'
-                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                         cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                         cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                        cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
-                        var val = cmd.ExecuteScalar();
-                        if (val != null && val != DBNull.Value)
-                        {
-                           ordenesCompraMes = Convert.ToInt32(val);
-                        }
-                     }
-                  }
-                  catch { }
-
-               }
-
-               // 5c. Movimientos de Almacen: Consumo Interno (9), Ingreso Merma (7), Salida Merma (8) Aprobados
+               // 4b. Estado de Produccion del mes actual (Doughnut Chart - indicador general sin restriccion por vendedor)
                try
                {
                   using (var cmd = conn.CreateCommand())
                   {
                      cmd.CommandText = @"
                         SELECT 
-                            m.trans_alma_id,
-                            COUNT(*) AS cantidad
-                        FROM mov_almacen m
-                        LEFT JOIN periodo_emp_sede pes ON m.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                          WHERE YEAR(m.fecha) = @anio
-                            AND MONTH(m.fecha) = @mes
-                          AND m.estado = 'A'
-                          AND ISNULL(m.estado_mov_alm_id, 0) <> 3
-                          AND m.estado_aproba_id = 2
-                          AND m.trans_alma_id IN (7, 8, 9)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
-                        GROUP BY m.trans_alma_id";
-                       cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                       cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
+                            CASE 
+                                WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
+                                WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
+                                WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
+                                WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
+                                ELSE 'En Proceso'
+                            END AS Estado,
+                            COUNT(*) AS Cantidad
+                        FROM orden_pro o
+                        LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
+                        WHERE YEAR(o.fecha) = @anio
+                          AND MONTH(o.fecha) = @mes
+                          AND (@sedeSesion IS NULL OR @sedeSesion = 0 OR pes.empresa_sede_id = @sedeSesion)
+                        GROUP BY 
+                            CASE 
+                                WHEN o.estado = 'I' OR o.estado_orden_p_id = 4 THEN 'Anuladas'
+                                WHEN o.estado_orden_p_id = 1 THEN 'Pendientes'
+                                WHEN o.estado_orden_p_id = 2 THEN 'En Proceso'
+                                WHEN o.estado_orden_p_id = 3 THEN 'Culminadas'
+                                ELSE 'En Proceso'
+                            END";
+                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
+                     cmd.Parameters.AddWithValue("@mes", mesConsulta);
+                     cmd.Parameters.AddWithValue("@sedeSesion", (object)sedeSesionFiltro ?? DBNull.Value);
                      using (var reader = cmd.ExecuteReader())
                      {
                         while (reader.Read())
                         {
-                           int tid = Convert.ToInt32(reader["trans_alma_id"]);
-                           int cant = Convert.ToInt32(reader["cantidad"]);
-                           if (tid == 9) salidasConsumoInternoMes = cant;
-                           else if (tid == 7) ingresosMermaMes = cant;
-                           else if (tid == 8) salidasMermaMes = cant;
+                           string est = reader["Estado"]?.ToString();
+                           int cnt = Convert.ToInt32(reader["Cantidad"]);
+                           if (est == "En Proceso") prodEnProceso = cnt;
+                           else if (est == "Culminadas") prodCulminadas = cnt;
+                           else if (est == "Pendientes") prodPendientes = cnt;
+                           else if (est == "Anuladas") prodAnuladas = cnt;
                         }
-                     }
-                  }
-               }
-               catch { }
-               // 5d. Guias de Remision del mes actual con estado Emitido (2)
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*)
-                        FROM guia_remision g
-                        LEFT JOIN periodo_emp_sede pes ON g.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                          WHERE YEAR(g.fecha) = @anio
-                            AND MONTH(g.fecha) = @mes
-                          AND g.estado = 'A'
-                          AND g.estado_guia_r_id = 2
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                       cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                       cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value)
-                     {
-                        guiasRemisionEmitidasMes = Convert.ToInt32(val);
                      }
                   }
                }
@@ -794,40 +866,7 @@ namespace ESD.ERP.Web.Controllers
                }
                catch { }
 
-               // 5b. Sumatoria de Pedidos del Mes Actual (filtrado por vendedor si aplica)
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = $@"
-                        SELECT 
-                            ROUND(ISNULL(SUM({SqlMontoEnSoles}), 0), 2) AS sumatoria,
-                            COUNT(*) AS cantidad
-                        FROM cotiza c
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                         {SqlTipoCambioApply}
-                        WHERE c.es_pedido = 'S' 
-                          AND c.estado = 'A'
-                          AND c.estado_cotiza_id IN (2, 3, 4)
-                            AND YEAR(c.fecha) = @anio 
-                            AND MONTH(c.fecha) = @mes
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                       cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                       cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeIdFiltro ?? DBNull.Value);
-                     using (var reader = cmd.ExecuteReader())
-                     {
-                        if (reader.Read())
-                        {
-                           if (reader["sumatoria"] != DBNull.Value) sumatoriaPedidosMes = Convert.ToDouble(reader["sumatoria"]);
-                           if (reader["cantidad"] != DBNull.Value) cantidadPedidosMes = Convert.ToInt32(reader["cantidad"]);
-                        }
-                     }
-                  }
-               }
-               catch { }
+               // 5b. Pedidos del Mes Actual calculado en CalcularKpisGenerales (sin filtro de vendedor)
 
                // 9b. Lista de Vendedores y Vendedor Inicial
                if (vendedorIdFiltro.HasValue)
@@ -1260,262 +1299,13 @@ namespace ESD.ERP.Web.Controllers
 
             DateTime hoy = DateTime.Today;
             int mesConsulta = (anioConsulta == hoy.Year) ? hoy.Month : 12;
-
-            bool esAdminOGerencia = EsAdminOGerencia();
-            int? vendedorIdFiltro = null;
-            if (!esAdminOGerencia)
-            {
-               var (vid, _) = ObtenerVendedorUsuarioActual();
-               vendedorIdFiltro = vid;
-            }
-
             int? sedeFiltro = (sedeId.HasValue && sedeId.Value > 0) ? sedeId.Value : (int?)null;
 
-            decimal facturacionMes = 0m;
-            int pedidosActivos = 0;
-            int cotizacionesActivas = 0;
-            int ordenesProduccionMes = 0;
-            int ordenesCompraMes = 0;
-            double sumatoriaPedidosMes = 0;
-            int cantidadPedidosMes = 0;
-            int salidasConsumoInternoMes = 0;
-            int ingresosMermaMes = 0;
-            int salidasMermaMes = 0;
-            int guiasRemisionEmitidasMes = 0;
-
+            var kpisGenerales = new DashboardKpisDTO();
             using (var conn = new SqlConnection(GetDbConnectionString()))
             {
                conn.Open();
-
-               // 1. Facturacion del mes
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = $@"
-                        SELECT ISNULL(SUM(monto_neto_soles), 0) AS total
-                        FROM (
-                           SELECT {SqlMontoEnSoles} AS monto_neto_soles
-                           FROM comprobante c
-                           INNER JOIN estado_compro ec ON c.estado_compro_id = ec.estado_compro_id
-                           LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                            {SqlTipoCambioApply}
-                           WHERE YEAR(c.fecha) = @anio 
-                             AND MONTH(c.fecha) = @mes 
-                             AND c.estado = 'A'
-                             AND (ec.estado_compro = '3' OR UPPER(ec.nombre) LIKE '%EMITID%' OR c.estado_compro_id = 3)
-                             AND (@vid IS NULL OR c.vendedor_id = @vid)
-                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
-                           UNION ALL
-                           SELECT -1.0 * (CASE WHEN c.moneda_id = 2 THEN nc.monto_total * ISNULL(NULLIF(c.monto_tc, 0), 3.50) ELSE nc.monto_total END) AS monto_neto_soles
-                           FROM nota_credito nc
-                           LEFT JOIN comprobante c ON nc.comprobante_id = c.comprobante_id
-                           LEFT JOIN periodo_emp_sede pes ON nc.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                           WHERE YEAR(nc.fecha) = @anio 
-                             AND MONTH(nc.fecha) = @mes 
-                             AND nc.estado = 'A'
-                             AND (@vid IS NULL OR nc.vendedor_id = @vid)
-                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
-                        ) t";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value) facturacionMes = Convert.ToDecimal(val);
-                  }
-               }
-               catch { }
-
-               // 2. Pedidos Activos
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*) 
-                        FROM cotiza c
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                        WHERE c.es_pedido = 'S' AND c.estado_cotiza_id IN (2, 4) AND c.estado = 'A'
-                          AND (@anio IS NULL OR @anio = 0 OR YEAR(c.fecha) = @anio)
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value) pedidosActivos = Convert.ToInt32(val);
-                  }
-               }
-               catch { }
-
-               // 3. Cotizaciones Activas
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*) 
-                        FROM cotiza c
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                        WHERE c.es_pedido = 'N' AND c.estado_cotiza_id = 1 AND c.estado = 'A' 
-                          AND (@anio IS NULL OR @anio = 0 OR YEAR(c.fecha) = @anio)
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value) cotizacionesActivas = Convert.ToInt32(val);
-                  }
-               }
-               catch { }
-
-               // 4. Ordenes de Produccion del mes
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*)
-                        FROM orden_pro o
-                        LEFT JOIN cotiza c ON c.cotiza_id = o.cotiza_id
-                        LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                        WHERE YEAR(o.fecha) = @anio
-                          AND MONTH(o.fecha) = @mes
-                          AND ISNULL(o.estado, 'A') <> 'I'
-                          AND ISNULL(o.estado_orden_p_id, 0) <> 4
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value) ordenesProduccionMes = Convert.ToInt32(val);
-                  }
-               }
-               catch { }
-
-               // 5. Ordenes de Compra del mes
-               if (!vendedorIdFiltro.HasValue)
-               {
-                  try
-                  {
-                     using (var cmd = conn.CreateCommand())
-                     {
-                        cmd.CommandText = @"
-                           SELECT COUNT(*) 
-                           FROM orden_co o
-                           LEFT JOIN periodo_emp_sede pes ON o.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                           WHERE YEAR(o.fecha) = @anio 
-                             AND MONTH(o.fecha) = @mes 
-                             AND o.estado = 'A'
-                             AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                        cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                        cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                        cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                        var val = cmd.ExecuteScalar();
-                        if (val != null && val != DBNull.Value) ordenesCompraMes = Convert.ToInt32(val);
-                     }
-                  }
-                  catch { }
-               }
-
-               // 5b. Sumatoria de Pedidos del Mes
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = $@"
-                        SELECT 
-                            ROUND(ISNULL(SUM({SqlMontoEnSoles}), 0), 2) AS sumatoria,
-                            COUNT(*) AS cantidad
-                        FROM cotiza c
-                        LEFT JOIN periodo_emp_sede pes ON c.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                         {SqlTipoCambioApply}
-                        WHERE c.es_pedido = 'S' 
-                          AND c.estado = 'A'
-                          AND c.estado_cotiza_id IN (2, 3, 4)
-                          AND YEAR(c.fecha) = @anio 
-                          AND MONTH(c.fecha) = @mes
-                          AND (@vid IS NULL OR c.vendedor_id = @vid)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@vid", (object)vendedorIdFiltro ?? DBNull.Value);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                     using (var reader = cmd.ExecuteReader())
-                     {
-                        if (reader.Read())
-                        {
-                           if (reader["sumatoria"] != DBNull.Value) sumatoriaPedidosMes = Convert.ToDouble(reader["sumatoria"]);
-                           if (reader["cantidad"] != DBNull.Value) cantidadPedidosMes = Convert.ToInt32(reader["cantidad"]);
-                        }
-                     }
-                  }
-               }
-               catch { }
-
-               // 5c. Consumo Interno y Mermas
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT 
-                            m.trans_alma_id,
-                            COUNT(*) AS cantidad
-                        FROM mov_almacen m
-                        LEFT JOIN periodo_emp_sede pes ON m.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                        WHERE YEAR(m.fecha) = @anio
-                          AND MONTH(m.fecha) = @mes
-                          AND m.estado = 'A'
-                          AND ISNULL(m.estado_mov_alm_id, 0) <> 3
-                          AND m.estado_aproba_id = 2
-                          AND m.trans_alma_id IN (7, 8, 9)
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)
-                        GROUP BY m.trans_alma_id";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                     using (var reader = cmd.ExecuteReader())
-                     {
-                        while (reader.Read())
-                        {
-                           int tid = Convert.ToInt32(reader["trans_alma_id"]);
-                           int cant = Convert.ToInt32(reader["cantidad"]);
-                           if (tid == 9) salidasConsumoInternoMes = cant;
-                           else if (tid == 7) ingresosMermaMes = cant;
-                           else if (tid == 8) salidasMermaMes = cant;
-                        }
-                     }
-                  }
-               }
-               catch { }
-
-               // 5d. Guias de Remision
-               try
-               {
-                  using (var cmd = conn.CreateCommand())
-                  {
-                     cmd.CommandText = @"
-                        SELECT COUNT(*)
-                        FROM guia_remision g
-                        LEFT JOIN periodo_emp_sede pes ON g.periodo_emp_sede_id = pes.periodo_emp_sede_id
-                        WHERE YEAR(g.fecha) = @anio
-                          AND MONTH(g.fecha) = @mes
-                          AND g.estado = 'A'
-                          AND g.estado_guia_r_id = 2
-                          AND (@sede IS NULL OR @sede = 0 OR pes.empresa_sede_id = @sede)";
-                     cmd.Parameters.AddWithValue("@anio", anioConsulta);
-                     cmd.Parameters.AddWithValue("@mes", mesConsulta);
-                     cmd.Parameters.AddWithValue("@sede", (object)sedeFiltro ?? DBNull.Value);
-                     var val = cmd.ExecuteScalar();
-                     if (val != null && val != DBNull.Value) guiasRemisionEmitidasMes = Convert.ToInt32(val);
-                  }
-               }
-               catch { }
+               kpisGenerales = CalcularKpisGenerales(conn, anioConsulta, mesConsulta, sedeFiltro);
             }
 
             return Json(new
@@ -1523,17 +1313,17 @@ namespace ESD.ERP.Web.Controllers
                success = true,
                kpis = new
                {
-                  facturacionMes = "S/ " + facturacionMes.ToString("N2"),
-                  pedidosActivos = pedidosActivos.ToString("N0"),
-                  cotizacionesActivas = cotizacionesActivas.ToString("N0"),
-                  ordenesProduccionMes = ordenesProduccionMes.ToString("N0"),
-                  ordenesCompraMes = ordenesCompraMes.ToString("N0"),
-                  pedidosMesMonto = "S/ " + sumatoriaPedidosMes.ToString("N2"),
-                  pedidosMesCantidad = cantidadPedidosMes,
-                  consumoInternoMes = salidasConsumoInternoMes.ToString("N0"),
-                  ingresosMermaMes = ingresosMermaMes.ToString("N0"),
-                  salidasMermaMes = salidasMermaMes.ToString("N0"),
-                  guiasRemisionMes = guiasRemisionEmitidasMes.ToString("N0")
+                  facturacionMes = "S/ " + kpisGenerales.FacturacionMes.ToString("N2"),
+                  pedidosActivos = kpisGenerales.PedidosActivos.ToString("N0"),
+                  cotizacionesActivas = kpisGenerales.CotizacionesActivas.ToString("N0"),
+                  ordenesProduccionMes = kpisGenerales.OrdenesProduccionMes.ToString("N0"),
+                  ordenesCompraMes = kpisGenerales.OrdenesCompraMes.ToString("N0"),
+                  pedidosMesMonto = "S/ " + kpisGenerales.SumatoriaPedidosMes.ToString("N2"),
+                  pedidosMesCantidad = kpisGenerales.CantidadPedidosMes,
+                  consumoInternoMes = kpisGenerales.SalidasConsumoInternoMes.ToString("N0"),
+                  ingresosMermaMes = kpisGenerales.IngresosMermaMes.ToString("N0"),
+                  salidasMermaMes = kpisGenerales.SalidasMermaMes.ToString("N0"),
+                  guiasRemisionMes = kpisGenerales.GuiasRemisionEmitidasMes.ToString("N0")
                }
             });
          }
